@@ -1,0 +1,166 @@
+"""
+services/ai_agent.py – AI-powered flight data extraction using Google Gemini 2.5 Flash.
+
+Supports multimodal input: images (JPEG, PNG, WebP) and PDF documents.
+Extraction logic reference: docs/AGENT_PARSER.md
+Model schema reference:     apps/api/models/ticket.py
+"""
+
+import json
+import os
+from typing import Any, Dict
+
+from google import genai
+from google.genai import types
+
+
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
+
+def _get_genai_client() -> genai.Client:
+    """
+    Initialize the Gemini API client with credentials from environment.
+
+    Expects GEMINI_API_KEY to be set in .env or environment variables.
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "GEMINI_API_KEY environment variable is not set. "
+            "Please add it to your .env file."
+        )
+    return genai.Client(api_key=api_key)
+
+
+# ---------------------------------------------------------------------------
+# System Prompt
+# ---------------------------------------------------------------------------
+
+FLIGHT_EXTRACTION_PROMPT = """
+You are an expert Flight Data Analyst for the Vietnam Aviation Market.
+
+Your task is to extract structured data from flight booking confirmations submitted
+as images (photos, screenshots) or PDF documents from Vietnam Airlines (VNA),
+Vietjet Air (VJ), Bamboo Airways (QH), and Vietravel Airlines (VU).
+
+## Extraction Requirements:
+- **PNR**: 6-character alphanumeric code (booking reference).
+- **Airline**: Map to one of [VNA, VJ, QH, VU]. Use airline name, logo, or branding to determine.
+- **Passengers**: List of full names in UPPERCASE format.
+- **Itinerary**: Flight route (e.g., "HAN-SGN" or "SGN-DAD-HAN").
+- **Flight Date**: Convert to ISO-8601 format (YYYY-MM-DDTHH:MM:SS).
+- **Net Price**: Extract the total price. If unclear or not mentioned, default to 0.
+- **Currency**: Default to "VND" for Vietnamese market.
+
+## Visual Parsing Instructions:
+1. **Airline Logo Detection**: Scan the header for airline logos to identify the carrier.
+   - VNA: Golden lotus flower on blue background.
+   - VJ: Red "VietJet" wordmark, red-and-white color scheme.
+   - QH: Green bamboo stalk logo.
+   - VU: Teal/turquoise "Vietravel" brand mark.
+
+2. **QR Code / Barcode**: Presence confirms a valid e-ticket. PNR is almost always adjacent.
+
+3. **Price Table**: Look for labels "Tổng tiền", "Total Amount", "Giá vé", or "Fare".
+   Extract the final total only. Currency formats: "2.500.000 VND" = "2,500,000 VND" = 2500000.
+
+4. **Itinerary Layout**: Look for IATA airport codes in route segments (SGN → HAN).
+   Map Vietnamese city names: Hà Nội→HAN, TP.HCM/Saigon→SGN, Đà Nẵng→DAD, Phú Quốc→PQC.
+
+## Output Format:
+Return ONLY a valid JSON object with this exact structure:
+{
+  "pnr": "string (6 characters)",
+  "airline": "string (VNA|VJ|QH|VU)",
+  "passengers": ["UPPERCASE FULLNAME 1", "UPPERCASE FULLNAME 2"],
+  "itinerary": "string (route format)",
+  "flight_date": "ISO-8601 datetime",
+  "net_price": number,
+  "currency": "VND"
+}
+
+Do not include any explanations, markdown formatting, or additional text.
+Return ONLY the JSON object.
+"""
+
+
+# ---------------------------------------------------------------------------
+# Parsing Function
+# ---------------------------------------------------------------------------
+
+async def parse_flight_content(file_bytes: bytes, mime_type: str) -> Dict[str, Any]:
+    """
+    Parse a flight confirmation file (image or PDF) into structured JSON.
+
+    Uses Google Gemini 2.5 Flash with multimodal input to visually extract
+    structured flight data from uploaded booking confirmation files.
+
+    Args:
+        file_bytes: Raw bytes of the uploaded file.
+        mime_type:  MIME type of the file (e.g., "image/jpeg", "application/pdf").
+
+    Returns:
+        Dictionary with extracted flight data matching AGENT_PARSER.md schema:
+        {
+            "pnr": str,
+            "airline": str,
+            "passengers": List[str],
+            "itinerary": str,
+            "flight_date": str (ISO-8601),
+            "net_price": float,
+            "currency": str
+        }
+
+    Raises:
+        ValueError: If API key is not configured or parsing fails.
+        json.JSONDecodeError: If the AI response is not valid JSON.
+    """
+    # Initialize the client
+    client = _get_genai_client()
+
+    # Build multimodal content parts: [file_data, text_prompt]
+    contents = [
+        types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
+        types.Part.from_text(text=FLIGHT_EXTRACTION_PROMPT),
+    ]
+
+    # Generate response using Gemini 2.5 Flash
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=contents,
+    )
+
+    # Extract the text from response
+    response_text = response.text.strip()
+
+    # Remove potential markdown code blocks if present
+    if response_text.startswith("```json"):
+        response_text = response_text.replace("```json", "").replace("```", "").strip()
+    elif response_text.startswith("```"):
+        response_text = response_text.replace("```", "").strip()
+
+    # Parse JSON
+    try:
+        data = json.loads(response_text)
+    except json.JSONDecodeError as e:
+        raise ValueError(
+            f"Failed to parse AI response as JSON. Response: {response_text[:200]}"
+        ) from e
+
+    # Validate required fields are present
+    required_fields = ["pnr", "airline", "passengers", "itinerary", "flight_date", "net_price"]
+    missing_fields = [field for field in required_fields if field not in data]
+
+    if missing_fields:
+        raise ValueError(
+            f"AI response missing required fields: {missing_fields}. "
+            f"Response: {response_text[:200]}"
+        )
+
+    # Ensure currency is set
+    if "currency" not in data:
+        data["currency"] = "VND"
+
+    return data
+

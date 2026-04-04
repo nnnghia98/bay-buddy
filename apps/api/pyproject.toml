@@ -1,0 +1,41 @@
+[tool.poetry]
+name = "bay-buddy-api"
+version = "0.1.0"
+description = "Bay Buddy – Flight & Debt Management API"
+authors = ["Bay Buddy Team"]
+readme = "README.md"
+packages = []
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+fastapi = "*"
+uvicorn = { version = "*", extras = ["standard"] }
+python-multipart = "*"
+
+# ORM / Database
+sqlmodel = "*"
+sqlalchemy = "*"
+alembic = "*"
+psycopg2-binary = "*"
+
+# Environment
+python-dotenv = "*"
+
+# Auth
+python-jose = { version = "*", extras = ["cryptography"] }
+passlib = { version = "*", extras = ["bcrypt"] }
+
+# AI – Gemini SDK
+
+# HTTP client (used by Gemini SDK internally)
+httpx = "*"
+google-genai = "^1.70.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
