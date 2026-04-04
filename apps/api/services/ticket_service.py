@@ -144,6 +144,7 @@ class TicketConfirmResponse(BaseModel):
 def create_ticket_with_transaction(
     payload: TicketConfirmPayload,
     session: Session,
+    actor_user_id: uuid.UUID,
 ) -> TicketConfirmResponse:
     """
     Atomically confirm a ticket, record a CHARGE transaction, and update the customer balance.
@@ -157,6 +158,12 @@ def create_ticket_with_transaction(
        both the customer and the ticket.
     5. Increment customer.balance by selling_price.
     6. Single atomic commit; refresh and return a structured response.
+
+    Args
+    ----
+    actor_user_id:
+        UUID of the authenticated user extracted from the JWT via `get_current_user`.
+        Used for audit context on ticket confirmation writes.
 
     Raises
     ------
@@ -234,7 +241,10 @@ def create_ticket_with_transaction(
         amount=selling_price,
         type=TransactionType.CHARGE,
         method="Ticket",
-        note=f"Auto-debt for PNR {payload.pnr} – {payload.itinerary} on {payload.flight_date.date()}",
+        note=(
+            f"Auto-debt for PNR {payload.pnr} – {payload.itinerary} "
+            f"on {payload.flight_date.date()} by user {actor_user_id}"
+        ),
         customer_id=customer.id,
         ticket_id=ticket.id,
     )

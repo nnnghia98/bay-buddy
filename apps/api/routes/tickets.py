@@ -52,7 +52,7 @@ router = APIRouter()
 async def confirm_ticket(
     *,
     session: SessionDep,
-    # current_user: CurrentUserDep, # Disabled for testing
+    current_user: CurrentUserDep,
     payload: TicketConfirmPayload,
 ):
     """
@@ -68,6 +68,7 @@ async def confirm_ticket(
         result: TicketConfirmResponse = create_ticket_with_transaction(
             payload=payload,
             session=session,
+            actor_user_id=current_user.id,
         )
 
         return success_response(
@@ -115,6 +116,7 @@ async def create_ticket(
         )
 
     # Create ticket
+    actor_user_id = current_user.id
     db_ticket = Ticket.model_validate(ticket_in)
     session.add(db_ticket)
 
@@ -128,6 +130,7 @@ async def create_ticket(
     return success_response({
         "ticket": TicketRead.model_validate(db_ticket).model_dump(),
         "customer_new_balance": customer.balance,
+        "actor_user_id": str(actor_user_id),
     })
 
 
@@ -161,4 +164,3 @@ async def get_ticket(
             status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found"
         )
     return success_response(TicketRead.model_validate(ticket).model_dump())
-

@@ -3,6 +3,12 @@
 ## 1. Database Schema (SQLModel)
 *Note: The database is now LIVE on Railway with 4 tables: `customer`, `ticket`, `transaction`, and `user`.*
 
+## Authentication Standard
+- JWT authentication is the required security standard for all write operations.
+- Every create, update, delete, or confirmation endpoint must resolve the authenticated user through `get_current_user` before mutating data.
+- The `user` table is active in production and is used as the source of truth for API authentication and RBAC.
+- Operational note: on Railway, inserts into the `user` table may currently require an explicitly defined `id` value if automatic ID generation is not fully aligned with the deployed schema.
+
 ### Model: User
 - `id`: UUID (PK)
 - `username`: String (Unique)
@@ -52,4 +58,5 @@
 2. **Transport**: Frontend sends `multipart/form-data` with the file to `POST /api/v1/ai/parse`.
 3. **AI Action**: FastAPI reads the file bytes and passes them to Gemini 2.5 Flash along with the `docs/AGENT_PARSER.md` extraction prompt.
 4. **Validation**: API returns structured JSON; Frontend validates via Zod and populates the `react-hook-form` fields.
-5. **Finalization**: On User confirmation, Backend creates a Ticket record and updates the `Customer.balance` via a DB transaction.
+5. **Authentication Gate**: Before any write operation, the backend resolves the authenticated user from the JWT bearer token.
+6. **Finalization**: On user confirmation, the backend creates a Ticket record and updates the `Customer.balance` via a DB transaction.

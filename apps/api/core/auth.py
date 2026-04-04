@@ -1,137 +1,26 @@
 """
-core/auth.py – Authentication utilities for Bay Buddy API.
+core/auth.py – Authentication dependency helpers for Bay Buddy API.
 
-Provides:
-- Password hashing and verification (passlib + bcrypt)
-- JWT token creation and validation (python-jose)
-- FastAPI dependency for extracting the current authenticated user
-
-Security flow reference: docs/ARCHITECT.md § 2. Agentic Flow
-Auth configuration: CLAUDE.md § Auth (JWT + bcrypt)
+Shared cryptographic helpers live in `services/auth.py`. This module keeps the
+FastAPI dependency layer used by route handlers.
 """
 
-import os
-from datetime import datetime, timedelta, timezone
-from typing import Annotated, Optional
+from typing import Annotated
 
-from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from passlib.context import CryptContext
-from sqlmodel import Session, select
+from sqlmodel import select
 
 from database import SessionDep
 from models import User
-
-load_dotenv()
-
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-
-SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-change-in-production")
-ALGORITHM: str = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES: int = int(
-    os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
+from services.auth import (  # noqa: F401 - re-exported for route and service imports
+    create_access_token,
+    decode_access_token,
+    hash_password,
+    verify_password,
 )
 
-# Warn if running with the default SECRET_KEY in production
-if SECRET_KEY == "dev-secret-change-in-production":
-    import warnings
-
-    warnings.warn(
-        "Using default SECRET_KEY. Set a random SECRET_KEY environment variable in production.",
-        UserWarning,
-        stacklevel=2,
-    )
-
-# ---------------------------------------------------------------------------
-# Password hashing context (bcrypt)
-# ---------------------------------------------------------------------------
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-def hash_password(plain_password: str) -> str:
-    """
-    Hash a plain-text password using bcrypt.
-
-    Args:
-        plain_password: The raw password string from user input.
-
-    Returns:
-        A bcrypt-hashed string safe for storage in User.hashed_password.
-    """
-    return pwd_context.hash(plain_password)
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verify a plain-text password against a bcrypt hash.
-
-    Args:
-        plain_password: The password the user is submitting (e.g., at login).
-        hashed_password: The stored hash from the database (User.hashed_password).
-
-    Returns:
-        True if the password matches the hash, False otherwise.
-    """
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-# ---------------------------------------------------------------------------
-# JWT token creation and validation
-# ---------------------------------------------------------------------------
-
-def create_access_token(
-    data: dict, expires_delta: Optional[timedelta] = None
-) -> str:
-    """
-    Create a signed JWT access token.
-
-    Args:
-        data: Payload dictionary. Must include {"sub": username}.
-        expires_delta: Optional custom expiration time. Defaults to ACCESS_TOKEN_EXPIRE_MINUTES.
-
-    Returns:
-        Encoded JWT string.
-    """
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-        )
-    to_encode.update({"exp": expire})
-    encoded_jwt: str = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
-def decode_access_token(token: str) -> Optional[str]:
-    """
-    Decode and validate a JWT token.
-
-    Args:
-        token: The JWT string to decode.
-
-    Returns:
-        The "sub" (subject / username) claim if valid, None if invalid/expired.
-    """
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: Optional[str] = payload.get("sub")
-        return username
-    except JWTError:
-        return None
-
-
-# ---------------------------------------------------------------------------
-# OAuth2 scheme and FastAPI dependency
-# ---------------------------------------------------------------------------
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 async def get_current_user(

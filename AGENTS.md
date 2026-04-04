@@ -4,23 +4,16 @@ You are an advanced AI Agent (Senior Fullstack Developer & Architect). Your miss
 
 ## 🎯 Current Progress
 
-**Completed**
-- Infrastructure & Database
-- Backend save logic
-- Frontend save integration
-- Implement Authentication
-- Database Migration
+Infrastructure & Database are complete. Backend Save Logic and Frontend Save button are connected and functionally verified.
 
-**Current Focus**
-- Stage 4: Debt Management & Invoicing
-
-**Live State**
-- JWT authentication is now active for ticket and transaction write flows.
-- All write operations to tickets and transactions MUST be authenticated.
+**Current Status (Paused):**
+We temporarily disabled backend authentication for the `POST /confirm` route to test the DB flow (Option 2). 
+- **Current Issue:** Without the bypass, the Frontend Save button triggers a `401 Unauthorized` because it does not send a token. Next step is to implement JWT injection into Axios/Fetch headers OR finalize the Frontend Auth flow.
+- **Architectural Decision:** All write operations to tickets and transactions MUST be authenticated.
 
 ## 📁 Project Structure & Context (The "Bay Buddy DNA")
 
-Before implementing any feature or modifying code, you **MUST** reference this file (`CLAUDE.md`) and the documentation in the `/docs/` directory. Together, these files form the "**Bay Buddy DNA**" (or "**DNA**" in shorthand), which acts as the system's absolute source of truth:
+Before implementing any feature or modifying code, you **MUST** reference this file (`AGENTS.md`) and the documentation in the `/docs/` directory. Together, these files form the "**Bay Buddy DNA**" (or "**DNA**" in shorthand), which acts as the system's absolute source of truth:
 
 - `docs/ARCHITECT.md`: System architecture, Database models (SQLModel), and Security flows.
 - `docs/BUSINESS.md`: Core business rules, pricing logic, and debt (công nợ) management.
@@ -51,7 +44,6 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 - **Style**: Follow PEP 8 strictly. Use Type Hints for all parameters and return types.
 - **Concurrency**: Use `async def` for all route handlers and IO-bound operations.
 - **AI Logic**: All flight parsing must be handled in `services/ai_agent.py` using the **Gemini 2.5 Flash** SDK. The model supports multimodal input: it can process raw bytes from uploaded images (JPEG, PNG, WebP) and PDF documents directly, in addition to plain text.
-- **Security Rule**: All new API endpoints must include the `get_current_user` dependency for security.
 
 ### 3. Frontend (Next.js/TS)
 
