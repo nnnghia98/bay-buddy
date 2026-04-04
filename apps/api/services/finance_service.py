@@ -113,6 +113,12 @@ def get_customer_ledger(
     entries: list[LedgerEntry] = []
 
     for ticket in tickets:
+        balance_delta = (
+            ticket.selling_price
+            if ticket.status == TicketStatus.CONFIRMED
+            else 0.0
+        )
+
         entries.append(
             LedgerEntry(
                 id=ticket.id,
@@ -120,7 +126,7 @@ def get_customer_ledger(
                 occurred_at=ticket.flight_date,
                 title=f"Ticket {ticket.pnr}",
                 display_amount=ticket.selling_price,
-                balance_delta=0,
+                balance_delta=balance_delta,
                 balance_after=0,
                 pnr=ticket.pnr,
                 itinerary=ticket.itinerary,
