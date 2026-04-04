@@ -82,6 +82,15 @@ class CustomerRead(CustomerBase):
     id: uuid.UUID
 
 
+class CustomerDirectoryItem(SQLModel):
+    """Slim customer payload used by the directory page."""
+
+    id: uuid.UUID
+    full_name: str
+    phone: Optional[str] = None
+    current_balance: float
+
+
 class CustomerUpdate(SQLModel):
     """All fields optional for partial PATCH payloads."""
 

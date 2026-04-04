@@ -6,7 +6,12 @@ from sqlmodel import select
 from core.auth import CurrentUserDep
 from core.responses import success_response
 from database import SessionDep
-from models.customer import Customer, CustomerCreate, CustomerRead
+from models.customer import (
+    Customer,
+    CustomerCreate,
+    CustomerDirectoryItem,
+    CustomerRead,
+)
 from services.finance_service import (
     RecordPaymentPayload,
     get_customer_ledger,
@@ -31,11 +36,19 @@ async def create_customer(
 async def list_customers(
     session: SessionDep, current_user: CurrentUserDep, skip: int = 0, limit: int = 100
 ):
-    """List all customers."""
-    statement = select(Customer).offset(skip).limit(limit)
+    """List all customers for the directory page."""
+    statement = select(Customer).order_by(Customer.name).offset(skip).limit(limit)
     customers = session.exec(statement).all()
-    customers_read = [CustomerRead.model_validate(c).model_dump() for c in customers]
-    return success_response(customers_read)
+    customer_directory = [
+        CustomerDirectoryItem(
+            id=customer.id,
+            full_name=customer.name,
+            phone=None,
+            current_balance=customer.balance,
+        ).model_dump(mode="json")
+        for customer in customers
+    ]
+    return success_response(customer_directory)
 
 @router.get("/{customer_id}", response_model=dict)
 async def get_customer(
