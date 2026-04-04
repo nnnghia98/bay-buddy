@@ -27,12 +27,18 @@ type LoginResponse = {
 }
 
 async function loginRequest(values: LoginValues): Promise<LoginResponse> {
+  const body = new URLSearchParams({
+    username: values.username,
+    password: values.password,
+    grant_type: "password",
+  })
+
   return apiFetch<LoginResponse>("/auth/login", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: JSON.stringify(values),
+    body: body.toString(),
   })
 }
 

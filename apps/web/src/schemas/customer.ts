@@ -11,7 +11,6 @@
 
 import { z } from "zod";
 import { CustomerTypeSchema } from "./enums";
-import { TransactionTypeSchema } from "./enums";
 
 // ---------------------------------------------------------------------------
 // Shared base
@@ -74,26 +73,17 @@ export type CustomerUpdate = z.infer<typeof CustomerUpdateSchema>;
 
 export const LedgerEntrySchema = z.object({
   id: z.string().uuid(),
-  entry_type: z.enum(["ticket", "transaction"]),
-  occurred_at: z.coerce.date(),
-  title: z.string(),
-  display_amount: z.number(),
-  balance_delta: z.number(),
-  balance_after: z.number(),
-  pnr: z.string().nullable().optional(),
-  itinerary: z.string().nullable().optional(),
-  ticket_status: z.string().nullable().optional(),
-  transaction_type: TransactionTypeSchema.nullable().optional(),
-  method: z.string().nullable().optional(),
-  note: z.string().nullable().optional(),
+  entry_type: z.enum(["ticket", "payment", "adjustment"]),
+  created_at: z.coerce.date(),
+  content: z.string(),
+  amount: z.number(),
+  running_balance: z.number(),
 });
 
 export type LedgerEntry = z.infer<typeof LedgerEntrySchema>;
 
 export const CustomerLedgerSchema = z.object({
   customer: CustomerReadSchema,
-  total_debt: z.number(),
-  total_paid: z.number(),
   current_balance: z.number(),
   entries: z.array(LedgerEntrySchema),
 });

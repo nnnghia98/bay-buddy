@@ -33,6 +33,7 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    swagger_ui_parameters={"persistAuthorization": True},
 )
 
 # ---------------------------------------------------------------------------
@@ -97,5 +98,4 @@ app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Tr
 async def health_check() -> dict:
     """Lightweight liveness probe for deployment platforms."""
     return {"status": "ok", "service": "bay-buddy-api"}
-
 

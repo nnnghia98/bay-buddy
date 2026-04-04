@@ -8,15 +8,18 @@ You are an advanced AI Agent (Senior Fullstack Developer & Architect). Your miss
 - Infrastructure & Database
 - Backend save logic
 - Frontend save integration
-- Implement Authentication
+- Authentication Integration
+- Swagger UI Fix
 - Database Migration
-- Customer List Page
+- Customer Directory & Ledger
 
 **Current Focus**
-- Stage 4: Debt Management & Invoicing
+- Stage 4 (Continued): Payment Recording UI & Invoice Exporting
 
 **Live State**
-- JWT authentication is now active for ticket and transaction write flows.
+- JWT authentication is now active for backend and frontend protected flows.
+- Swagger UI uses the OAuth2 password flow against `/api/v1/auth/login`.
+- Customer directory and customer ledger detail pages are functional.
 - All write operations to tickets and transactions MUST be authenticated.
 
 ## 📁 Project Structure & Context (The "Bay Buddy DNA")

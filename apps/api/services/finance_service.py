@@ -24,29 +24,20 @@ from models.transaction import Transaction, TransactionRead
 
 
 class LedgerEntry(BaseModel):
-    """A single customer ledger row representing either a ticket or a transaction."""
+    """A table-ready customer ledger row."""
 
     id: uuid.UUID
-    entry_type: Literal["ticket", "transaction"]
-    occurred_at: datetime
-    title: str
-    display_amount: float
-    balance_delta: float
-    balance_after: float
-    pnr: Optional[str] = None
-    itinerary: Optional[str] = None
-    ticket_status: Optional[TicketStatus] = None
-    transaction_type: Optional[TransactionType] = None
-    method: Optional[str] = None
-    note: Optional[str] = None
+    entry_type: Literal["ticket", "payment", "adjustment"]
+    created_at: datetime
+    content: str
+    amount: float
+    running_balance: float
 
 
 class CustomerLedgerResponse(BaseModel):
     """Ledger payload returned by GET /customers/{id}/ledger."""
 
     customer: CustomerRead
-    total_debt: float = Field(ge=0)
-    total_paid: float = Field(ge=0)
     current_balance: float
     entries: list[LedgerEntry]
 
@@ -90,8 +81,11 @@ def get_customer_ledger(
 
     tickets = session.exec(
         select(Ticket)
-        .where(Ticket.customer_id == customer_id)
-        .order_by(Ticket.flight_date, Ticket.id)
+        .where(
+            Ticket.customer_id == customer_id,
+            Ticket.status == TicketStatus.CONFIRMED,
+        )
+        .order_by(Ticket.id)
     ).all()
     transactions = session.exec(
         select(Transaction)
@@ -99,65 +93,53 @@ def get_customer_ledger(
         .order_by(Transaction.created_at, Transaction.id)
     ).all()
 
-    total_debt = sum(
-        ticket.selling_price
-        for ticket in tickets
-        if ticket.status == TicketStatus.CONFIRMED
-    )
-    total_paid = sum(
-        transaction.amount
-        for transaction in transactions
-        if transaction.type == TransactionType.PAYMENT
-    )
-
     entries: list[LedgerEntry] = []
-
-    for ticket in tickets:
-        balance_delta = (
-            ticket.selling_price
-            if ticket.status == TicketStatus.CONFIRMED
-            else 0.0
-        )
-
-        entries.append(
-            LedgerEntry(
-                id=ticket.id,
-                entry_type="ticket",
-                occurred_at=ticket.flight_date,
-                title=f"Ticket {ticket.pnr}",
-                display_amount=ticket.selling_price,
-                balance_delta=balance_delta,
-                balance_after=0,
-                pnr=ticket.pnr,
-                itinerary=ticket.itinerary,
-                ticket_status=ticket.status,
-                note=", ".join(ticket.passengers),
-            )
-        )
+    ticket_charge_by_ticket_id: dict[uuid.UUID, Transaction] = {}
 
     for transaction in transactions:
-        balance_delta = transaction.amount
+        if (
+            transaction.type == TransactionType.CHARGE
+            and transaction.ticket_id is not None
+        ):
+            ticket_charge_by_ticket_id[transaction.ticket_id] = transaction
+            continue
+
+        amount = transaction.amount
+        entry_type: Literal["payment", "adjustment"] = "adjustment"
         if transaction.type in (TransactionType.PAYMENT, TransactionType.REFUND):
-            balance_delta = -transaction.amount
+            amount = -transaction.amount
+            entry_type = "payment"
 
         entries.append(
             LedgerEntry(
                 id=transaction.id,
-                entry_type="transaction",
-                occurred_at=transaction.created_at,
-                title=f"{transaction.type.title()} transaction",
-                display_amount=transaction.amount,
-                balance_delta=balance_delta,
-                balance_after=0,
-                transaction_type=transaction.type,
-                method=transaction.method,
-                note=transaction.note,
+                entry_type=entry_type,
+                created_at=transaction.created_at,
+                content=(transaction.note or transaction.method).strip(),
+                amount=amount,
+                running_balance=0,
+            )
+        )
+
+    for ticket in tickets:
+        charge_transaction = ticket_charge_by_ticket_id.get(ticket.id)
+        created_at = (
+            charge_transaction.created_at if charge_transaction else ticket.flight_date
+        )
+        entries.append(
+            LedgerEntry(
+                id=ticket.id,
+                entry_type="ticket",
+                created_at=created_at,
+                content=ticket.pnr,
+                amount=ticket.selling_price,
+                running_balance=0,
             )
         )
 
     entries.sort(
         key=lambda entry: (
-            entry.occurred_at,
+            entry.created_at,
             0 if entry.entry_type == "ticket" else 1,
             str(entry.id),
         )
@@ -165,14 +147,12 @@ def get_customer_ledger(
 
     running_balance = 0.0
     for entry in entries:
-        running_balance += entry.balance_delta
-        entry.balance_after = running_balance
+        running_balance += entry.amount
+        entry.running_balance = running_balance
 
     return CustomerLedgerResponse(
         customer=CustomerRead.model_validate(customer),
-        total_debt=total_debt,
-        total_paid=total_paid,
-        current_balance=customer.balance,
+        current_balance=running_balance if entries else customer.balance,
         entries=entries,
     )
 

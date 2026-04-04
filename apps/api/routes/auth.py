@@ -8,8 +8,9 @@ Endpoints:
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlmodel import select
 
 from core.auth import CurrentUserDep, create_access_token, verify_password
@@ -17,13 +18,6 @@ from database import SessionDep
 from models import User, UserRead
 
 router = APIRouter()
-
-
-class LoginRequest(BaseModel):
-    """Payload accepted by POST /login."""
-
-    username: str = Field(min_length=1)
-    password: str = Field(min_length=1)
 
 
 class TokenResponse(BaseModel):
@@ -34,12 +28,15 @@ class TokenResponse(BaseModel):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(payload: LoginRequest, session: SessionDep) -> TokenResponse:
-    """Authenticate a user and return a JWT access token."""
-    statement = select(User).where(User.username == payload.username)
+async def login(
+    session: SessionDep,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+) -> TokenResponse:
+    """Authenticate a user from OAuth2 form fields and return a JWT access token."""
+    statement = select(User).where(User.username == form_data.username)
     user = session.exec(statement).first()
 
-    if user is None or not verify_password(payload.password, user.hashed_password):
+    if user is None or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -60,4 +57,3 @@ async def login(payload: LoginRequest, session: SessionDep) -> TokenResponse:
 async def get_current_user_profile(current_user: CurrentUserDep) -> UserRead:
     """Return the authenticated user's public profile."""
     return UserRead.model_validate(current_user)
-
