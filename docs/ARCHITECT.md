@@ -60,3 +60,8 @@
 4. **Validation**: API returns structured JSON; Frontend validates via Zod and populates the `react-hook-form` fields.
 5. **Authentication Gate**: Before any write operation, the backend resolves the authenticated user from the JWT bearer token.
 6. **Finalization**: On user confirmation, the backend creates a Ticket record and updates the `Customer.balance` via a DB transaction.
+
+## 4. Customer Endpoints
+- `GET /api/v1/customers` returns the customer directory used by the web UI.
+- The directory payload includes `id`, `full_name`, `phone`, and `current_balance`.
+- `current_balance` is sourced directly from the `customer.balance` value stored in the database.

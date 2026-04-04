@@ -10,6 +10,7 @@ You are an advanced AI Agent (Senior Fullstack Developer & Architect). Your miss
 - Frontend save integration
 - Implement Authentication
 - Database Migration
+- Customer List Page
 
 **Current Focus**
 - Stage 4: Debt Management & Invoicing
