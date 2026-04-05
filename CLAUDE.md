@@ -48,7 +48,8 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 
 - **No Hard-coding**: All UI text must use `t('key')` via `next-international`.
 - **Naming Convention**: Use `docs/DICTIONARY.md` for domain-specific variables (e.g., `pnr`, `net_price`, `selling_price`).
-- **Communication**: You may discuss in Vietnamese with the user, but all code, comments, and documentation must be in **English**.
+- **Language Policy**: System communication is English; target market is Vietnam; UI labels are Vietnamese-first.
+- **Semantic Integrity**: Preserve Vietnamese business terms with precision (e.g., "công nợ", "Nghị định 123", "số tiền bằng chữ", "báo có/báo nợ") while keeping variable names in English (e.g., `is_invoice_issued`).
 
 ### 2. Backend (Python/FastAPI)
 

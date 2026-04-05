@@ -2,6 +2,20 @@
 
 This document defines the core business rules, financial logic, and operational workflows for the Bay Buddy system. All AI Agents and developers must adhere to these rules when implementing features.
 
+## 0. Language Policy (Mandatory)
+
+System communication: English | Target Market: Vietnam | UI Labels: Vietnamese-first.
+
+- **System communication**: English (all assistant responses, developer documentation, and code comments).
+- **Target market**: Vietnam (implement business logic according to Vietnamese market practices and applicable Vietnamese legal/compliance requirements).
+- **UI labels**: Vietnamese-first (default locale is Vietnamese; English is secondary for developer convenience).
+- **Engineering identifiers**: English variable names and schema fields (e.g., `is_invoice_issued`) while UI values and labels remain Vietnamese (e.g., "Đã xuất hóa đơn").
+- **Semantic integrity**: Preserve Vietnamese domain terms with accounting/legal precision:
+  - **Công nợ**: Accounts Receivable (debt-first customer ledger).
+  - **Nghị định 123 (Decree 123/2020/ND-CP)**: E-invoice formatting and compliance requirements.
+  - **Số tiền bằng chữ**: Convert invoice totals into Vietnamese words.
+  - **Báo có / Báo nợ**: Correct bank statement terminology for incoming/outgoing transaction records.
+
 ## 1. Ticket Lifecycle
 
 Each ticket parsed into the system follows a specific lifecycle. Status changes affect how financial data is calculated.
@@ -45,6 +59,13 @@ The **Customer Balance** is a real-time calculation of all interactions:
 - **Negative Balance (< 0)**: The agent owes money or holds a deposit for the customer.
 - **Zero Balance (= 0)**: All accounts are settled.
 
+### Banking Terminology (Báo Có / Báo Nợ)
+
+For bank transfer-based accounting workflows in Vietnam, the system must preserve the correct semantics:
+
+- **Báo có**: Incoming money (credit advice) to the agency's bank account (typically customer payments).
+- **Báo nợ**: Outgoing money (debit advice) from the agency's bank account (typically refunds or supplier payments).
+
 ### Debt Reconciliation (Biên bản đối chiếu công nợ)
 
 To comply with Vietnamese Accounting Standards (Circular 200/2014/TT-BTC or Circular 133/2016/TT-BTC), the system must be capable of generating a formal **Debt Reconciliation Minute** at the end of each accounting period. This document must clearly list:
@@ -83,7 +104,7 @@ To operate compliantly within the Vietnamese market, the system must adhere to l
 When generating official electronic invoices (Hóa đơn điện tử) for `BUSINESS` accounts, the system data must support:
 - **Buyer & Seller Tax IDs (Mã số thuế)**: Mandatory for B2B transactions.
 - **VAT Breakdown**: Displaying the separated taxable and non-taxable components.
-- **Total in Words (Số tiền viết bằng chữ)**: The final grand total must be written out in Vietnamese script securely.
+- **Total in Words (Số tiền bằng chữ)**: The final grand total must be written out in Vietnamese script securely.
 
 ### VAT Calculation Logic
 
