@@ -26,10 +26,11 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 - **Backend**: Python 3.10+, FastAPI, SQLModel (Pydantic v2 + SQLAlchemy), Poetry.
 - **Package Managers**: **Yarn** (Frontend) and **Poetry** (Backend).
 - **State Management**: TanStack Query v5 (React Query).
-- **Forms & Validation**: React Hook Form + Zod (Frontend) strictly synced with Pydantic (Backend).
+- **Forms & Validation**: Zod-first validation shared between Client and Server boundaries.
 - **i18n**: `next-international` (Default Locale: `vi`, Secondary: `en`).
 - **Auth**: JWT (OAuth2PasswordBearer) with bcrypt password hashing.
 - **Deployment**: Standalone Docker image (Frontend) & Uvicorn (Backend).
+- **Frontend Standard**: `react-best-practices` is now part of the DNA. Follow Vercel's latest Next.js App Router recommendations by default.
 
 ## 💻 Coding Standards
 
@@ -50,7 +51,23 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 
 - **Components**: Use Functional Components and Server Components by default.
 - **UI**: Shadcn UI is the primary component library. Maintain a minimalist and clean aesthetic.
-- **Data Fetching**: Use custom hooks wrapping TanStack Query for all API interactions.
+- **Data Fetching**: Prefer React Server Components (RSC) for read operations and initial data loading in App Router.
+- **Mutations**: Use Server Actions for all data mutations, especially creating payments and updating tickets.
+- **Forms**: For App Router forms, prefer `useActionState` / `useFormState` over client-only mutation handlers.
+- **Pending State**: Use `useFormStatus` to drive submit-button loading, disabled states, and in-flight labels.
+- **Validation**: Reuse the same Zod schema on both Client and Server for every critical form.
+- **TypeUI Principle**: UI should feel type-safe, predictable, and immediate. Pending, success, error, and rollback states must be explicit.
+- **Optimistic UI**: Consider `useOptimistic` for mutation-heavy surfaces such as the customer ledger so newly recorded payments appear instantly before server confirmation.
+- **TanStack Query Usage**: Keep TanStack Query for client-side cache coordination, background refresh, or interactive islands where RSC alone is not sufficient.
+
+### 4. Record Payment Standard (Step 4.3)
+
+- The Payment Dialog must submit through a **Server Action**.
+- The form state must be driven by `useActionState` (or `useFormState` where applicable).
+- The submit button must read its pending state from `useFormStatus`.
+- Validation must use a shared Zod schema on both Client and Server.
+- The ledger view should adopt **optimistic insertion** so the payment row appears immediately while the action is still pending.
+- Optimistic entries must reconcile cleanly with the confirmed server response and roll back safely on validation or network failure.
 
 ## 🔐 Authentication & Security
 

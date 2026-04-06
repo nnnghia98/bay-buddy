@@ -20,7 +20,7 @@ from sqlmodel import select
 
 from core.auth import CurrentUserDep
 from database import SessionDep
-from models.ticket import Ticket, TicketCreate, TicketRead
+from models.ticket import Ticket, TicketCreate, TicketRead, TicketUpdate
 from models.customer import Customer
 from core.responses import success_response
 from services.ticket_service import (
@@ -164,3 +164,73 @@ async def get_ticket(
             status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found"
         )
     return success_response(TicketRead.model_validate(ticket).model_dump())
+
+
+@router.patch("/{ticket_id}", response_model=dict)
+async def update_ticket(
+    ticket_id: uuid.UUID,
+    ticket_in: TicketUpdate,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+):
+    """Partially update a ticket and recompute selling_price when pricing inputs change."""
+    del current_user
+
+    ticket = session.get(Ticket, ticket_id)
+    if ticket is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Ticket not found",
+        )
+
+    update_data = ticket_in.model_dump(exclude_unset=True)
+
+    next_pnr = update_data.get("pnr")
+    if next_pnr is not None and next_pnr != ticket.pnr:
+        existing_ticket = session.exec(
+            select(Ticket).where(
+                Ticket.pnr == next_pnr,
+                Ticket.id != ticket_id,
+            )
+        ).first()
+        if existing_ticket is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Ticket with this PNR already exists",
+            )
+
+    next_customer_id = update_data.get("customer_id")
+    if next_customer_id is not None:
+        customer = session.get(Customer, next_customer_id)
+        if customer is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Customer not found",
+            )
+
+    next_net_price = update_data.get("net_price", ticket.net_price)
+    next_selling_price = update_data.get("selling_price")
+    next_service_fee = update_data.pop("service_fee", None)
+
+    if next_service_fee is not None:
+        next_selling_price = next_net_price + next_service_fee
+    elif "net_price" in update_data and next_selling_price is None:
+        existing_service_fee = ticket.selling_price - ticket.net_price
+        next_selling_price = next_net_price + existing_service_fee
+
+    if next_selling_price is not None:
+        if next_selling_price < next_net_price:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="selling_price must be greater than or equal to net_price",
+            )
+        update_data["selling_price"] = next_selling_price
+
+    for field_name, value in update_data.items():
+        setattr(ticket, field_name, value)
+
+    session.add(ticket)
+    session.commit()
+    session.refresh(ticket)
+
+    return success_response(TicketRead.model_validate(ticket).model_dump(mode="json"))

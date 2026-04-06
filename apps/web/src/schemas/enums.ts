@@ -46,6 +46,19 @@ export const TransactionTypeSchema = z.enum(["PAYMENT", "CHARGE", "REFUND"]);
 export type TransactionType = z.infer<typeof TransactionTypeSchema>;
 
 // ---------------------------------------------------------------------------
+// TransactionCategory
+// ---------------------------------------------------------------------------
+
+export const TransactionCategorySchema = z.enum([
+  "TICKET_PURCHASE",
+  "PAYMENT",
+  "DISCOUNT",
+  "ADDITIONAL_FEE",
+  "REFUND",
+]);
+export type TransactionCategory = z.infer<typeof TransactionCategorySchema>;
+
+// ---------------------------------------------------------------------------
 // TicketStatus
 // ---------------------------------------------------------------------------
 

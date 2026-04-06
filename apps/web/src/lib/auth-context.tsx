@@ -24,7 +24,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = React.useState(false)
 
   React.useEffect(() => {
-    setToken(getStoredToken())
+    const storedToken = getStoredToken()
+    if (storedToken) {
+      setStoredToken(storedToken)
+    }
+    setToken(storedToken)
     setIsReady(true)
   }, [])
 
@@ -60,4 +64,3 @@ export function useAuth(): AuthContextValue {
 
   return context
 }
-

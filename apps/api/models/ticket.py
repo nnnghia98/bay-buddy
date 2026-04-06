@@ -24,6 +24,8 @@ from .enums import Airline, TicketStatus
 
 if TYPE_CHECKING:
     from .customer import Customer
+    from .invoice_item import InvoiceItem
+    from .quote_item import QuoteItem
     from .transaction import Transaction
 
 
@@ -101,7 +103,9 @@ class Ticket(TicketBase, table=True):
     customer: Optional["Customer"] = Relationship(back_populates="tickets")
 
     # Relationship to Transactions created from this ticket (e.g. auto-debt).
-    transactions: List["Transaction"] = Relationship(back_populates="ticket")
+    transactions: List["Transaction"] = Relationship(back_populates="linked_ticket")
+    invoice_items: List["InvoiceItem"] = Relationship(back_populates="linked_ticket")
+    quote_items: List["QuoteItem"] = Relationship(back_populates="linked_ticket")
 
     @property
     def service_fee(self) -> float:
@@ -140,6 +144,11 @@ class TicketUpdate(SQLModel):
     itinerary: Optional[str] = Field(default=None, max_length=100)
     flight_date: Optional[datetime] = None
     net_price: Optional[float] = Field(default=None, ge=0)
+    service_fee: Optional[float] = Field(
+        default=None,
+        ge=0,
+        description="Optional service fee used to recompute selling_price.",
+    )
     selling_price: Optional[float] = Field(default=None, ge=0)
     status: Optional[TicketStatus] = None
     customer_id: Optional[uuid.UUID] = None

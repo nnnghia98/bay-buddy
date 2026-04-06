@@ -14,10 +14,17 @@ export {
   AirlineSchema,
   AIRLINE_LABELS,
   CustomerTypeSchema,
+  TransactionCategorySchema,
   TransactionTypeSchema,
   UserRoleSchema,
 } from "./enums";
-export type { Airline, CustomerType, TransactionType, UserRole } from "./enums";
+export type {
+  Airline,
+  CustomerType,
+  TransactionCategory,
+  TransactionType,
+  UserRole,
+} from "./enums";
 
 // User
 export {
@@ -43,6 +50,7 @@ export type {
   CustomerLedger,
   CustomerRead,
   CustomerUpdate,
+  BalanceState,
   LedgerEntry,
   RecordPayment,
 } from "./customer";
@@ -55,6 +63,17 @@ export {
   computeServiceFee,
 } from "./ticket";
 export type { TicketCreate, TicketRead, TicketUpdate } from "./ticket";
+
+// Finance
+export {
+  initialRecordPaymentActionState,
+  paymentMethodOptions,
+  recordPaymentFormSchema,
+} from "./finance";
+export type {
+  RecordPaymentActionState,
+  RecordPaymentFormValues,
+} from "./finance";
 
 // Transaction
 export {

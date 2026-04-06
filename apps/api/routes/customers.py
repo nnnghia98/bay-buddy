@@ -11,6 +11,7 @@ from models.customer import (
     CustomerCreate,
     CustomerDirectoryItem,
     CustomerRead,
+    CustomerUpdate,
 )
 from services.finance_service import (
     RecordPaymentPayload,
@@ -43,7 +44,7 @@ async def list_customers(
         CustomerDirectoryItem(
             id=customer.id,
             full_name=customer.name,
-            phone=None,
+            phone=customer.phone,
             current_balance=customer.balance,
         ).model_dump(mode="json")
         for customer in customers
@@ -61,6 +62,63 @@ async def get_customer(
             status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found"
         )
     return success_response(CustomerRead.model_validate(customer).model_dump())
+
+
+@router.patch("/{customer_id}", response_model=dict)
+async def update_customer(
+    customer_id: uuid.UUID,
+    customer_in: CustomerUpdate,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+):
+    """Partially update a customer and enforce unique email/tax code constraints."""
+    del current_user
+
+    customer = session.get(Customer, customer_id)
+    if not customer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer not found",
+        )
+
+    update_data = customer_in.model_dump(exclude_unset=True)
+
+    normalized_email = update_data.get("email")
+    if normalized_email is not None:
+        existing_customer = session.exec(
+            select(Customer).where(
+                Customer.email == normalized_email,
+                Customer.id != customer_id,
+            )
+        ).first()
+        if existing_customer is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email is already used by another customer",
+            )
+
+    normalized_tax_code = update_data.get("tax_code")
+    if normalized_tax_code is not None:
+        existing_customer = session.exec(
+            select(Customer).where(
+                Customer.tax_code == normalized_tax_code,
+                Customer.id != customer_id,
+            )
+        ).first()
+        if existing_customer is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Tax code is already used by another customer",
+            )
+
+    for field_name, value in update_data.items():
+        setattr(customer, field_name, value)
+
+    session.add(customer)
+    session.commit()
+    session.refresh(customer)
+
+    return success_response(CustomerRead.model_validate(customer).model_dump(mode="json"))
 
 
 @router.get("/{customer_id}/ledger", response_model=dict)
@@ -85,7 +143,10 @@ async def record_customer_payment(
     result = record_payment(
         customer_id=customer_id,
         amount=payload.amount,
+        method=payload.method,
         note=payload.note,
+        evidence_url=payload.evidence_url,
+        linked_ticket_id=payload.linked_ticket_id,
         actor_user_id=current_user.id,
         session=session,
     )

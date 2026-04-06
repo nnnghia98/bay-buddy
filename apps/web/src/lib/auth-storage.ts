@@ -1,11 +1,30 @@
-const TOKEN_KEY = "bay-buddy.access-token"
+import {
+  AUTH_TOKEN_COOKIE_KEY,
+  AUTH_TOKEN_STORAGE_KEY,
+} from "@/lib/auth-token"
+
+function writeTokenCookie(token: string): void {
+  if (typeof document === "undefined") {
+    return
+  }
+
+  document.cookie = `${AUTH_TOKEN_COOKIE_KEY}=${encodeURIComponent(token)}; Path=/; SameSite=Lax`
+}
+
+function clearTokenCookie(): void {
+  if (typeof document === "undefined") {
+    return
+  }
+
+  document.cookie = `${AUTH_TOKEN_COOKIE_KEY}=; Path=/; Max-Age=0; SameSite=Lax`
+}
 
 export function getStoredToken(): string | null {
   if (typeof window === "undefined") {
     return null
   }
 
-  return window.localStorage.getItem(TOKEN_KEY)
+  return window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
 }
 
 export function setStoredToken(token: string): void {
@@ -13,7 +32,8 @@ export function setStoredToken(token: string): void {
     return
   }
 
-  window.localStorage.setItem(TOKEN_KEY, token)
+  window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token)
+  writeTokenCookie(token)
 }
 
 export function clearStoredToken(): void {
@@ -21,6 +41,6 @@ export function clearStoredToken(): void {
     return
   }
 
-  window.localStorage.removeItem(TOKEN_KEY)
+  window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
+  clearTokenCookie()
 }
-

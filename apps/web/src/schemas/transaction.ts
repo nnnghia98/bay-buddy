@@ -3,18 +3,24 @@
  *
  * Mirrors apps/api/models/transaction.py (TransactionCreate, TransactionRead, TransactionUpdate).
  *
- * Balance update logic (công nợ) – mirrors Python docstring:
- *   CHARGE  → customer.balance += amount   (debt increases)
- *   PAYMENT → customer.balance -= amount   (debt decreases)
- *   REFUND  → customer.balance -= amount   (credit returned)
+ * Balance update logic (công nợ) – derived from `category`:
+ *   TICKET_PURCHASE / ADDITIONAL_FEE / REFUND → customer.balance += amount
+ *   PAYMENT / DISCOUNT                        → customer.balance -= amount
  */
 
 import { z } from "zod";
-import { TransactionTypeSchema } from "./enums";
+import { TransactionCategorySchema, TransactionTypeSchema } from "./enums";
 
 // ---------------------------------------------------------------------------
 // Shared base
 // ---------------------------------------------------------------------------
+
+const NullableEvidenceUrlSchema = z
+  .string()
+  .url("evidence_url must be a valid URL.")
+  .max(2048)
+  .nullable()
+  .optional();
 
 const TransactionBaseSchema = z.object({
   /**
@@ -27,10 +33,16 @@ const TransactionBaseSchema = z.object({
 
   /**
    * PAYMENT | CHARGE | REFUND.
-   * Determines how Customer.balance (công nợ) is adjusted.
+   * Legacy direction enum kept in sync with category.
    * Maps to Python: type
    */
   type: TransactionTypeSchema,
+
+  /**
+   * VN-market transaction category for reconciliation and running balance rules.
+   * Maps to Python: category
+   */
+  category: TransactionCategorySchema.default("TICKET_PURCHASE"),
 
   /**
    * Payment method label.
@@ -48,11 +60,20 @@ const TransactionBaseSchema = z.object({
    */
   note: z.string().max(500, "Note must be at most 500 characters.").optional(),
 
+  /**
+   * Optional receipt URL or payment-proof link.
+   * Maps to Python: evidence_url
+   */
+  evidence_url: NullableEvidenceUrlSchema,
+
   /** Foreign key to the owning Customer. Maps to Python: customer_id */
   customer_id: z.string().uuid("customer_id must be a valid UUID."),
 
-  /** Optional foreign key to the source ticket. Maps to Python: ticket_id */
-  ticket_id: z.string().uuid().nullable().optional(),
+  /** Optional foreign key to the specifically reconciled ticket. Maps to Python: linked_ticket_id */
+  linked_ticket_id: z.string().uuid().nullable().optional(),
+
+  /** Refund confirmation state for overpayment returns. Maps to Python: is_refunded_confirmed */
+  is_refund_confirmed: z.boolean().default(false),
 });
 
 // ---------------------------------------------------------------------------
@@ -76,6 +97,9 @@ export const TransactionReadSchema = TransactionBaseSchema.extend({
    * UI should format using vi-VN locale per docs/DICTIONARY.md.
    */
   created_at: z.coerce.date(),
+
+  /** UUID of the authenticated internal user who created the transaction. */
+  created_by: z.string().uuid(),
 });
 
 export type TransactionRead = z.infer<typeof TransactionReadSchema>;
@@ -88,8 +112,12 @@ export type TransactionRead = z.infer<typeof TransactionReadSchema>;
 export const TransactionUpdateSchema = z.object({
   amount: z.number().positive().optional(),
   type: TransactionTypeSchema.optional(),
+  category: TransactionCategorySchema.optional(),
   method: z.string().min(1).max(100).optional(),
-  note: z.string().max(500).optional(),
+  note: z.string().max(2000).optional(),
+  evidence_url: z.string().url().max(2048).nullable().optional(),
+  linked_ticket_id: z.string().uuid().nullable().optional(),
+  is_refund_confirmed: z.boolean().optional(),
 });
 
 export type TransactionUpdate = z.infer<typeof TransactionUpdateSchema>;

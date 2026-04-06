@@ -26,10 +26,33 @@ them (Ticket, Transaction).
 
 from sqlmodel import SQLModel
 
-from .enums import Airline, CustomerType, TransactionType, UserRole
+from .enums import (
+    Airline,
+    CustomerType,
+    InvoiceStatus,
+    QuoteStatus,
+    TransactionCategory,
+    TransactionType,
+    UserRole,
+)
 from .user import User, UserCreate, UserRead, UserUpdate
 from .customer import Customer, CustomerCreate, CustomerRead, CustomerUpdate
 from .ticket import Ticket, TicketCreate, TicketRead, TicketUpdate
+from .invoice import (
+    Invoice,
+    InvoiceCreate,
+    InvoiceDetail,
+    InvoiceListFilters,
+    InvoiceListItem,
+    InvoicePublicBrand,
+    InvoicePublicView,
+    InvoiceRead,
+    InvoiceUpdate,
+    InvoiceStatusUpdate,
+)
+from .invoice_item import InvoiceItem, InvoiceItemCreate, InvoiceItemRead
+from .quote import Quote, QuoteConvertResponse, QuoteCreate, QuoteDetail, QuoteRead
+from .quote_item import QuoteItem, QuoteItemRead
 from .transaction import Transaction, TransactionCreate, TransactionRead, TransactionUpdate
 
 # Expose SQLModel.metadata so Alembic's env.py can do:
@@ -45,6 +68,9 @@ __all__ = [
     "UserRole",
     "CustomerType",
     "Airline",
+    "InvoiceStatus",
+    "QuoteStatus",
+    "TransactionCategory",
     "TransactionType",
     # User
     "User",
@@ -61,10 +87,33 @@ __all__ = [
     "TicketCreate",
     "TicketRead",
     "TicketUpdate",
+    # Invoice
+    "Invoice",
+    "InvoiceCreate",
+    "InvoiceDetail",
+    "InvoiceListFilters",
+    "InvoiceListItem",
+    "InvoicePublicBrand",
+    "InvoicePublicView",
+    "InvoiceRead",
+    "InvoiceUpdate",
+    "InvoiceStatusUpdate",
+    # InvoiceItem
+    "InvoiceItem",
+    "InvoiceItemCreate",
+    "InvoiceItemRead",
+    # Quote
+    "Quote",
+    "QuoteConvertResponse",
+    "QuoteCreate",
+    "QuoteDetail",
+    "QuoteRead",
+    # QuoteItem
+    "QuoteItem",
+    "QuoteItemRead",
     # Transaction
     "Transaction",
     "TransactionCreate",
     "TransactionRead",
     "TransactionUpdate",
 ]
-

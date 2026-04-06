@@ -51,12 +51,15 @@ The **Customer Balance** is a real-time calculation of all interactions:
 
 - **Total Debt**: Sum of all `selling_price` from `CONFIRMED` tickets.
 - **Total Paid**: Sum of all `amount` from `PAYMENT` transactions.
+- **Discounts**: `DISCOUNT` transactions reduce debt without representing cash movement.
+- **Additional Fees**: `ADDITIONAL_FEE` transactions increase debt for post-booking charges.
 - **Formula**: `Current Balance = Total Debt - Total Paid`
 
 ### Balance Indicators
 
 - **Positive Balance (> 0)**: The customer owes money to the agent.
 - **Negative Balance (< 0)**: The agent owes money or holds a deposit for the customer.
+- When a payment pushes the balance below zero, the UI must clearly label that state as **"Tiền dư / Đặt cọc"**.
 - **Zero Balance (= 0)**: All accounts are settled.
 
 ### Banking Terminology (Báo Có / Báo Nợ)
@@ -71,8 +74,15 @@ For bank transfer-based accounting workflows in Vietnam, the system must preserv
 To comply with Vietnamese Accounting Standards (Circular 200/2014/TT-BTC or Circular 133/2016/TT-BTC), the system must be capable of generating a formal **Debt Reconciliation Minute** at the end of each accounting period. This document must clearly list:
 - Exact opening and closing balances.
 - All incurred debts (`CONFIRMED` tickets/`CHARGE` transactions) during the period.
-- All payments (`PAYMENT` and `REFUND` transactions).
+- All payments and cash returns (`PAYMENT` and `REFUND` transactions).
+- Non-cash debt adjustments (`DISCOUNT`, `ADDITIONAL_FEE`) separately from cash movement.
 - Dedicated signature blocks for both the Agent and the Customer confirming the closing balance.
+
+### Audit Trail Requirement
+
+- Every transaction must store the authenticated internal user in `created_by`.
+- Payment receipts or transfer screenshots should be attached via `evidence_url` whenever available.
+- Refund / overpayment returns should use `is_refund_confirmed` to distinguish planned vs. confirmed outbound payouts.
 
 ## 4. Invoicing Logic
 
