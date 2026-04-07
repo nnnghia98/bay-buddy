@@ -28,7 +28,14 @@ from pydantic import BaseModel, Field, model_validator
 from sqlmodel import Session, select
 
 from models.customer import Customer
-from models.enums import Airline, CustomerType, TicketStatus, TransactionType
+from models.enums import (
+    Airline,
+    CustomerType,
+    TicketStatus,
+    TransactionCategory,
+    TransactionType,
+    get_transaction_balance_delta,
+)
 from models.ticket import Ticket, TicketRead
 from models.transaction import Transaction
 
@@ -240,13 +247,15 @@ def create_ticket_with_transaction(
     new_transaction = Transaction(
         amount=selling_price,
         type=TransactionType.CHARGE,
+        category=TransactionCategory.TICKET_PURCHASE,
         method="Ticket",
         note=(
             f"Auto-debt for PNR {payload.pnr} – {payload.itinerary} "
             f"on {payload.flight_date.date()} by user {actor_user_id}"
         ),
         customer_id=customer.id,
-        ticket_id=ticket.id,
+        linked_ticket_id=ticket.id,
+        created_by=actor_user_id,
     )
     session.add(new_transaction)
     print(f"[ticket_service] Transaction added to session: id={new_transaction.id}")
@@ -255,7 +264,10 @@ def create_ticket_with_transaction(
     # ── 5. Update customer balance ───────────────────────────────────────────
     # BUSINESS.md §3: Current Balance = Total Debt – Total Paid
     # Adding a debt (CHARGE) increases the balance (positive = customer owes).
-    customer.balance += selling_price
+    customer.balance += get_transaction_balance_delta(
+        amount=selling_price,
+        transaction_category=new_transaction.category,
+    )
     session.add(customer)
     print(f"[ticket_service] Customer balance updated to {customer.balance}")
     logger.info("Customer '%s' balance updated to %s", customer.name, customer.balance)

@@ -71,6 +71,9 @@ export const CustomerUpdateSchema = z.object({
 
 export type CustomerUpdate = z.infer<typeof CustomerUpdateSchema>;
 
+export const BalanceStateSchema = z.enum(["debt", "settled", "credit"]);
+export type BalanceState = z.infer<typeof BalanceStateSchema>;
+
 export const LedgerEntrySchema = z.object({
   id: z.string().uuid(),
   entry_type: z.enum(["ticket", "payment", "adjustment"]),
@@ -85,6 +88,7 @@ export type LedgerEntry = z.infer<typeof LedgerEntrySchema>;
 export const CustomerLedgerSchema = z.object({
   customer: CustomerReadSchema,
   current_balance: z.number(),
+  balance_state: BalanceStateSchema,
   entries: z.array(LedgerEntrySchema),
 });
 
@@ -92,7 +96,15 @@ export type CustomerLedger = z.infer<typeof CustomerLedgerSchema>;
 
 export const RecordPaymentSchema = z.object({
   amount: z.number().positive("Amount must be a positive number."),
-  note: z.string().max(500, "Note must be at most 500 characters.").optional(),
+  method: z.string().min(1, "Method is required."),
+  note: z.string().min(1, "Note is required.").max(2000, "Note must be at most 2000 characters."),
+  evidence_url: z
+    .string()
+    .url("evidence_url must be a valid URL.")
+    .max(2048)
+    .nullable()
+    .optional(),
+  linked_ticket_id: z.string().uuid().optional(),
 });
 
 export type RecordPayment = z.infer<typeof RecordPaymentSchema>;

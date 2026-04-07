@@ -84,11 +84,12 @@ from routes import auth, ai
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(ai.router, prefix="/api/v1/ai", tags=["AI"])
-from routes import users, customers, tickets, transactions
+from routes import customers, finance, tickets, transactions, users
 app.include_router(users.router,        prefix="/api/v1/users",        tags=["Users"])
 app.include_router(customers.router,    prefix="/api/v1/customers",    tags=["Customers"])
 app.include_router(tickets.router,      prefix="/api/v1/tickets",      tags=["Tickets"])
 app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Transactions"])
+app.include_router(finance.router,      prefix="/api/v1/finance",      tags=["Finance"])
 
 # ---------------------------------------------------------------------------
 # Health check
@@ -98,4 +99,3 @@ app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Tr
 async def health_check() -> dict:
     """Lightweight liveness probe for deployment platforms."""
     return {"status": "ok", "service": "bay-buddy-api"}
-

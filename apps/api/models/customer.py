@@ -12,13 +12,17 @@ Balance semantics
 """
 
 import uuid
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
 from .enums import CustomerType
-from .ticket import Ticket
-from .transaction import Transaction
+
+if TYPE_CHECKING:
+    from .invoice import Invoice
+    from .quote import Quote
+    from .ticket import Ticket
+    from .transaction import Transaction
 
 # ---------------------------------------------------------------------------
 # Shared / base properties
@@ -32,6 +36,30 @@ class CustomerBase(SQLModel):
         min_length=1,
         max_length=255,
         description="Full name of the individual or registered business name.",
+    )
+    email: Optional[str] = Field(
+        default=None,
+        index=True,
+        unique=True,
+        max_length=255,
+        description="Optional customer email used for contact and invoice delivery.",
+    )
+    phone: Optional[str] = Field(
+        default=None,
+        max_length=30,
+        description="Optional customer phone number.",
+    )
+    address: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description="Optional billing/customer address.",
+    )
+    tax_code: Optional[str] = Field(
+        default=None,
+        index=True,
+        unique=True,
+        max_length=100,
+        description="Optional Vietnamese tax code for invoicing.",
     )
     type: CustomerType = Field(
         default=CustomerType.INDIVIDUAL,
@@ -63,8 +91,10 @@ class Customer(CustomerBase, table=True):
     )
 
     # Relationships – populated lazily by SQLAlchemy; not included in API responses by default.
-    tickets: List[Ticket] = Relationship(back_populates="customer")
-    transactions: List[Transaction] = Relationship(back_populates="customer")
+    tickets: List["Ticket"] = Relationship(back_populates="customer")
+    transactions: List["Transaction"] = Relationship(back_populates="customer")
+    invoices: List["Invoice"] = Relationship(back_populates="customer")
+    quotes: List["Quote"] = Relationship(back_populates="customer")
 
 
 # ---------------------------------------------------------------------------
@@ -95,5 +125,9 @@ class CustomerUpdate(SQLModel):
     """All fields optional for partial PATCH payloads."""
 
     name: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    email: Optional[str] = Field(default=None, max_length=255)
+    phone: Optional[str] = Field(default=None, max_length=30)
+    address: Optional[str] = Field(default=None, max_length=500)
+    tax_code: Optional[str] = Field(default=None, max_length=100)
     type: Optional[CustomerType] = None
     balance: Optional[float] = None

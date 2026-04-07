@@ -3,7 +3,8 @@ services/finance_service.py – Customer ledger and payment recording logic.
 
 Business rules reference: docs/BUSINESS.md
   - Current Balance = Total Debt - Total Paid
-  - PAYMENT transactions reduce customer.balance
+  - PAYMENT / DISCOUNT reduce customer.balance
+  - TICKET_PURCHASE / ADDITIONAL_FEE / REFUND increase customer.balance
   - Ledger must show tickets and transactions in chronological order
 """
 
@@ -18,7 +19,13 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
 from models.customer import Customer, CustomerRead
-from models.enums import TicketStatus, TransactionType
+from models.enums import (
+    TransactionCategory,
+    TicketStatus,
+    TransactionType,
+    get_transaction_balance_delta,
+    is_cash_transaction_category,
+)
 from models.ticket import Ticket
 from models.transaction import Transaction, TransactionRead
 
@@ -39,6 +46,7 @@ class CustomerLedgerResponse(BaseModel):
 
     customer: CustomerRead
     current_balance: float
+    balance_state: Literal["debt", "settled", "credit"]
     entries: list[LedgerEntry]
 
 
@@ -46,10 +54,24 @@ class RecordPaymentPayload(BaseModel):
     """Payload accepted by POST /customers/{id}/payments."""
 
     amount: float = Field(gt=0, description="Payment amount in VND.")
+    method: str = Field(
+        min_length=1,
+        max_length=100,
+        description="Payment method label, e.g. Chuyển khoản or Tiền mặt.",
+    )
     note: Optional[str] = Field(
         default=None,
-        max_length=500,
-        description="Optional free-text reference or bank transfer note.",
+        max_length=2000,
+        description="Required payment note or transfer reference.",
+    )
+    evidence_url: Optional[str] = Field(
+        default=None,
+        max_length=2048,
+        description="Optional payment receipt / proof URL.",
+    )
+    linked_ticket_id: Optional[uuid.UUID] = Field(
+        default=None,
+        description="Optional ticket UUID for specific reconciliation (đích danh).",
     )
 
 
@@ -59,6 +81,7 @@ class RecordPaymentResponse(BaseModel):
     customer: CustomerRead
     transaction: TransactionRead
     customer_new_balance: float
+    balance_state: Literal["debt", "settled", "credit"]
 
 
 def _get_customer_or_404(session: Session, customer_id: uuid.UUID) -> Customer:
@@ -69,6 +92,36 @@ def _get_customer_or_404(session: Session, customer_id: uuid.UUID) -> Customer:
             detail="Customer not found",
         )
     return customer
+
+
+def _validate_linked_ticket(
+    *,
+    session: Session,
+    customer_id: uuid.UUID,
+    linked_ticket_id: uuid.UUID,
+) -> None:
+    linked_ticket = session.get(Ticket, linked_ticket_id)
+    if linked_ticket is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Linked ticket not found",
+        )
+
+    if linked_ticket.customer_id != customer_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Linked ticket does not belong to the customer",
+        )
+
+
+def get_balance_state(balance: float) -> Literal["debt", "settled", "credit"]:
+    """Return a UI-friendly state for the current customer balance."""
+
+    if balance > 0:
+        return "debt"
+    if balance < 0:
+        return "credit"
+    return "settled"
 
 
 def get_customer_ledger(
@@ -98,16 +151,20 @@ def get_customer_ledger(
 
     for transaction in transactions:
         if (
-            transaction.type == TransactionType.CHARGE
-            and transaction.ticket_id is not None
+            transaction.category == TransactionCategory.TICKET_PURCHASE
+            and transaction.linked_ticket_id is not None
         ):
-            ticket_charge_by_ticket_id[transaction.ticket_id] = transaction
+            ticket_charge_by_ticket_id[transaction.linked_ticket_id] = transaction
             continue
 
-        amount = transaction.amount
+        amount = get_transaction_balance_delta(
+            amount=transaction.amount,
+            transaction_category=transaction.category,
+            transaction_type=transaction.type,
+            linked_ticket_id=transaction.linked_ticket_id,
+        )
         entry_type: Literal["payment", "adjustment"] = "adjustment"
-        if transaction.type in (TransactionType.PAYMENT, TransactionType.REFUND):
-            amount = -transaction.amount
+        if is_cash_transaction_category(transaction.category):
             entry_type = "payment"
 
         entries.append(
@@ -150,9 +207,11 @@ def get_customer_ledger(
         running_balance += entry.amount
         entry.running_balance = running_balance
 
+    current_balance = running_balance if entries else customer.balance
     return CustomerLedgerResponse(
         customer=CustomerRead.model_validate(customer),
-        current_balance=running_balance if entries else customer.balance,
+        current_balance=current_balance,
+        balance_state=get_balance_state(current_balance),
         entries=entries,
     )
 
@@ -161,29 +220,43 @@ def record_payment(
     *,
     customer_id: uuid.UUID,
     amount: float,
+    method: str,
     note: Optional[str],
+    evidence_url: Optional[str],
+    linked_ticket_id: Optional[uuid.UUID],
     actor_user_id: uuid.UUID,
     session: Session,
 ) -> RecordPaymentResponse:
     """Create a PAYMENT transaction and reduce the customer's balance atomically."""
     customer = _get_customer_or_404(session, customer_id)
 
-    audit_note = f"Recorded by user {actor_user_id}"
-    cleaned_note = (note or "").strip()
-    if cleaned_note:
-        audit_note = f"{cleaned_note} | {audit_note}"
+    if linked_ticket_id is not None:
+        _validate_linked_ticket(
+            session=session,
+            customer_id=customer_id,
+            linked_ticket_id=linked_ticket_id,
+        )
+
+    cleaned_note = (note or "").strip() or None
 
     payment = Transaction(
         amount=amount,
         type=TransactionType.PAYMENT,
-        method="Manual Payment",
-        note=audit_note,
+        category=TransactionCategory.PAYMENT,
+        method=method.strip(),
+        note=cleaned_note,
+        evidence_url=evidence_url,
         customer_id=customer_id,
+        linked_ticket_id=linked_ticket_id,
+        created_by=actor_user_id,
     )
 
     try:
         session.add(payment)
-        customer.balance -= amount
+        customer.balance += get_transaction_balance_delta(
+            amount=amount,
+            transaction_category=payment.category,
+        )
         session.add(customer)
         session.commit()
     except Exception:
@@ -197,4 +270,5 @@ def record_payment(
         customer=CustomerRead.model_validate(customer),
         transaction=TransactionRead.model_validate(payment),
         customer_new_balance=customer.balance,
+        balance_state=get_balance_state(customer.balance),
     )

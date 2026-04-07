@@ -4,12 +4,13 @@ You are an advanced AI Agent (Senior Fullstack Developer & Architect). Your miss
 
 ## 🎯 Current Progress
 
-Infrastructure & Database are complete. Backend Save Logic and Frontend Save button are connected and functionally verified.
+Infrastructure, Database, and Stage 4 Financial Core are complete. The system now includes transaction compliance fields, server-action-based payment recording, ledger reconciliation rules, invoice/quote services, and snapshot-backed financial documents.
 
-**Current Status (Paused):**
-We temporarily disabled backend authentication for the `POST /confirm` route to test the DB flow (Option 2). 
-- **Current Issue:** Without the bypass, the Frontend Save button triggers a `401 Unauthorized` because it does not send a token. Next step is to implement JWT injection into Axios/Fetch headers OR finalize the Frontend Auth flow.
-- **Architectural Decision:** All write operations to tickets and transactions MUST be authenticated.
+**Current Status:**
+- **Financial Core:** Stage 4 backend is complete and ready for UI integration. Invoices, quotes, public invoice payloads, customer/ticket patch APIs, and invoice locking rules are implemented.
+- **Frontend Finance Flow:** The customer ledger follows App Router best practices. Reads happen through React Server Components, and payment recording uses a Server Action with `useActionState`, `useFormStatus`, shared Zod validation, and optimistic ledger insertion.
+- **Authentication Standard:** All write operations to tickets, transactions, invoices, quotes, customers, and related financial records MUST be authenticated.
+- **Next Focus:** Continue the authenticated App Router UI integration on top of the completed backend finance APIs.
 
 ## 📁 Project Structure & Context (The "Bay Buddy DNA")
 
@@ -26,10 +27,11 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 - **Backend**: Python 3.10+, FastAPI, SQLModel (Pydantic v2 + SQLAlchemy), Poetry.
 - **Package Managers**: **Yarn** (Frontend) and **Poetry** (Backend).
 - **State Management**: TanStack Query v5 (React Query).
-- **Forms & Validation**: React Hook Form + Zod (Frontend) strictly synced with Pydantic (Backend).
+- **Forms & Validation**: Zod-first validation shared between Client and Server boundaries.
 - **i18n**: `next-international` (Default Locale: `vi`, Secondary: `en`).
 - **Auth**: JWT (OAuth2PasswordBearer) with bcrypt password hashing.
 - **Deployment**: Standalone Docker image (Frontend) & Uvicorn (Backend).
+- **Frontend Standard**: `react-best-practices` is now part of the DNA. Follow Vercel's latest Next.js App Router recommendations by default.
 
 ## 💻 Coding Standards
 
@@ -45,12 +47,39 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 - **Style**: Follow PEP 8 strictly. Use Type Hints for all parameters and return types.
 - **Concurrency**: Use `async def` for all route handlers and IO-bound operations.
 - **AI Logic**: All flight parsing must be handled in `services/ai_agent.py` using the **Gemini 2.5 Flash** SDK. The model supports multimodal input: it can process raw bytes from uploaded images (JPEG, PNG, WebP) and PDF documents directly, in addition to plain text.
+- **Financial Integrity**: Invoice and quote APIs must use snapshot fields so issued documents remain unchanged even if live `customer` or `ticket` data is edited later.
+- **Invoice Rules**: Invoice numbers use `BB-YYYYMM-XXXX`; quotes use `BQ-YYYYMM-XXXX`. Once an invoice reaches `ISSUED` or `PAID`, its editable fields become read-only.
+- **Audit Trail**: Every transaction mutation must preserve `created_by`, and optional payment proof should be stored in `evidence_url` when available.
 
 ### 3. Frontend (Next.js/TS)
 
 - **Components**: Use Functional Components and Server Components by default.
 - **UI**: Shadcn UI is the primary component library. Maintain a minimalist and clean aesthetic.
-- **Data Fetching**: Use custom hooks wrapping TanStack Query for all API interactions.
+- **Data Fetching**: Prefer React Server Components (RSC) for read operations and initial data loading in App Router.
+- **Mutations**: Use Server Actions for all data mutations, especially creating payments and updating tickets.
+- **Forms**: For App Router forms, prefer `useActionState` / `useFormState` over client-only mutation handlers.
+- **Pending State**: Use `useFormStatus` to drive submit-button loading, disabled states, and in-flight labels.
+- **Validation**: Reuse the same Zod schema on both Client and Server for every critical form.
+- **TypeUI Principle**: UI should feel type-safe, predictable, and immediate. Pending, success, error, and rollback states must be explicit.
+- **Optimistic UI**: Consider `useOptimistic` for mutation-heavy surfaces such as the customer ledger so newly recorded payments appear instantly before server confirmation.
+- **TanStack Query Usage**: Keep TanStack Query for client-side cache coordination, background refresh, or interactive islands where RSC alone is not sufficient.
+
+### 4. Record Payment Standard (Step 4.3)
+
+- The Payment Dialog must submit through a **Server Action**.
+- The form state must be driven by `useActionState` (or `useFormState` where applicable).
+- The submit button must read its pending state from `useFormStatus`.
+- Validation must use a shared Zod schema on both Client and Server.
+- The ledger view should adopt **optimistic insertion** so the payment row appears immediately while the action is still pending.
+- Optimistic entries must reconcile cleanly with the confirmed server response and roll back safely on validation or network failure.
+
+### 5. Financial Core Standard (Stage 4.4)
+
+- **Invoices**: `GET /api/v1/finance/invoices/{id}` and `GET /api/v1/finance/invoices/{id}/public` must render from stored invoice snapshots, not live joins.
+- **Quotes**: Quotes are informational only and MUST NOT affect `customer.balance` or ledger rows.
+- **Quote Conversion**: `convert_quote_to_invoice` is the only supported bridge from quote acceptance to invoice creation.
+- **Ledger Integrity**: `DISCOUNT` reduces debt without cash flow, `ADDITIONAL_FEE` increases debt, and negative balances must be labeled as `Tiền dư / Đặt cọc` in the UI.
+- **Public Invoice Payload**: Printable invoice responses must include Bay Buddy brand info, snapshot fields, and Vietnamese amount-in-words from the backend utility.
 
 ## 🔐 Authentication & Security
 
