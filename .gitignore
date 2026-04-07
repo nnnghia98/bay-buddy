@@ -38,3 +38,9 @@ apps/api/alembic/versions/*.pyc
 .idea/
 .DS_Store
 Thumbs.db
+
+# --- Local AI Tooling (Do Not Commit) ---
+.agents/
+.claude/
+.codex/
+skills-lock.json

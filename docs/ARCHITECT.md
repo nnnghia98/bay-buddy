@@ -7,7 +7,7 @@
 - JWT authentication is the required security standard for all write operations.
 - Every create, update, delete, or confirmation endpoint must resolve the authenticated user through `get_current_user` before mutating data.
 - The `user` table is active in production and is used as the source of truth for API authentication and RBAC.
-- Operational note: on Railway, inserts into the `user` table may currently require an explicitly defined `id` value if automatic ID generation is not fully aligned with the deployed schema.
+- All primary-key UUID columns use database-side UUID generation so inserts should not require manual ID assignment on PostgreSQL deployments.
 
 ### JWT Authentication Flow
 1. The client submits `username` and `password` to `POST /api/v1/auth/login`.
@@ -145,6 +145,7 @@
 - `DRAFT -> ISSUED -> PAID`
 - `DRAFT -> ISSUED -> CANCELLED`
 - Once an invoice is `ISSUED` or `PAID`, its editable fields become read-only through the API.
+- `CANCELLED` is treated as terminal for business purposes and must not be mutated back into an active billing document.
 
 ## 2. AI Model
 - **Primary Model**: `gemini-2.5-flash` (Google Gemini 2.5 Flash)
