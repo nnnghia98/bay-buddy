@@ -7,6 +7,13 @@ import { ArrowLeft } from "lucide-react"
 import { PaymentDialog } from "@/components/payment-dialog"
 import { Button } from "@/components/ui/button"
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
   Table,
   TableBody,
   TableCell,
@@ -154,15 +161,15 @@ export function CustomerLedgerClient({
 
   if (!initialLedger) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,116,144,0.12),_transparent_28%),linear-gradient(180deg,_#f8fafc_0%,_#eef2f7_100%)] px-4">
-        <div className="max-w-md rounded-[2rem] border border-red-100 bg-white/90 p-8 text-center shadow-xl">
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_color-mix(in_srgb,var(--primary)_16%,transparent),_transparent_28%),linear-gradient(180deg,_var(--background)_0%,_color-mix(in_srgb,var(--accent)_22%,white)_100%)] px-4">
+        <Card className="max-w-md border border-border/80 p-8 text-center">
           <h1 className="text-2xl font-semibold text-slate-900">
             {t("customers.ledger.unavailableTitle")}
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-600">
             {t("customers.ledger.unavailableDescription")}
           </p>
-        </div>
+        </Card>
       </div>
     )
   }
@@ -184,9 +191,9 @@ export function CustomerLedgerClient({
   } as const
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(14,116,144,0.12),_transparent_28%),linear-gradient(180deg,_#f8fafc_0%,_#eef2f7_100%)] px-4 py-8 text-slate-900">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_color-mix(in_srgb,var(--primary)_16%,transparent),_transparent_28%),linear-gradient(180deg,_var(--background)_0%,_color-mix(in_srgb,var(--accent)_22%,white)_100%)] px-4 py-8 text-slate-900">
       <div className="mx-auto max-w-6xl space-y-6">
-        <section className="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-2xl shadow-slate-900/5 backdrop-blur">
+        <Card className="border border-border/70 bg-card/95 p-6 backdrop-blur">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-4">
               <Button asChild className="w-fit" size="sm" variant="outline">
@@ -216,54 +223,57 @@ export function CustomerLedgerClient({
               />
             </div>
 
-            <div className="w-full max-w-sm rounded-[1.75rem] border border-slate-200 bg-slate-50/90 p-6">
-              <p className="text-sm font-medium text-slate-500">
-                {t("customers.ledger.currentBalance")}
-              </p>
-              <div className="mt-3 flex items-center gap-2">
-                <span
+            <Card className="w-full max-w-sm border border-border bg-card">
+              <CardHeader className="pb-3">
+                <CardDescription className="text-sm font-medium text-slate-500">
+                  {t("customers.ledger.currentBalance")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="mt-0 flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
+                      optimisticLedger.balance_state === "debt"
+                        ? "bg-primary/12 text-primary"
+                        : optimisticLedger.balance_state === "credit"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-slate-200 text-slate-700",
+                    )}
+                  >
+                    {balanceStateLabels[optimisticLedger.balance_state]}
+                  </span>
+                </div>
+                <p
                   className={cn(
-                    "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
-                    optimisticLedger.balance_state === "debt"
-                      ? "bg-red-100 text-red-700"
-                      : optimisticLedger.balance_state === "credit"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-slate-200 text-slate-700",
+                    "mt-3 text-3xl font-semibold tracking-tight",
+                    optimisticLedger.current_balance > 0
+                      ? "text-primary"
+                      : optimisticLedger.current_balance < 0
+                        ? "text-emerald-600"
+                        : "text-slate-900",
                   )}
                 >
-                  {balanceStateLabels[optimisticLedger.balance_state]}
-                </span>
-              </div>
-              <p
-                className={cn(
-                  "mt-3 text-3xl font-semibold tracking-tight",
-                  optimisticLedger.current_balance > 0
-                    ? "text-red-600"
-                    : optimisticLedger.current_balance < 0
-                      ? "text-emerald-600"
-                      : "text-slate-900",
-                )}
-              >
-                {formatCurrency(Math.abs(optimisticLedger.current_balance))}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                {t("customers.ledger.amountInWords")}: {currentBalanceInWords}
-              </p>
-            </div>
+                  {formatCurrency(Math.abs(optimisticLedger.current_balance))}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  {t("customers.ledger.amountInWords")}: {currentBalanceInWords}
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </section>
+        </Card>
 
-        <section className="rounded-[2rem] border border-white/70 bg-white/90 shadow-2xl shadow-slate-900/5 backdrop-blur">
-          <div className="border-b border-slate-200 px-6 py-5">
-            <h2 className="text-xl font-semibold text-slate-900">
+        <Card className="border border-border/70 bg-card/95 backdrop-blur">
+          <CardHeader className="border-b border-border">
+            <CardTitle className="text-xl text-slate-900">
               {t("customers.ledger.tableTitle")}
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            </CardTitle>
+            <CardDescription className="mt-1 text-sm text-slate-500">
               {t("customers.ledger.tableDescription")}
-            </p>
-          </div>
-
-          <div className="overflow-x-auto">
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -313,8 +323,8 @@ export function CustomerLedgerClient({
                 )}
               </TableBody>
             </Table>
-          </div>
-        </section>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
