@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
+import { AppShell } from "@/components/app-shell";
 import { Providers } from "./providers";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -20,7 +21,7 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bay Buddy",
+  title: "Bay Buddy | Professional Flight & Tour Management",
   description: "Flight and debt management system for Bay Buddy",
 }
 
@@ -35,7 +36,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${sourceSerif.variable} ${jetBrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background font-sans text-foreground">
-        <Providers>{children}</Providers>
+        <Providers>
+          <AppShell>{children}</AppShell>
+        </Providers>
         <Toaster position="top-right" richColors />
       </body>
     </html>
