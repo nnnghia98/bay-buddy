@@ -41,9 +41,12 @@ const sheetVariants = cva(
   },
 )
 
-interface SheetContentProps
-  extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {}
+type SheetContentProps = React.PropsWithChildren<
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> &
+    VariantProps<typeof sheetVariants> & {
+      className?: string
+    }
+>
 
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,

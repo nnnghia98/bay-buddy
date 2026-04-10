@@ -57,7 +57,7 @@ export default function LoginPage() {
 
   React.useEffect(() => {
     if (isReady && token) {
-      router.replace("/tickets/capture")
+      router.replace("/")
     }
   }, [isReady, router, token])
 
@@ -68,7 +68,7 @@ export default function LoginPage() {
       const response = await loginRequest(values)
       login(response.access_token)
       toast.success("Logged in successfully")
-      router.replace("/tickets/capture")
+      router.replace("/")
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unable to sign in"

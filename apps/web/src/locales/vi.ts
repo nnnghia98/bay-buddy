@@ -1,4 +1,54 @@
 export default {
+  dashboard: {
+    summary: {
+      eyebrow: "Tổng quan tài chính",
+      title: "Bức tranh doanh thu, lợi nhuận và công nợ từ sổ cái hiện tại.",
+      description:
+        "Tổng hợp này ghép số dư công nợ khách hàng với các vé đã xác nhận để tạo ra ảnh chụp nhanh cho giai đoạn đầu của Phase 5.",
+      primaryAriaLabel: "Nhóm chỉ số tài chính chính",
+      secondaryAriaLabel: "Nhóm chỉ số tài chính bổ sung",
+      unavailableTitle: "Chưa tải được tổng quan tài chính",
+      unavailableDescription:
+        "Không thể đọc dữ liệu customers hoặc tickets lúc này. Vui lòng thử lại sau khi kết nối API ổn định.",
+      snapshot: {
+        label: "Cập nhật lúc",
+        sourceLabel: "Nguồn dữ liệu",
+        sourceValue: "Ledger + vé xác nhận",
+      },
+      widgets: {
+        revenue: {
+          label: "Tổng doanh thu",
+          detail: "vé đã xác nhận trong hệ thống.",
+        },
+        profit: {
+          label: "Lợi nhuận ròng",
+          detail: "biên lợi nhuận bình quân.",
+        },
+        receivables: {
+          label: "Công nợ phải thu",
+          detail: "khách hàng còn dư nợ.",
+        },
+      },
+      metrics: {
+        customers: {
+          label: "Khách hàng đang theo dõi",
+          detail: "khách hiện ở trạng thái tiền dư / đặt cọc.",
+        },
+        tickets: {
+          label: "Vé đã ghi nhận",
+          detail: "Chỉ tính các vé ở trạng thái CONFIRMED.",
+        },
+        credit: {
+          label: "Tiền dư / đặt cọc",
+          detail: "khách đang có số dư âm.",
+        },
+        coverage: {
+          label: "Tỷ lệ công nợ / doanh thu",
+          detail: "Cho biết phần doanh thu vẫn chưa thu hết.",
+        },
+      },
+    },
+  },
   customers: {
     ledger: {
       eyebrow: "Sổ công nợ",

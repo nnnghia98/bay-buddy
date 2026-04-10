@@ -52,7 +52,7 @@ type NavItem = {
 }
 
 const navItems: NavItem[] = [
-  { label: "Tổng quan", href: "/", icon: Home, disabled: true },
+  { label: "Tổng quan", href: "/", icon: Home },
   { label: "Khách hàng", href: "/customers", icon: Users },
   { label: "Hóa đơn", href: "/invoices", icon: FileText, disabled: true },
   { label: "Nhập vé", href: "/tickets/capture", icon: Ticket },
@@ -75,6 +75,10 @@ function formatRoleLabel(role: string): string {
 
 function useBreadcrumbs(pathname: string, customerName?: string) {
   return React.useMemo(() => {
+    if (pathname === "/") {
+      return [{ label: "Tổng quan", href: "/" }]
+    }
+
     if (pathname === "/customers") {
       return [{ label: "Khách hàng", href: "/customers" }]
     }

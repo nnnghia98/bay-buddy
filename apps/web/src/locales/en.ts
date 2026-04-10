@@ -1,4 +1,54 @@
 export default {
+  dashboard: {
+    summary: {
+      eyebrow: "Financial overview",
+      title: "Revenue, profit, and receivables in one current snapshot.",
+      description:
+        "This view combines customer ledger balances with confirmed tickets to form the first Phase 5 finance summary slice.",
+      primaryAriaLabel: "Primary financial summary metrics",
+      secondaryAriaLabel: "Secondary financial summary metrics",
+      unavailableTitle: "Financial overview unavailable",
+      unavailableDescription:
+        "We could not read customers or tickets right now. Please try again once the API is available.",
+      snapshot: {
+        label: "Updated at",
+        sourceLabel: "Data source",
+        sourceValue: "Ledger + confirmed tickets",
+      },
+      widgets: {
+        revenue: {
+          label: "Total revenue",
+          detail: "confirmed tickets in the system.",
+        },
+        profit: {
+          label: "Net profit",
+          detail: "average margin.",
+        },
+        receivables: {
+          label: "Total receivables",
+          detail: "customers still owe money.",
+        },
+      },
+      metrics: {
+        customers: {
+          label: "Tracked customers",
+          detail: "customers currently hold credit / deposit.",
+        },
+        tickets: {
+          label: "Recorded tickets",
+          detail: "Only tickets in CONFIRMED status are counted.",
+        },
+        credit: {
+          label: "Credit / deposit held",
+          detail: "customers currently have a negative balance.",
+        },
+        coverage: {
+          label: "Receivables to revenue",
+          detail: "Shows how much revenue is still outstanding.",
+        },
+      },
+    },
+  },
   customers: {
     ledger: {
       eyebrow: "Customer ledger",
