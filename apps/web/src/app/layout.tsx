@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
+import { Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
 import { AppShell } from "@/components/app-shell";
 import { Providers } from "./providers";
 import { Toaster } from "sonner";
 import "./globals.css";
 
-const geistSans = Geist({
+const interSans = Inter({
   variable: "--font-sans",
+  display: "swap",
   subsets: ["latin"],
 });
 
@@ -23,17 +24,17 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Bay Buddy | Professional Flight & Tour Management",
   description: "Flight and debt management system for Bay Buddy",
-}
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html
       lang="vi"
-      className={`${geistSans.variable} ${sourceSerif.variable} ${jetBrainsMono.variable} h-full antialiased`}
+      className={`${interSans.variable} ${sourceSerif.variable} ${jetBrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background font-sans text-foreground">
         <Providers>
@@ -42,5 +43,5 @@ export default function RootLayout({
         <Toaster position="top-right" richColors />
       </body>
     </html>
-  )
+  );
 }

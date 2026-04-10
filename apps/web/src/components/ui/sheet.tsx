@@ -17,7 +17,7 @@ const SheetOverlay = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
-    className={cn("fixed inset-0 z-50 bg-slate-950/35 backdrop-blur-sm", className)}
+    className={cn("fixed inset-0 z-50 bg-[rgba(24,29,38,0.24)] backdrop-blur-sm", className)}
     ref={ref}
     {...props}
   />
@@ -25,7 +25,7 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = DialogPrimitive.Overlay.displayName
 
 const sheetVariants = cva(
-  "fixed z-50 grid gap-4 bg-background p-6 shadow-[var(--shadow-lg)] transition ease-out duration-200",
+  "fixed z-50 grid gap-4 bg-background p-6 shadow-[var(--shadow-xl),var(--theme-shadow-soft)] transition ease-out duration-200",
   {
     variants: {
       side: {
@@ -57,7 +57,7 @@ const SheetContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full p-2 text-slate-500 transition-colors duration-200 ease-out hover:bg-accent hover:text-slate-900">
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-[12px] p-2 text-muted-foreground transition-colors duration-200 ease-out hover:bg-accent hover:text-foreground">
         <X className="h-5 w-5" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
@@ -78,7 +78,7 @@ const SheetTitle = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
-    className={cn("text-xl font-semibold tracking-tight text-slate-900", className)}
+    className={cn("text-xl font-medium tracking-[-0.02em] text-foreground", className)}
     ref={ref}
     {...props}
   />
@@ -90,7 +90,7 @@ const SheetDescription = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
-    className={cn("text-sm leading-[1.6] text-slate-500", className)}
+    className={cn("text-sm leading-[1.6] text-muted-foreground", className)}
     ref={ref}
     {...props}
   />

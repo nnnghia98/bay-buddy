@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Users } from "lucide-react";
+import { ArrowRight, Landmark, Search, TrendingDown, TrendingUp, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Input } from "@/components/ui/input";
@@ -79,113 +79,209 @@ export default function CustomersPage() {
         return fullName.includes(normalizedSearch) || phone.includes(normalizedSearch);
       });
 
+  const directoryStats = React.useMemo(() => {
+    const customers = customersQuery.data ?? [];
+
+    const outstanding = customers.reduce((sum, customer) => {
+      return customer.current_balance > 0 ? sum + customer.current_balance : sum;
+    }, 0);
+
+    const credit = customers.reduce((sum, customer) => {
+      return customer.current_balance < 0 ? sum + Math.abs(customer.current_balance) : sum;
+    }, 0);
+
+    return {
+      totalCustomers: customers.length,
+      outstanding,
+      credit,
+    };
+  }, [customersQuery.data]);
+
   if (!isReady || !token) {
     return null;
   }
 
   return (
-      <div className="mx-auto max-w-6xl space-y-6 text-slate-900">
-        <section className="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-2xl shadow-slate-900/5 backdrop-blur">
-          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-700">
-                Customer Directory
-              </p>
-              <h1 className="text-3xl font-semibold tracking-tight">Danh sach khach hang</h1>
-              <p className="text-sm text-slate-600">
-                Track balances, search customer accounts, and jump into each ledger.
+    <div className="mx-auto max-w-7xl space-y-6 text-foreground">
+      <section className="rounded-[28px] border border-border bg-white p-6 shadow-[var(--shadow-lg),var(--theme-shadow-soft)] lg:p-8">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] lg:items-end">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-accent/60 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+              Danh mục khách hàng
+            </div>
+            <div className="space-y-3">
+              <h1 className="text-4xl font-medium tracking-[-0.03em] text-foreground">
+                Theo dõi khách hàng và sổ công nợ theo một bảng điều hành gọn gàng.
+              </h1>
+              <p className="max-w-3xl text-base leading-7 text-muted-foreground">
+                Tìm nhanh theo tên hoặc số điện thoại, xem trạng thái công nợ hiện tại và mở
+                trực tiếp từng sổ chi tiết.
               </p>
             </div>
+          </div>
 
-            <div className="relative w-full max-w-md">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <div className="rounded-[24px] border border-border bg-secondary p-5 shadow-[var(--shadow-sm)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              Tìm kiếm nhanh
+            </p>
+            <div className="relative mt-4">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
-                className="h-11 rounded-full border-slate-200 bg-white pl-10"
-                placeholder="Tim theo ten hoac so dien thoai"
+                className="pl-10"
+                placeholder="Tìm theo tên hoặc số điện thoại"
               />
             </div>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              {filteredCustomers.length} khách hàng khớp với bộ lọc hiện tại.
+            </p>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/85 shadow-2xl shadow-slate-900/5 backdrop-blur">
-          <div className="border-b border-slate-200 px-6 py-5">
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-cyan-100 p-2 text-cyan-700">
-                <Users className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold tracking-tight">Customer Accounts</h2>
-                <p className="text-sm text-slate-600">
-                  Click any row to open the full ledger timeline.
-                </p>
-              </div>
+      <section className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-[24px] border border-border bg-white p-5 shadow-[var(--shadow-sm)]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Tổng khách hàng
+              </p>
+              <p className="mt-3 text-3xl font-medium tracking-[-0.02em] text-foreground">
+                {directoryStats.totalCustomers}
+              </p>
+            </div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-accent text-primary">
+              <Users className="h-5 w-5" />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[24px] border border-border bg-white p-5 shadow-[var(--shadow-sm)]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Công nợ phải thu
+              </p>
+              <p className="mt-3 text-3xl font-medium tracking-[-0.02em] text-foreground">
+                {formatCurrency(directoryStats.outstanding)}
+              </p>
+            </div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-secondary text-foreground">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[24px] border border-border bg-white p-5 shadow-[var(--shadow-sm)]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Tiền dư / đặt cọc
+              </p>
+              <p className="mt-3 text-3xl font-medium tracking-[-0.02em] text-foreground">
+                {formatCurrency(directoryStats.credit)}
+              </p>
+            </div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-accent text-primary">
+              <TrendingDown className="h-5 w-5" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="overflow-hidden rounded-[28px] border border-border bg-white shadow-[var(--shadow-lg),var(--theme-shadow-soft)]">
+        <div className="flex flex-col gap-4 border-b border-border px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-accent text-primary">
+              <Landmark className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-medium tracking-[-0.02em] text-foreground">
+                Tài khoản khách hàng
+              </h2>
+              <p className="text-sm leading-6 text-muted-foreground">
+                Chọn một dòng để mở sổ công nợ chi tiết và ghi nhận thanh toán.
+              </p>
             </div>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow className="border-slate-200 bg-slate-50/80 hover:bg-slate-50/80">
-                <TableHead>Khach hang</TableHead>
-                <TableHead>So dien thoai</TableHead>
-                <TableHead className="text-right">So du hien tai</TableHead>
+          <div className="rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {filteredCustomers.length} hiển thị
+          </div>
+        </div>
+
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-secondary/80 hover:bg-secondary/80">
+              <TableHead>Khách hàng</TableHead>
+              <TableHead>Số điện thoại</TableHead>
+              <TableHead className="text-right">Số dư hiện tại</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {customersQuery.isLoading ? (
+              <TableRow>
+                <TableCell className="py-12 text-center text-muted-foreground" colSpan={3}>
+                  Đang tải danh sách khách hàng...
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {customersQuery.isLoading ? (
-                <TableRow>
-                  <TableCell className="py-10 text-center text-slate-500" colSpan={3}>
-                    Dang tai danh sach khach hang...
-                  </TableCell>
-                </TableRow>
-              ) : customersQuery.isError ? (
-                <TableRow>
-                  <TableCell className="py-10 text-center text-red-600" colSpan={3}>
-                    Khong the tai danh sach khach hang luc nay.
-                  </TableCell>
-                </TableRow>
-              ) : filteredCustomers.length === 0 ? (
-                <TableRow>
-                  <TableCell className="py-10 text-center text-slate-500" colSpan={3}>
-                    Khong tim thay khach hang phu hop.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredCustomers.map((customer) => (
-                  <TableRow
-                    key={customer.id}
-                    className="cursor-pointer border-slate-100 hover:bg-cyan-50/60"
-                    onClick={() => router.push(`/customers/${customer.id}`)}
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
-                          {getInitials(customer.full_name)}
-                        </div>
-                        <div>
-                          <div className="font-medium text-slate-900">{customer.full_name}</div>
-                          <div className="text-xs text-slate-500">Customer ID: {customer.id}</div>
+            ) : customersQuery.isError ? (
+              <TableRow>
+                <TableCell className="py-12 text-center text-red-600" colSpan={3}>
+                  Không thể tải danh sách khách hàng lúc này.
+                </TableCell>
+              </TableRow>
+            ) : filteredCustomers.length === 0 ? (
+              <TableRow>
+                <TableCell className="py-12 text-center text-muted-foreground" colSpan={3}>
+                  Không tìm thấy khách hàng phù hợp.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredCustomers.map((customer) => (
+                <TableRow
+                  key={customer.id}
+                  className="cursor-pointer hover:bg-accent/45"
+                  onClick={() => router.push(`/customers/${customer.id}`)}
+                >
+                  <TableCell className="px-6 py-5">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-accent text-sm font-semibold text-primary">
+                        {getInitials(customer.full_name)}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="font-medium text-foreground">{customer.full_name}</div>
+                        <div className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                          Mã KH: {customer.id.slice(0, 8)}
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-slate-600">
-                      {customer.phone ? customer.phone : "Chua cap nhat"}
-                    </TableCell>
-                    <TableCell
-                      className={cn(
-                        "text-right font-semibold",
-                        customer.current_balance > 0 ? "text-red-600" : "text-emerald-600",
-                      )}
-                    >
-                      {formatCurrency(customer.current_balance)}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </section>
-      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-6 py-5 text-muted-foreground">
+                    {customer.phone ? customer.phone : "Chưa cập nhật"}
+                  </TableCell>
+                  <TableCell
+                    className={cn(
+                      "px-6 py-5 text-right font-semibold",
+                      customer.current_balance > 0
+                        ? "text-red-600"
+                        : customer.current_balance < 0
+                          ? "text-primary"
+                          : "text-foreground",
+                    )}
+                  >
+                    <div className="inline-flex items-center gap-2">
+                      <span>{formatCurrency(customer.current_balance)}</span>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </section>
+    </div>
   );
 }

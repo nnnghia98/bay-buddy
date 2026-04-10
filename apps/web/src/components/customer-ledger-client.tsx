@@ -7,7 +7,6 @@ import {
   Building2,
   Landmark,
   Receipt,
-  Sparkles,
   WalletCards,
 } from "lucide-react"
 
@@ -111,6 +110,20 @@ function buildOptimisticLedger(
   }
 }
 
+function getEntryTypeLabel(entryType: CustomerLedger["entries"][number]["entry_type"]): string {
+  const labels = {
+    ticket: "Vé",
+    payment: "Thanh toán",
+    adjustment: "Điều chỉnh",
+  } as const
+
+  return labels[entryType]
+}
+
+function getCustomerTypeLabel(type: CustomerLedger["customer"]["type"]): string {
+  return type === "BUSINESS" ? "Doanh nghiệp" : "Cá nhân"
+}
+
 export function CustomerLedgerClient({
   customerId,
   initialLedger,
@@ -168,12 +181,12 @@ export function CustomerLedgerClient({
 
   if (!initialLedger) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center bg-[radial-gradient(circle_at_top,_color-mix(in_srgb,var(--primary)_16%,transparent),_transparent_28%),linear-gradient(180deg,_var(--background)_0%,_color-mix(in_srgb,var(--accent)_22%,white)_100%)] px-4">
-        <Card className="max-w-md border border-border/80 p-8 text-center">
-          <h1 className="text-2xl font-semibold text-slate-900">
+      <div className="flex min-h-[50vh] items-center justify-center px-4">
+        <Card className="max-w-md border border-border p-8 text-center">
+          <h1 className="text-2xl font-medium text-foreground">
             {t("customers.ledger.unavailableTitle")}
           </h1>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
             {t("customers.ledger.unavailableDescription")}
           </p>
         </Card>
@@ -206,217 +219,208 @@ export function CustomerLedgerClient({
   const overviewCards = [
     {
       icon: Receipt,
-      label: t("customers.ledger.tableTitle"),
+      label: "Số vé đã ghi nhận",
       value: `${ticketCount}`,
-      detail: t("customers.ledger.columns.content"),
+      detail: "Bao gồm toàn bộ vé phát sinh công nợ của khách hàng này.",
     },
     {
       icon: WalletCards,
-      label: t("customers.ledger.paymentDialog.title"),
+      label: "Giao dịch thanh toán",
       value: `${paymentCount}`,
-      detail: latestEntry ? formatDate(latestEntry.created_at) : "No activity yet",
+      detail: latestEntry ? `Gần nhất: ${formatDate(latestEntry.created_at)}` : "Chưa có phát sinh mới.",
     },
     {
       icon: Building2,
-      label: t("customers.ledger.balanceStates.settled"),
-      value: ledger.customer.type,
-      detail: `${t("customers.ledger.customerId")}: ${ledger.customer.id.slice(0, 8)}`,
+      label: "Loại khách hàng",
+      value: getCustomerTypeLabel(ledger.customer.type),
+      detail: `${ledger.entries.length} dòng phát sinh trong sổ công nợ.`,
     },
   ]
 
   return (
-    <div className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_color-mix(in_srgb,var(--primary)_16%,transparent),_transparent_28%),linear-gradient(180deg,_var(--background)_0%,_color-mix(in_srgb,var(--accent)_22%,white)_100%)] px-4 py-8 text-slate-900">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_18%_22%,color-mix(in_srgb,var(--accent)_28%,transparent),transparent_42%)] blur-3xl" />
-      <div className="pointer-events-none absolute right-[-8rem] top-32 h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
-      <div className="pointer-events-none absolute left-[-6rem] top-[28rem] h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+    <div className="mx-auto max-w-7xl space-y-6 text-foreground">
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+        <Card className="border border-border bg-white">
+          <CardHeader className="gap-5">
+            <div className="inline-flex w-fit items-center rounded-full border border-primary/15 bg-accent/60 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              {t("customers.ledger.eyebrow")}
+            </div>
+            <div className="space-y-3">
+              <CardTitle className="text-4xl leading-[1.08] sm:text-5xl">
+                {ledger.customer.name}
+              </CardTitle>
+              <CardDescription className="max-w-2xl text-sm leading-7">
+                {t("customers.ledger.customerId")}: {ledger.customer.id}
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="flex flex-wrap gap-3">
+              <div className="rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {getCustomerTypeLabel(ledger.customer.type)}
+              </div>
+              <div className="rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {ledger.entries.length} dòng phát sinh
+              </div>
+            </div>
 
-      <div className="relative mx-auto max-w-7xl space-y-6">
-        <div className="grid gap-4 lg:grid-cols-12">
-          <Card className="group relative overflow-hidden border border-border/60 bg-card/95 p-6 lg:col-span-7 lg:p-8">
-            <div className="absolute inset-x-0 top-0 h-24 bg-linear-to-r from-primary/12 via-chart-2/10 to-transparent" />
-            <div className="relative space-y-6">
-              <Button asChild className="group w-fit" size="sm" variant="outline">
+            <div className="flex flex-wrap gap-3">
+              <Button asChild variant="outline">
                 <Link href="/customers">
-                  <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-1" />
+                  <ArrowLeft className="h-4 w-4" />
                   {t("customers.ledger.back")}
                 </Link>
               </Button>
 
-              <div className="space-y-4">
-                <div className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-                  <Sparkles className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
-                  {t("customers.ledger.eyebrow")}
-                </div>
-                <div className="space-y-3">
-                  <h1 className="max-w-2xl text-4xl font-semibold leading-[1.1] tracking-tight lg:text-5xl">
-                    {ledger.customer.name}
-                  </h1>
-                  <p className="max-w-xl text-base leading-[1.6] text-slate-600">
-                    {t("customers.ledger.customerId")}: {ledger.customer.id}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <PaymentDialog
-                  customerId={customerId}
-                  onOptimisticSubmit={handleOptimisticSubmit}
-                  onSettled={handleActionSettled}
-                  ticketOptions={ticketOptions}
-                />
-              </div>
+              <PaymentDialog
+                customerId={customerId}
+                onOptimisticSubmit={handleOptimisticSubmit}
+                onSettled={handleActionSettled}
+                ticketOptions={ticketOptions}
+              />
             </div>
-          </Card>
-
-          <div className="lg:col-span-5 [perspective:2000px]">
-            <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-primary via-primary to-chart-2 text-primary-foreground shadow-[var(--shadow-lg),0_18px_40px_-20px_color-mix(in_srgb,var(--primary)_36%,transparent)] [transform:rotateX(5deg)_rotateY(-12deg)] hover:[transform:rotateX(2deg)_rotateY(-8deg)_translateY(-4px)]">
-              <div className="absolute -right-12 top-8 h-28 w-28 rounded-full bg-white/12 blur-2xl" />
-              <div className="absolute bottom-0 left-0 h-24 w-24 rounded-full bg-white/10 blur-xl" />
-              <CardHeader className="relative pb-4">
-                <div className="flex items-center justify-between">
-                  <CardDescription className="text-sm font-medium text-primary-foreground/80">
-                    {t("customers.ledger.currentBalance")}
-                  </CardDescription>
-                  <Landmark className="h-5 w-5 text-primary-foreground/80 transition-transform duration-200 group-hover:translate-x-1" />
-                </div>
-              </CardHeader>
-              <CardContent className="relative pt-0">
-                <span className="inline-flex rounded-full bg-white/14 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground/90">
-                  {balanceStateLabels[optimisticLedger.balance_state]}
-                </span>
-                <p className="mt-4 text-4xl font-semibold leading-[1.1] tracking-tight lg:text-5xl">
-                  {formatCurrency(Math.abs(optimisticLedger.current_balance))}
-                </p>
-                <p className="mt-3 text-sm leading-[1.6] text-primary-foreground/82">
-                  {t("customers.ledger.amountInWords")}: {currentBalanceInWords}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {overviewCards.map((item, index) => {
-            const Icon = item.icon
-
-            return (
-              <Card
-                key={item.label}
-                className={cn(
-                  "group relative overflow-hidden border border-border/60 bg-card/95 p-6 lg:col-span-4",
-                  index % 2 === 0
-                    ? "[transform:rotateY(4deg)] hover:[transform:rotateY(0deg)_translateY(-4px)]"
-                    : "[transform:rotateY(-4deg)] hover:[transform:rotateY(0deg)_translateY(-4px)]",
-                )}
-              >
-                <div className="absolute right-0 top-0 h-20 w-20 bg-[radial-gradient(circle,color-mix(in_srgb,var(--accent)_26%,transparent),transparent_72%)] blur-2xl" />
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium text-slate-500">{item.label}</p>
-                    <p className="text-3xl font-semibold leading-[1.1] tracking-tight text-slate-900">
-                      {item.value}
-                    </p>
-                    <p className="text-sm leading-[1.6] text-slate-500">{item.detail}</p>
-                  </div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-200 group-hover:-translate-y-0.5">
-                    <Icon className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-1" />
-                  </div>
-                </div>
-              </Card>
-            )
-          })}
-        </div>
-
-        <Card className="group relative overflow-hidden border border-border/70 bg-card/95 backdrop-blur">
-          <div className="pointer-events-none absolute left-8 top-0 h-24 w-32 bg-[radial-gradient(circle,color-mix(in_srgb,var(--accent)_20%,transparent),transparent_72%)] blur-3xl" />
-          <CardHeader className="gap-3 border-b border-border/50 bg-primary/5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="space-y-2">
-                <CardDescription className="text-sm font-medium uppercase tracking-[0.18em] text-primary">
-                  {t("customers.ledger.eyebrow")}
-                </CardDescription>
-                <CardTitle className="text-[2rem] leading-[1.1] tracking-tight text-slate-900">
-                  {t("customers.ledger.tableTitle")}
-                </CardTitle>
-                <CardDescription className="max-w-2xl text-sm leading-[1.6] text-slate-500">
-                  {t("customers.ledger.tableDescription")}
-                </CardDescription>
-              </div>
-              <div className="rounded-xl border border-border/50 bg-card px-4 py-3 shadow-[var(--shadow-sm)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-                  {t("customers.ledger.currentBalance")}
-                </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
-                  {formatCurrency(Math.abs(ledger.current_balance))}
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/50 hover:bg-transparent">
-                  <TableHead className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    {t("customers.ledger.columns.date")}
-                  </TableHead>
-                  <TableHead className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    {t("customers.ledger.columns.content")}
-                  </TableHead>
-                  <TableHead className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    {t("customers.ledger.columns.amount")}
-                  </TableHead>
-                  <TableHead className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    {t("customers.ledger.columns.balance")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {ledger.entries.length === 0 ? (
-                  <TableRow>
-                    <TableCell className="py-12 text-center text-slate-500" colSpan={4}>
-                      {t("customers.ledger.empty")}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  ledger.entries.map((entry) => (
-                    <TableRow
-                      key={entry.id}
-                      className="group border-border/40 hover:-translate-y-0.5 hover:bg-primary/5"
-                    >
-                      <TableCell className="whitespace-nowrap px-6 py-5 text-sm text-slate-500 transition-colors duration-200 group-hover:text-slate-700">
-                        {formatDate(entry.created_at)}
-                      </TableCell>
-                      <TableCell className="px-6 py-5">
-                        <div className="space-y-1">
-                          <p className="font-medium text-slate-900">
-                            {entry.content.trim() || t("customers.ledger.fallbackContent")}
-                          </p>
-                          <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400 transition-colors duration-200 group-hover:text-primary/70">
-                            {entry.entry_type}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell
-                        className={cn(
-                          "px-6 py-5 text-right font-semibold transition-colors duration-200",
-                          entry.amount > 0
-                            ? "text-slate-900"
-                            : entry.amount < 0
-                              ? "text-emerald-500"
-                              : "text-slate-700",
-                        )}
-                      >
-                        {formatSignedCurrency(entry.amount)}
-                      </TableCell>
-                      <TableCell className="px-6 py-5 text-right font-medium text-slate-700 transition-colors duration-200 group-hover:text-slate-900">
-                        {formatCurrency(entry.running_balance)}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
           </CardContent>
         </Card>
-      </div>
+
+        <Card className="overflow-hidden border border-primary/10 bg-[linear-gradient(180deg,#1b61c9_0%,#254fad_100%)] text-primary-foreground">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between gap-4">
+              <CardDescription className="text-sm font-medium text-primary-foreground/82">
+                {t("customers.ledger.currentBalance")}
+              </CardDescription>
+              <Landmark className="h-5 w-5 text-primary-foreground/84" />
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground">
+              {balanceStateLabels[ledger.balance_state]}
+            </span>
+            <p className="mt-4 text-4xl font-medium tracking-[-0.03em] sm:text-5xl">
+              {formatCurrency(Math.abs(ledger.current_balance))}
+            </p>
+            <p className="mt-4 text-sm leading-7 text-primary-foreground/82">
+              {t("customers.ledger.amountInWords")}: {currentBalanceInWords}
+            </p>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-3">
+        {overviewCards.map((item) => {
+          const Icon = item.icon
+
+          return (
+            <Card key={item.label} className="border border-border bg-white">
+              <CardContent className="flex items-start justify-between gap-4 p-6">
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                    {item.label}
+                  </p>
+                  <p className="text-3xl font-medium tracking-[-0.02em] text-foreground">
+                    {item.value}
+                  </p>
+                  <p className="text-sm leading-6 text-muted-foreground">{item.detail}</p>
+                </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-accent text-primary">
+                  <Icon className="h-5 w-5" />
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </section>
+
+      <Card className="overflow-hidden border border-border bg-white">
+        <CardHeader className="gap-4 border-b border-border bg-secondary/55">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <CardDescription className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                {t("customers.ledger.eyebrow")}
+              </CardDescription>
+              <CardTitle className="text-[2rem] leading-[1.1]">
+                {t("customers.ledger.tableTitle")}
+              </CardTitle>
+              <CardDescription className="max-w-2xl text-sm leading-7">
+                {t("customers.ledger.tableDescription")}
+              </CardDescription>
+            </div>
+            <div className="rounded-[18px] border border-border bg-white px-4 py-3 shadow-[var(--shadow-sm)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                {t("customers.ledger.currentBalance")}
+              </p>
+              <p className="mt-2 text-2xl font-medium tracking-[-0.02em] text-foreground">
+                {formatCurrency(Math.abs(ledger.current_balance))}
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="px-6 py-4">
+                  {t("customers.ledger.columns.date")}
+                </TableHead>
+                <TableHead className="px-6 py-4">
+                  {t("customers.ledger.columns.content")}
+                </TableHead>
+                <TableHead className="px-6 py-4 text-right">
+                  {t("customers.ledger.columns.amount")}
+                </TableHead>
+                <TableHead className="px-6 py-4 text-right">
+                  {t("customers.ledger.columns.balance")}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {ledger.entries.length === 0 ? (
+                <TableRow>
+                  <TableCell className="py-12 text-center text-muted-foreground" colSpan={4}>
+                    {t("customers.ledger.empty")}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                ledger.entries.map((entry) => (
+                  <TableRow
+                    key={entry.id}
+                    className="hover:bg-accent/40"
+                  >
+                    <TableCell className="whitespace-nowrap px-6 py-5 text-sm text-muted-foreground">
+                      {formatDate(entry.created_at)}
+                    </TableCell>
+                    <TableCell className="px-6 py-5">
+                      <div className="space-y-2">
+                        <p className="font-medium text-foreground">
+                          {entry.content.trim() || t("customers.ledger.fallbackContent")}
+                        </p>
+                        <span className="inline-flex rounded-full border border-border bg-secondary px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          {getEntryTypeLabel(entry.entry_type)}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "px-6 py-5 text-right font-semibold",
+                        entry.amount > 0
+                          ? "text-foreground"
+                          : entry.amount < 0
+                            ? "text-primary"
+                            : "text-muted-foreground",
+                      )}
+                    >
+                      {formatSignedCurrency(entry.amount)}
+                    </TableCell>
+                    <TableCell className="px-6 py-5 text-right font-medium text-foreground">
+                      {formatCurrency(entry.running_balance)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   )
 }

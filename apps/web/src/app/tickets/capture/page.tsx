@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Zod Schema
@@ -202,7 +203,7 @@ export default function CaptureTicketPage() {
   const saveMutation = useMutation({
     mutationFn: saveTicket,
     onSuccess: () => {
-      toast.success("Ticket saved and debt recorded!");
+      toast.success("Đã lưu vé và ghi nhận công nợ.");
       // router.push("/tickets");
     },
     onError: (error) => {
@@ -230,27 +231,54 @@ export default function CaptureTicketPage() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      {/* Page header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Capture Ticket</h1>
-        <p className="text-gray-500 mt-1">
-          Upload a booking confirmation image or PDF to extract flight data with
-          AI.
-        </p>
-      </div>
+    <div className="mx-auto max-w-7xl space-y-6 px-1">
+      <section className="rounded-[28px] border border-border bg-white p-6 shadow-[var(--shadow-lg),var(--theme-shadow-soft)] lg:p-8">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)] lg:items-end">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-accent/60 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+              Ticket Capture
+            </div>
+            <div className="space-y-3">
+              <h1 className="text-4xl font-medium tracking-[-0.03em] text-foreground">
+                Nhập vé bằng AI từ booking confirmation hoặc e-ticket PDF.
+              </h1>
+              <p className="max-w-3xl text-base leading-7 text-muted-foreground">
+                Tải chứng từ lên, trích xuất dữ liệu chuyến bay với Gemini và kiểm tra lại trước
+                khi lưu để tạo phát sinh công nợ cho khách hàng.
+              </p>
+            </div>
+          </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          <div className="rounded-[24px] border border-border bg-secondary p-5 shadow-[var(--shadow-sm)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              Luồng xử lý
+            </p>
+            <div className="mt-4 grid gap-3 text-sm leading-6 text-muted-foreground">
+              <div className="rounded-[16px] border border-border bg-white px-4 py-3 shadow-[var(--shadow-sm)]">
+                1. Tải ảnh hoặc PDF vé máy bay.
+              </div>
+              <div className="rounded-[16px] border border-border bg-white px-4 py-3 shadow-[var(--shadow-sm)]">
+                2. Trích xuất dữ liệu bằng AI và rà soát lại biểu mẫu.
+              </div>
+              <div className="rounded-[16px] border border-border bg-white px-4 py-3 shadow-[var(--shadow-sm)]">
+                3. Lưu vé đã xác nhận để ghi nhận công nợ đúng chuẩn.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
         {/* ------------------------------------------------------------------ */}
         {/* Left column – File upload / Preview                               */}
         {/* ------------------------------------------------------------------ */}
-        <div className="flex flex-col gap-4 p-6 bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="flex flex-col gap-4 rounded-[28px] border border-border bg-white p-6 shadow-[var(--shadow-lg),var(--theme-shadow-soft)]">
           <div>
-            <Label className="text-base font-semibold">
-              Booking Confirmation
+            <Label className="text-base font-medium text-foreground">
+              Chứng từ đặt chỗ
             </Label>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Upload an image (JPEG, PNG, WebP) or PDF e-ticket.
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              Hỗ trợ ảnh JPEG, PNG, WebP hoặc file PDF e-ticket.
             </p>
           </div>
 
@@ -279,43 +307,41 @@ export default function CaptureTicketPage() {
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             onDrop={onDrop}
-            className={[
-              "relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed",
-              "transition-colors cursor-pointer select-none",
-              "min-h-[320px]",
+            className={cn(
+              "relative flex min-h-[340px] cursor-pointer select-none flex-col items-center justify-center rounded-[24px] border-2 border-dashed transition-colors",
               isDragging
-                ? "border-blue-500 bg-blue-50"
-                : "border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/30",
-            ].join(" ")}
+                ? "border-primary bg-accent/65"
+                : "border-border bg-secondary hover:border-primary/35 hover:bg-accent/45",
+            )}
           >
             {/* Preview area */}
             {isImage && previewUrl ? (
               <img
                 src={previewUrl}
                 alt="Ticket preview"
-                className="max-h-72 max-w-full rounded object-contain p-2"
+                className="max-h-80 max-w-full rounded-[18px] object-contain p-2"
               />
             ) : isPDF ? (
-              <div className="flex flex-col items-center gap-3 text-gray-500 py-8">
+              <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
                 <FileText
-                  className="h-16 w-16 text-blue-400"
+                  className="h-16 w-16 text-primary"
                   strokeWidth={1.5}
                 />
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-foreground">
                   {file!.name}
                 </span>
-                <span className="text-xs text-gray-400">
-                  {(file!.size / 1024).toFixed(1)} KB — PDF Document
+                <span className="text-xs text-muted-foreground">
+                  {(file!.size / 1024).toFixed(1)} KB - PDF document
                 </span>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3 text-gray-400 p-8 text-center">
+              <div className="flex flex-col items-center gap-3 p-8 text-center text-muted-foreground">
                 <UploadCloud className="h-12 w-12" strokeWidth={1.5} />
                 <div>
-                  <p className="text-sm font-medium text-gray-700">
-                    Drag &amp; drop, or click to upload
+                  <p className="text-sm font-medium text-foreground">
+                    Kéo thả hoặc bấm để tải file lên
                   </p>
-                  <p className="text-xs mt-1">JPEG, PNG, WebP, or PDF</p>
+                  <p className="mt-1 text-xs">JPEG, PNG, WebP hoặc PDF</p>
                 </div>
               </div>
             )}
@@ -323,14 +349,14 @@ export default function CaptureTicketPage() {
 
           {/* File info bar + Clear button */}
           {file && (
-            <div className="flex items-center justify-between rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-sm">
-              <span className="truncate text-gray-700 max-w-[80%]">
+            <div className="flex items-center justify-between rounded-[16px] border border-border bg-secondary px-3 py-3 text-sm">
+              <span className="max-w-[80%] truncate text-foreground">
                 {file.name}
               </span>
               <button
                 type="button"
                 onClick={clearFile}
-                className="ml-2 shrink-0 text-gray-400 hover:text-red-500 transition-colors"
+                className="ml-2 shrink-0 rounded-[10px] p-1 text-muted-foreground transition-colors hover:bg-white hover:text-red-500"
                 aria-label="Remove file"
               >
                 <X className="h-4 w-4" />
@@ -349,19 +375,19 @@ export default function CaptureTicketPage() {
           <Button
             id="parse-with-ai-btn"
             onClick={handleParseWithAI}
-            className="w-full mt-1"
+            className="mt-1 w-full justify-center"
             size="lg"
             disabled={!file || mutation.isPending}
           >
             {mutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Parsing…
+                Đang phân tích...
               </>
             ) : (
               <>
                 <Wand2 className="mr-2 h-4 w-4" />
-                Parse with AI
+                Trích xuất bằng AI
               </>
             )}
           </Button>
@@ -373,21 +399,23 @@ export default function CaptureTicketPage() {
         <form
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onSubmit={form.handleSubmit(onSubmit as any)}
-          className="flex flex-col gap-6 p-6 bg-white rounded-xl shadow-sm border border-gray-200"
+          className="flex flex-col gap-6 rounded-[28px] border border-border bg-white p-6 shadow-[var(--shadow-lg),var(--theme-shadow-soft)]"
         >
           <div>
-            <h2 className="text-xl font-semibold mb-0.5">Ticket Details</h2>
-            <p className="text-sm text-gray-500">
-              Verify or edit the extracted information.
+            <h2 className="mb-1 text-2xl font-medium tracking-[-0.02em] text-foreground">
+              Thông tin vé
+            </h2>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Kiểm tra lại dữ liệu trích xuất trước khi xác nhận lưu vào hệ thống.
             </p>
           </div>
 
           {/* Customer Name */}
           <div className="space-y-2">
-            <Label htmlFor="customerName">Customer Name (Client)</Label>
+            <Label htmlFor="customerName">Tên khách hàng</Label>
             <Input
               id="customerName"
-              placeholder="e.g. Nguyen Van A"
+              placeholder="Ví dụ: Nguyen Van A"
               {...form.register("customerName")}
             />
             {form.formState.errors.customerName && (
@@ -398,12 +426,12 @@ export default function CaptureTicketPage() {
           </div>
 
           {/* PNR + Airline row */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="pnr">PNR / Booking Ref.</Label>
+              <Label htmlFor="pnr">PNR / Mã đặt chỗ</Label>
               <Input
                 id="pnr"
-                placeholder="e.g. XYZ987"
+                placeholder="Ví dụ: XYZ987"
                 {...form.register("pnr")}
               />
               {form.formState.errors.pnr && (
@@ -413,10 +441,10 @@ export default function CaptureTicketPage() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="airline">Airline</Label>
+              <Label htmlFor="airline">Hãng bay</Label>
               <Input
                 id="airline"
-                placeholder="e.g. VNA"
+                placeholder="Ví dụ: VNA"
                 {...form.register("airline")}
               />
               {form.formState.errors.airline && (
@@ -428,12 +456,12 @@ export default function CaptureTicketPage() {
           </div>
 
           {/* Route & Date */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="route">Route (Sector)</Label>
+              <Label htmlFor="route">Hành trình</Label>
               <Input
                 id="route"
-                placeholder="e.g. SGN-HAN"
+                placeholder="Ví dụ: SGN-HAN"
                 {...form.register("route")}
               />
               {form.formState.errors.route && (
@@ -443,7 +471,7 @@ export default function CaptureTicketPage() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="flightDate">Flight Date</Label>
+              <Label htmlFor="flightDate">Ngày bay</Label>
               <Input
                 id="flightDate"
                 type="datetime-local"
@@ -459,7 +487,7 @@ export default function CaptureTicketPage() {
 
           {/* Total Price */}
           <div className="space-y-2">
-            <Label htmlFor="totalPrice">Total Price (VND)</Label>
+            <Label htmlFor="totalPrice">Giá gốc (VND)</Label>
             <Input
               id="totalPrice"
               type="number"
@@ -477,7 +505,7 @@ export default function CaptureTicketPage() {
           {/* Passengers */}
           <div className="space-y-3 pt-1">
             <div className="flex items-center justify-between">
-              <Label>Passengers</Label>
+              <Label>Hành khách</Label>
               <Button
                 type="button"
                 id="add-passenger-btn"
@@ -486,7 +514,7 @@ export default function CaptureTicketPage() {
                 onClick={() => append({ name: "" })}
               >
                 <Plus className="mr-1.5 h-3 w-3" />
-                Add
+                Thêm
               </Button>
             </div>
 
@@ -495,7 +523,7 @@ export default function CaptureTicketPage() {
                 <div className="flex-1 space-y-1">
                   <Input
                     id={`passenger-${index}`}
-                    placeholder={`Passenger ${index + 1} Name`}
+                    placeholder={`Tên hành khách ${index + 1}`}
                     {...form.register(`passengers.${index}.name`)}
                   />
                   {form.formState.errors.passengers?.[index]?.name && (
@@ -508,7 +536,7 @@ export default function CaptureTicketPage() {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="shrink-0 text-gray-400 hover:text-red-600"
+                  className="shrink-0 text-muted-foreground hover:text-red-600"
                   onClick={() => remove(index)}
                   disabled={fields.length === 1}
                   aria-label={`Remove passenger ${index + 1}`}
@@ -520,7 +548,7 @@ export default function CaptureTicketPage() {
           </div>
 
           {/* Submit */}
-          <div className="pt-4 mt-auto border-t border-gray-100 flex justify-end">
+          <div className="mt-auto flex justify-end border-t border-border pt-4">
             <Button
               id="save-ticket-btn"
               type="submit"
@@ -530,10 +558,10 @@ export default function CaptureTicketPage() {
               {saveMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving…
+                  Đang lưu...
                 </>
               ) : (
-                "Save Ticket"
+                "Lưu vé"
               )}
             </Button>
           </div>

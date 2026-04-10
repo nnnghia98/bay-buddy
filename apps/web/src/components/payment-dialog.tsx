@@ -99,6 +99,9 @@ export function PaymentDialog({
     ? convertNumberToVietnameseWords(parseCurrencyInput(displayAmount))
     : t("customers.ledger.paymentDialog.amountPlaceholder")
 
+  const selectClassName =
+    "flex h-11 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
+
   React.useEffect(() => {
     if (state.status === "success") {
       toast.success(state.message ?? t("customers.ledger.paymentDialog.success"))
@@ -156,13 +159,13 @@ export function PaymentDialog({
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
-        <Button className="rounded-full px-5">
+        <Button size="lg">
           <Wallet className="h-4 w-4" />
           {t("customers.ledger.paymentDialog.open")}
         </Button>
       </DialogTrigger>
 
-      <DialogContent>
+      <DialogContent className="w-[min(92vw,42rem)]">
         <DialogHeader>
           <DialogTitle>{t("customers.ledger.paymentDialog.title")}</DialogTitle>
           <DialogDescription>
@@ -170,32 +173,36 @@ export function PaymentDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form action={formAction} className="space-y-4" onSubmit={handleSubmit}>
+        <form action={formAction} className="space-y-5" onSubmit={handleSubmit}>
           <input name="customer_id" type="hidden" value={customerId} />
 
-          <div className="space-y-2">
-            <Label htmlFor="amount">{t("customers.ledger.paymentDialog.fields.amount")}</Label>
-            <Input
-              id="amount_display"
-              inputMode="numeric"
-              onChange={(event) => setDisplayAmount(formatCurrencyInput(event.target.value))}
-              placeholder="1,000,000"
-              value={displayAmount}
-            />
-            <input name="amount" type="hidden" value={displayAmount} />
-            <p className="text-sm leading-6 text-slate-500">
-              {t("customers.ledger.amountInWords")}: {amountInWords}
-            </p>
-            {getFieldError("amount") ? (
-              <p className="text-sm text-red-600">{getFieldError("amount")}</p>
-            ) : null}
+          <div className="rounded-[20px] border border-border bg-secondary/70 p-4">
+            <div className="space-y-2">
+              <Label htmlFor="amount">
+                {t("customers.ledger.paymentDialog.fields.amount")}
+              </Label>
+              <Input
+                id="amount_display"
+                inputMode="numeric"
+                onChange={(event) => setDisplayAmount(formatCurrencyInput(event.target.value))}
+                placeholder="1,000,000"
+                value={displayAmount}
+              />
+              <input name="amount" type="hidden" value={displayAmount} />
+              <p className="text-sm leading-6 text-muted-foreground">
+                {t("customers.ledger.amountInWords")}: {amountInWords}
+              </p>
+              {getFieldError("amount") ? (
+                <p className="text-sm text-red-600">{getFieldError("amount")}</p>
+              ) : null}
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="method">{t("customers.ledger.paymentDialog.fields.method")}</Label>
               <select
-                className="flex h-10 w-full rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
+                className={selectClassName}
                 id="method"
                 name="method"
                 onChange={(event) =>
@@ -219,7 +226,7 @@ export function PaymentDialog({
                 {t("customers.ledger.paymentDialog.fields.linkedTicket")}
               </Label>
               <select
-                className="flex h-10 w-full rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
+                className={selectClassName}
                 defaultValue=""
                 id="linked_ticket_id"
                 name="linked_ticket_id"
@@ -253,38 +260,37 @@ export function PaymentDialog({
             ) : null}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="evidence_url">
-              {t("customers.ledger.paymentDialog.fields.evidence")}
-            </Label>
-            <div className="relative">
-              <ReceiptText className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                className="pl-9"
-                id="evidence_url"
-                name="evidence_url"
-                onChange={(event) => setEvidenceUrl(event.target.value)}
-                placeholder="https://..."
-                value={evidenceUrl}
-              />
+          <div className="space-y-3 rounded-[20px] border border-border bg-white p-4 shadow-[var(--shadow-sm)]">
+            <div className="space-y-2">
+              <Label htmlFor="evidence_url">
+                {t("customers.ledger.paymentDialog.fields.evidence")}
+              </Label>
+              <div className="relative">
+                <ReceiptText className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  className="pl-10"
+                  id="evidence_url"
+                  name="evidence_url"
+                  onChange={(event) => setEvidenceUrl(event.target.value)}
+                  placeholder="https://..."
+                  value={evidenceUrl}
+                />
+              </div>
+              <p className="text-sm leading-6 text-muted-foreground">
+                {t("customers.ledger.paymentDialog.fields.evidenceHint")}
+              </p>
             </div>
-            <p className="text-sm leading-6 text-slate-500">
-              {t("customers.ledger.paymentDialog.fields.evidenceHint")}
-            </p>
-            <div className="flex items-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+
+            <div className="flex items-center gap-2 rounded-[16px] border border-dashed border-border bg-secondary px-3 py-3 text-sm text-muted-foreground">
               {evidenceUrl.trim() ? (
                 <>
-                  <ReceiptText className="h-4 w-4 text-cyan-700" />
-                  <span>
-                    {t("customers.ledger.paymentDialog.fields.evidenceReady")}
-                  </span>
+                  <ReceiptText className="h-4 w-4 text-primary" />
+                  <span>{t("customers.ledger.paymentDialog.fields.evidenceReady")}</span>
                 </>
               ) : (
                 <>
-                  <CircleSlash className="h-4 w-4 text-slate-400" />
-                  <span>
-                    {t("customers.ledger.paymentDialog.fields.evidenceEmpty")}
-                  </span>
+                  <CircleSlash className="h-4 w-4 text-muted-foreground" />
+                  <span>{t("customers.ledger.paymentDialog.fields.evidenceEmpty")}</span>
                 </>
               )}
             </div>
@@ -293,7 +299,7 @@ export function PaymentDialog({
             ) : null}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="pt-2">
             <Button
               onClick={() => setOpen(false)}
               type="button"
