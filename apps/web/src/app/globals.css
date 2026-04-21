@@ -60,6 +60,8 @@
     "Segoe UI Symbol", "Noto Color Emoji";
   --font-serif: Source Serif 4, serif;
   --font-mono: JetBrains Mono, monospace;
+  --font-geist:
+    "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
   --radius: 0.75rem;
 

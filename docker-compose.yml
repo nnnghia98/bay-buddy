@@ -1,0 +1,32 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: sqlite:////app/data/bay_buddy.db
+      FRONTEND_URL: http://localhost:6769
+      SECRET_KEY: change-this-in-production-minimum-32-chars
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports:
+      - "6768:6768"
+    volumes:
+      - bay_buddy_api_data:/app/data
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:6768/api/v1
+        INTERNAL_API_BASE_URL: http://api:6768/api/v1
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:6768/api/v1
+      INTERNAL_API_BASE_URL: http://api:6768/api/v1
+    depends_on:
+      - api
+    ports:
+      - "6769:6769"
+
+volumes:
+  bay_buddy_api_data:

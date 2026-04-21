@@ -7,6 +7,7 @@ export default {
         "This view combines customer ledger balances with confirmed tickets to form the first Phase 5 finance summary slice.",
       primaryAriaLabel: "Primary financial summary metrics",
       secondaryAriaLabel: "Secondary financial summary metrics",
+      analyticsAriaLabel: "Revenue chart and top debtors",
       unavailableTitle: "Financial overview unavailable",
       unavailableDescription:
         "We could not read customers or tickets right now. Please try again once the API is available.",
@@ -45,6 +46,37 @@ export default {
         coverage: {
           label: "Receivables to revenue",
           detail: "Shows how much revenue is still outstanding.",
+        },
+      },
+      analytics: {
+        revenueTrend: {
+          eyebrow: "Revenue Trend",
+          title: "Revenue growth over the last 30 days",
+          description:
+            "Grouped by ledger transaction date so the recent sales pace is visible at a glance.",
+          totalLabel: "30-day revenue",
+          growthLabel: "Displayed cumulative",
+          tooltip: {
+            daily: "Daily revenue",
+            cumulative: "Cumulative revenue",
+            dateLabel: "Date",
+          },
+        },
+        topDebtors: {
+          eyebrow: "Who Owes Me",
+          title: "Top customers with outstanding debt",
+          description:
+            "The 5 highest receivable balances based on total debit minus total credit.",
+          columns: {
+            customer: "Customer",
+            balance: "Balance",
+          },
+          status: {
+            high: "High debt",
+            medium: "Medium debt",
+          },
+          balanceLabel: "Outstanding",
+          empty: "No customers currently have outstanding receivables.",
         },
       },
     },

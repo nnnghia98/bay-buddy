@@ -4,6 +4,7 @@ import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
 import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
+import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
 import {
   RecordPaymentActionState,
   TransactionReadSchema,
@@ -11,8 +12,7 @@ import {
   recordPaymentFormSchema,
 } from "@/schemas"
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:6768/api/v1"
+const API_BASE_URL = getServerApiBaseUrl()
 
 type RecordPaymentApiResponse = {
   transaction: unknown
@@ -21,7 +21,7 @@ type RecordPaymentApiResponse = {
 }
 
 function buildUrl(path: string): string {
-  return `${API_BASE_URL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`
+  return buildApiUrl(path, API_BASE_URL)
 }
 
 function getErrorMessage(payload: unknown): string {

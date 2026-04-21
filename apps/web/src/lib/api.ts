@@ -1,7 +1,7 @@
 import { clearStoredToken, getStoredToken } from "@/lib/auth-storage"
+import { buildApiUrl, getClientApiBaseUrl } from "@/lib/api-base"
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:6768/api/v1"
+const API_BASE_URL = getClientApiBaseUrl()
 
 export class ApiError extends Error {
   status: number
@@ -26,7 +26,7 @@ function buildUrl(path: string): string {
     return path
   }
 
-  return `${API_BASE_URL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`
+  return buildApiUrl(path, API_BASE_URL)
 }
 
 function getErrorMessage(payload: unknown, fallback: string): string {

@@ -28,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { convert_number_to_vn_words } from "@/lib/number-to-vn-words"
+import { applyOptimisticPaymentToLedger } from "@/lib/finance-core"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
 import type { CustomerLedger } from "@/schemas"
@@ -62,52 +63,6 @@ function formatDate(value: Date): string {
   const minutes = value.getMinutes().toString().padStart(2, "0")
 
   return `${day}/${month}/${year} ${hours}:${minutes}`
-}
-
-function buildOptimisticLedger(
-  ledger: CustomerLedger,
-  optimisticPayment: { amount: number; note: string },
-): CustomerLedger {
-  const optimisticEntry = {
-    id: `optimistic-${Date.now()}`,
-    entry_type: "payment" as const,
-    created_at: new Date(),
-    content: optimisticPayment.note,
-    amount: -optimisticPayment.amount,
-    running_balance: 0,
-  }
-
-  const nextEntries = [...ledger.entries, optimisticEntry].sort((left, right) => {
-    const leftTimestamp = left.created_at.getTime()
-    const rightTimestamp = right.created_at.getTime()
-
-    if (leftTimestamp !== rightTimestamp) {
-      return leftTimestamp - rightTimestamp
-    }
-
-    if (left.entry_type === right.entry_type) {
-      return String(left.id).localeCompare(String(right.id))
-    }
-
-    return left.entry_type === "ticket" ? -1 : 1
-  })
-
-  let runningBalance = 0
-  const entriesWithBalance = nextEntries.map((entry) => {
-    runningBalance += entry.amount
-    return {
-      ...entry,
-      running_balance: runningBalance,
-    }
-  })
-
-  return {
-    ...ledger,
-    current_balance: runningBalance,
-    balance_state:
-      runningBalance > 0 ? "debt" : runningBalance < 0 ? "credit" : "settled",
-    entries: entriesWithBalance,
-  }
 }
 
 function getEntryTypeLabel(entryType: CustomerLedger["entries"][number]["entry_type"]): string {
@@ -156,9 +111,12 @@ export function CustomerLedgerClient({
     setConfirmedLedger(emptyLedger)
   }, [emptyLedger, initialLedger])
 
-  const [optimisticLedger, addOptimisticPayment] = React.useOptimistic(
+  const [optimisticLedger, addOptimisticPayment] = React.useOptimistic<
+    CustomerLedger,
+    { amount: number; note: string }
+  >(
     confirmedLedger,
-    buildOptimisticLedger,
+    (ledger, payment) => applyOptimisticPaymentToLedger(ledger, payment),
   )
 
   const handleOptimisticSubmit = React.useCallback(

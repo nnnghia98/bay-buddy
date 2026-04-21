@@ -7,6 +7,7 @@ export default {
         "Tổng hợp này ghép số dư công nợ khách hàng với các vé đã xác nhận để tạo ra ảnh chụp nhanh cho giai đoạn đầu của Phase 5.",
       primaryAriaLabel: "Nhóm chỉ số tài chính chính",
       secondaryAriaLabel: "Nhóm chỉ số tài chính bổ sung",
+      analyticsAriaLabel: "Biểu đồ doanh thu và danh sách khách nợ nhiều nhất",
       unavailableTitle: "Chưa tải được tổng quan tài chính",
       unavailableDescription:
         "Không thể đọc dữ liệu customers hoặc tickets lúc này. Vui lòng thử lại sau khi kết nối API ổn định.",
@@ -45,6 +46,37 @@ export default {
         coverage: {
           label: "Tỷ lệ công nợ / doanh thu",
           detail: "Cho biết phần doanh thu vẫn chưa thu hết.",
+        },
+      },
+      analytics: {
+        revenueTrend: {
+          eyebrow: "Revenue Trend",
+          title: "Đà tăng doanh thu 30 ngày gần nhất",
+          description:
+            "Nhóm theo ngày từ các giao dịch ledger tăng doanh thu để theo dõi nhịp tăng trưởng gần đây.",
+          totalLabel: "Doanh thu 30 ngày",
+          growthLabel: "Lũy kế hiển thị",
+          tooltip: {
+            daily: "Doanh thu trong ngày",
+            cumulative: "Doanh thu lũy kế",
+            dateLabel: "Ngày",
+          },
+        },
+        topDebtors: {
+          eyebrow: "Who Owes Me",
+          title: "Top khách hàng còn nợ nhiều nhất",
+          description:
+            "5 khách có số dư công nợ cao nhất dựa trên chênh lệch tổng phát sinh nợ và thanh toán.",
+          columns: {
+            customer: "Khách hàng",
+            balance: "Công nợ",
+          },
+          status: {
+            high: "Nợ cao",
+            medium: "Nợ vừa",
+          },
+          balanceLabel: "Số dư phải thu",
+          empty: "Chưa có khách hàng nào đang còn công nợ phải thu.",
         },
       },
     },

@@ -3,13 +3,13 @@ import { redirect } from "next/navigation"
 
 import { CustomerLedgerClient } from "@/components/customer-ledger-client"
 import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
+import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
 import { CustomerLedgerSchema, type CustomerLedger } from "@/schemas"
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:6768/api/v1"
+const API_BASE_URL = getServerApiBaseUrl()
 
 type PageProps = {
-  params: Promise<{ id: string }> | { id: string }
+  params: Promise<{ id: string }>
 }
 
 type ApiEnvelope<T> = {
@@ -19,7 +19,7 @@ type ApiEnvelope<T> = {
 }
 
 function buildUrl(path: string): string {
-  return `${API_BASE_URL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`
+  return buildApiUrl(path, API_BASE_URL)
 }
 
 async function fetchCustomerLedger(customerId: string): Promise<CustomerLedger | null> {
@@ -60,7 +60,7 @@ async function fetchCustomerLedger(customerId: string): Promise<CustomerLedger |
 }
 
 export default async function CustomerLedgerPage({ params }: PageProps) {
-  const { id: customerId } = await Promise.resolve(params)
+  const { id: customerId } = await params
   const ledger = await fetchCustomerLedger(customerId)
 
   return (

@@ -1,0 +1,12 @@
+.git
+.gitignore
+.next
+node_modules
+apps/web/.next
+apps/web/node_modules
+apps/web/.vitest-coverage
+apps/api/.venv
+apps/api/__pycache__
+apps/api/**/*.pyc
+.env
+.DS_Store
