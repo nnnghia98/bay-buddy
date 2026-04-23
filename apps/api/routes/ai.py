@@ -13,7 +13,11 @@ from typing import Dict, Any
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 
-from services.ai_agent import parse_flight_content
+from services.ai_agent import (
+    AIServiceTemporarilyUnavailable,
+    GEMINI_MODEL_NAME,
+    parse_flight_content,
+)
 
 
 router = APIRouter()
@@ -102,6 +106,11 @@ async def parse_flight(
 
         return parsed_data
 
+    except AIServiceTemporarilyUnavailable:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Gemini đang quá tải tạm thời. Vui lòng thử lại sau ít phút.",
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -144,5 +153,5 @@ async def ai_health_check() -> Dict[str, str]:
     return {
         "status": "ok",
         "service": "ai-parser",
-        "model": "gemini-1.5-flash",
+        "model": GEMINI_MODEL_NAME,
     }

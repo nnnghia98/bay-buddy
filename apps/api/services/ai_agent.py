@@ -6,17 +6,28 @@ Extraction logic reference: docs/AGENT_PARSER.md
 Model schema reference:     apps/api/models/ticket.py
 """
 
+import asyncio
 import json
 import os
 from typing import Any, Dict
 
 from google import genai
+from google.genai.errors import APIError
 from google.genai import types
 
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+
+GEMINI_MODEL_NAME = "gemini-3.1-flash-lite"
+GEMINI_MAX_ATTEMPTS = 3
+GEMINI_RETRY_DELAYS_SECONDS = (1.0, 2.0)
+
+
+class AIServiceTemporarilyUnavailable(RuntimeError):
+    """Raised when Gemini is temporarily overloaded after retry attempts."""
+
 
 def _get_genai_client() -> genai.Client:
     """
@@ -125,11 +136,29 @@ async def parse_flight_content(file_bytes: bytes, mime_type: str) -> Dict[str, A
         types.Part.from_text(text=FLIGHT_EXTRACTION_PROMPT),
     ]
 
-    # Generate response using Gemini 2.5 Flash
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=contents,
-    )
+    response = None
+    for attempt in range(GEMINI_MAX_ATTEMPTS):
+        try:
+            response = client.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=contents,
+            )
+            break
+        except APIError as error:
+            if not _is_retryable_gemini_error(error):
+                raise
+
+            if attempt == GEMINI_MAX_ATTEMPTS - 1:
+                raise AIServiceTemporarilyUnavailable(
+                    "Gemini is temporarily overloaded. Please try again later."
+                ) from error
+
+            await asyncio.sleep(GEMINI_RETRY_DELAYS_SECONDS[attempt])
+
+    if response is None:
+        raise AIServiceTemporarilyUnavailable(
+            "Gemini is temporarily unavailable. Please try again later."
+        )
 
     # Extract the text from response
     response_text = response.text.strip()
@@ -164,3 +193,10 @@ async def parse_flight_content(file_bytes: bytes, mime_type: str) -> Dict[str, A
 
     return data
 
+
+def _is_retryable_gemini_error(error: APIError) -> bool:
+    """Return True for temporary Gemini capacity/rate availability failures."""
+    return error.code in {429, 500, 502, 503, 504} or error.status in {
+        "RESOURCE_EXHAUSTED",
+        "UNAVAILABLE",
+    }

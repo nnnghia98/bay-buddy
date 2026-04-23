@@ -3,10 +3,10 @@ import uuid
 
 from fastapi import APIRouter, Query, status
 
-from core.auth import CurrentUserDep
+from core.auth import CurrentUserDep, require_user_roles
 from core.responses import success_response
 from database import SessionDep
-from models.enums import InvoiceStatus
+from models.enums import InvoiceStatus, UserRole
 from models.invoice import (
     InvoiceCreate,
     InvoiceListFilters,
@@ -35,7 +35,7 @@ async def create_invoice_route(
     current_user: CurrentUserDep,
 ):
     """Generate a draft invoice from selected tickets in one atomic transaction."""
-    del current_user
+    require_user_roles(current_user, UserRole.ADMIN)
     invoice = create_invoice(session=session, payload=payload)
     return success_response(invoice.model_dump(mode="json"))
 
@@ -95,7 +95,7 @@ async def update_invoice_route(
     current_user: CurrentUserDep,
 ):
     """Update mutable draft invoice fields. Issued/paid invoices are read-only."""
-    del current_user
+    require_user_roles(current_user, UserRole.ADMIN)
     invoice = update_invoice(session=session, invoice_id=invoice_id, payload=payload)
     return success_response(invoice.model_dump(mode="json"))
 
@@ -108,7 +108,7 @@ async def update_invoice_status_route(
     current_user: CurrentUserDep,
 ):
     """Update invoice lifecycle status and lock linked transactions on issue."""
-    del current_user
+    require_user_roles(current_user, UserRole.ADMIN)
     invoice = update_invoice_status(
         session=session,
         invoice_id=invoice_id,
@@ -124,7 +124,7 @@ async def create_quote_route(
     current_user: CurrentUserDep,
 ):
     """Create an informational quote without touching the ledger."""
-    del current_user
+    require_user_roles(current_user, UserRole.ADMIN)
     quote = create_quote(session=session, payload=payload)
     return success_response(quote.model_dump(mode="json"))
 
@@ -148,6 +148,6 @@ async def convert_quote_to_invoice_route(
     current_user: CurrentUserDep,
 ):
     """Accept a quote and convert it into a draft invoice."""
-    del current_user
+    require_user_roles(current_user, UserRole.ADMIN)
     result = convert_quote_to_invoice(session=session, quote_id=quote_id)
     return success_response(result.model_dump(mode="json"))

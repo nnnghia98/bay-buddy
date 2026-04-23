@@ -14,6 +14,7 @@
  */
 
 import { z } from "zod";
+import { calculateServiceFee } from "@/lib/finance-core";
 import { AirlineSchema, TicketStatusSchema } from "./enums";
 
 // ---------------------------------------------------------------------------
@@ -140,4 +141,4 @@ export type TicketUpdate = z.infer<typeof TicketUpdateSchema>;
 export const computeServiceFee = (
   net_price: number,
   selling_price: number
-): number => selling_price - net_price;
+): number => calculateServiceFee(net_price, selling_price);

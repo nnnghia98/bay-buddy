@@ -4,7 +4,7 @@ import * as React from "react"
 
 import {
   clearStoredToken,
-  getStoredToken,
+  hydrateAuthTokenFromStorage,
   setStoredToken,
 } from "@/lib/auth-storage"
 
@@ -24,11 +24,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = React.useState(false)
 
   React.useEffect(() => {
-    const storedToken = getStoredToken()
-    if (storedToken) {
-      setStoredToken(storedToken)
-    }
-    setToken(storedToken)
+    const tokenFromStorage = hydrateAuthTokenFromStorage()
+    setToken(tokenFromStorage)
     setIsReady(true)
   }, [])
 

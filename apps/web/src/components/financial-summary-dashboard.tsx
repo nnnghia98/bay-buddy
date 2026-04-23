@@ -1,26 +1,25 @@
 "use client"
 
 import { Landmark, TrendingUp, Wallet, WalletCards } from "lucide-react"
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 
+import type { FinancialSummarySnapshot } from "@/lib/dashboard"
+import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
-
-type FinancialSummarySnapshot = {
-  totalRevenue: number
-  totalNetProfit: number
-  totalReceivables: number
-  totalHeldCredit: number
-  confirmedTickets: number
-  activeCustomers: number
-  customersWithDebt: number
-  customersWithCredit: number
-  averageMarginPercent: number
-  receivablesRatioPercent: number
-  updatedAt: string
-}
 
 type FinancialSummaryDashboardProps = {
   summary: FinancialSummarySnapshot | null
 }
+
+const revenueStroke = "#2d7ff9"
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("vi-VN", {
@@ -45,6 +44,13 @@ function formatDateTime(value: string): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value))
+}
+
+function formatCompactCurrency(amount: number): string {
+  return new Intl.NumberFormat("vi-VN", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(amount)
 }
 
 export function FinancialSummaryDashboard({
@@ -122,6 +128,11 @@ export function FinancialSummaryDashboard({
       detail: t("dashboard.summary.metrics.coverage.detail"),
     },
   ]
+  const revenueLast30Days = summary.revenueTrend.reduce(
+    (sum, point) => sum + point.revenue,
+    0,
+  )
+  const currentGrowth = summary.revenueTrend.at(-1)?.cumulativeRevenue ?? 0
 
   return (
     <div className="space-y-5 text-foreground">
@@ -208,6 +219,181 @@ export function FinancialSummaryDashboard({
             </p>
           </div>
         ))}
+      </section>
+
+      <section
+        aria-label={t("dashboard.summary.analyticsAriaLabel")}
+        className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"
+      >
+        <section className="overflow-hidden rounded-md border border-[#e2e8f0] bg-white">
+          <div className="flex flex-col gap-4 border-b border-border px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold uppercase text-primary">
+                {t("dashboard.summary.analytics.revenueTrend.eyebrow")}
+              </p>
+              <h2 className="text-lg font-medium tracking-[-0.02em] text-foreground">
+                {t("dashboard.summary.analytics.revenueTrend.title")}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {t("dashboard.summary.analytics.revenueTrend.description")}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-md border border-border bg-secondary px-3 py-2">
+                <p className="text-[11px] font-semibold uppercase text-muted-foreground">
+                  {t("dashboard.summary.analytics.revenueTrend.totalLabel")}
+                </p>
+                <p className="mt-1 font-medium text-foreground">
+                  {formatCurrency(revenueLast30Days)}
+                </p>
+              </div>
+              <div className="rounded-md border border-border bg-secondary px-3 py-2">
+                <p className="text-[11px] font-semibold uppercase text-muted-foreground">
+                  {t("dashboard.summary.analytics.revenueTrend.growthLabel")}
+                </p>
+                <p className="mt-1 font-medium text-foreground">
+                  {formatCurrency(currentGrowth)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-[320px] px-3 py-4 sm:px-5">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={summary.revenueTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  axisLine={false}
+                  dataKey="label"
+                  minTickGap={24}
+                  tick={{ fill: "#64748b", fontSize: 12 }}
+                  tickLine={false}
+                  tickMargin={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tick={{ fill: "#64748b", fontSize: 12 }}
+                  tickFormatter={formatCompactCurrency}
+                  tickLine={false}
+                  tickMargin={10}
+                  width={56}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#ffffff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "8px",
+                    boxShadow: "none",
+                    color: "#0f172a",
+                  }}
+                  cursor={{ stroke: "#94a3b8", strokeDasharray: "3 3" }}
+                  formatter={(value, name) => {
+                    const amount = typeof value === "number" ? value : 0
+
+                    if (String(name) === "revenue") {
+                      return [
+                        formatCurrency(amount),
+                        t("dashboard.summary.analytics.revenueTrend.tooltip.daily"),
+                      ]
+                    }
+
+                    return [
+                      formatCurrency(amount),
+                      t("dashboard.summary.analytics.revenueTrend.tooltip.cumulative"),
+                    ]
+                  }}
+                  labelFormatter={(value) =>
+                    `${t("dashboard.summary.analytics.revenueTrend.tooltip.dateLabel")} ${value}`
+                  }
+                />
+                <Area
+                  dataKey="cumulativeRevenue"
+                  fill={revenueStroke}
+                  fillOpacity={0.08}
+                  name="cumulativeRevenue"
+                  stroke={revenueStroke}
+                  strokeWidth={2}
+                  type="monotone"
+                />
+                <Area
+                  dataKey="revenue"
+                  fill="transparent"
+                  name="revenue"
+                  stroke="transparent"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-md border border-[#e2e8f0] bg-white">
+          <div className="border-b border-border px-5 py-4 [font-family:var(--font-geist)]">
+            <p className="text-xs font-semibold uppercase text-primary">
+              {t("dashboard.summary.analytics.topDebtors.eyebrow")}
+            </p>
+            <h2 className="mt-1 text-lg font-medium tracking-[-0.02em] text-foreground">
+              {t("dashboard.summary.analytics.topDebtors.title")}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t("dashboard.summary.analytics.topDebtors.description")}
+            </p>
+          </div>
+
+          <div className="[font-family:var(--font-geist)]">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border px-5 py-2 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              <span>{t("dashboard.summary.analytics.topDebtors.columns.customer")}</span>
+              <span>{t("dashboard.summary.analytics.topDebtors.columns.balance")}</span>
+            </div>
+
+            {summary.topDebtors.length === 0 ? (
+              <div className="px-5 py-8 text-sm text-muted-foreground">
+                {t("dashboard.summary.analytics.topDebtors.empty")}
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {summary.topDebtors.map((debtor, index) => (
+                  <div
+                    className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 px-5 py-3"
+                    key={debtor.id}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                        <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-secondary text-[10px] font-semibold text-muted-foreground">
+                          {index + 1}
+                        </span>
+                        <span className="truncate">{debtor.name}</span>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "inline-flex rounded-full border px-2 py-1 text-xs font-medium",
+                            debtor.status === "high"
+                              ? "border-red-100 bg-red-50 text-red-600"
+                              : "border-orange-100 bg-orange-50 text-orange-600",
+                          )}
+                        >
+                          {debtor.status === "high"
+                            ? t("dashboard.summary.analytics.topDebtors.status.high")
+                            : t("dashboard.summary.analytics.topDebtors.status.medium")}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-foreground">
+                        {formatCurrency(debtor.outstandingBalance)}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t("dashboard.summary.analytics.topDebtors.balanceLabel")}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
       </section>
     </div>
   )

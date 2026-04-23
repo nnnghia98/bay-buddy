@@ -4,6 +4,7 @@ import * as React from "react"
 import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
 import { CircleSlash, Loader2, ReceiptText, Wallet } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { recordPaymentAction } from "@/actions/finance"
@@ -83,6 +84,7 @@ export function PaymentDialog({
   onSettled,
 }: PaymentDialogProps) {
   const t = useI18n()
+  const router = useRouter()
   const [open, setOpen] = React.useState(false)
   const [displayAmount, setDisplayAmount] = React.useState("")
   const [evidenceUrl, setEvidenceUrl] = React.useState("")
@@ -104,6 +106,7 @@ export function PaymentDialog({
 
   React.useEffect(() => {
     if (state.status === "success") {
+      router.refresh()
       toast.success(state.message ?? t("customers.ledger.paymentDialog.success"))
       setClientErrors({})
       setDisplayAmount("")
@@ -118,7 +121,7 @@ export function PaymentDialog({
       toast.error(state.message ?? t("customers.ledger.paymentDialog.error"))
       onSettled("error")
     }
-  }, [onSettled, state, t])
+  }, [onSettled, router, state, t])
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     const formData = new FormData(event.currentTarget)

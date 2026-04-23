@@ -7,6 +7,7 @@ export default {
         "Tổng hợp này ghép số dư công nợ khách hàng với các vé đã xác nhận để tạo ra ảnh chụp nhanh cho giai đoạn đầu của Phase 5.",
       primaryAriaLabel: "Nhóm chỉ số tài chính chính",
       secondaryAriaLabel: "Nhóm chỉ số tài chính bổ sung",
+      analyticsAriaLabel: "Biểu đồ doanh thu và danh sách khách nợ nhiều nhất",
       unavailableTitle: "Chưa tải được tổng quan tài chính",
       unavailableDescription:
         "Không thể đọc dữ liệu customers hoặc tickets lúc này. Vui lòng thử lại sau khi kết nối API ổn định.",
@@ -45,6 +46,37 @@ export default {
         coverage: {
           label: "Tỷ lệ công nợ / doanh thu",
           detail: "Cho biết phần doanh thu vẫn chưa thu hết.",
+        },
+      },
+      analytics: {
+        revenueTrend: {
+          eyebrow: "Revenue Trend",
+          title: "Đà tăng doanh thu 30 ngày gần nhất",
+          description:
+            "Nhóm theo ngày từ các giao dịch ledger tăng doanh thu để theo dõi nhịp tăng trưởng gần đây.",
+          totalLabel: "Doanh thu 30 ngày",
+          growthLabel: "Lũy kế hiển thị",
+          tooltip: {
+            daily: "Doanh thu trong ngày",
+            cumulative: "Doanh thu lũy kế",
+            dateLabel: "Ngày",
+          },
+        },
+        topDebtors: {
+          eyebrow: "Who Owes Me",
+          title: "Top khách hàng còn nợ nhiều nhất",
+          description:
+            "5 khách có số dư công nợ cao nhất dựa trên chênh lệch tổng phát sinh nợ và thanh toán.",
+          columns: {
+            customer: "Khách hàng",
+            balance: "Công nợ",
+          },
+          status: {
+            high: "Nợ cao",
+            medium: "Nợ vừa",
+          },
+          balanceLabel: "Số dư phải thu",
+          empty: "Chưa có khách hàng nào đang còn công nợ phải thu.",
         },
       },
     },
@@ -100,6 +132,109 @@ export default {
           linkedTicket: "Đối soát đích danh",
           linkedTicketPlaceholder: "Không liên kết vé cụ thể",
         },
+      },
+      invoices: {
+        title: "Hóa đơn của khách hàng",
+        description:
+          "Mở danh sách hóa đơn được lọc theo khách hàng này để xem bản chi tiết hoặc bản in công khai.",
+        open: "Xem hóa đơn",
+      },
+    },
+  },
+  financeDocuments: {
+    common: {
+      invoice: "Hóa đơn",
+      quote: "Báo giá",
+      status: "Trạng thái",
+      customer: "Khách hàng",
+      address: "Địa chỉ",
+      taxCode: "Mã số thuế",
+      createdAt: "Ngày tạo",
+      issuedAt: "Ngày xuất",
+      validUntil: "Hiệu lực đến",
+      note: "Ghi chú",
+      noNote: "Không có ghi chú",
+      notUpdated: "Chưa cập nhật",
+      amountInWords: "Số tiền bằng chữ",
+      total: "Tổng cộng",
+      taxAmount: "Thuế",
+      discountAmount: "Chiết khấu",
+      print: "Bản in",
+      viewDetail: "Xem chi tiết",
+      openPrint: "Mở bản in",
+      backToInvoices: "Quay lại danh sách hóa đơn",
+      backToCustomer: "Quay lại sổ khách hàng",
+      snapshotNotice:
+        "Dữ liệu hiển thị từ bản chụp hóa đơn/báo giá đã lưu, không lấy lại từ hồ sơ khách hàng hoặc vé hiện tại.",
+      columns: {
+        description: "Nội dung",
+        passenger: "Hành khách",
+        quantity: "SL",
+        unitPrice: "Đơn giá",
+        total: "Thành tiền",
+      },
+    },
+    statuses: {
+      invoice: {
+        DRAFT: "Nháp",
+        ISSUED: "Đã xuất",
+        PAID: "Đã thanh toán",
+        CANCELLED: "Đã hủy",
+      },
+      quote: {
+        DRAFT: "Nháp",
+        ACCEPTED: "Đã chấp nhận",
+        EXPIRED: "Hết hiệu lực",
+        CANCELLED: "Đã hủy",
+      },
+    },
+    invoices: {
+      list: {
+        eyebrow: "Hóa đơn theo khách hàng",
+        title: "Danh sách hóa đơn được giới hạn theo từng khách hàng.",
+        description:
+          "Mở từ sổ công nợ khách hàng để xem các hóa đơn đã tạo, trạng thái và bản in công khai.",
+        emptyScopeTitle: "Chọn khách hàng để xem hóa đơn",
+        emptyScopeDescription:
+          "Danh sách hóa đơn hiện được lọc theo khách hàng. Vui lòng mở một sổ công nợ khách hàng trước, sau đó chọn mục hóa đơn.",
+        emptyList: "Khách hàng này chưa có hóa đơn nào.",
+      },
+      detail: {
+        eyebrow: "Chi tiết hóa đơn",
+        titlePrefix: "Hóa đơn",
+        publicLink: "Mở bản in công khai",
+        lineItemsTitle: "Dòng hóa đơn",
+      },
+      public: {
+        eyebrow: "Bản in hóa đơn",
+        title: "Hóa đơn thanh toán",
+        contact: "Thông tin hỗ trợ",
+        lineItemsTitle: "Chi tiết dịch vụ",
+      },
+    },
+    quotes: {
+      detail: {
+        eyebrow: "Chi tiết báo giá",
+        titlePrefix: "Báo giá",
+        lineItemsTitle: "Dòng báo giá",
+        informationalNotice:
+          "Báo giá chỉ mang tính thông tin và chưa ảnh hưởng đến sổ công nợ cho đến khi được chuyển thành hóa đơn.",
+        convert: "Chuyển thành hóa đơn",
+        converting: "Đang chuyển...",
+        convertUnavailable:
+          "Báo giá không còn ở trạng thái nháp nên không thể chuyển từ màn hình này.",
+        convertedTitle: "Đã tạo hóa đơn",
+        convertedDescription: "Báo giá đã được chuyển thành hóa đơn nháp.",
+        openInvoice: "Mở hóa đơn",
+      },
+    },
+    actions: {
+      quoteConvert: {
+        missingQuote: "Không tìm thấy mã báo giá.",
+        missingAuth: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+        permission: "Bạn không có quyền chuyển báo giá này thành hóa đơn.",
+        failure: "Không thể chuyển báo giá thành hóa đơn lúc này.",
+        success: "Đã chuyển báo giá thành hóa đơn.",
       },
     },
   },

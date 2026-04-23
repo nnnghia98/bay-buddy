@@ -7,6 +7,7 @@ export default {
         "This view combines customer ledger balances with confirmed tickets to form the first Phase 5 finance summary slice.",
       primaryAriaLabel: "Primary financial summary metrics",
       secondaryAriaLabel: "Secondary financial summary metrics",
+      analyticsAriaLabel: "Revenue chart and top debtors",
       unavailableTitle: "Financial overview unavailable",
       unavailableDescription:
         "We could not read customers or tickets right now. Please try again once the API is available.",
@@ -45,6 +46,37 @@ export default {
         coverage: {
           label: "Receivables to revenue",
           detail: "Shows how much revenue is still outstanding.",
+        },
+      },
+      analytics: {
+        revenueTrend: {
+          eyebrow: "Revenue Trend",
+          title: "Revenue growth over the last 30 days",
+          description:
+            "Grouped by ledger transaction date so the recent sales pace is visible at a glance.",
+          totalLabel: "30-day revenue",
+          growthLabel: "Displayed cumulative",
+          tooltip: {
+            daily: "Daily revenue",
+            cumulative: "Cumulative revenue",
+            dateLabel: "Date",
+          },
+        },
+        topDebtors: {
+          eyebrow: "Who Owes Me",
+          title: "Top customers with outstanding debt",
+          description:
+            "The 5 highest receivable balances based on total debit minus total credit.",
+          columns: {
+            customer: "Customer",
+            balance: "Balance",
+          },
+          status: {
+            high: "High debt",
+            medium: "Medium debt",
+          },
+          balanceLabel: "Outstanding",
+          empty: "No customers currently have outstanding receivables.",
         },
       },
     },
@@ -100,6 +132,109 @@ export default {
           linkedTicket: "Specific reconciliation",
           linkedTicketPlaceholder: "Do not link to a specific ticket",
         },
+      },
+      invoices: {
+        title: "Customer invoices",
+        description:
+          "Open this customer's scoped invoice list to review detail pages or public print views.",
+        open: "View invoices",
+      },
+    },
+  },
+  financeDocuments: {
+    common: {
+      invoice: "Invoice",
+      quote: "Quote",
+      status: "Status",
+      customer: "Customer",
+      address: "Address",
+      taxCode: "Tax code",
+      createdAt: "Created at",
+      issuedAt: "Issued at",
+      validUntil: "Valid until",
+      note: "Note",
+      noNote: "No note",
+      notUpdated: "Not updated",
+      amountInWords: "Amount in words",
+      total: "Total",
+      taxAmount: "Tax",
+      discountAmount: "Discount",
+      print: "Print",
+      viewDetail: "View detail",
+      openPrint: "Open print view",
+      backToInvoices: "Back to invoices",
+      backToCustomer: "Back to customer ledger",
+      snapshotNotice:
+        "This view renders stored invoice/quote snapshots, not current customer or ticket records.",
+      columns: {
+        description: "Description",
+        passenger: "Passenger",
+        quantity: "Qty",
+        unitPrice: "Unit price",
+        total: "Line total",
+      },
+    },
+    statuses: {
+      invoice: {
+        DRAFT: "Draft",
+        ISSUED: "Issued",
+        PAID: "Paid",
+        CANCELLED: "Cancelled",
+      },
+      quote: {
+        DRAFT: "Draft",
+        ACCEPTED: "Accepted",
+        EXPIRED: "Expired",
+        CANCELLED: "Cancelled",
+      },
+    },
+    invoices: {
+      list: {
+        eyebrow: "Customer invoices",
+        title: "Invoice lists are scoped to a customer.",
+        description:
+          "Open a customer ledger to review created invoices, statuses, and public print views.",
+        emptyScopeTitle: "Choose a customer to view invoices",
+        emptyScopeDescription:
+          "Invoice lists are currently customer-scoped. Open a customer ledger first, then choose invoices.",
+        emptyList: "This customer has no invoices yet.",
+      },
+      detail: {
+        eyebrow: "Invoice detail",
+        titlePrefix: "Invoice",
+        publicLink: "Open public print view",
+        lineItemsTitle: "Invoice lines",
+      },
+      public: {
+        eyebrow: "Invoice print view",
+        title: "Payment invoice",
+        contact: "Support information",
+        lineItemsTitle: "Service details",
+      },
+    },
+    quotes: {
+      detail: {
+        eyebrow: "Quote detail",
+        titlePrefix: "Quote",
+        lineItemsTitle: "Quote lines",
+        informationalNotice:
+          "Quotes are informational and do not affect the customer ledger until converted to an invoice.",
+        convert: "Convert to invoice",
+        converting: "Converting...",
+        convertUnavailable:
+          "This quote is no longer a draft, so it cannot be converted from this screen.",
+        convertedTitle: "Invoice created",
+        convertedDescription: "The quote was converted to a draft invoice.",
+        openInvoice: "Open invoice",
+      },
+    },
+    actions: {
+      quoteConvert: {
+        missingQuote: "Quote id is missing.",
+        missingAuth: "Your session has expired. Please sign in again.",
+        permission: "You do not have permission to convert this quote.",
+        failure: "Unable to convert this quote right now.",
+        success: "Quote converted to invoice.",
       },
     },
   },

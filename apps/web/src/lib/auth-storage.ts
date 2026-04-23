@@ -3,6 +3,24 @@ import {
   AUTH_TOKEN_STORAGE_KEY,
 } from "@/lib/auth-token"
 
+function readCookieValue(name: string): string | null {
+  if (typeof document === "undefined") {
+    return null
+  }
+
+  const cookiePrefix = `${name}=`
+  const matchedCookie = document.cookie
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith(cookiePrefix))
+
+  if (!matchedCookie) {
+    return null
+  }
+
+  return decodeURIComponent(matchedCookie.slice(cookiePrefix.length))
+}
+
 function writeTokenCookie(token: string): void {
   if (typeof document === "undefined") {
     return
@@ -43,4 +61,24 @@ export function clearStoredToken(): void {
 
   window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
   clearTokenCookie()
+}
+
+export function getCookieToken(): string | null {
+  return readCookieValue(AUTH_TOKEN_COOKIE_KEY)
+}
+
+export function hydrateAuthTokenFromStorage(): string | null {
+  const cookieToken = getCookieToken()
+
+  if (!cookieToken) {
+    clearStoredToken()
+    return null
+  }
+
+  const storedToken = getStoredToken()
+  if (storedToken !== cookieToken) {
+    setStoredToken(cookieToken)
+  }
+
+  return cookieToken
 }

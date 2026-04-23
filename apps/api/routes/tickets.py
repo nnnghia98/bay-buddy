@@ -13,20 +13,27 @@ Service:        services/ticket_service.py
 """
 
 import uuid
-from typing import List
 
 from fastapi import APIRouter, HTTPException, status
 from sqlmodel import select
 
-from core.auth import CurrentUserDep
+from core.auth import CurrentUserDep, require_user_roles
 from database import SessionDep
-from models.ticket import Ticket, TicketCreate, TicketRead, TicketUpdate
-from models.customer import Customer
 from core.responses import success_response
+from models.enums import UserRole
+from models.ticket import Ticket, TicketCreate, TicketRead, TicketUpdate
 from services.ticket_service import (
     TicketConfirmPayload,
     TicketConfirmResponse,
+    TicketRefundPayload,
+    TicketReassignPayload,
+    TicketRefundResponse,
+    TicketReassignResponse,
+    TicketVoidResponse,
     create_ticket_with_transaction,
+    reassign_confirmed_ticket,
+    refund_confirmed_ticket,
+    void_confirmed_ticket,
 )
 
 router = APIRouter()
@@ -64,28 +71,25 @@ async def confirm_ticket(
     4. Persist CHARGE Transaction (auto-debt) linked to the customer.
     5. Increment customer.balance by selling_price.
     """
-    try:
-        result: TicketConfirmResponse = create_ticket_with_transaction(
-            payload=payload,
-            session=session,
-            actor_user_id=current_user.id,
-        )
+    require_user_roles(current_user, UserRole.ADMIN, UserRole.STAFF)
+    result: TicketConfirmResponse = create_ticket_with_transaction(
+        payload=payload,
+        session=session,
+        actor_user_id=current_user.id,
+    )
 
-        return success_response(
-            {
-                "ticket": result.ticket.model_dump(),
-                "transaction_id": str(result.transaction_id),
-                "customer": {
-                    "id": str(result.customer_id),
-                    "name": result.customer_name,
-                    "balance": result.customer_new_balance,
-                    "is_new": result.is_new_customer,
-                },
-            }
-        )
-    except Exception as e:
-        import traceback
-        return {"error": str(e), "traceback": traceback.format_exc()}
+    return success_response(
+        {
+            "ticket": result.ticket.model_dump(),
+            "transaction_id": str(result.transaction_id),
+            "customer": {
+                "id": str(result.customer_id),
+                "name": result.customer_name,
+                "balance": result.customer_new_balance,
+                "is_new": result.is_new_customer,
+            },
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -97,41 +101,17 @@ async def create_ticket(
     *, session: SessionDep, current_user: CurrentUserDep, ticket_in: TicketCreate
 ):
     """
-    Create a new ticket and update the customer's balance.
-    Requires a known `customer_id`. Use POST /confirm for the full AI-parse flow.
+    Legacy write path retired in favor of POST /confirm.
+
+    The confirm flow is the only supported ledger-safe ticket mutation because it
+    creates the matching CHARGE transaction and updates customer.balance atomically.
     """
-    # Verify customer exists
-    customer = session.get(Customer, ticket_in.customer_id)
-    if not customer:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found"
-        )
-
-    # Check if PNR already exists
-    statement = select(Ticket).where(Ticket.pnr == ticket_in.pnr)
-    existing = session.exec(statement).first()
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Ticket with this PNR already exists"
-        )
-
-    # Create ticket
-    actor_user_id = current_user.id
-    db_ticket = Ticket.model_validate(ticket_in)
-    session.add(db_ticket)
-
-    # Update customer balance (increase debt by selling_price)
-    customer.balance += ticket_in.selling_price
-    session.add(customer)
-
-    session.commit()
-    session.refresh(db_ticket)
-
-    return success_response({
-        "ticket": TicketRead.model_validate(db_ticket).model_dump(),
-        "customer_new_balance": customer.balance,
-        "actor_user_id": str(actor_user_id),
-    })
+    require_user_roles(current_user, UserRole.ADMIN, UserRole.STAFF)
+    del session, current_user, ticket_in
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Legacy ticket creation is retired. Use POST /api/v1/tickets/confirm.",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -173,64 +153,62 @@ async def update_ticket(
     session: SessionDep,
     current_user: CurrentUserDep,
 ):
-    """Partially update a ticket and recompute selling_price when pricing inputs change."""
-    del current_user
+    """Legacy write path retired in favor of the confirm-only ticket flow."""
+    require_user_roles(current_user, UserRole.ADMIN, UserRole.STAFF)
+    del ticket_id, ticket_in, session, current_user
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Legacy ticket update is retired. Use the confirm flow for ticket writes.",
+    )
 
-    ticket = session.get(Ticket, ticket_id)
-    if ticket is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Ticket not found",
-        )
 
-    update_data = ticket_in.model_dump(exclude_unset=True)
+@router.post("/{ticket_id}/void", response_model=dict)
+async def void_ticket_route(
+    ticket_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+):
+    """Reverse the confirmed ticket debt and mark the ticket VOID."""
+    require_user_roles(current_user, UserRole.ADMIN, UserRole.STAFF)
+    result: TicketVoidResponse = void_confirmed_ticket(
+        ticket_id=ticket_id,
+        session=session,
+        actor_user_id=current_user.id,
+    )
+    return success_response(result.model_dump())
 
-    next_pnr = update_data.get("pnr")
-    if next_pnr is not None and next_pnr != ticket.pnr:
-        existing_ticket = session.exec(
-            select(Ticket).where(
-                Ticket.pnr == next_pnr,
-                Ticket.id != ticket_id,
-            )
-        ).first()
-        if existing_ticket is not None:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Ticket with this PNR already exists",
-            )
 
-    next_customer_id = update_data.get("customer_id")
-    if next_customer_id is not None:
-        customer = session.get(Customer, next_customer_id)
-        if customer is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Customer not found",
-            )
+@router.post("/{ticket_id}/refund", response_model=dict)
+async def refund_ticket_route(
+    ticket_id: uuid.UUID,
+    payload: TicketRefundPayload,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+):
+    """Record a refund credit adjustment and mark the ticket REFUNDED."""
+    require_user_roles(current_user, UserRole.ADMIN, UserRole.STAFF)
+    result: TicketRefundResponse = refund_confirmed_ticket(
+        ticket_id=ticket_id,
+        payload=payload,
+        session=session,
+        actor_user_id=current_user.id,
+    )
+    return success_response(result.model_dump())
 
-    next_net_price = update_data.get("net_price", ticket.net_price)
-    next_selling_price = update_data.get("selling_price")
-    next_service_fee = update_data.pop("service_fee", None)
 
-    if next_service_fee is not None:
-        next_selling_price = next_net_price + next_service_fee
-    elif "net_price" in update_data and next_selling_price is None:
-        existing_service_fee = ticket.selling_price - ticket.net_price
-        next_selling_price = next_net_price + existing_service_fee
-
-    if next_selling_price is not None:
-        if next_selling_price < next_net_price:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="selling_price must be greater than or equal to net_price",
-            )
-        update_data["selling_price"] = next_selling_price
-
-    for field_name, value in update_data.items():
-        setattr(ticket, field_name, value)
-
-    session.add(ticket)
-    session.commit()
-    session.refresh(ticket)
-
-    return success_response(TicketRead.model_validate(ticket).model_dump(mode="json"))
+@router.post("/{ticket_id}/reassign", response_model=dict)
+async def reassign_ticket_route(
+    ticket_id: uuid.UUID,
+    payload: TicketReassignPayload,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+):
+    """Move a confirmed ticket and its debt to another customer."""
+    require_user_roles(current_user, UserRole.ADMIN, UserRole.STAFF)
+    result: TicketReassignResponse = reassign_confirmed_ticket(
+        ticket_id=ticket_id,
+        payload=payload,
+        session=session,
+        actor_user_id=current_user.id,
+    )
+    return success_response(result.model_dump())

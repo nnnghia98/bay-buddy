@@ -15,7 +15,7 @@ from datetime import datetime
 from typing import Literal, Optional
 
 from fastapi import HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlmodel import Session, select
 
 from models.customer import Customer, CustomerRead
@@ -73,6 +73,12 @@ class RecordPaymentPayload(BaseModel):
         default=None,
         description="Optional ticket UUID for specific reconciliation (đích danh).",
     )
+
+    @model_validator(mode="after")
+    def validate_payment_note(self) -> "RecordPaymentPayload":
+        if not (self.note or "").strip():
+            raise ValueError("Payment note is required.")
+        return self
 
 
 class RecordPaymentResponse(BaseModel):

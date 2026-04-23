@@ -2,8 +2,10 @@
 
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 
 import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
+import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
 import {
   RecordPaymentActionState,
   TransactionReadSchema,
@@ -11,8 +13,7 @@ import {
   recordPaymentFormSchema,
 } from "@/schemas"
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:6768/api/v1"
+const API_BASE_URL = getServerApiBaseUrl()
 
 type RecordPaymentApiResponse = {
   transaction: unknown
@@ -20,8 +21,14 @@ type RecordPaymentApiResponse = {
   balance_state: "debt" | "settled" | "credit"
 }
 
+const recordPaymentApiResponseSchema = z.object({
+  transaction: TransactionReadSchema,
+  customer_new_balance: z.number(),
+  balance_state: z.enum(["debt", "settled", "credit"]),
+})
+
 function buildUrl(path: string): string {
-  return `${API_BASE_URL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`
+  return buildApiUrl(path, API_BASE_URL)
 }
 
 function getErrorMessage(payload: unknown): string {
@@ -131,15 +138,25 @@ export async function recordPaymentAction(
       ? (rawPayload as { data: RecordPaymentApiResponse }).data
       : (rawPayload as RecordPaymentApiResponse)
 
-  revalidatePath(`/customers/${customer_id}`)
+  const apiResponseResult = recordPaymentApiResponseSchema.safeParse(apiEnvelope)
 
-  const transactionResult = TransactionReadSchema.safeParse(apiEnvelope.transaction)
+  if (!apiResponseResult.success) {
+    return {
+      status: "error",
+      message: "Không thể ghi nhận thanh toán lúc này.",
+      fieldErrors: {},
+      submittedAt: Date.now(),
+      transactionId: null,
+    }
+  }
+
+  revalidatePath(`/customers/${customer_id}`)
 
   return {
     status: "success",
     message: "Đã ghi nhận thanh toán thành công.",
     fieldErrors: {},
     submittedAt: Date.now(),
-    transactionId: transactionResult.success ? transactionResult.data.id : null,
+    transactionId: apiResponseResult.data.transaction.id,
   }
 }

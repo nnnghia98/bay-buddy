@@ -26,6 +26,10 @@ import {
 } from "@/components/ui/sheet"
 import { apiFetchData } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
+import {
+  isUnauthorizedSessionError,
+  shouldRenderAuthenticatedShell,
+} from "@/lib/auth-session"
 import { cn } from "@/lib/utils"
 
 type AppShellProps = {
@@ -54,7 +58,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { label: "Tổng quan", href: "/", icon: Home },
   { label: "Khách hàng", href: "/customers", icon: Users },
-  { label: "Hóa đơn", href: "/invoices", icon: FileText, disabled: true },
+  { label: "Hóa đơn", href: "/invoices", icon: FileText },
   { label: "Nhập vé", href: "/tickets/capture", icon: Ticket },
   { label: "Báo cáo", href: "/reports", icon: FileText, disabled: true },
   { label: "Thiết lập", href: "/settings", icon: Settings, disabled: true },
@@ -97,6 +101,20 @@ function useBreadcrumbs(pathname: string, customerName?: string) {
       return [
         { label: "Vé máy bay", href: "/tickets/capture" },
         { label: "Nhập vé bằng AI", href: pathname },
+      ]
+    }
+
+    if (pathname.startsWith("/invoices")) {
+      return [
+        { label: "Hóa đơn", href: "/invoices" },
+        { label: "Tài liệu tài chính", href: pathname },
+      ]
+    }
+
+    if (pathname.startsWith("/quotes")) {
+      return [
+        { label: "Báo giá", href: pathname },
+        { label: "Tài liệu tài chính", href: pathname },
       ]
     }
 
@@ -170,6 +188,11 @@ export function AppShell({ children }: AppShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
 
   const showShell = pathname !== "/login"
+  const shouldRenderShell = shouldRenderAuthenticatedShell({
+    pathname,
+    isReady,
+    token,
+  })
   const customerId =
     pathname.startsWith("/customers/") && pathname.split("/")[2]
       ? pathname.split("/")[2]
@@ -191,12 +214,35 @@ export function AppShell({ children }: AppShellProps) {
     setIsSidebarOpen(false)
   }, [pathname])
 
+  React.useEffect(() => {
+    if (isReady && !token && showShell) {
+      router.replace("/login")
+    }
+  }, [isReady, router, showShell, token])
+
+  React.useEffect(() => {
+    if (
+      !showShell ||
+      (!isUnauthorizedSessionError(userQuery.error) &&
+        !isUnauthorizedSessionError(customerQuery.error))
+    ) {
+      return
+    }
+
+    logout()
+    router.replace("/login")
+  }, [customerQuery.error, logout, router, showShell, userQuery.error])
+
   const breadcrumbs = useBreadcrumbs(pathname, customerQuery.data?.name)
   const userName = userQuery.data?.username ?? "Staff"
   const userRole = formatRoleLabel(userQuery.data?.role ?? "STAFF")
 
   if (!showShell) {
     return <>{children}</>
+  }
+
+  if (!shouldRenderShell) {
+    return null
   }
 
   return (

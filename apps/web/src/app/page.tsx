@@ -4,14 +4,17 @@ import { z } from "zod"
 
 import { FinancialSummaryDashboard } from "@/components/financial-summary-dashboard"
 import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
+import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
+import { buildFinancialSummarySnapshot } from "@/lib/dashboard"
 import { CustomerDirectoryItemSchema } from "@/schemas/customer"
 import { TicketReadSchema } from "@/schemas/ticket"
+import { TransactionReadSchema } from "@/schemas/transaction"
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:6768/api/v1"
+const API_BASE_URL = getServerApiBaseUrl()
 
 const customerDirectorySchema = z.array(CustomerDirectoryItemSchema)
 const ticketListSchema = z.array(TicketReadSchema)
+const transactionListSchema = z.array(TransactionReadSchema)
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -19,22 +22,8 @@ type ApiEnvelope<T> = {
   error: string | null
 }
 
-type FinancialSummarySnapshot = {
-  totalRevenue: number
-  totalNetProfit: number
-  totalReceivables: number
-  totalHeldCredit: number
-  confirmedTickets: number
-  activeCustomers: number
-  customersWithDebt: number
-  customersWithCredit: number
-  averageMarginPercent: number
-  receivablesRatioPercent: number
-  updatedAt: string
-}
-
 function buildUrl(path: string): string {
-  return `${API_BASE_URL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`
+  return buildApiUrl(path, API_BASE_URL)
 }
 
 async function fetchCollection<TSchema extends z.ZodTypeAny>(
@@ -69,54 +58,7 @@ async function fetchCollection<TSchema extends z.ZodTypeAny>(
   return schema.parse(payload)
 }
 
-function buildFinancialSummarySnapshot(
-  customers: z.infer<typeof customerDirectorySchema>,
-  tickets: z.infer<typeof ticketListSchema>,
-): FinancialSummarySnapshot {
-  const confirmedTickets = tickets.filter((ticket) => ticket.status === "CONFIRMED")
-  const totalRevenue = confirmedTickets.reduce(
-    (sum, ticket) => sum + ticket.selling_price,
-    0,
-  )
-  const totalNetProfit = confirmedTickets.reduce(
-    (sum, ticket) => sum + ticket.service_fee,
-    0,
-  )
-  const totalReceivables = customers.reduce((sum, customer) => {
-    return customer.current_balance > 0
-      ? sum + customer.current_balance
-      : sum
-  }, 0)
-  const totalHeldCredit = customers.reduce((sum, customer) => {
-    return customer.current_balance < 0
-      ? sum + Math.abs(customer.current_balance)
-      : sum
-  }, 0)
-  const customersWithDebt = customers.filter(
-    (customer) => customer.current_balance > 0,
-  ).length
-  const customersWithCredit = customers.filter(
-    (customer) => customer.current_balance < 0,
-  ).length
-
-  return {
-    totalRevenue,
-    totalNetProfit,
-    totalReceivables,
-    totalHeldCredit,
-    confirmedTickets: confirmedTickets.length,
-    activeCustomers: customers.length,
-    customersWithDebt,
-    customersWithCredit,
-    averageMarginPercent:
-      totalRevenue > 0 ? (totalNetProfit / totalRevenue) * 100 : 0,
-    receivablesRatioPercent:
-      totalRevenue > 0 ? (totalReceivables / totalRevenue) * 100 : 0,
-    updatedAt: new Date().toISOString(),
-  }
-}
-
-async function loadFinancialSummarySnapshot(): Promise<FinancialSummarySnapshot | null> {
+async function loadFinancialSummarySnapshot() {
   const token = (await cookies()).get(AUTH_TOKEN_COOKIE_KEY)?.value
 
   if (!token) {
@@ -124,12 +66,17 @@ async function loadFinancialSummarySnapshot(): Promise<FinancialSummarySnapshot 
   }
 
   try {
-    const [customers, tickets] = await Promise.all([
+    const [customers, tickets, transactions] = await Promise.all([
       fetchCollection("/customers?limit=1000", token, customerDirectorySchema),
       fetchCollection("/tickets?limit=1000", token, ticketListSchema),
+      fetchCollection("/transactions?limit=5000", token, transactionListSchema),
     ])
 
-    return buildFinancialSummarySnapshot(customers, tickets)
+    return buildFinancialSummarySnapshot({
+      customers,
+      tickets,
+      transactions,
+    })
   } catch {
     return null
   }
