@@ -24,7 +24,11 @@ import os
 import sys
 from typing import Any
 
+from dotenv import load_dotenv
 from google import genai
+
+
+load_dotenv()
 
 
 # Free-tier model families observed in Google's official rate-limits docs

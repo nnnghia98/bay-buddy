@@ -46,7 +46,7 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 
 - **Style**: Follow PEP 8 strictly. Use Type Hints for all parameters and return types.
 - **Concurrency**: Use `async def` for all route handlers and IO-bound operations.
-- **AI Logic**: All flight parsing must be handled in `services/ai_agent.py` using the **Gemini 2.5 Flash** SDK. The model supports multimodal input: it can process raw bytes from uploaded images (JPEG, PNG, WebP) and PDF documents directly, in addition to plain text.
+- **AI Logic**: All flight parsing must be handled in `services/ai_agent.py` using the Google GenAI SDK. Choose the most suitable Gemini model available at implementation time based on current availability, cost, latency, and multimodal support. The selected model must support processing raw bytes from uploaded images (JPEG, PNG, WebP) and PDF documents directly, in addition to plain text.
 - **Financial Integrity**: Invoice and quote APIs must use snapshot fields so issued documents remain unchanged even if live `customer` or `ticket` data is edited later.
 - **Invoice Rules**: Invoice numbers use `BB-YYYYMM-XXXX`; quotes use `BQ-YYYYMM-XXXX`. Once an invoice reaches `ISSUED` or `PAID`, its editable fields become read-only.
 - **Audit Trail**: Every transaction mutation must preserve `created_by`, and optional payment proof should be stored in `evidence_url` when available.
@@ -109,6 +109,6 @@ When tasked with "Parsing a ticket":
 
 1. Interrogate `docs/AGENT_PARSER.md` for the latest prompt engineering strategies.
 2. The Frontend sends a `multipart/form-data` request with the uploaded file (image/PDF) to `POST /api/v1/ai/parse`.
-3. The Backend reads the raw file bytes and submits them directly to **Gemini 2.5 Flash** using the GenAI SDK's multimodal part format.
-4. Gemini 2.5 Flash uses the system prompt from `AGENT_PARSER.md` (including visual instructions for logos, QR codes, and price tables) to extract structured JSON.
+3. The Backend reads the raw file bytes and submits them directly to the most suitable currently available Gemini model using the GenAI SDK's multimodal part format.
+4. The selected Gemini model uses the system prompt from `AGENT_PARSER.md` (including visual instructions for logos, QR codes, and price tables) to extract structured JSON.
 5. Ensure the returned data passes both the Backend Pydantic validation and the Frontend Zod validation before allowing a database commit.
