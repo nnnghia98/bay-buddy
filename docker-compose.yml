@@ -4,9 +4,9 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
     environment:
-      DATABASE_URL: sqlite:////app/data/bay_buddy.db
-      FRONTEND_URL: http://localhost:6769
-      SECRET_KEY: change-this-in-production-minimum-32-chars
+      DATABASE_URL: ${DATABASE_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      SECRET_KEY: ${SECRET_KEY:-change-this-in-production-minimum-32-chars}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     ports:
       - "6768:6768"
