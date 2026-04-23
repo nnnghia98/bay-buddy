@@ -177,7 +177,7 @@ export default function CustomersPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                Tiền dư / đặt cọc
+                Tiền dư / Đặt cọc
               </p>
               <p className="mt-3 text-3xl font-medium tracking-[-0.02em] text-foreground">
                 {formatCurrency(directoryStats.credit)}
@@ -271,8 +271,15 @@ export default function CustomersPage() {
                           : "text-foreground",
                     )}
                   >
-                    <div className="inline-flex items-center gap-2">
-                      <span>{formatCurrency(customer.current_balance)}</span>
+                    <div className="inline-flex items-center justify-end gap-2">
+                      {customer.current_balance < 0 ? (
+                        <span className="rounded-full border border-primary/15 bg-accent px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+                          Tiền dư / Đặt cọc
+                        </span>
+                      ) : null}
+                      <span>
+                        {formatCurrency(Math.abs(customer.current_balance))}
+                      </span>
                       <ArrowRight className="h-4 w-4 text-muted-foreground" />
                     </div>
                   </TableCell>

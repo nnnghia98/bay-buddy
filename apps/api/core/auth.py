@@ -13,6 +13,7 @@ from sqlmodel import select
 
 from database import SessionDep
 from models import User
+from models.enums import UserRole
 from services.auth import (  # noqa: F401 - re-exported for route and service imports
     create_access_token,
     decode_access_token,
@@ -65,6 +66,18 @@ async def get_current_user(
         )
 
     return user
+
+
+def require_user_roles(current_user: User, *allowed_roles: UserRole) -> User:
+    """Ensure the authenticated user belongs to one of the allowed roles."""
+
+    if current_user.role not in allowed_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions",
+        )
+
+    return current_user
 
 
 # ---------------------------------------------------------------------------

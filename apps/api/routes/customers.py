@@ -3,7 +3,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, status
 from sqlmodel import select
 
-from core.auth import CurrentUserDep
+from core.auth import CurrentUserDep, require_user_roles
 from core.responses import success_response
 from database import SessionDep
 from models.customer import (
@@ -13,6 +13,7 @@ from models.customer import (
     CustomerRead,
     CustomerUpdate,
 )
+from models.enums import UserRole
 from services.finance_service import (
     RecordPaymentPayload,
     get_customer_ledger,
@@ -26,6 +27,7 @@ async def create_customer(
     *, session: SessionDep, current_user: CurrentUserDep, customer_in: CustomerCreate
 ):
     """Create a new customer."""
+    require_user_roles(current_user, UserRole.ADMIN, UserRole.STAFF)
     db_customer = Customer.model_validate(customer_in)
     session.add(db_customer)
     session.commit()
@@ -72,7 +74,7 @@ async def update_customer(
     current_user: CurrentUserDep,
 ):
     """Partially update a customer and enforce unique email/tax code constraints."""
-    del current_user
+    require_user_roles(current_user, UserRole.ADMIN, UserRole.STAFF)
 
     customer = session.get(Customer, customer_id)
     if not customer:
@@ -140,6 +142,7 @@ async def record_customer_payment(
     current_user: CurrentUserDep,
 ):
     """Record a manual payment for a customer and reduce their balance."""
+    require_user_roles(current_user, UserRole.ADMIN, UserRole.STAFF)
     result = record_payment(
         customer_id=customer_id,
         amount=payload.amount,

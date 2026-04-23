@@ -17,6 +17,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import create_db_and_tables
+from runtime_env_logging import log_runtime_environment_summary
 
 load_dotenv()
 
@@ -68,6 +69,8 @@ async def on_startup() -> None:
     """
     # Import models so SQLModel collects table metadata before create_all.
     import models  # noqa: F401
+
+    log_runtime_environment_summary(os.environ)
 
     if os.getenv("DATABASE_URL", "").startswith("sqlite") or not os.getenv(
         "DATABASE_URL"

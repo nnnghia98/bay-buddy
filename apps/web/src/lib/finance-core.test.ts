@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   applyOptimisticPaymentToLedger,
   applyTransactionToBalance,
+  cloneLedgerState,
   buildInvoiceSnapshot,
   calculateInvoiceTotal,
   calculateServiceFee,
@@ -193,6 +194,47 @@ describe("finance-core", () => {
       running_balance: 0,
     })
     expect(nextLedger.balance_state).toBe("settled")
+  })
+
+  it("clones a confirmed ledger snapshot so rollback can restore a fresh baseline", () => {
+    const ledger: FinanceLedgerState = {
+      current_balance: 500_000,
+      balance_state: "debt",
+      entries: [
+        {
+          id: "ticket-1",
+          entry_type: "ticket",
+          created_at: new Date("2026-04-10T09:00:00.000Z"),
+          content: "ABC123",
+          amount: 500_000,
+          running_balance: 500_000,
+        },
+      ],
+    }
+
+    const clonedLedger = cloneLedgerState({
+      ...ledger,
+      customer: {
+        id: "customer-1",
+        name: "Cong ty Bay Buddy",
+        type: "INDIVIDUAL",
+        balance: 500_000,
+      },
+    })
+
+    expect(clonedLedger).toEqual({
+      ...ledger,
+      customer: {
+        id: "customer-1",
+        name: "Cong ty Bay Buddy",
+        type: "INDIVIDUAL",
+        balance: 500_000,
+      },
+    })
+    expect(clonedLedger.customer).not.toBe(ledger.customer)
+    expect(clonedLedger.entries).not.toBe(ledger.entries)
+    expect(clonedLedger.entries[0]).not.toBe(ledger.entries[0])
+    expect(clonedLedger.entries[0].created_at).not.toBe(ledger.entries[0].created_at)
   })
 
   it("calculates commission as the markup between selling price and net price", () => {

@@ -1,4 +1,4 @@
-import type { BalanceState } from "@/schemas/customer"
+import type { BalanceState, CustomerLedger } from "@/schemas/customer"
 import type { TransactionCategory } from "@/schemas/enums"
 
 export type FinanceLedgerEntry = {
@@ -187,6 +187,19 @@ export function applyOptimisticPaymentToLedger<TLedger extends FinanceLedgerStat
   }
 
   return rebuildLedger(ledger, [...ledger.entries, optimisticEntry])
+}
+
+export function cloneLedgerState(ledger: CustomerLedger): CustomerLedger {
+  return {
+    ...ledger,
+    customer: {
+      ...ledger.customer,
+    },
+    entries: ledger.entries.map((entry) => ({
+      ...entry,
+      created_at: new Date(entry.created_at),
+    })),
+  }
 }
 
 export function calculateInvoiceTotal(

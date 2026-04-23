@@ -28,7 +28,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { convert_number_to_vn_words } from "@/lib/number-to-vn-words"
-import { applyOptimisticPaymentToLedger } from "@/lib/finance-core"
+import {
+  applyOptimisticPaymentToLedger,
+  cloneLedgerState,
+} from "@/lib/finance-core"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
 import type { CustomerLedger } from "@/schemas"
@@ -99,16 +102,16 @@ export function CustomerLedgerClient({
     [customerId],
   )
   const [confirmedLedger, setConfirmedLedger] = React.useState<CustomerLedger>(
-    initialLedger ?? emptyLedger,
+    () => cloneLedgerState(initialLedger ?? emptyLedger),
   )
 
   React.useEffect(() => {
     if (initialLedger) {
-      setConfirmedLedger(initialLedger)
+      setConfirmedLedger(cloneLedgerState(initialLedger))
       return
     }
 
-    setConfirmedLedger(emptyLedger)
+    setConfirmedLedger(cloneLedgerState(emptyLedger))
   }, [emptyLedger, initialLedger])
 
   const [optimisticLedger, addOptimisticPayment] = React.useOptimistic<
@@ -130,10 +133,7 @@ export function CustomerLedgerClient({
 
   const handleActionSettled = React.useCallback((status: "success" | "error") => {
     if (status === "error") {
-      setConfirmedLedger((currentLedger) => ({
-        ...currentLedger,
-        entries: [...currentLedger.entries],
-      }))
+      setConfirmedLedger((currentLedger) => cloneLedgerState(currentLedger))
     }
   }, [])
 

@@ -27,7 +27,7 @@ from fastapi import HTTPException, status
 from pydantic import BaseModel, Field, model_validator
 from sqlmodel import Session, select
 
-from models.customer import Customer
+from models.customer import Customer, CustomerRead
 from models.enums import (
     Airline,
     CustomerType,
@@ -37,7 +37,7 @@ from models.enums import (
     get_transaction_balance_delta,
 )
 from models.ticket import Ticket, TicketRead
-from models.transaction import Transaction
+from models.transaction import Transaction, TransactionRead
 
 logger = logging.getLogger(__name__)
 
@@ -144,9 +144,117 @@ class TicketConfirmResponse(BaseModel):
     is_new_customer: bool
 
 
-# ---------------------------------------------------------------------------
-# Service function
-# ---------------------------------------------------------------------------
+class TicketVoidResponse(BaseModel):
+    """Composite response returned after voiding a confirmed ticket."""
+
+    ticket: TicketRead
+    customer: CustomerRead
+    transaction: TransactionRead
+    customer_new_balance: float
+
+
+class TicketRefundPayload(BaseModel):
+    """Payload for partial or full ticket refunds."""
+
+    amount: float = Field(gt=0, description="Refund amount in VND.")
+
+
+class TicketRefundResponse(BaseModel):
+    """Composite response returned after refunding a confirmed ticket."""
+
+    ticket: TicketRead
+    customer: CustomerRead
+    transaction: TransactionRead
+    customer_new_balance: float
+
+
+class TicketReassignPayload(BaseModel):
+    """Payload for moving a confirmed ticket to another customer."""
+
+    new_customer_id: uuid.UUID = Field(description="UUID of the target customer.")
+
+
+class TicketReassignResponse(BaseModel):
+    """Composite response returned after reassigning a confirmed ticket."""
+
+    ticket: TicketRead
+    old_customer: CustomerRead
+    new_customer: CustomerRead
+    reversal_transaction: TransactionRead
+    transfer_transaction: TransactionRead
+    old_customer_new_balance: float
+    new_customer_new_balance: float
+
+
+def _get_ticket_or_404(*, session: Session, ticket_id: uuid.UUID) -> Ticket:
+    ticket = session.get(Ticket, ticket_id)
+    if ticket is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Ticket not found",
+        )
+    return ticket
+
+
+def _get_customer_or_404(*, session: Session, customer_id: uuid.UUID) -> Customer:
+    customer = session.get(Customer, customer_id)
+    if customer is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer not found",
+        )
+    return customer
+
+
+def _get_confirmed_ticket_charge(*, session: Session, ticket: Ticket) -> Transaction:
+    statement = select(Transaction).where(
+        Transaction.customer_id == ticket.customer_id,
+        Transaction.linked_ticket_id == ticket.id,
+        Transaction.category == TransactionCategory.TICKET_PURCHASE,
+    )
+    transaction = session.exec(statement).first()
+    if transaction is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Confirmed ticket is missing its linked purchase transaction.",
+        )
+    if transaction.is_invoiced or transaction.invoice_id is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Confirmed ticket is locked by an issued invoice.",
+        )
+    return transaction
+
+
+def _prepare_ticket_for_lifecycle_change(
+    *,
+    session: Session,
+    ticket: Ticket,
+) -> Transaction:
+    if ticket.status != TicketStatus.CONFIRMED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Only confirmed tickets can use lifecycle actions.",
+        )
+
+    purchase_transaction = _get_confirmed_ticket_charge(session=session, ticket=ticket)
+    purchase_transaction.linked_ticket_id = None
+    session.add(purchase_transaction)
+    return purchase_transaction
+
+
+def _build_lifecycle_note(
+    *,
+    action: str,
+    ticket: Ticket,
+    actor_user_id: uuid.UUID,
+    suffix: str | None = None,
+) -> str:
+    base = f"{action} ticket {ticket.pnr} ({ticket.itinerary}) by user {actor_user_id}"
+    if suffix:
+        return f"{base} - {suffix}"
+    return base
+
 
 def create_ticket_with_transaction(
     payload: TicketConfirmPayload,
@@ -165,20 +273,8 @@ def create_ticket_with_transaction(
        both the customer and the ticket.
     5. Increment customer.balance by selling_price.
     6. Single atomic commit; refresh and return a structured response.
-
-    Args
-    ----
-    actor_user_id:
-        UUID of the authenticated user extracted from the JWT via `get_current_user`.
-        Used for audit context on ticket confirmation writes.
-
-    Raises
-    ------
-    HTTPException 400  If a ticket with the same PNR already exists.
-    HTTPException 422  If the pricing formula is violated (validated by the schema).
     """
 
-    # ── 1. Customer resolution ───────────────────────────────────────────────
     customer_name_normalised = payload.customer_name.strip()
 
     statement = select(Customer).where(
@@ -188,7 +284,6 @@ def create_ticket_with_transaction(
     is_new_customer = customer is None
 
     if customer is None:
-        print(f"[ticket_service] New customer '{customer_name_normalised}' – creating record.")
         logger.info("New customer '%s' – creating record.", customer_name_normalised)
         customer = Customer(
             name=customer_name_normalised,
@@ -196,15 +291,11 @@ def create_ticket_with_transaction(
             balance=0.0,
         )
         session.add(customer)
-        # Flush so customer.id is populated before we reference it in FKs.
         session.flush()
-        print(f"[ticket_service] Customer created with id={customer.id}")
         logger.info("Customer created with id=%s", customer.id)
     else:
-        print(f"[ticket_service] Found existing customer '{customer.name}' id={customer.id}")
         logger.info("Found existing customer '%s' id=%s", customer.name, customer.id)
 
-    # ── 2. Duplicate PNR guard ───────────────────────────────────────────────
     existing_ticket = session.exec(
         select(Ticket).where(Ticket.pnr == payload.pnr)
     ).first()
@@ -215,11 +306,7 @@ def create_ticket_with_transaction(
             detail=f"A ticket with PNR '{payload.pnr}' already exists in the system.",
         )
 
-    # ── 3. Create Ticket (CONFIRMED) ─────────────────────────────────────────
-    selling_price = payload.selling_price  # guaranteed non-None by the validator
-
-    print(f"[ticket_service] Creating ticket PNR={payload.pnr} selling_price={selling_price}")
-    logger.info("Creating ticket PNR=%s selling_price=%s", payload.pnr, selling_price)
+    selling_price = payload.selling_price
 
     ticket = Ticket(
         pnr=payload.pnr,
@@ -233,16 +320,7 @@ def create_ticket_with_transaction(
         customer_id=customer.id,
     )
     session.add(ticket)
-    # Flush so ticket.id is populated before the Transaction FK references it.
     session.flush()
-    print(f"[ticket_service] Ticket flushed with id={ticket.id}")
-    logger.info("Ticket flushed with id=%s", ticket.id)
-
-    # ── 4. Create CHARGE Transaction ─────────────────────────────────────────
-    # BUSINESS.md §3: Every CONFIRMED ticket is a debt entry (CHARGE type).
-    # TransactionType.CHARGE → customer.balance += amount (see transaction.py header).
-    print(f"[ticket_service] Creating transaction for ticket {ticket.pnr} (amount={selling_price})...")
-    logger.info("Creating transaction for ticket %s (amount=%s)...", ticket.pnr, selling_price)
 
     new_transaction = Transaction(
         amount=selling_price,
@@ -258,26 +336,18 @@ def create_ticket_with_transaction(
         created_by=actor_user_id,
     )
     session.add(new_transaction)
-    print(f"[ticket_service] Transaction added to session: id={new_transaction.id}")
-    logger.info("Transaction added to session: id=%s", new_transaction.id)
 
-    # ── 5. Update customer balance ───────────────────────────────────────────
-    # BUSINESS.md §3: Current Balance = Total Debt – Total Paid
-    # Adding a debt (CHARGE) increases the balance (positive = customer owes).
     customer.balance += get_transaction_balance_delta(
         amount=selling_price,
         transaction_category=new_transaction.category,
     )
     session.add(customer)
-    print(f"[ticket_service] Customer balance updated to {customer.balance}")
-    logger.info("Customer '%s' balance updated to %s", customer.name, customer.balance)
 
-    # ── 6. Atomic commit ─────────────────────────────────────────────────────
-    print(f"[ticket_service] Committing atomic transaction (ticket + transaction + balance)...")
-    logger.info("Committing atomic transaction (ticket + transaction + balance)...")
-    session.commit()
-    print(f"[ticket_service] Commit successful.")
-    logger.info("Commit successful.")
+    try:
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
 
     session.refresh(ticket)
     session.refresh(new_transaction)
@@ -290,4 +360,214 @@ def create_ticket_with_transaction(
         customer_name=customer.name,
         customer_new_balance=customer.balance,
         is_new_customer=is_new_customer,
+    )
+
+
+def void_confirmed_ticket(
+    *,
+    session: Session,
+    ticket_id: uuid.UUID,
+    actor_user_id: uuid.UUID,
+) -> TicketVoidResponse:
+    """Void a confirmed ticket and reverse its debt in the same transaction."""
+
+    ticket = _get_ticket_or_404(session=session, ticket_id=ticket_id)
+    customer = _get_customer_or_404(session=session, customer_id=ticket.customer_id)
+
+    try:
+        _prepare_ticket_for_lifecycle_change(session=session, ticket=ticket)
+
+        reversal = Transaction(
+            amount=ticket.selling_price,
+            type=TransactionType.PAYMENT,
+            category=TransactionCategory.DISCOUNT,
+            method="Ticket lifecycle",
+            note=_build_lifecycle_note(
+                action="VOID",
+                ticket=ticket,
+                actor_user_id=actor_user_id,
+            ),
+            customer_id=customer.id,
+            linked_ticket_id=ticket.id,
+            created_by=actor_user_id,
+        )
+        session.add(reversal)
+
+        customer.balance += get_transaction_balance_delta(
+            amount=ticket.selling_price,
+            transaction_category=reversal.category,
+        )
+        ticket.status = TicketStatus.VOID
+        session.add(ticket)
+        session.add(customer)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    session.refresh(ticket)
+    session.refresh(customer)
+    session.refresh(reversal)
+
+    return TicketVoidResponse(
+        ticket=TicketRead.model_validate(ticket),
+        customer=CustomerRead.model_validate(customer),
+        transaction=TransactionRead.model_validate(reversal),
+        customer_new_balance=customer.balance,
+    )
+
+
+def refund_confirmed_ticket(
+    *,
+    session: Session,
+    ticket_id: uuid.UUID,
+    payload: TicketRefundPayload,
+    actor_user_id: uuid.UUID,
+) -> TicketRefundResponse:
+    """Record a credit-style adjustment for a partial or full refund."""
+
+    ticket = _get_ticket_or_404(session=session, ticket_id=ticket_id)
+    customer = _get_customer_or_404(session=session, customer_id=ticket.customer_id)
+
+    if payload.amount > ticket.selling_price:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Refund amount cannot exceed the ticket selling price.",
+        )
+
+    try:
+        _prepare_ticket_for_lifecycle_change(session=session, ticket=ticket)
+
+        refund_transaction = Transaction(
+            amount=payload.amount,
+            type=TransactionType.PAYMENT,
+            category=TransactionCategory.DISCOUNT,
+            method="Ticket lifecycle",
+            note=_build_lifecycle_note(
+                action="REFUND",
+                ticket=ticket,
+                actor_user_id=actor_user_id,
+                suffix=f"refund amount {payload.amount}",
+            ),
+            customer_id=customer.id,
+            linked_ticket_id=ticket.id,
+            created_by=actor_user_id,
+        )
+        session.add(refund_transaction)
+
+        customer.balance += get_transaction_balance_delta(
+            amount=payload.amount,
+            transaction_category=refund_transaction.category,
+        )
+        ticket.status = TicketStatus.REFUNDED
+        session.add(ticket)
+        session.add(customer)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    session.refresh(ticket)
+    session.refresh(customer)
+    session.refresh(refund_transaction)
+
+    return TicketRefundResponse(
+        ticket=TicketRead.model_validate(ticket),
+        customer=CustomerRead.model_validate(customer),
+        transaction=TransactionRead.model_validate(refund_transaction),
+        customer_new_balance=customer.balance,
+    )
+
+
+def reassign_confirmed_ticket(
+    *,
+    session: Session,
+    ticket_id: uuid.UUID,
+    payload: TicketReassignPayload,
+    actor_user_id: uuid.UUID,
+) -> TicketReassignResponse:
+    """Move a confirmed ticket to another customer and rebalance both ledgers."""
+
+    ticket = _get_ticket_or_404(session=session, ticket_id=ticket_id)
+    old_customer = _get_customer_or_404(session=session, customer_id=ticket.customer_id)
+    new_customer = _get_customer_or_404(session=session, customer_id=payload.new_customer_id)
+
+    if old_customer.id == new_customer.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ticket is already assigned to this customer.",
+        )
+
+    try:
+        purchase_transaction = _prepare_ticket_for_lifecycle_change(
+            session=session,
+            ticket=ticket,
+        )
+
+        reversal = Transaction(
+            amount=ticket.selling_price,
+            type=TransactionType.PAYMENT,
+            category=TransactionCategory.DISCOUNT,
+            method="Ticket lifecycle",
+            note=_build_lifecycle_note(
+                action="REASSIGN",
+                ticket=ticket,
+                actor_user_id=actor_user_id,
+                suffix=f"from {old_customer.name} to {new_customer.name}",
+            ),
+            customer_id=old_customer.id,
+            linked_ticket_id=ticket.id,
+            created_by=actor_user_id,
+        )
+        transfer = Transaction(
+            amount=ticket.selling_price,
+            type=TransactionType.CHARGE,
+            category=TransactionCategory.TICKET_PURCHASE,
+            method="Ticket lifecycle",
+            note=_build_lifecycle_note(
+                action="REASSIGN",
+                ticket=ticket,
+                actor_user_id=actor_user_id,
+                suffix=f"from {old_customer.name} to {new_customer.name}",
+            ),
+            customer_id=new_customer.id,
+            linked_ticket_id=ticket.id,
+            created_by=actor_user_id,
+        )
+        session.add(reversal)
+        session.add(transfer)
+
+        old_customer.balance += get_transaction_balance_delta(
+            amount=ticket.selling_price,
+            transaction_category=reversal.category,
+        )
+        new_customer.balance += get_transaction_balance_delta(
+            amount=ticket.selling_price,
+            transaction_category=transfer.category,
+        )
+        ticket.customer_id = new_customer.id
+        session.add(ticket)
+        session.add(old_customer)
+        session.add(new_customer)
+        session.add(purchase_transaction)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    session.refresh(ticket)
+    session.refresh(old_customer)
+    session.refresh(new_customer)
+    session.refresh(purchase_transaction)
+    session.refresh(reversal)
+    session.refresh(transfer)
+
+    return TicketReassignResponse(
+        ticket=TicketRead.model_validate(ticket),
+        old_customer=CustomerRead.model_validate(old_customer),
+        new_customer=CustomerRead.model_validate(new_customer),
+        reversal_transaction=TransactionRead.model_validate(reversal),
+        transfer_transaction=TransactionRead.model_validate(transfer),
+        old_customer_new_balance=old_customer.balance,
+        new_customer_new_balance=new_customer.balance,
     )
