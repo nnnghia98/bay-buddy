@@ -11,14 +11,14 @@ RUN apt-get update \
 
 RUN pip install --no-cache-dir "poetry==$POETRY_VERSION"
 
-COPY apps/api/pyproject.toml apps/api/poetry.lock ./
+COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create false \
     && poetry install --only main --no-interaction --no-ansi
 
-COPY apps/api ./
+COPY . ./
 
 RUN mkdir -p /app/data
 
 EXPOSE 6768
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "6768"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-6768}"]
