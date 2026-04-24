@@ -26,6 +26,24 @@ export type TopDebtor = {
   status: "high" | "medium"
 }
 
+export type DashboardActionQueue = {
+  key: "receivables" | "heldCredit" | "draftTickets"
+  count: number
+  amount: number
+  href: string
+  severity: "high" | "medium" | "low"
+}
+
+export type DashboardRecentActivity = {
+  id: string
+  type: "ticket" | "payment" | "adjustment" | "refund"
+  category?: TransactionRead["category"]
+  title: string
+  amount: number
+  createdAt: Date
+  href: string
+}
+
 export type FinancialSummarySnapshot = {
   totalRevenue: number
   totalNetProfit: number
@@ -39,6 +57,8 @@ export type FinancialSummarySnapshot = {
   receivablesRatioPercent: number
   revenueTrend: RevenueTrendPoint[]
   topDebtors: TopDebtor[]
+  actionQueues: DashboardActionQueue[]
+  recentActivity: DashboardRecentActivity[]
   updatedAt: string
 }
 
@@ -130,6 +150,153 @@ function buildTopDebtors(
     }))
 }
 
+function getQueueSeverity(amount: number): DashboardActionQueue["severity"] {
+  if (amount >= 10_000_000) {
+    return "high"
+  }
+
+  if (amount > 0) {
+    return "medium"
+  }
+
+  return "low"
+}
+
+function buildActionQueues(input: {
+  customers: readonly CustomerDirectoryItem[]
+  tickets: readonly TicketRead[]
+}): DashboardActionQueue[] {
+  const receivableCustomers = input.customers.filter(
+    (customer) => customer.current_balance > 0,
+  )
+  const creditCustomers = input.customers.filter(
+    (customer) => customer.current_balance < 0,
+  )
+  const draftTickets = input.tickets.filter((ticket) => ticket.status === "DRAFT")
+  const totalReceivables = receivableCustomers.reduce(
+    (sum, customer) => sum + customer.current_balance,
+    0,
+  )
+  const totalHeldCredit = creditCustomers.reduce(
+    (sum, customer) => sum + Math.abs(customer.current_balance),
+    0,
+  )
+  const draftTicketAmount = draftTickets.reduce(
+    (sum, ticket) => sum + ticket.selling_price,
+    0,
+  )
+
+  return [
+    {
+      key: "receivables",
+      count: receivableCustomers.length,
+      amount: totalReceivables,
+      href: "/customers",
+      severity: getQueueSeverity(totalReceivables),
+    },
+    {
+      key: "heldCredit",
+      count: creditCustomers.length,
+      amount: totalHeldCredit,
+      href: "/customers",
+      severity: getQueueSeverity(totalHeldCredit),
+    },
+    {
+      key: "draftTickets",
+      count: draftTickets.length,
+      amount: draftTicketAmount,
+      href: "/tickets/capture",
+      severity: getQueueSeverity(draftTicketAmount),
+    },
+  ]
+}
+
+function getTransactionActivityAmount(transaction: TransactionRead): number {
+  if (
+    transaction.category === "PAYMENT" ||
+    transaction.category === "DISCOUNT"
+  ) {
+    return -transaction.amount
+  }
+
+  return transaction.amount
+}
+
+function getTransactionActivityType(
+  transaction: TransactionRead,
+): DashboardRecentActivity["type"] {
+  if (transaction.category === "REFUND") {
+    return "refund"
+  }
+
+  if (transaction.category === "PAYMENT") {
+    return "payment"
+  }
+
+  if (
+    transaction.category === "DISCOUNT" ||
+    transaction.category === "ADDITIONAL_FEE"
+  ) {
+    return "adjustment"
+  }
+
+  return "ticket"
+}
+
+function buildRecentActivity(input: {
+  tickets: readonly TicketRead[]
+  transactions: readonly TransactionRead[]
+}): DashboardRecentActivity[] {
+  const ticketPurchaseTimestampByTicketId = new Map<string, Date>()
+
+  for (const transaction of input.transactions) {
+    if (
+      transaction.category !== "TICKET_PURCHASE" ||
+      !transaction.linked_ticket_id
+    ) {
+      continue
+    }
+
+    const existingTimestamp = ticketPurchaseTimestampByTicketId.get(
+      transaction.linked_ticket_id,
+    )
+
+    if (!existingTimestamp || existingTimestamp < transaction.created_at) {
+      ticketPurchaseTimestampByTicketId.set(
+        transaction.linked_ticket_id,
+        transaction.created_at,
+      )
+    }
+  }
+
+  const ticketActivity: DashboardRecentActivity[] = input.tickets
+    .filter((ticket) => ticket.status === "CONFIRMED")
+    .map((ticket) => ({
+      id: ticket.id,
+      type: "ticket",
+      title: `${ticket.pnr} - ${ticket.itinerary}`,
+      amount: ticket.selling_price,
+      createdAt:
+        ticketPurchaseTimestampByTicketId.get(ticket.id) ?? ticket.flight_date,
+      href: `/customers/${ticket.customer_id}`,
+    }))
+  const transactionActivity: DashboardRecentActivity[] = input.transactions.map(
+    (transaction) => ({
+      id: transaction.id,
+      type: getTransactionActivityType(transaction),
+      category: transaction.category,
+      title: transaction.note?.trim() ?? "",
+      amount: getTransactionActivityAmount(transaction),
+      createdAt: transaction.created_at,
+      href: `/customers/${transaction.customer_id}`,
+    }),
+  )
+
+  return [...ticketActivity, ...transactionActivity]
+    .toSorted((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+    .slice(0, 8)
+}
+
 export function buildFinancialSummarySnapshot(input: {
   customers: readonly CustomerDirectoryItem[]
   tickets: readonly TicketRead[]
@@ -178,6 +345,8 @@ export function buildFinancialSummarySnapshot(input: {
       totalRevenue > 0 ? (totalReceivables / totalRevenue) * 100 : 0,
     revenueTrend: buildRevenueTrend(input.transactions),
     topDebtors: buildTopDebtors(input.customers),
+    actionQueues: buildActionQueues(input),
+    recentActivity: buildRecentActivity(input),
     updatedAt: new Date().toISOString(),
   }
 }

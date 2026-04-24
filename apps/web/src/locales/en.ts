@@ -16,6 +16,76 @@ export default {
         sourceLabel: "Data source",
         sourceValue: "Ledger + confirmed tickets",
       },
+      commandCenter: {
+        title: "Today command center",
+        description:
+          "Track receivables, tickets, payments, and the next work that needs attention.",
+        needsAction: {
+          eyebrow: "Needs action",
+          title: "Work queues",
+          description:
+            "Work groups that directly affect debt tracking and operations.",
+        },
+        queues: {
+          receivables: {
+            label: "Customers with debt",
+            description: "Prioritize payment follow-up or reconciliation.",
+          },
+          heldCredit: {
+            label: "Credit / deposit held",
+            description: "Track negative balances to hold or refund.",
+          },
+          draftTickets: {
+            label: "Draft tickets",
+            description: "Confirm tickets to create debt entries.",
+          },
+        },
+        queueAmounts: {
+          receivables: "Outstanding balance",
+          heldCredit: "Held amount",
+          draftTickets: "Draft ticket value",
+        },
+        shortcuts: {
+          eyebrow: "Quick actions",
+          title: "Open workflow",
+          customers: {
+            label: "Open customers",
+            description: "Find a customer and inspect their ledger.",
+          },
+          tickets: {
+            label: "Capture ticket",
+            description: "Upload a document and parse it with AI.",
+          },
+          invoices: {
+            label: "Invoices",
+            description: "Review financial documents by customer.",
+          },
+        },
+        recent: {
+          eyebrow: "Latest",
+          title: "Recent activity",
+          description: "The newest tickets and ledger transactions.",
+          columns: {
+            activity: "Activity",
+            amount: "Amount",
+            time: "Time",
+          },
+          empty: "No recent activity yet.",
+          types: {
+            ticket: "Ticket",
+            payment: "Payment",
+            adjustment: "Adjustment",
+            refund: "Refund",
+          },
+          fallbacks: {
+            ticketPurchase: "Recorded ticket",
+            payment: "Payment",
+            discount: "Discount",
+            additionalFee: "Additional fee",
+            refund: "Refund",
+          },
+        },
+      },
       widgets: {
         revenue: {
           label: "Total revenue",

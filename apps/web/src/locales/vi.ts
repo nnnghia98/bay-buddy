@@ -16,6 +16,76 @@ export default {
         sourceLabel: "Nguồn dữ liệu",
         sourceValue: "Ledger + vé xác nhận",
       },
+      commandCenter: {
+        title: "Trung tâm vận hành hôm nay",
+        description:
+          "Theo dõi công nợ, vé, thanh toán và các việc cần xử lý tiếp theo.",
+        needsAction: {
+          eyebrow: "Cần xử lý",
+          title: "Hàng đợi công việc",
+          description:
+            "Các nhóm việc có tác động trực tiếp đến công nợ và vận hành.",
+        },
+        queues: {
+          receivables: {
+            label: "Khách còn nợ",
+            description: "Ưu tiên nhắc thanh toán hoặc đối soát.",
+          },
+          heldCredit: {
+            label: "Tiền dư / đặt cọc",
+            description: "Theo dõi số dư âm cần giữ hoặc hoàn lại.",
+          },
+          draftTickets: {
+            label: "Vé nháp",
+            description: "Hoàn tất xác nhận để ghi nhận công nợ.",
+          },
+        },
+        queueAmounts: {
+          receivables: "Số dư phải thu",
+          heldCredit: "Số tiền đang giữ",
+          draftTickets: "Giá trị vé nháp",
+        },
+        shortcuts: {
+          eyebrow: "Thao tác nhanh",
+          title: "Mở luồng làm việc",
+          customers: {
+            label: "Mở khách hàng",
+            description: "Tìm khách và kiểm tra sổ công nợ.",
+          },
+          tickets: {
+            label: "Nhập vé",
+            description: "Tải chứng từ và trích xuất bằng AI.",
+          },
+          invoices: {
+            label: "Hóa đơn",
+            description: "Xem tài liệu tài chính theo khách hàng.",
+          },
+        },
+        recent: {
+          eyebrow: "Mới nhất",
+          title: "Hoạt động gần đây",
+          description: "Vé và giao dịch mới nhất trong hệ thống.",
+          columns: {
+            activity: "Hoạt động",
+            amount: "Số tiền",
+            time: "Thời gian",
+          },
+          empty: "Chưa có hoạt động gần đây.",
+          types: {
+            ticket: "Vé",
+            payment: "Thanh toán",
+            adjustment: "Điều chỉnh",
+            refund: "Hoàn tiền",
+          },
+          fallbacks: {
+            ticketPurchase: "Vé đã ghi nhận",
+            payment: "Thanh toán",
+            discount: "Chiết khấu",
+            additionalFee: "Phụ thu",
+            refund: "Hoàn tiền",
+          },
+        },
+      },
       widgets: {
         revenue: {
           label: "Tổng doanh thu",
