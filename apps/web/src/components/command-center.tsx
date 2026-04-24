@@ -1,5 +1,5 @@
 import Link from "next/link"
-import type { ComponentType, ReactNode } from "react"
+import type { ComponentPropsWithoutRef, ComponentType, ReactNode } from "react"
 import type { LucideProps } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -9,16 +9,15 @@ type IconComponent = ComponentType<LucideProps>
 export function CommandPanel({
   children,
   className,
-}: {
-  children: ReactNode
-  className?: string
-}) {
+  ...props
+}: ComponentPropsWithoutRef<"section">) {
   return (
     <section
       className={cn(
         "overflow-hidden rounded-lg border border-border bg-white",
         className,
       )}
+      {...props}
     >
       {children}
     </section>
@@ -28,11 +27,13 @@ export function CommandPanel({
 export function CommandPanelHeader({
   eyebrow,
   title,
+  titleId,
   description,
   action,
 }: {
   eyebrow?: string
   title: string
+  titleId?: string
   description?: string
   action?: ReactNode
 }) {
@@ -44,7 +45,10 @@ export function CommandPanelHeader({
             {eyebrow}
           </p>
         ) : null}
-        <h2 className="text-lg font-medium tracking-[-0.02em] text-foreground">
+        <h2
+          className="text-lg font-medium tracking-[-0.02em] text-foreground"
+          id={titleId}
+        >
           {title}
         </h2>
         {description ? (
@@ -88,16 +92,21 @@ export function CommandActionLink({
   icon: Icon,
   label,
   description,
-}: {
-  href: string
+  className,
+  ...props
+}: Omit<ComponentPropsWithoutRef<typeof Link>, "children"> & {
   icon: IconComponent
   label: string
   description: string
 }) {
   return (
     <Link
-      className="group flex items-start gap-3 rounded-lg border border-border bg-white px-4 py-3 transition-colors duration-200 hover:border-primary/30 hover:bg-accent/45"
+      className={cn(
+        "group flex items-start gap-3 rounded-lg border border-border bg-white px-4 py-3 transition-colors duration-200 hover:border-primary/30 hover:bg-accent/45",
+        className,
+      )}
       href={href}
+      {...props}
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-secondary text-primary transition-colors duration-200 group-hover:border-primary/25 group-hover:bg-white">
         <Icon className="h-4 w-4" aria-hidden="true" />
