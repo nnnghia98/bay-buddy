@@ -1,10 +1,9 @@
 import Link from "next/link"
-import type { ComponentPropsWithoutRef, ComponentType, ReactNode } from "react"
-import type { LucideProps } from "lucide-react"
+import type { ComponentPropsWithoutRef, ComponentType, SVGProps, ReactNode } from "react"
 
 import { cn } from "@/lib/utils"
 
-type IconComponent = ComponentType<LucideProps>
+type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
 
 export function CommandPanel({
   children,
