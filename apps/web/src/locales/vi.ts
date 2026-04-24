@@ -40,6 +40,11 @@ export default {
             description: "Hoàn tất xác nhận để ghi nhận công nợ.",
           },
         },
+        queueAmounts: {
+          receivables: "Số dư phải thu",
+          heldCredit: "Số tiền đang giữ",
+          draftTickets: "Giá trị vé nháp",
+        },
         shortcuts: {
           eyebrow: "Thao tác nhanh",
           title: "Mở luồng làm việc",
@@ -70,6 +75,13 @@ export default {
             ticket: "Vé",
             payment: "Thanh toán",
             adjustment: "Điều chỉnh",
+          },
+          fallbacks: {
+            ticketPurchase: "Vé đã ghi nhận",
+            payment: "Thanh toán",
+            discount: "Chiết khấu",
+            additionalFee: "Phụ thu",
+            refund: "Hoàn tiền",
           },
         },
       },

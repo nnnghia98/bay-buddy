@@ -37,6 +37,7 @@ export type DashboardActionQueue = {
 export type DashboardRecentActivity = {
   id: string
   type: "ticket" | "payment" | "adjustment"
+  category?: TransactionRead["category"]
   title: string
   amount: number
   createdAt: Date
@@ -257,7 +258,8 @@ function buildRecentActivity(input: {
     (transaction) => ({
       id: transaction.id,
       type: getTransactionActivityType(transaction),
-      title: transaction.note?.trim() || transaction.category,
+      category: transaction.category,
+      title: transaction.note?.trim() ?? "",
       amount: getTransactionActivityAmount(transaction),
       createdAt: transaction.created_at,
       href: `/customers/${transaction.customer_id}`,

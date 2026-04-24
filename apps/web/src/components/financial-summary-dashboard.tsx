@@ -150,6 +150,20 @@ export function FinancialSummaryDashboard({
     return t("dashboard.summary.commandCenter.queues.receivables.description")
   }
 
+  const getQueueAmountCaption = (
+    key: FinancialSummarySnapshot["actionQueues"][number]["key"],
+  ): string => {
+    if (key === "heldCredit") {
+      return t("dashboard.summary.commandCenter.queueAmounts.heldCredit")
+    }
+
+    if (key === "draftTickets") {
+      return t("dashboard.summary.commandCenter.queueAmounts.draftTickets")
+    }
+
+    return t("dashboard.summary.commandCenter.queueAmounts.receivables")
+  }
+
   const getActivityTypeLabel = (
     type: FinancialSummarySnapshot["recentActivity"][number]["type"],
   ): string => {
@@ -162,6 +176,34 @@ export function FinancialSummaryDashboard({
     }
 
     return t("dashboard.summary.commandCenter.recent.types.payment")
+  }
+
+  const getActivityTitle = (
+    activity: FinancialSummarySnapshot["recentActivity"][number],
+  ): string => {
+    const title = activity.title.trim()
+
+    if (title) {
+      return title
+    }
+
+    if (activity.category === "PAYMENT") {
+      return t("dashboard.summary.commandCenter.recent.fallbacks.payment")
+    }
+
+    if (activity.category === "DISCOUNT") {
+      return t("dashboard.summary.commandCenter.recent.fallbacks.discount")
+    }
+
+    if (activity.category === "ADDITIONAL_FEE") {
+      return t("dashboard.summary.commandCenter.recent.fallbacks.additionalFee")
+    }
+
+    if (activity.category === "REFUND") {
+      return t("dashboard.summary.commandCenter.recent.fallbacks.refund")
+    }
+
+    return t("dashboard.summary.commandCenter.recent.fallbacks.ticketPurchase")
   }
 
   const primaryWidgets = [
@@ -301,7 +343,7 @@ export function FinancialSummaryDashboard({
                     {formatCurrency(queue.amount)}
                   </span>
                   <span className="mt-1 block text-xs text-muted-foreground">
-                    {t("dashboard.summary.analytics.topDebtors.balanceLabel")}
+                    {getQueueAmountCaption(queue.key)}
                   </span>
                 </span>
               </Link>
@@ -435,7 +477,7 @@ export function FinancialSummaryDashboard({
                           {getActivityTypeLabel(activity.type)}
                         </StatusChip>
                         <span className="truncate text-sm font-medium text-foreground group-hover:text-primary">
-                          {activity.title}
+                          {getActivityTitle(activity)}
                         </span>
                       </Link>
                     </TableCell>

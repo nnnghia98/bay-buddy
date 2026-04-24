@@ -40,6 +40,11 @@ export default {
             description: "Confirm tickets to create debt entries.",
           },
         },
+        queueAmounts: {
+          receivables: "Outstanding balance",
+          heldCredit: "Held amount",
+          draftTickets: "Draft ticket value",
+        },
         shortcuts: {
           eyebrow: "Quick actions",
           title: "Open workflow",
@@ -70,6 +75,13 @@ export default {
             ticket: "Ticket",
             payment: "Payment",
             adjustment: "Adjustment",
+          },
+          fallbacks: {
+            ticketPurchase: "Recorded ticket",
+            payment: "Payment",
+            discount: "Discount",
+            additionalFee: "Additional fee",
+            refund: "Refund",
           },
         },
       },

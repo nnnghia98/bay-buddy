@@ -144,4 +144,25 @@ describe("buildFinancialSummarySnapshot command center fields", () => {
       href: "/tickets/capture",
     })
   })
+
+  it("keeps blank transaction notes separate from category fallback metadata", () => {
+    const snapshot = buildFinancialSummarySnapshot({
+      customers: [customerA],
+      tickets: [],
+      transactions: [
+        {
+          ...transactions[0],
+          id: "99999999-9999-4999-8999-999999999999",
+          note: "   ",
+        },
+      ],
+    })
+
+    expect(snapshot.recentActivity[0]).toMatchObject({
+      id: "99999999-9999-4999-8999-999999999999",
+      type: "ticket",
+      category: "TICKET_PURCHASE",
+      title: "",
+    })
+  })
 })
