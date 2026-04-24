@@ -43,4 +43,5 @@ Thumbs.db
 .agents/
 .claude/
 .codex/
+.superpowers/
 skills-lock.json
