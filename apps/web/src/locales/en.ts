@@ -75,6 +75,7 @@ export default {
             ticket: "Ticket",
             payment: "Payment",
             adjustment: "Adjustment",
+            refund: "Refund",
           },
           fallbacks: {
             ticketPurchase: "Recorded ticket",

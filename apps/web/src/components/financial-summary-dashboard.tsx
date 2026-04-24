@@ -85,9 +85,13 @@ function getQueueTone(
 
 function getActivityTone(
   type: FinancialSummarySnapshot["recentActivity"][number]["type"],
-): "neutral" | "info" | "warning" {
+): "neutral" | "info" | "warning" | "danger" {
   if (type === "ticket") {
     return "info"
+  }
+
+  if (type === "refund") {
+    return "danger"
   }
 
   if (type === "adjustment") {
@@ -173,6 +177,10 @@ export function FinancialSummaryDashboard({
 
     if (type === "adjustment") {
       return t("dashboard.summary.commandCenter.recent.types.adjustment")
+    }
+
+    if (type === "refund") {
+      return t("dashboard.summary.commandCenter.recent.types.refund")
     }
 
     return t("dashboard.summary.commandCenter.recent.types.payment")

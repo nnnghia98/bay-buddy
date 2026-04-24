@@ -75,6 +75,7 @@ export default {
             ticket: "Vé",
             payment: "Thanh toán",
             adjustment: "Điều chỉnh",
+            refund: "Hoàn tiền",
           },
           fallbacks: {
             ticketPurchase: "Vé đã ghi nhận",

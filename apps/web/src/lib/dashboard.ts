@@ -36,7 +36,7 @@ export type DashboardActionQueue = {
 
 export type DashboardRecentActivity = {
   id: string
-  type: "ticket" | "payment" | "adjustment"
+  type: "ticket" | "payment" | "adjustment" | "refund"
   category?: TransactionRead["category"]
   title: string
   amount: number
@@ -225,7 +225,11 @@ function getTransactionActivityAmount(transaction: TransactionRead): number {
 function getTransactionActivityType(
   transaction: TransactionRead,
 ): DashboardRecentActivity["type"] {
-  if (transaction.category === "PAYMENT" || transaction.category === "REFUND") {
+  if (transaction.category === "REFUND") {
+    return "refund"
+  }
+
+  if (transaction.category === "PAYMENT") {
     return "payment"
   }
 
@@ -243,17 +247,39 @@ function buildRecentActivity(input: {
   tickets: readonly TicketRead[]
   transactions: readonly TransactionRead[]
 }): DashboardRecentActivity[] {
-  const ticketActivity: DashboardRecentActivity[] = input.tickets.map((ticket) => ({
-    id: ticket.id,
-    type: "ticket",
-    title: `${ticket.pnr} - ${ticket.itinerary}`,
-    amount: ticket.selling_price,
-    createdAt: ticket.flight_date,
-    href:
-      ticket.status === "DRAFT"
-        ? "/tickets/capture"
-        : `/customers/${ticket.customer_id}`,
-  }))
+  const ticketPurchaseTimestampByTicketId = new Map<string, Date>()
+
+  for (const transaction of input.transactions) {
+    if (
+      transaction.category !== "TICKET_PURCHASE" ||
+      !transaction.linked_ticket_id
+    ) {
+      continue
+    }
+
+    const existingTimestamp = ticketPurchaseTimestampByTicketId.get(
+      transaction.linked_ticket_id,
+    )
+
+    if (!existingTimestamp || existingTimestamp < transaction.created_at) {
+      ticketPurchaseTimestampByTicketId.set(
+        transaction.linked_ticket_id,
+        transaction.created_at,
+      )
+    }
+  }
+
+  const ticketActivity: DashboardRecentActivity[] = input.tickets
+    .filter((ticket) => ticket.status === "CONFIRMED")
+    .map((ticket) => ({
+      id: ticket.id,
+      type: "ticket",
+      title: `${ticket.pnr} - ${ticket.itinerary}`,
+      amount: ticket.selling_price,
+      createdAt:
+        ticketPurchaseTimestampByTicketId.get(ticket.id) ?? ticket.flight_date,
+      href: `/customers/${ticket.customer_id}`,
+    }))
   const transactionActivity: DashboardRecentActivity[] = input.transactions.map(
     (transaction) => ({
       id: transaction.id,

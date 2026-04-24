@@ -54,6 +54,20 @@ const ticketB: TicketRead = {
   customer_id: customerC.id,
 }
 
+const ticketC: TicketRead = {
+  id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  pnr: "LMN456",
+  airline: "QH",
+  passengers: ["LE THI C"],
+  itinerary: "DAD-SGN",
+  flight_date: new Date("2026-04-23T02:00:00.000Z"),
+  net_price: 700_000,
+  selling_price: 900_000,
+  service_fee: 200_000,
+  status: "REFUNDED",
+  customer_id: customerA.id,
+}
+
 const transactions: TransactionRead[] = [
   {
     id: "66666666-6666-4666-8666-666666666666",
@@ -121,27 +135,26 @@ describe("buildFinancialSummarySnapshot command center fields", () => {
   it("builds recent activity sorted newest first", () => {
     const snapshot = buildFinancialSummarySnapshot({
       customers: [customerA, customerB, customerC],
-      tickets: [ticketA, ticketB],
+      tickets: [ticketA, ticketB, ticketC],
       transactions,
     })
 
     expect(snapshot.recentActivity.map((item) => item.id)).toEqual([
-      "55555555-5555-4555-8555-555555555555",
       "88888888-8888-4888-8888-888888888888",
-      "66666666-6666-4666-8666-666666666666",
       "44444444-4444-4444-8444-444444444444",
+      "66666666-6666-4666-8666-666666666666",
     ])
-    expect(snapshot.recentActivity[1]).toMatchObject({
+    expect(snapshot.recentActivity[0]).toMatchObject({
       type: "payment",
       title: "Customer transferred deposit",
       amount: -500_000,
       href: `/customers/${customerB.id}`,
     })
-    expect(snapshot.recentActivity[0]).toMatchObject({
+    expect(snapshot.recentActivity[1]).toMatchObject({
       type: "ticket",
-      title: "XYZ789 - SGN-DAD",
-      amount: 950_000,
-      href: "/tickets/capture",
+      title: "ABC123 - HAN-SGN",
+      amount: 1_250_000,
+      href: `/customers/${customerA.id}`,
     })
   })
 
@@ -162,6 +175,33 @@ describe("buildFinancialSummarySnapshot command center fields", () => {
       id: "99999999-9999-4999-8999-999999999999",
       type: "ticket",
       category: "TICKET_PURCHASE",
+      title: "",
+    })
+  })
+
+  it("models outbound refunds separately from inbound payments", () => {
+    const snapshot = buildFinancialSummarySnapshot({
+      customers: [customerA],
+      tickets: [ticketA],
+      transactions: [
+        {
+          ...transactions[0],
+          id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          category: "REFUND",
+          type: "REFUND",
+          amount: 300_000,
+          note: "",
+          linked_ticket_id: ticketA.id,
+          created_at: new Date("2026-04-24T06:00:00.000Z"),
+        },
+      ],
+    })
+
+    expect(snapshot.recentActivity[0]).toMatchObject({
+      id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      type: "refund",
+      category: "REFUND",
+      amount: 300_000,
       title: "",
     })
   })
