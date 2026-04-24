@@ -126,18 +126,18 @@ describe("buildFinancialSummarySnapshot command center fields", () => {
     })
 
     expect(snapshot.recentActivity.map((item) => item.id)).toEqual([
+      "55555555-5555-4555-8555-555555555555",
       "88888888-8888-4888-8888-888888888888",
       "66666666-6666-4666-8666-666666666666",
-      "55555555-5555-4555-8555-555555555555",
       "44444444-4444-4444-8444-444444444444",
     ])
-    expect(snapshot.recentActivity[0]).toMatchObject({
+    expect(snapshot.recentActivity[1]).toMatchObject({
       type: "payment",
       title: "Customer transferred deposit",
       amount: -500_000,
       href: `/customers/${customerB.id}`,
     })
-    expect(snapshot.recentActivity[2]).toMatchObject({
+    expect(snapshot.recentActivity[0]).toMatchObject({
       type: "ticket",
       title: "XYZ789 - SGN-DAD",
       amount: 950_000,

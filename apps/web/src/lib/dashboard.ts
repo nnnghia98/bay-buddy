@@ -264,14 +264,9 @@ function buildRecentActivity(input: {
     }),
   )
 
-  return [
-    ...transactionActivity.toSorted(
-      (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
-    ),
-    ...ticketActivity.toSorted(
-      (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
-    ),
-  ].slice(0, 8)
+  return [...ticketActivity, ...transactionActivity]
+    .toSorted((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+    .slice(0, 8)
 }
 
 export function buildFinancialSummarySnapshot(input: {
