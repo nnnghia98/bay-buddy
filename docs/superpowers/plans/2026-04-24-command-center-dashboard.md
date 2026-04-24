@@ -198,7 +198,7 @@ describe("buildFinancialSummarySnapshot command center fields", () => {
 Run:
 
 ```bash
-yarn --cwd apps/web test apps/web/src/lib/dashboard.test.ts
+yarn --cwd apps/web test src/lib/dashboard.test.ts
 ```
 
 Expected: FAIL because `actionQueues` and `recentActivity` do not exist on `FinancialSummarySnapshot`.
@@ -384,7 +384,7 @@ Add these properties to the `return` object in `buildFinancialSummarySnapshot`:
 Run:
 
 ```bash
-yarn --cwd apps/web test apps/web/src/lib/dashboard.test.ts
+yarn --cwd apps/web test src/lib/dashboard.test.ts
 ```
 
 Expected: PASS.
@@ -1099,7 +1099,7 @@ git commit -m "feat(web): rework dashboard as command center"
 Run:
 
 ```bash
-yarn --cwd apps/web test apps/web/src/lib/dashboard.test.ts apps/web/src/lib/finance-core.test.ts
+yarn --cwd apps/web test src/lib/dashboard.test.ts src/lib/finance-core.test.ts
 ```
 
 Expected: PASS.
