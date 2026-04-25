@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
@@ -81,43 +82,19 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen px-4 py-8 text-foreground sm:px-6 lg:px-8">
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl items-center justify-center">
-        <div className="grid w-full overflow-hidden rounded-[32px] border border-border bg-white shadow-[var(--shadow-xl),var(--theme-shadow-soft)] sm:grid-cols-[1.08fr_0.92fr]">
-          <div className="relative overflow-hidden border-b border-border bg-[linear-gradient(180deg,#ffffff_0%,#f3f7fc_100%)] px-8 py-10 sm:border-b-0 sm:border-r sm:px-10 sm:py-12">
-            <div className="absolute right-[-5rem] top-[-4rem] h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-            <div className="absolute bottom-[-6rem] left-[-4rem] h-56 w-56 rounded-full bg-accent blur-3xl" />
-
-            <div className="relative flex h-full flex-col justify-between gap-10">
-              <div className="space-y-5">
-                <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-primary shadow-[var(--shadow-sm)]">
-                  Bay Buddy
-                </div>
-                <div className="space-y-4">
-                  <h1 className="max-w-lg text-4xl font-medium leading-[1.08] tracking-[-0.03em] text-foreground sm:text-5xl">
-                    Đăng nhập để tiếp tục quy trình nhập vé và ghi nhận công nợ.
-                  </h1>
-                  <p className="max-w-xl text-base leading-7 text-muted-foreground">
-                    Giao diện vận hành được thiết kế cho đội ngũ Bay Buddy: nhập chứng từ nhanh,
-                    kiểm tra dữ liệu trích xuất và lưu giao dịch với xác thực JWT đầy đủ.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid gap-3 text-sm text-foreground sm:max-w-lg">
-                <div className="rounded-[20px] border border-border bg-white px-4 py-4 shadow-[var(--shadow-sm)]">
-                  Xác thực nhân sự trước mọi thao tác ghi dữ liệu vào tickets, customers và finance.
-                </div>
-                <div className="rounded-[20px] border border-border bg-white px-4 py-4 shadow-[var(--shadow-sm)]">
-                  Truy cập trực tiếp vào màn hình nhập vé AI sau khi đăng nhập thành công.
-                </div>
-                <div className="rounded-[20px] border border-border bg-white px-4 py-4 shadow-[var(--shadow-sm)]">
-                  Phù hợp cho luồng công việc khách hàng, vé máy bay và sổ công nợ theo chuẩn App Router.
-                </div>
-              </div>
-            </div>
-          </div>
-
+        <div className="w-full max-w-2xl overflow-hidden rounded-[32px] border border-border bg-white shadow-[var(--shadow-xl),var(--theme-shadow-soft)]">
           <div className="px-8 py-10 sm:px-10 sm:py-12">
             <div className="mb-8 space-y-2">
+              <div className="inline-flex items-center rounded-[18px] border border-border bg-white p-2 shadow-[var(--shadow-sm)]">
+                <Image
+                  alt="Bay Buddy logo"
+                  className="h-14 w-auto"
+                  height={820}
+                  priority
+                  src="/branding/logo-bay-buddy-v1-crop.png"
+                  width={1020}
+                />
+              </div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
                 Tài khoản nội bộ
               </p>

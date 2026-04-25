@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
@@ -260,10 +261,16 @@ export function AppShell({ children }: AppShellProps) {
       >
         <div className="flex h-full flex-col">
           <div className="border-b border-border px-2 pb-4">
-            <p className="text-lg font-medium tracking-[-0.02em] text-foreground">Bay Buddy</p>
-            <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-              Hệ điều hành nội bộ
-            </p>
+            <div className="rounded-[18px] border border-border bg-white px-3 py-3 shadow-[var(--shadow-sm)]">
+              <Image
+                alt="Bay Buddy"
+                className="h-16 w-auto"
+                height={820}
+                priority
+                src="/branding/logo-bay-buddy-v1-crop.png"
+                width={1020}
+              />
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto py-4">
             <ShellNavigation onNavigate={() => setIsSidebarOpen(false)} pathname={pathname} />
@@ -293,13 +300,21 @@ export function AppShell({ children }: AppShellProps) {
               </SheetTrigger>
               <SheetContent className="bg-background p-0" side="left">
                 <div className="flex h-full flex-col bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(248,250,252,0.98)_100%)]">
-                  <SheetHeader className="border-b border-border px-6 py-6">
-                    <SheetTitle>Bay Buddy</SheetTitle>
-                    <SheetDescription>
-                      Điều hành khách hàng, vé máy bay và công nợ theo một luồng làm việc thống nhất.
+                  <SheetHeader className="border-b border-border px-5 py-5">
+                    <SheetTitle className="rounded-[18px] border border-border bg-white px-3 py-3 shadow-[var(--shadow-sm)]">
+                      <Image
+                        alt="Bay Buddy"
+                        className="h-12 w-auto"
+                        height={820}
+                        priority
+                        src="/branding/logo-bay-buddy-v1-crop.png"
+                        width={1020}
+                      />
+                    </SheetTitle>
+                    <SheetDescription className="px-1 pt-2 text-left">
+                      Điều phối khách hàng, nhận vé và ghi nhận công nợ trong một luồng thống nhất.
                     </SheetDescription>
                   </SheetHeader>
-
                   <div className="flex-1 overflow-y-auto px-4 py-5">
                     <ShellNavigation
                       onNavigate={() => setIsSidebarOpen(false)}
