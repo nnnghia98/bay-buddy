@@ -9,7 +9,6 @@ import {
   FileText,
   Home,
   Menu,
-  Search,
   Settings,
   Ticket,
   Users,
@@ -26,6 +25,12 @@ import {
 } from "@/components/ui/sheet"
 import { apiFetchData } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
+import {
+  getAuthenticatedContentOffsetClassName,
+  getAuthenticatedMainClassName,
+  getAuthenticatedSidebarClassName,
+  getPageHeaderClassName,
+} from "@/lib/authenticated-layout"
 import {
   isUnauthorizedSessionError,
   shouldRenderAuthenticatedShell,
@@ -247,57 +252,34 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="min-h-full bg-background text-foreground">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-80 flex-col border-r border-sidebar-border bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(248,250,252,0.98)_100%)] px-5 py-5 lg:flex">
-        <div className="rounded-[24px] border border-border bg-white p-5 shadow-[var(--shadow-sm)]">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-primary text-lg font-semibold text-white shadow-[var(--shadow-md)]">
-              BB
-            </div>
-            <div>
-              <p className="text-lg font-medium tracking-[-0.02em] text-foreground">
-                Bay Buddy
-              </p>
-              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-                Hệ điều hành nội bộ
-              </p>
-            </div>
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 hidden border-r border-sidebar-border bg-[#f6f8fb] px-4 py-4 lg:block",
+          getAuthenticatedSidebarClassName(),
+        )}
+      >
+        <div className="flex h-full flex-col">
+          <div className="border-b border-border px-2 pb-4">
+            <p className="text-lg font-medium tracking-[-0.02em] text-foreground">Bay Buddy</p>
+            <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+              Hệ điều hành nội bộ
+            </p>
           </div>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">
-            Điều phối khách hàng, nhập vé và theo dõi công nợ trên cùng một giao diện vận hành.
-          </p>
-        </div>
-
-        <div className="mt-6 rounded-[24px] border border-border bg-sidebar p-4 shadow-[var(--shadow-sm)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-            Điều hướng
-          </p>
-          <div className="mt-4">
-            <ShellNavigation
-              onNavigate={() => setIsSidebarOpen(false)}
-              pathname={pathname}
-            />
+          <div className="flex-1 overflow-y-auto py-4">
+            <ShellNavigation onNavigate={() => setIsSidebarOpen(false)} pathname={pathname} />
           </div>
-        </div>
-
-        <div className="mt-auto rounded-[24px] border border-border bg-white p-4 shadow-[var(--shadow-sm)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-            Tài khoản
-          </p>
-          <div className="mt-3 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-accent text-sm font-semibold text-primary">
-              {getInitials(userName)}
-            </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">{userName}</p>
-              <p className="text-sm text-muted-foreground">{userRole}</p>
-            </div>
+          <div className="border-t border-border px-2 pt-4">
+            <p className="text-sm font-medium text-foreground">{userName}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+              {userRole}
+            </p>
           </div>
         </div>
       </aside>
 
-      <div className="lg:pl-80">
-        <header className="sticky top-0 z-30 border-b border-border/80 bg-white/85 backdrop-blur-xl">
-          <div className="flex min-h-20 items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
+      <div className={getAuthenticatedContentOffsetClassName()}>
+        <header className={cn("sticky top-0 z-30", getPageHeaderClassName())}>
+          <div className="flex min-h-14 items-center gap-3 px-4 py-3 sm:px-6 lg:px-7">
             <Sheet onOpenChange={setIsSidebarOpen} open={isSidebarOpen}>
               <SheetTrigger asChild>
                 <Button
@@ -351,21 +333,11 @@ export function AppShell({ children }: AppShellProps) {
                   </React.Fragment>
                 ))}
               </nav>
-              <p className="mt-2 hidden text-sm text-muted-foreground md:block">
-                Nền tảng làm việc cho vé máy bay, khách hàng và sổ công nợ.
-              </p>
             </div>
 
-            <button
-              className="hidden items-center gap-3 rounded-[12px] border border-border bg-white px-3.5 py-2.5 text-sm text-muted-foreground shadow-[var(--shadow-sm)] transition-all duration-200 hover:border-primary/20 hover:text-foreground md:flex"
-              type="button"
-            >
-              <Search className="h-4 w-4" strokeWidth={2} />
-              <span>Tìm nhanh</span>
-              <span className="rounded-[8px] border border-border px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#75839a]">
-                Cmd+K
-              </span>
-            </button>
+            <Button className="hidden md:inline-flex" size="sm" type="button" variant="outline">
+              Tìm nhanh
+            </Button>
 
             <details className="group relative">
               <summary className="flex cursor-pointer list-none items-center gap-3 rounded-[16px] border border-border bg-white px-3 py-2 shadow-[var(--shadow-sm)] transition-all duration-200 hover:border-primary/20">
@@ -398,8 +370,8 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        <main className="min-h-[calc(100vh-5rem)] px-4 py-6 sm:px-6 lg:px-8">
-          <div className="mx-auto w-full max-w-[1440px]">{children}</div>
+        <main className="min-h-[calc(100vh-3.5rem)]">
+          <div className={getAuthenticatedMainClassName()}>{children}</div>
         </main>
       </div>
     </div>

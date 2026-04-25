@@ -32,6 +32,7 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 - **Auth**: JWT (OAuth2PasswordBearer) with bcrypt password hashing.
 - **Deployment**: Standalone Docker image (Frontend) & Uvicorn (Backend).
 - **Frontend Standard**: `react-best-practices` is now part of the DNA. Follow Vercel's latest Next.js App Router recommendations by default.
+- **UI Skill Standard**: For any UI, layout, styling, dashboard, form, table, or design-system task, the agent MUST also use the local `frontend-design` skill in `.agents/skills/frontend-design/SKILL.md` together with the Bay Buddy DNA.
 
 ## 💻 Coding Standards
 

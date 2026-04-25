@@ -10,11 +10,11 @@ export default {
       analyticsAriaLabel: "Biểu đồ doanh thu và danh sách khách nợ nhiều nhất",
       unavailableTitle: "Chưa tải được tổng quan tài chính",
       unavailableDescription:
-        "Không thể đọc dữ liệu customers hoặc tickets lúc này. Vui lòng thử lại sau khi kết nối API ổn định.",
+        "Không thể đọc dữ liệu khách hàng hoặc vé lúc này. Vui lòng thử lại sau khi kết nối API ổn định.",
       snapshot: {
         label: "Cập nhật lúc",
         sourceLabel: "Nguồn dữ liệu",
-        sourceValue: "Ledger + vé xác nhận",
+        sourceValue: "Sổ công nợ + vé đã xác nhận",
       },
       commandCenter: {
         title: "Trung tâm vận hành hôm nay",
@@ -120,7 +120,7 @@ export default {
       },
       analytics: {
         revenueTrend: {
-          eyebrow: "Revenue Trend",
+          eyebrow: "Xu hướng doanh thu",
           title: "Đà tăng doanh thu 30 ngày gần nhất",
           description:
             "Nhóm theo ngày từ các giao dịch ledger tăng doanh thu để theo dõi nhịp tăng trưởng gần đây.",
@@ -133,7 +133,7 @@ export default {
           },
         },
         topDebtors: {
-          eyebrow: "Who Owes Me",
+          eyebrow: "Khách còn nợ",
           title: "Top khách hàng còn nợ nhiều nhất",
           description:
             "5 khách có số dư công nợ cao nhất dựa trên chênh lệch tổng phát sinh nợ và thanh toán.",
@@ -152,11 +152,28 @@ export default {
     },
   },
   customers: {
+    directory: {
+      eyebrow: "Danh mục khách hàng",
+      title: "Theo dõi khách hàng và sổ công nợ theo một bảng điều hành gọn gàng.",
+      description:
+        "Tìm nhanh theo tên hoặc số điện thoại, xem trạng thái công nợ hiện tại và mở trực tiếp từng sổ chi tiết.",
+      searchPlaceholder: "Tìm theo tên hoặc số điện thoại",
+      metrics: {
+        totalCustomers: "Tổng khách hàng",
+      },
+      columns: {
+        phone: "Số điện thoại",
+      },
+      loading: "Đang tải danh sách khách hàng...",
+      error: "Không thể tải danh sách khách hàng lúc này.",
+      empty: "Không tìm thấy khách hàng phù hợp.",
+    },
     ledger: {
       eyebrow: "Sổ công nợ",
       back: "Quay lại danh sách khách hàng",
       customerId: "Mã khách hàng",
       currentBalance: "Tổng nợ hiện tại",
+      entryCount: "Số dòng phát sinh",
       amountInWords: "Số tiền bằng chữ",
       tableTitle: "Lịch sử công nợ",
       tableDescription:
@@ -166,8 +183,14 @@ export default {
         settled: "Đã tất toán",
         credit: "Tiền dư / Đặt cọc",
       },
+      entryTypes: {
+        ticket: "Vé",
+        payment: "Thanh toán",
+        adjustment: "Điều chỉnh",
+      },
       columns: {
         date: "Ngày",
+        type: "Loại",
         content: "Nội dung",
         amount: "Phát sinh",
         balance: "Số dư",
@@ -189,14 +212,30 @@ export default {
         success: "Đã ghi nhận thanh toán.",
         error: "Không thể ghi nhận thanh toán.",
         amountPlaceholder: "Chưa nhập số tiền",
+        validation: {
+          customerIdInvalid: "Mã khách hàng không hợp lệ.",
+          amountPositive: "Số tiền phải lớn hơn 0.",
+          methodRequired: "Vui lòng chọn loại thanh toán.",
+          noteRequired: "Vui lòng nhập ghi chú.",
+          noteMax: "Ghi chú không được vượt quá 2000 ký tự.",
+          evidenceUrlInvalid: "Ảnh biên lai phải là một đường dẫn hợp lệ.",
+          evidenceUrlMax: "Ảnh biên lai không được vượt quá 2048 ký tự.",
+          linkedTicketInvalid: "Vé liên kết không hợp lệ.",
+        },
         fields: {
           amount: "Số tiền",
+          amountInputPlaceholder: "1.000.000",
           method: "Loại thanh toán",
+          methodOptions: {
+            bankTransfer: "Chuyển khoản",
+            cash: "Tiền mặt",
+          },
           note: "Ghi chú",
           notePlaceholder: "Ví dụ: Khách chuyển khoản BIDV lúc 09:15",
           evidence: "Ảnh biên lai",
+          evidencePlaceholder: "https://...",
           evidenceHint:
-            "Hiện hỗ trợ nhập URL ảnh biên lai. Tải file trực tiếp sẽ bổ sung sau.",
+            "Hiện hỗ trợ nhập liên kết ảnh biên lai. Tải file trực tiếp sẽ bổ sung sau.",
           evidenceEmpty: "Chưa có biên lai đính kèm.",
           evidenceReady: "Đã thêm URL biên lai.",
           linkedTicket: "Đối soát đích danh",
@@ -208,6 +247,14 @@ export default {
         description:
           "Mở danh sách hóa đơn được lọc theo khách hàng này để xem bản chi tiết hoặc bản in công khai.",
         open: "Xem hóa đơn",
+      },
+    },
+    actions: {
+      recordPayment: {
+        invalidInput: "Vui lòng kiểm tra lại thông tin thanh toán.",
+        missingAuth: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+        failure: "Không thể ghi nhận thanh toán lúc này.",
+        success: "Đã ghi nhận thanh toán thành công.",
       },
     },
   },

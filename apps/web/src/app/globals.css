@@ -2,8 +2,10 @@
 @import "tailwindcss";
 
 :root {
+  --theme-app-canvas: #f4f7fa;
+  --theme-app-canvas-highlight: #f7f9fc;
   --theme-canvas: #ffffff;
-  --theme-surface-soft: #f8fafc;
+  --theme-surface-soft: #f6f8fb;
   --theme-surface-muted: #f3f7fc;
   --theme-ink: #181d26;
   --theme-ink-weak: rgba(4, 14, 32, 0.69);
@@ -12,6 +14,7 @@
   --theme-blue-strong: #254fad;
   --theme-blue-soft: #edf5ff;
   --theme-border: #e0e2e6;
+  --theme-panel-border-strong: #cfd9e4;
   --theme-success: #006400;
   --theme-danger: #d53b3b;
   --theme-shadow-blue:
@@ -21,7 +24,7 @@
     rgba(0, 0, 0, 0.06) 0px 0px 0px 0.5px inset;
   --theme-shadow-soft: rgba(15, 48, 106, 0.05) 0px 0px 20px;
 
-  --background: #ffffff;
+  --background: var(--theme-canvas);
   --foreground: var(--theme-ink);
   --card: #ffffff;
   --card-foreground: var(--theme-ink);
@@ -37,7 +40,7 @@
   --accent-foreground: var(--theme-blue-strong);
   --destructive: var(--theme-danger);
   --border: var(--theme-border);
-  --input: #dfe3eb;
+  --input: var(--theme-panel-border-strong);
   --ring: var(--theme-blue);
   --chart-1: var(--theme-blue);
   --chart-2: #3275dd;
@@ -50,7 +53,7 @@
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #eef4fb;
   --sidebar-accent-foreground: var(--theme-ink);
-  --sidebar-border: var(--theme-border);
+  --sidebar-border: var(--theme-panel-border-strong);
   --sidebar-ring: var(--theme-blue);
 
   --font-sans:
@@ -63,11 +66,13 @@
   --font-geist:
     "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
-  --radius: 0.75rem;
+  --radius: 0.625rem;
 
   --shadow-2xs: var(--theme-shadow-blue);
   --shadow-xs: var(--theme-shadow-blue);
-  --shadow-sm: var(--theme-shadow-blue);
+  --shadow-sm:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.72) inset;
   --shadow: var(--theme-shadow-blue);
   --shadow-md:
     var(--theme-shadow-blue),
@@ -84,6 +89,12 @@
 }
 
 .dark {
+  --theme-app-canvas: #0f1726;
+  --theme-app-canvas-highlight: #172236;
+  --theme-panel-border-strong: rgba(255, 255, 255, 0.18);
+  --shadow-sm:
+    0 1px 2px rgba(0, 0, 0, 0.24),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
   --background: #0f1726;
   --foreground: #f7f9fc;
   --card: #101a2d;
@@ -100,7 +111,7 @@
   --accent-foreground: #d9e8ff;
   --destructive: #ff6868;
   --border: rgba(255, 255, 255, 0.12);
-  --input: rgba(255, 255, 255, 0.16);
+  --input: var(--theme-panel-border-strong);
   --ring: #4f8ef2;
   --chart-1: #7ab0ff;
   --chart-2: #4f8ef2;
@@ -113,7 +124,7 @@
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #172236;
   --sidebar-accent-foreground: #f7f9fc;
-  --sidebar-border: rgba(255, 255, 255, 0.12);
+  --sidebar-border: var(--theme-panel-border-strong);
   --sidebar-ring: #4f8ef2;
 }
 
@@ -134,6 +145,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
+  --color-panel-border-strong: var(--theme-panel-border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
@@ -181,9 +193,11 @@ html {
 body {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(27, 97, 201, 0.1), transparent 26%),
-    radial-gradient(circle at top right, rgba(37, 79, 173, 0.07), transparent 24%),
-    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    linear-gradient(
+      180deg,
+      var(--theme-app-canvas-highlight) 0%,
+      var(--theme-app-canvas) 100%
+    );
   color: var(--foreground);
   font-family: var(--font-sans);
   letter-spacing: 0.12px;

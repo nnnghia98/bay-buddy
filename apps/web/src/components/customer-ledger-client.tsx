@@ -1,24 +1,14 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import {
-  ArrowLeft,
-  Building2,
-  Landmark,
-  Receipt,
-  WalletCards,
-} from "lucide-react"
 
 import { PaymentDialog } from "@/components/payment-dialog"
-import { Button } from "@/components/ui/button"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+  CommandPanel,
+  CommandPanelHeader,
+  StatusChip,
+  TableScrollArea,
+} from "@/components/command-center"
 import {
   Table,
   TableBody,
@@ -66,20 +56,6 @@ function formatDate(value: Date): string {
   const minutes = value.getMinutes().toString().padStart(2, "0")
 
   return `${day}/${month}/${year} ${hours}:${minutes}`
-}
-
-function getEntryTypeLabel(entryType: CustomerLedger["entries"][number]["entry_type"]): string {
-  const labels = {
-    ticket: "Vé",
-    payment: "Thanh toán",
-    adjustment: "Điều chỉnh",
-  } as const
-
-  return labels[entryType]
-}
-
-function getCustomerTypeLabel(type: CustomerLedger["customer"]["type"]): string {
-  return type === "BUSINESS" ? "Doanh nghiệp" : "Cá nhân"
 }
 
 export function CustomerLedgerClient({
@@ -139,16 +115,13 @@ export function CustomerLedgerClient({
 
   if (!initialLedger) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center px-4">
-        <Card className="max-w-md border border-border p-8 text-center">
-          <h1 className="text-2xl font-medium text-foreground">
-            {t("customers.ledger.unavailableTitle")}
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            {t("customers.ledger.unavailableDescription")}
-          </p>
-        </Card>
-      </div>
+      <CommandPanel>
+        <CommandPanelHeader
+          eyebrow={t("customers.ledger.eyebrow")}
+          title={t("customers.ledger.unavailableTitle")}
+          description={t("customers.ledger.unavailableDescription")}
+        />
+      </CommandPanel>
     )
   }
 
@@ -167,166 +140,101 @@ export function CustomerLedgerClient({
     settled: t("customers.ledger.balanceStates.settled"),
     credit: t("customers.ledger.balanceStates.credit"),
   } as const
-  const paymentCount = ledger.entries.filter(
-    (entry) => entry.entry_type === "payment",
-  ).length
-  const ticketCount = ledger.entries.filter(
-    (entry) => entry.entry_type === "ticket",
-  ).length
-  const latestEntry = ledger.entries.at(-1)
-  const overviewCards = [
-    {
-      icon: Receipt,
-      label: "Số vé đã ghi nhận",
-      value: `${ticketCount}`,
-      detail: "Bao gồm toàn bộ vé phát sinh công nợ của khách hàng này.",
-    },
-    {
-      icon: WalletCards,
-      label: "Giao dịch thanh toán",
-      value: `${paymentCount}`,
-      detail: latestEntry ? `Gần nhất: ${formatDate(latestEntry.created_at)}` : "Chưa có phát sinh mới.",
-    },
-    {
-      icon: Building2,
-      label: "Loại khách hàng",
-      value: getCustomerTypeLabel(ledger.customer.type),
-      detail: `${ledger.entries.length} dòng phát sinh trong sổ công nợ.`,
-    },
-  ]
+
+  const getEntryTypeLabel = (
+    entryType: CustomerLedger["entries"][number]["entry_type"],
+  ): string => {
+    if (entryType === "ticket") {
+      return t("customers.ledger.entryTypes.ticket")
+    }
+
+    if (entryType === "adjustment") {
+      return t("customers.ledger.entryTypes.adjustment")
+    }
+
+    return t("customers.ledger.entryTypes.payment")
+  }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 text-foreground">
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-        <Card className="border border-border bg-white">
-          <CardHeader className="gap-5">
-            <div className="inline-flex w-fit items-center rounded-full border border-primary/15 bg-accent/60 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-              {t("customers.ledger.eyebrow")}
-            </div>
-            <div className="space-y-3">
-              <CardTitle className="text-4xl leading-[1.08] sm:text-5xl">
-                {ledger.customer.name}
-              </CardTitle>
-              <CardDescription className="max-w-2xl text-sm leading-7">
-                {t("customers.ledger.customerId")}: {ledger.customer.id}
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="flex flex-wrap gap-3">
-              <div className="rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {getCustomerTypeLabel(ledger.customer.type)}
-              </div>
-              <div className="rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {ledger.entries.length} dòng phát sinh
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <Button asChild variant="outline">
-                <Link href="/customers">
-                  <ArrowLeft className="h-4 w-4" />
-                  {t("customers.ledger.back")}
-                </Link>
-              </Button>
-
-              <PaymentDialog
-                customerId={customerId}
-                onOptimisticSubmit={handleOptimisticSubmit}
-                onSettled={handleActionSettled}
-                ticketOptions={ticketOptions}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden border border-primary/10 bg-[linear-gradient(180deg,#1b61c9_0%,#254fad_100%)] text-primary-foreground">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between gap-4">
-              <CardDescription className="text-sm font-medium text-primary-foreground/82">
-                {t("customers.ledger.currentBalance")}
-              </CardDescription>
-              <Landmark className="h-5 w-5 text-primary-foreground/84" />
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground">
-              {balanceStateLabels[ledger.balance_state]}
-            </span>
-            <p className="mt-4 text-4xl font-medium tracking-[-0.03em] sm:text-5xl">
-              {formatCurrency(Math.abs(ledger.current_balance))}
-            </p>
-            <p className="mt-4 text-sm leading-7 text-primary-foreground/82">
-              {t("customers.ledger.amountInWords")}: {currentBalanceInWords}
-            </p>
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-3">
-        {overviewCards.map((item) => {
-          const Icon = item.icon
-
-          return (
-            <Card key={item.label} className="border border-border bg-white">
-              <CardContent className="flex items-start justify-between gap-4 p-6">
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                    {item.label}
-                  </p>
-                  <p className="text-3xl font-medium tracking-[-0.02em] text-foreground">
-                    {item.value}
-                  </p>
-                  <p className="text-sm leading-6 text-muted-foreground">{item.detail}</p>
-                </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-accent text-primary">
-                  <Icon className="h-5 w-5" />
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </section>
-
-      <Card className="overflow-hidden border border-border bg-white">
-        <CardHeader className="gap-4 border-b border-border bg-secondary/55">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-2">
-              <CardDescription className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                {t("customers.ledger.eyebrow")}
-              </CardDescription>
-              <CardTitle className="text-[2rem] leading-[1.1]">
-                {t("customers.ledger.tableTitle")}
-              </CardTitle>
-              <CardDescription className="max-w-2xl text-sm leading-7">
-                {t("customers.ledger.tableDescription")}
-              </CardDescription>
-            </div>
-            <div className="rounded-[18px] border border-border bg-white px-4 py-3 shadow-[var(--shadow-sm)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+    <div className="space-y-4 text-foreground">
+      <CommandPanel>
+        <CommandPanelHeader
+          eyebrow={t("customers.ledger.eyebrow")}
+          title={ledger.customer.name}
+          description={`${t("customers.ledger.customerId")}: ${ledger.customer.id}`}
+          action={
+            <PaymentDialog
+              customerId={customerId}
+              onOptimisticSubmit={handleOptimisticSubmit}
+              onSettled={handleActionSettled}
+              ticketOptions={ticketOptions}
+            />
+          }
+        />
+        <div className="grid gap-3 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-border bg-secondary/35 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
                 {t("customers.ledger.currentBalance")}
               </p>
-              <p className="mt-2 text-2xl font-medium tracking-[-0.02em] text-foreground">
+              <p className="mt-2 text-2xl font-medium text-foreground">
                 {formatCurrency(Math.abs(ledger.current_balance))}
               </p>
             </div>
+            <div className="rounded-lg border border-border bg-secondary/35 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+                {t("financeDocuments.common.status")}
+              </p>
+              <div className="mt-2">
+                <StatusChip
+                  tone={
+                    ledger.balance_state === "debt"
+                      ? "danger"
+                      : ledger.balance_state === "credit"
+                        ? "info"
+                        : "success"
+                  }
+                >
+                  {balanceStateLabels[ledger.balance_state]}
+                </StatusChip>
+              </div>
+            </div>
+            <div className="rounded-lg border border-border bg-secondary/35 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+                {t("customers.ledger.entryCount")}
+              </p>
+              <p className="mt-2 text-2xl font-medium text-foreground">
+                {ledger.entries.length}
+              </p>
+            </div>
           </div>
-        </CardHeader>
+          <div className="rounded-lg border border-border bg-secondary/35 p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+              {t("customers.ledger.amountInWords")}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-foreground">
+              {currentBalanceInWords}
+            </p>
+          </div>
+        </div>
+      </CommandPanel>
 
-        <CardContent className="p-0">
+      <CommandPanel>
+        <CommandPanelHeader
+          title={t("customers.ledger.tableTitle")}
+          description={t("customers.ledger.tableDescription")}
+        />
+        <TableScrollArea>
           <Table>
             <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="px-6 py-4">
-                  {t("customers.ledger.columns.date")}
-                </TableHead>
-                <TableHead className="px-6 py-4">
-                  {t("customers.ledger.columns.content")}
-                </TableHead>
-                <TableHead className="px-6 py-4 text-right">
+              <TableRow className="bg-secondary/55 hover:bg-secondary/55">
+                <TableHead>{t("customers.ledger.columns.date")}</TableHead>
+                <TableHead>{t("customers.ledger.columns.type")}</TableHead>
+                <TableHead>{t("customers.ledger.columns.content")}</TableHead>
+                <TableHead className="text-right">
                   {t("customers.ledger.columns.amount")}
                 </TableHead>
-                <TableHead className="px-6 py-4 text-right">
+                <TableHead className="text-right">
                   {t("customers.ledger.columns.balance")}
                 </TableHead>
               </TableRow>
@@ -334,28 +242,33 @@ export function CustomerLedgerClient({
             <TableBody>
               {ledger.entries.length === 0 ? (
                 <TableRow>
-                  <TableCell className="py-12 text-center text-muted-foreground" colSpan={4}>
+                  <TableCell className="py-12 text-center text-muted-foreground" colSpan={5}>
                     {t("customers.ledger.empty")}
                   </TableCell>
                 </TableRow>
               ) : (
                 ledger.entries.map((entry) => (
-                  <TableRow
-                    key={entry.id}
-                    className="hover:bg-accent/40"
-                  >
+                  <TableRow key={entry.id} className="hover:bg-accent/40">
                     <TableCell className="whitespace-nowrap px-6 py-5 text-sm text-muted-foreground">
                       {formatDate(entry.created_at)}
                     </TableCell>
                     <TableCell className="px-6 py-5">
-                      <div className="space-y-2">
-                        <p className="font-medium text-foreground">
-                          {entry.content.trim() || t("customers.ledger.fallbackContent")}
-                        </p>
-                        <span className="inline-flex rounded-full border border-border bg-secondary px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          {getEntryTypeLabel(entry.entry_type)}
-                        </span>
-                      </div>
+                      <StatusChip
+                        tone={
+                          entry.entry_type === "ticket"
+                            ? "warning"
+                            : entry.entry_type === "adjustment"
+                              ? "neutral"
+                              : "info"
+                        }
+                      >
+                        {getEntryTypeLabel(entry.entry_type)}
+                      </StatusChip>
+                    </TableCell>
+                    <TableCell className="px-6 py-5">
+                      <p className="font-medium text-foreground">
+                        {entry.content.trim() || t("customers.ledger.fallbackContent")}
+                      </p>
                     </TableCell>
                     <TableCell
                       className={cn(
@@ -377,8 +290,8 @@ export function CustomerLedgerClient({
               )}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+        </TableScrollArea>
+      </CommandPanel>
     </div>
   )
 }

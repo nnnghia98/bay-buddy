@@ -7,7 +7,6 @@ import {
   ReceiptText,
   TrendingUp,
   Users,
-  Wallet,
   WalletCards,
 } from "lucide-react"
 
@@ -240,32 +239,52 @@ export function FinancialSummaryDashboard({
 
   return (
     <div className="space-y-5 text-foreground">
-      <CommandPanel className="border-[#172554] bg-[#0f172a] text-white shadow-sm">
-        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_auto]">
-          <div className="px-5 py-5 sm:px-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-200">
-              {t("dashboard.summary.eyebrow")}
-            </p>
-            <h1 className="mt-3 text-2xl font-medium tracking-[-0.02em] text-white">
-              {t("dashboard.summary.commandCenter.title")}
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-              {t("dashboard.summary.commandCenter.description")}
-            </p>
-          </div>
-          <div className="flex items-end border-t border-white/10 px-5 py-5 lg:border-l lg:border-t-0">
-            <Button asChild size="sm" variant="secondary">
+      <CommandPanel>
+        <CommandPanelHeader
+          eyebrow={t("dashboard.summary.eyebrow")}
+          title={t("dashboard.summary.commandCenter.title")}
+          description={t("dashboard.summary.commandCenter.description")}
+          action={
+            <Button asChild size="sm" variant="outline">
               <Link href="/customers">
-                <Users aria-hidden="true" className="h-4 w-4" />
                 {t("dashboard.summary.commandCenter.shortcuts.customers.label")}
               </Link>
             </Button>
-          </div>
-        </div>
-      </CommandPanel>
+          }
+        />
+        <div
+          aria-label={t("dashboard.summary.primaryAriaLabel")}
+          className="grid gap-3 p-4 lg:grid-cols-3"
+        >
+          {primaryWidgets.map((widget) => {
+            const Icon = widget.icon
 
-      <CommandPanel>
-        <div className="grid gap-px bg-border sm:grid-cols-2">
+            return (
+              <div
+                key={widget.key}
+                className="rounded-lg border border-border bg-secondary/35 p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+                      {widget.label}
+                    </p>
+                    <p className="text-2xl font-medium tracking-[-0.02em] text-foreground">
+                      {widget.value}
+                    </p>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      {widget.detail}
+                    </p>
+                  </div>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-white text-primary">
+                    <Icon aria-hidden="true" className="h-4 w-4" />
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        <div className="grid gap-px border-t border-border bg-border sm:grid-cols-2">
           <div className="bg-secondary/70 px-5 py-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
               {t("dashboard.summary.snapshot.label")}
@@ -278,43 +297,12 @@ export function FinancialSummaryDashboard({
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
               {t("dashboard.summary.snapshot.sourceLabel")}
             </p>
-            <div className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-foreground">
-              <Wallet aria-hidden="true" className="h-4 w-4 text-primary" />
-              <span>{t("dashboard.summary.snapshot.sourceValue")}</span>
-            </div>
+            <p className="mt-2 text-sm font-medium text-foreground">
+              {t("dashboard.summary.snapshot.sourceValue")}
+            </p>
           </div>
         </div>
       </CommandPanel>
-
-      <section
-        aria-label={t("dashboard.summary.primaryAriaLabel")}
-        className="grid gap-4 lg:grid-cols-3"
-      >
-        {primaryWidgets.map((widget) => {
-          const Icon = widget.icon
-
-          return (
-            <CommandPanel key={widget.key}>
-              <div className="flex items-start justify-between gap-4 px-5 py-4">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
-                    {widget.label}
-                  </p>
-                  <p className="mt-3 break-words text-2xl font-medium tracking-[-0.02em] text-foreground">
-                    {widget.value}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    {widget.detail}
-                  </p>
-                </div>
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-secondary text-primary">
-                  <Icon aria-hidden="true" className="h-4 w-4" />
-                </div>
-              </div>
-            </CommandPanel>
-          )
-        })}
-      </section>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
         <CommandPanel aria-labelledby="dashboard-work-queues-title">

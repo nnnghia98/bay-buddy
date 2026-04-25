@@ -152,11 +152,28 @@ export default {
     },
   },
   customers: {
+    directory: {
+      eyebrow: "Customer directory",
+      title: "Track customers and ledgers from one compact work surface.",
+      description:
+        "Search by name or phone number, review the current debt state, and open each detailed ledger directly.",
+      searchPlaceholder: "Search by name or phone number",
+      metrics: {
+        totalCustomers: "Total customers",
+      },
+      columns: {
+        phone: "Phone number",
+      },
+      loading: "Loading customers...",
+      error: "Unable to load customers right now.",
+      empty: "No matching customers found.",
+    },
     ledger: {
       eyebrow: "Customer ledger",
       back: "Back to customers",
       customerId: "Customer ID",
       currentBalance: "Current balance",
+      entryCount: "Entry count",
       amountInWords: "Amount in words",
       tableTitle: "Ledger history",
       tableDescription:
@@ -166,8 +183,14 @@ export default {
         settled: "Settled",
         credit: "Credit / Deposit",
       },
+      entryTypes: {
+        ticket: "Ticket",
+        payment: "Payment",
+        adjustment: "Adjustment",
+      },
       columns: {
         date: "Date",
+        type: "Type",
         content: "Content",
         amount: "Change",
         balance: "Balance",
@@ -189,12 +212,28 @@ export default {
         success: "Payment recorded successfully.",
         error: "Unable to record payment.",
         amountPlaceholder: "No amount entered",
+        validation: {
+          customerIdInvalid: "Customer id is invalid.",
+          amountPositive: "Amount must be greater than 0.",
+          methodRequired: "Please choose a payment type.",
+          noteRequired: "Please enter a note.",
+          noteMax: "Note must not exceed 2000 characters.",
+          evidenceUrlInvalid: "Receipt image must be a valid URL.",
+          evidenceUrlMax: "Receipt image must not exceed 2048 characters.",
+          linkedTicketInvalid: "Linked ticket is invalid.",
+        },
         fields: {
           amount: "Amount",
+          amountInputPlaceholder: "1,000,000",
           method: "Payment type",
+          methodOptions: {
+            bankTransfer: "Bank transfer",
+            cash: "Cash",
+          },
           note: "Note",
           notePlaceholder: "Example: Customer transferred via BIDV at 09:15",
           evidence: "Receipt image",
+          evidencePlaceholder: "https://...",
           evidenceHint:
             "URL input is supported for now. Direct file upload can be added next.",
           evidenceEmpty: "No receipt attached yet.",
@@ -208,6 +247,14 @@ export default {
         description:
           "Open this customer's scoped invoice list to review detail pages or public print views.",
         open: "View invoices",
+      },
+    },
+    actions: {
+      recordPayment: {
+        invalidInput: "Please review the payment details.",
+        missingAuth: "Your session has expired. Please sign in again.",
+        failure: "Unable to record payment right now.",
+        success: "Payment recorded successfully.",
       },
     },
   },

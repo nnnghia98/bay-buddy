@@ -6,12 +6,16 @@ import { z } from "zod"
 
 import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
 import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
+import { getI18n } from "@/locales/server"
 import {
   RecordPaymentActionState,
   TransactionReadSchema,
   initialRecordPaymentActionState,
-  recordPaymentFormSchema,
 } from "@/schemas"
+import {
+  createRecordPaymentFormSchema,
+  getRecordPaymentValidationMessages,
+} from "@/schemas/finance"
 
 const API_BASE_URL = getServerApiBaseUrl()
 
@@ -31,7 +35,10 @@ function buildUrl(path: string): string {
   return buildApiUrl(path, API_BASE_URL)
 }
 
-function getErrorMessage(payload: unknown): string {
+function getErrorMessage(
+  payload: unknown,
+  fallbackMessage: string,
+): string {
   if (
     payload &&
     typeof payload === "object" &&
@@ -50,7 +57,7 @@ function getErrorMessage(payload: unknown): string {
     return (payload as { error: string }).error
   }
 
-  return "Không thể ghi nhận thanh toán lúc này."
+  return fallbackMessage
 }
 
 export async function recordPaymentAction(
@@ -58,6 +65,10 @@ export async function recordPaymentAction(
   formData: FormData,
 ): Promise<RecordPaymentActionState> {
   void previousState
+  const t = await getI18n()
+  const recordPaymentFormSchema = createRecordPaymentFormSchema(
+    getRecordPaymentValidationMessages(t),
+  )
 
   const parsedInput = recordPaymentFormSchema.safeParse({
     customer_id: formData.get("customer_id"),
@@ -73,7 +84,7 @@ export async function recordPaymentAction(
 
     return {
       status: "error",
-      message: "Vui lòng kiểm tra lại thông tin thanh toán.",
+      message: t("customers.actions.recordPayment.invalidInput"),
       fieldErrors: {
         customer_id: flattenedErrors.customer_id?.[0],
         amount: flattenedErrors.amount?.[0],
@@ -91,7 +102,7 @@ export async function recordPaymentAction(
   if (!token) {
     return {
       status: "error",
-      message: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      message: t("customers.actions.recordPayment.missingAuth"),
       fieldErrors: {},
       submittedAt: Date.now(),
       transactionId: null,
@@ -124,7 +135,10 @@ export async function recordPaymentAction(
   if (!response.ok) {
     return {
       status: "error",
-      message: getErrorMessage(rawPayload),
+      message: getErrorMessage(
+        rawPayload,
+        t("customers.actions.recordPayment.failure"),
+      ),
       fieldErrors: {},
       submittedAt: Date.now(),
       transactionId: null,
@@ -143,7 +157,7 @@ export async function recordPaymentAction(
   if (!apiResponseResult.success) {
     return {
       status: "error",
-      message: "Không thể ghi nhận thanh toán lúc này.",
+      message: t("customers.actions.recordPayment.failure"),
       fieldErrors: {},
       submittedAt: Date.now(),
       transactionId: null,
@@ -154,7 +168,7 @@ export async function recordPaymentAction(
 
   return {
     status: "success",
-    message: "Đã ghi nhận thanh toán thành công.",
+    message: t("customers.actions.recordPayment.success"),
     fieldErrors: {},
     submittedAt: Date.now(),
     transactionId: apiResponseResult.data.transaction.id,

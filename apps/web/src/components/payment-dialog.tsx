@@ -23,11 +23,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { convertNumberToVietnameseWords } from "@/lib/number-to-vn-words"
 import {
+  createRecordPaymentFormSchema,
+  getRecordPaymentValidationMessages,
   initialRecordPaymentActionState,
   paymentMethodOptions,
-  recordPaymentFormSchema,
   type RecordPaymentFormValues,
-} from "@/schemas"
+} from "@/schemas/finance"
 import { useI18n } from "@/locales/client"
 
 type TicketOption = {
@@ -96,6 +97,11 @@ export function PaymentDialog({
     recordPaymentAction,
     initialRecordPaymentActionState,
   )
+  const recordPaymentFormSchema = React.useMemo(
+    () =>
+      createRecordPaymentFormSchema(getRecordPaymentValidationMessages(t)),
+    [t],
+  )
 
   const amountInWords = displayAmount
     ? convertNumberToVietnameseWords(parseCurrencyInput(displayAmount))
@@ -103,6 +109,13 @@ export function PaymentDialog({
 
   const selectClassName =
     "flex h-11 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
+
+  const paymentMethodLabels: Record<RecordPaymentFormValues["method"], string> = {
+    "Chuyển khoản": t(
+      "customers.ledger.paymentDialog.fields.methodOptions.bankTransfer",
+    ),
+    "Tiền mặt": t("customers.ledger.paymentDialog.fields.methodOptions.cash"),
+  }
 
   React.useEffect(() => {
     if (state.status === "success") {
@@ -188,7 +201,7 @@ export function PaymentDialog({
                 id="amount_display"
                 inputMode="numeric"
                 onChange={(event) => setDisplayAmount(formatCurrencyInput(event.target.value))}
-                placeholder="1,000,000"
+                placeholder={t("customers.ledger.paymentDialog.fields.amountInputPlaceholder")}
                 value={displayAmount}
               />
               <input name="amount" type="hidden" value={displayAmount} />
@@ -215,7 +228,7 @@ export function PaymentDialog({
               >
                 {paymentMethodOptions.map((option) => (
                   <option key={option} value={option}>
-                    {option}
+                    {paymentMethodLabels[option]}
                   </option>
                 ))}
               </select>
@@ -275,7 +288,7 @@ export function PaymentDialog({
                   id="evidence_url"
                   name="evidence_url"
                   onChange={(event) => setEvidenceUrl(event.target.value)}
-                  placeholder="https://..."
+                  placeholder={t("customers.ledger.paymentDialog.fields.evidencePlaceholder")}
                   value={evidenceUrl}
                 />
               </div>

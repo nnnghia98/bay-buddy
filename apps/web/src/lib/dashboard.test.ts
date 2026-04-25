@@ -132,6 +132,16 @@ describe("buildFinancialSummarySnapshot command center fields", () => {
     ])
   })
 
+  it("keeps the receivables queue available for compact command-center rendering", () => {
+    const summary = buildFinancialSummarySnapshot({
+      customers: [customerA, customerB, customerC],
+      tickets: [ticketA, ticketB],
+      transactions,
+    })
+
+    expect(summary.actionQueues.some((queue) => queue.key === "receivables")).toBe(true)
+  })
+
   it("builds recent activity sorted newest first", () => {
     const snapshot = buildFinancialSummarySnapshot({
       customers: [customerA, customerB, customerC],

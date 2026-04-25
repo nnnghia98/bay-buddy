@@ -14,6 +14,21 @@ import {
 } from "@/lib/finance-core"
 
 describe("finance-core", () => {
+  const ledgerFixture: FinanceLedgerState = {
+    current_balance: 1_200_000,
+    balance_state: "debt",
+    entries: [
+      {
+        id: "ticket-1",
+        entry_type: "ticket",
+        created_at: new Date("2026-04-10T09:00:00.000Z"),
+        content: "ABC123",
+        amount: 1_200_000,
+        running_balance: 1_200_000,
+      },
+    ],
+  }
+
   afterEach(() => {
     vi.useRealTimers()
   })
@@ -131,22 +146,7 @@ describe("finance-core", () => {
   })
 
   it("appends an optimistic payment and recalculates the customer ledger immediately", () => {
-    const ledger: FinanceLedgerState = {
-      current_balance: 1_200_000,
-      balance_state: "debt",
-      entries: [
-        {
-          id: "ticket-1",
-          entry_type: "ticket",
-          created_at: new Date("2026-04-10T09:00:00.000Z"),
-          content: "ABC123",
-          amount: 1_200_000,
-          running_balance: 1_200_000,
-        },
-      ],
-    }
-
-    const nextLedger = applyOptimisticPaymentToLedger(ledger, {
+    const nextLedger = applyOptimisticPaymentToLedger(ledgerFixture, {
       id: "optimistic-1",
       amount: 300_000,
       note: "Customer transferred partial payment",
@@ -162,6 +162,51 @@ describe("finance-core", () => {
     })
     expect(nextLedger.current_balance).toBe(900_000)
     expect(nextLedger.balance_state).toBe("debt")
+  })
+
+  it("rebuilds optimistic payments into chronological order instead of always appending them", () => {
+    const nextLedger = applyOptimisticPaymentToLedger(ledgerFixture, {
+      id: "optimistic-middle",
+      amount: 500_000,
+      note: "test",
+      created_at: new Date("2026-04-10T09:30:00.000Z"),
+    })
+
+    const ledgerWithLaterEntry = applyOptimisticPaymentToLedger(
+      {
+        ...ledgerFixture,
+        current_balance: 1_250_000,
+        entries: [
+          ...ledgerFixture.entries,
+          {
+            id: "adjustment-late",
+            entry_type: "adjustment",
+            created_at: new Date("2026-04-10T10:00:00.000Z"),
+            content: "Manual fee",
+            amount: 50_000,
+            running_balance: 1_250_000,
+          },
+        ],
+      },
+      {
+        id: "optimistic-middle",
+        amount: 500_000,
+        note: "Inserted between entries",
+        created_at: new Date("2026-04-10T09:30:00.000Z"),
+      },
+    )
+
+    expect(ledgerWithLaterEntry.entries.map((entry) => entry.id)).toEqual([
+      "ticket-1",
+      "optimistic-middle",
+      "adjustment-late",
+    ])
+    expect(ledgerWithLaterEntry.entries.map((entry) => entry.running_balance)).toEqual([
+      1_200_000,
+      700_000,
+      750_000,
+    ])
+    expect(nextLedger.entries.at(-1)?.entry_type).toBe("payment")
   })
 
   it("creates default optimistic payment metadata when no id or timestamp is provided", () => {

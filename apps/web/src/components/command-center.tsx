@@ -1,9 +1,20 @@
 import Link from "next/link"
-import type { ComponentPropsWithoutRef, ComponentType, SVGProps, ReactNode } from "react"
+import type { ComponentPropsWithoutRef, ComponentType, ReactNode, SVGProps } from "react"
 
+import {
+  getTableSectionClassName,
+} from "@/lib/authenticated-layout"
 import { cn } from "@/lib/utils"
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
+
+type CommandPanelHeaderProps = {
+  eyebrow?: string
+  title: string
+  titleId?: string
+  description?: string
+  action?: ReactNode
+}
 
 export function CommandPanel({
   children,
@@ -11,13 +22,19 @@ export function CommandPanel({
   ...props
 }: ComponentPropsWithoutRef<"section">) {
   return (
-    <section
-      className={cn(
-        "overflow-hidden rounded-lg border border-border bg-white",
-        className,
-      )}
-      {...props}
-    >
+    <TableSection className={cn("bg-card", className)} {...props}>
+      {children}
+    </TableSection>
+  )
+}
+
+export function TableSection({
+  children,
+  className,
+  ...props
+}: ComponentPropsWithoutRef<"section">) {
+  return (
+    <section className={cn(getTableSectionClassName(), "bg-white", className)} {...props}>
       {children}
     </section>
   )
@@ -29,25 +46,16 @@ export function CommandPanelHeader({
   titleId,
   description,
   action,
-}: {
-  eyebrow?: string
-  title: string
-  titleId?: string
-  description?: string
-  action?: ReactNode
-}) {
+}: CommandPanelHeaderProps) {
   return (
-    <div className="flex flex-col gap-4 border-b border-border bg-secondary/55 px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0 space-y-1.5">
+    <div className="flex flex-col gap-3 border-b border-border bg-secondary/45 px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="min-w-0 space-y-1">
         {eyebrow ? (
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
             {eyebrow}
           </p>
         ) : null}
-        <h2
-          className="text-lg font-medium tracking-[-0.02em] text-foreground"
-          id={titleId}
-        >
+        <h2 className="text-base font-medium tracking-[-0.02em] text-foreground" id={titleId}>
           {title}
         </h2>
         {description ? (
@@ -122,6 +130,14 @@ export function CommandActionLink({
   )
 }
 
-export function TableScrollArea({ children }: { children: ReactNode }) {
-  return <div className="overflow-x-auto">{children}</div>
+export function TableScrollArea({
+  children,
+  className,
+  ...props
+}: ComponentPropsWithoutRef<"div">) {
+  return (
+    <div className={cn("overflow-x-auto", className)} {...props}>
+      {children}
+    </div>
+  )
 }

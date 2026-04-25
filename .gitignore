@@ -41,6 +41,9 @@ Thumbs.db
 
 # --- Local AI Tooling (Do Not Commit) ---
 .agents/
+!.agents/skills/
+!.agents/skills/frontend-design/
+!.agents/skills/frontend-design/SKILL.md
 .claude/
 .codex/
 .superpowers/
