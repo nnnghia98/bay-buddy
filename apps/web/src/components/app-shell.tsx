@@ -8,7 +8,6 @@ import { useQuery } from "@tanstack/react-query"
 import {
   ChevronDown,
   FileText,
-  Home,
   Menu,
   Settings,
   Ticket,
@@ -36,6 +35,7 @@ import {
   isUnauthorizedSessionError,
   shouldRenderAuthenticatedShell,
 } from "@/lib/auth-session"
+import { useI18n } from "@/locales/client"
 import { cn } from "@/lib/utils"
 
 type AppShellProps = {
@@ -62,7 +62,6 @@ type NavItem = {
 }
 
 const navItems: NavItem[] = [
-  { label: "Tổng quan", href: "/", icon: Home },
   { label: "Khách hàng", href: "/customers", icon: Users },
   { label: "Hóa đơn", href: "/invoices", icon: FileText },
   { label: "Nhập vé", href: "/tickets/capture", icon: Ticket },
@@ -83,10 +82,14 @@ function formatRoleLabel(role: string): string {
   return role === "ADMIN" ? "Quản trị viên" : "Nhân viên"
 }
 
-function useBreadcrumbs(pathname: string, customerName?: string) {
+function useBreadcrumbs(
+  pathname: string,
+  homeLabel: string,
+  customerName?: string,
+) {
   return React.useMemo(() => {
     if (pathname === "/") {
-      return [{ label: "Tổng quan", href: "/" }]
+      return [{ label: homeLabel, href: "/" }]
     }
 
     if (pathname === "/customers") {
@@ -125,7 +128,7 @@ function useBreadcrumbs(pathname: string, customerName?: string) {
     }
 
     return [{ label: "Bay Buddy", href: pathname }]
-  }, [customerName, pathname])
+  }, [customerName, homeLabel, pathname])
 }
 
 function ShellNavigation({
@@ -188,6 +191,7 @@ function ShellNavigation({
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const t = useI18n()
   const pathname = usePathname()
   const router = useRouter()
   const { token, isReady, logout } = useAuth()
@@ -239,7 +243,11 @@ export function AppShell({ children }: AppShellProps) {
     router.replace("/login")
   }, [customerQuery.error, logout, router, showShell, userQuery.error])
 
-  const breadcrumbs = useBreadcrumbs(pathname, customerQuery.data?.name)
+  const breadcrumbs = useBreadcrumbs(
+    pathname,
+    t("appShell.home"),
+    customerQuery.data?.name,
+  )
   const userName = userQuery.data?.username ?? "Staff"
   const userRole = formatRoleLabel(userQuery.data?.role ?? "STAFF")
 
@@ -261,15 +269,21 @@ export function AppShell({ children }: AppShellProps) {
       >
         <div className="flex h-full flex-col">
           <div className="border-b border-border px-2 pb-4">
-            <div className="rounded-[18px] border border-border bg-white px-3 py-3 shadow-[var(--shadow-sm)]">
-              <Image
-                alt="Bay Buddy"
-                className="h-16 w-auto"
-                height={820}
-                priority
-                src="/branding/logo-bay-buddy-v1-crop.png"
-                width={1020}
-              />
+            <div className="flex justify-center px-2 py-2">
+              <Link
+                aria-label="Về trang chủ"
+                className="flex justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                href="/"
+              >
+                <Image
+                  alt="Bay Buddy"
+                  className="h-24 w-auto object-contain"
+                  height={820}
+                  priority
+                  src="/branding/logo-bay-buddy-v1-crop.png"
+                  width={1020}
+                />
+              </Link>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto py-4">
@@ -301,15 +315,22 @@ export function AppShell({ children }: AppShellProps) {
               <SheetContent className="bg-background p-0" side="left">
                 <div className="flex h-full flex-col bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(248,250,252,0.98)_100%)]">
                   <SheetHeader className="border-b border-border px-5 py-5">
-                    <SheetTitle className="rounded-[18px] border border-border bg-white px-3 py-3 shadow-[var(--shadow-sm)]">
-                      <Image
-                        alt="Bay Buddy"
-                        className="h-12 w-auto"
-                        height={820}
-                        priority
-                        src="/branding/logo-bay-buddy-v1-crop.png"
-                        width={1020}
-                      />
+                    <SheetTitle className="flex justify-center px-2 py-2">
+                      <Link
+                        aria-label="Về trang chủ"
+                        className="flex justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                        href="/"
+                        onClick={() => setIsSidebarOpen(false)}
+                      >
+                        <Image
+                          alt="Bay Buddy"
+                          className="h-20 w-auto object-contain"
+                          height={820}
+                          priority
+                          src="/branding/logo-bay-buddy-v1-crop.png"
+                          width={1020}
+                        />
+                      </Link>
                     </SheetTitle>
                     <SheetDescription className="px-1 pt-2 text-left">
                       Điều phối khách hàng, nhận vé và ghi nhận công nợ trong một luồng thống nhất.

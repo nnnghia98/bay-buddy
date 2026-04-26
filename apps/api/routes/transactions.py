@@ -4,18 +4,22 @@ from fastapi import APIRouter, HTTPException, status
 from sqlmodel import select
 
 from core.auth import CurrentUserDep
+from core.responses import success_response
 from database import SessionDep
-from models.transaction import Transaction, TransactionCreate, TransactionRead
 from models.customer import Customer
 from models.enums import get_transaction_balance_delta
 from models.ticket import Ticket
-from core.responses import success_response
+from models.transaction import Transaction, TransactionCreate, TransactionRead
 
 router = APIRouter()
 
+
 @router.post("/", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def create_transaction(
-    *, session: SessionDep, current_user: CurrentUserDep, transaction_in: TransactionCreate
+    *,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+    transaction_in: TransactionCreate,
 ):
     """
     Create a new transaction and update the customer's balance.
@@ -68,12 +72,18 @@ async def create_transaction(
         "customer_new_balance": customer.balance
     })
 
+
 @router.get("/", response_model=dict)
 async def list_transactions(
     session: SessionDep, current_user: CurrentUserDep, skip: int = 0, limit: int = 100
 ):
     """List all transactions."""
-    statement = select(Transaction).offset(skip).limit(limit)
+    statement = (
+        select(Transaction)
+        .order_by(Transaction.occurred_at, Transaction.created_at, Transaction.id)
+        .offset(skip)
+        .limit(limit)
+    )
     transactions = session.exec(statement).all()
     tx_data = [TransactionRead.model_validate(tx).model_dump() for tx in transactions]
     return success_response(tx_data)

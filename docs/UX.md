@@ -170,6 +170,9 @@ Forms must follow the App Router standard from the DNA:
 ### Authenticated App Shell
 
 - Sidebar navigation should support fast repeated use.
+- The homepage should be represented once in the shell. Use the Bay Buddy logo as the direct route back to `/` rather than duplicating a separate homepage item in the left navigation.
+- The homepage breadcrumb label should be locale-aware and read as `Trang chủ` in Vietnamese and `Home` in English.
+- The sidebar logo should feel like a calm brand anchor, centered and visually lightweight, without an extra decorative card container around it.
 - Breadcrumbs should clarify location without becoming the main navigation.
 - Quick search can be introduced later, but disabled UI should not look clickable.
 - Mobile navigation must preserve access to the same major work areas.

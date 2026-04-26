@@ -8,7 +8,7 @@ These rows represent flight bookings and translate directly into the **`Ticket`*
 
 | Excel Column | Bay Buddy DB Field | Model | Description |
 | :--- | :--- | :--- | :--- |
-| **Ngày** | `created_at` / `flight_date` | `Ticket` | The date of the booking. If flight date is unknown, it falls back to the creation timestamp. |
+| **Ngày** | `occurred_at` / `flight_date` | `Ticket` | The real-world booking timestamp. If flight date is unknown, it falls back to the booking timestamp. |
 | **Nội dung** | `passengers` | `Ticket` | The name of the passenger(s). Stored as a JSON array in the database. |
 | **Mã chỗ** | `pnr` | `Ticket` | The 6-character Unique Booking Reference (e.g., `FKWODX`). |
 | **Hãng** | `airline` | `Ticket` | Mapped to the `Airline` Enum (e.g., `VN`, `VJ`). |
@@ -26,7 +26,7 @@ These rows represent cash flow into the agency and translate into the **`Transac
 
 | Excel Column | Bay Buddy DB Field | Model | Description |
 | :--- | :--- | :--- | :--- |
-| **Ngày** | `created_at` | `Transaction` | The timestamp of the bank transfer or payment. |
+| **Ngày** | `occurred_at` | `Transaction` | The real-world timestamp of the bank transfer or payment. |
 | **Nội dung** | `note` | `Transaction` | The bank transfer description or memo (e.g., `BIDV: TKThe...`). |
 | **Tài Khoản Có** | `amount` | `Transaction` | The exact amount of money received. |
 | *(Implied)* | `category` = `PAYMENT` | `Transaction` | Classifies the transaction as a payment, which mathematically reduces the customer's debt. |

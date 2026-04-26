@@ -1,4 +1,7 @@
 export default {
+  appShell: {
+    home: "Trang chủ",
+  },
   dashboard: {
     summary: {
       eyebrow: "Tổng quan tài chính",

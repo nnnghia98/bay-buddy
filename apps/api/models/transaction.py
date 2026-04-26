@@ -66,6 +66,10 @@ class TransactionBase(SQLModel):
         max_length=2048,
         description="Optional receipt / payment-proof URL attached to the transaction.",
     )
+    occurred_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="UTC timestamp of when the business event actually happened.",
+    )
 
     # FK – resolved at the DB layer.
     customer_id: uuid.UUID = Field(foreign_key="customer.id", index=True)

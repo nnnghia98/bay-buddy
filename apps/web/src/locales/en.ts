@@ -1,4 +1,7 @@
 export default {
+  appShell: {
+    home: "Home",
+  },
   dashboard: {
     summary: {
       eyebrow: "Financial overview",

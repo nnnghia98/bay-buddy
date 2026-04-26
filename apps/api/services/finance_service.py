@@ -31,7 +31,7 @@ from models.transaction import Transaction, TransactionRead
 
 
 class LedgerEntry(BaseModel):
-    """A table-ready customer ledger row."""
+    """A table-ready customer ledger row ordered by business event time."""
 
     id: uuid.UUID
     entry_type: Literal["ticket", "payment", "adjustment"]
@@ -177,7 +177,7 @@ def get_customer_ledger(
             LedgerEntry(
                 id=transaction.id,
                 entry_type=entry_type,
-                created_at=transaction.created_at,
+                created_at=transaction.occurred_at,
                 content=(transaction.note or transaction.method).strip(),
                 amount=amount,
                 running_balance=0,
@@ -187,7 +187,7 @@ def get_customer_ledger(
     for ticket in tickets:
         charge_transaction = ticket_charge_by_ticket_id.get(ticket.id)
         created_at = (
-            charge_transaction.created_at if charge_transaction else ticket.flight_date
+            charge_transaction.occurred_at if charge_transaction else ticket.flight_date
         )
         entries.append(
             LedgerEntry(

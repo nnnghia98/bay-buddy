@@ -56,6 +56,7 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 
 - **Components**: Use Functional Components and Server Components by default.
 - **UI**: Shadcn UI is the primary component library. Maintain a minimalist and clean aesthetic.
+- **App Shell Navigation**: Treat `/` as the real homepage. Do not duplicate it as a separate left-sidebar destination when the logo already serves as the home entry point. The homepage breadcrumb label must be locale-aware (`Trang chủ` in `vi`, `Home` in `en`).
 - **Data Fetching**: Prefer React Server Components (RSC) for read operations and initial data loading in App Router.
 - **Mutations**: Use Server Actions for all data mutations, especially creating payments and updating tickets.
 - **Forms**: For App Router forms, prefer `useActionState` / `useFormState` over client-only mutation handlers.
@@ -64,6 +65,7 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 - **TypeUI Principle**: UI should feel type-safe, predictable, and immediate. Pending, success, error, and rollback states must be explicit.
 - **Optimistic UI**: Consider `useOptimistic` for mutation-heavy surfaces such as the customer ledger so newly recorded payments appear instantly before server confirmation.
 - **TanStack Query Usage**: Keep TanStack Query for client-side cache coordination, background refresh, or interactive islands where RSC alone is not sufficient.
+- **Logo Treatment**: In the authenticated shell, the Bay Buddy logo should read as a direct navigation affordance to the homepage, centered in the sidebar, and should avoid decorative card framing unless a future redesign explicitly changes the shell pattern.
 
 ### 4. Record Payment Standard (Step 4.3)
 

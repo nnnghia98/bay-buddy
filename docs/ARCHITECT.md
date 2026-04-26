@@ -56,6 +56,7 @@
 - `is_invoiced`: Boolean (Locked once included in an issued invoice)
 - `invoice_id`: UUID Nullable (FK to Invoice for duplicate-billing prevention)
 - `created_by`: UUID (FK to User for audit trail ownership)
+- `occurred_at`: DateTime (Real-world event timestamp)
 - `created_at`: DateTime (UTC auto-stamp)
 
 ### Model: Invoice
@@ -191,6 +192,7 @@ Bay Buddy now follows the `react-best-practices` standard aligned with Vercel's 
 
 ### Customer Ledger Structure
 - Each ledger row contains `id`, `entry_type`, `created_at`, `content`, `amount`, and `running_balance`.
+- In the ledger payload, `created_at` represents the business event timestamp used for chronological display, while `transaction.created_at` remains the audit timestamp stored on the transaction record itself.
 - `entry_type="ticket"` represents a confirmed ticket and is shown as a positive debt row using `Ticket.selling_price`.
 - `entry_type="payment"` represents cash movement categories. `PAYMENT` is shown as a negative amount because it reduces debt, while outbound `REFUND` increases debt / reduces held credit after money is returned to the customer.
 - `entry_type="adjustment"` represents non-cash debt adjustments such as `DISCOUNT` and `ADDITIONAL_FEE`.
