@@ -34,7 +34,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain-text password against a bcrypt hash."""
     password_bytes = plain_password.encode("utf-8")
     hashed_password_bytes = hashed_password.encode("utf-8")
-    return bcrypt.checkpw(password_bytes, hashed_password_bytes)
+    try:
+        return bcrypt.checkpw(password_bytes, hashed_password_bytes)
+    except (AttributeError, TypeError, ValueError):
+        # Handle malformed or legacy non-bcrypt hashes safely as invalid credentials.
+        return False
 
 
 def create_access_token(

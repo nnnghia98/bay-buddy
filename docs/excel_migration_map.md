@@ -1,0 +1,54 @@
+# Excel to Bay Buddy Database Migration Map
+
+This document outlines how the legacy manual Excel data (`Bản Công Nợ` sheet) maps to the current Bay Buddy financial core database schema (SQLModel).
+
+## 1. Ticket Purchases (Rows where `#` is `Vé`)
+
+These rows represent flight bookings and translate directly into the **`Ticket`** table, and automatically generate debt entries in the **`Transaction`** table.
+
+| Excel Column | Bay Buddy DB Field | Model | Description |
+| :--- | :--- | :--- | :--- |
+| **Ngày** | `created_at` / `flight_date` | `Ticket` | The date of the booking. If flight date is unknown, it falls back to the creation timestamp. |
+| **Nội dung** | `passengers` | `Ticket` | The name of the passenger(s). Stored as a JSON array in the database. |
+| **Mã chỗ** | `pnr` | `Ticket` | The 6-character Unique Booking Reference (e.g., `FKWODX`). |
+| **Hãng** | `airline` | `Ticket` | Mapped to the `Airline` Enum (e.g., `VN`, `VJ`). |
+| **Số Vé** | *N/A (See Note)* | `Ticket` | The 13-digit ticket number. *Note: We can add a `ticket_number` column to the Ticket table, or append this to the `passengers` JSON data.* |
+| **Loại Vé** | *N/A (See Note)* | `Ticket` | Ticket class (e.g., `B`, `Eco1`). Can be stored in a `note` field or a newly added column if necessary. |
+| **Hành Trình Đi/Về** | `itinerary` | `Ticket` | Combined into the itinerary string (e.g., `DAD-HAN`). |
+| **Giá Hệ Thống** | `net_price` | `Ticket` | Supplier/Airline cost. |
+| **Giá Thu** | `selling_price`| `Ticket` | Price sold to the customer (creates positive debt). |
+
+---
+
+## 2. Bank Transfers & Payments (Rows where `#` is `Nộp quỹ`)
+
+These rows represent cash flow into the agency and translate into the **`Transaction`** table as payment events.
+
+| Excel Column | Bay Buddy DB Field | Model | Description |
+| :--- | :--- | :--- | :--- |
+| **Ngày** | `created_at` | `Transaction` | The timestamp of the bank transfer or payment. |
+| **Nội dung** | `note` | `Transaction` | The bank transfer description or memo (e.g., `BIDV: TKThe...`). |
+| **Tài Khoản Có** | `amount` | `Transaction` | The exact amount of money received. |
+| *(Implied)* | `category` = `PAYMENT` | `Transaction` | Classifies the transaction as a payment, which mathematically reduces the customer's debt. |
+
+---
+
+## 3. Adjustments & Miscellaneous
+
+| Excel Column | Bay Buddy DB Field | Model | Description |
+| :--- | :--- | :--- | :--- |
+| **Chiết Khấu** | `category` = `DISCOUNT` | `Transaction` | Discount given to the customer. Reduces debt without actual cash flow. |
+| **Phí** | `category` = `ADDITIONAL_FEE` | `Transaction` | Extra charges applied to the customer. Increases debt. |
+| **Lũy Kế** | `running_balance` | *(Dynamic)* | We do not need to import this! The system calculates it dynamically (`running_balance = previous_balance + amount`) ensuring perfect accuracy over time. |
+
+---
+
+## Migration Strategy
+
+When transitioning from the Excel file to the Bay Buddy Database, the workflow will be:
+
+1. **Customer Creation**: Create a `Customer` record for the agent (e.g., "Hoài Hương").
+2. **Data Parsing**: Run a Python migration script using `pandas` to iterate through the `.xlsx` file.
+3. **Ticket Generation**: For each `Vé` row, instantiate a `Ticket` linked to the `Customer.id`.
+4. **Transaction Generation**: For each `Nộp quỹ` row, instantiate a `Transaction` (Type: `PAYMENT`) linked to the `Customer.id`.
+5. **Ledger Verification**: View the `GET /api/v1/customers/{id}/ledger` endpoint to verify that the dynamically calculated `running_balance` matches the legacy `Lũy Kế` column perfectly.
