@@ -12,10 +12,15 @@ export function getClientApiBaseUrl(): string {
 }
 
 export function getServerApiBaseUrl(): string {
+  const defaultServerBaseUrl =
+    process.env.NODE_ENV === "development"
+      ? DEFAULT_PUBLIC_API_BASE_URL
+      : DEFAULT_INTERNAL_API_BASE_URL
+
   return normalizeBaseUrl(
     process.env.INTERNAL_API_BASE_URL ??
       process.env.NEXT_PUBLIC_API_BASE_URL ??
-      DEFAULT_INTERNAL_API_BASE_URL,
+      defaultServerBaseUrl,
   )
 }
 

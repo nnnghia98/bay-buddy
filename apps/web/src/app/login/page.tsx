@@ -85,7 +85,7 @@ export default function LoginPage() {
         <div className="w-full max-w-2xl overflow-hidden rounded-[32px] border border-border bg-white shadow-[var(--shadow-xl),var(--theme-shadow-soft)]">
           <div className="px-8 py-10 sm:px-10 sm:py-12">
             <div className="mb-8 space-y-2">
-              <div className="inline-flex items-center rounded-[18px] border border-border bg-white p-2 shadow-[var(--shadow-sm)]">
+              <div className="inline-flex items-center">
                 <Image
                   alt="Bay Buddy logo"
                   className="h-14 w-auto"
