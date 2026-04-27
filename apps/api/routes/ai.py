@@ -40,7 +40,12 @@ class ParseFlightResponse(BaseModel):
 
     pnr: str = Field(description="6-character PNR booking reference code.")
     airline: str = Field(description="Airline code: VNA, VJ, QH, or VU.")
+    ticket_number: str = Field(description="Airline ticket number.")
     passengers: list[str] = Field(description="List of passenger names in UPPERCASE.")
+    departure_place: str = Field(description="Readable departure place name.")
+    arrival_place: str = Field(description="Readable arrival place name.")
+    departure_code: str = Field(description="Departure place code, e.g. DAD.")
+    arrival_code: str = Field(description="Arrival place code, e.g. SGN.")
     itinerary: str = Field(description="Flight route (e.g., 'HAN-SGN').")
     flight_date: str = Field(description="Departure datetime in ISO-8601 format.")
     net_price: float = Field(ge=0, description="Total net price from airline/supplier.")

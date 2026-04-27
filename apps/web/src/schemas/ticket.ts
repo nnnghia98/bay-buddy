@@ -5,6 +5,9 @@
  *
  * Field names from docs/DICTIONARY.md:
  *   pnr           → Mã đặt chỗ (6-char booking reference)
+ *   ticket_number → Số vé
+ *   departure_place / arrival_place → Nơi đi / nơi đến
+ *   departure_code / arrival_code   → Mã nơi đi / mã nơi đến
  *   itinerary     → Hành trình  (e.g. "HAN-SGN")
  *   net_price     → Giá gốc     (cost paid to airline/supplier)
  *   selling_price → Giá bán     (price invoiced to customer)
@@ -33,6 +36,21 @@ const TicketBaseSchema = z.object({
 
   /** Airline carrier code. Maps to Python: airline */
   airline: AirlineSchema,
+
+  /** Airline ticket number. Maps to Python: ticket_number */
+  ticket_number: z.string().min(1).max(50).optional(),
+
+  /** Human-readable departure place. Maps to Python: departure_place */
+  departure_place: z.string().min(1).max(255).optional(),
+
+  /** Human-readable arrival place. Maps to Python: arrival_place */
+  arrival_place: z.string().min(1).max(255).optional(),
+
+  /** Departure place code. Maps to Python: departure_code */
+  departure_code: z.string().min(1).max(10).toUpperCase().optional(),
+
+  /** Arrival place code. Maps to Python: arrival_code */
+  arrival_code: z.string().min(1).max(10).toUpperCase().optional(),
 
   /**
    * Flight route string (hành trình).
@@ -122,7 +140,12 @@ export type TicketRead = z.infer<typeof TicketReadSchema>;
 export const TicketUpdateSchema = z.object({
   pnr: z.string().length(6).toUpperCase().optional(),
   airline: AirlineSchema.optional(),
+  ticket_number: z.string().min(1).max(50).optional(),
   passengers: z.array(z.string().min(1).toUpperCase()).min(1).optional(),
+  departure_place: z.string().min(1).max(255).optional(),
+  arrival_place: z.string().min(1).max(255).optional(),
+  departure_code: z.string().min(1).max(10).toUpperCase().optional(),
+  arrival_code: z.string().min(1).max(10).toUpperCase().optional(),
   itinerary: z.string().min(1).max(100).optional(),
   flight_date: z.coerce.date().optional(),
   net_price: z.number().min(0).optional(),

@@ -59,7 +59,12 @@ def _confirm_payload() -> dict:
         "customer_type": "INDIVIDUAL",
         "pnr": "ABC123",
         "airline": "VJ",
+        "ticket_number": "7382319992101",
         "passengers": ["NGUYEN VAN A"],
+        "departure_place": "Ha Noi",
+        "arrival_place": "Ho Chi Minh City",
+        "departure_code": "HAN",
+        "arrival_code": "SGN",
         "itinerary": "HAN-SGN",
         "flight_date": datetime(2026, 4, 22, 10, 30, tzinfo=timezone.utc).isoformat(),
         "net_price": 1000000,
@@ -90,7 +95,12 @@ def _seed_confirmed_ticket(
     ticket = Ticket(
         pnr="XYZ789",
         airline=Airline.VJ,
+        ticket_number="7382319992102",
         passengers=["NGUYEN VAN A"],
+        departure_place="Ha Noi",
+        arrival_place="Ho Chi Minh City",
+        departure_code="HAN",
+        arrival_code="SGN",
         itinerary="HAN-SGN",
         flight_date=datetime(2026, 4, 22, 10, 30, tzinfo=timezone.utc),
         net_price=1000000,
@@ -141,6 +151,36 @@ def test_confirm_ticket_surfaces_service_errors_as_non_2xx(test_client, monkeypa
     assert response.json() == {"detail": "duplicate PNR"}
 
 
+def test_confirm_ticket_allows_shared_ticket_numbers_for_return_flights(
+    test_client,
+    test_engine,
+):
+    outbound_response = test_client.post("/api/v1/tickets/confirm", json=_confirm_payload())
+
+    return_payload = _confirm_payload() | {
+        "pnr": "DEF456",
+        "departure_place": "Ho Chi Minh City",
+        "arrival_place": "Ha Noi",
+        "departure_code": "SGN",
+        "arrival_code": "HAN",
+        "itinerary": "SGN-HAN",
+        "flight_date": datetime(2026, 4, 28, 8, 0, tzinfo=timezone.utc).isoformat(),
+    }
+    return_response = test_client.post("/api/v1/tickets/confirm", json=return_payload)
+
+    assert outbound_response.status_code == 201
+    assert return_response.status_code == 201
+
+    with Session(test_engine) as session:
+        tickets = session.exec(
+            select(Ticket).where(Ticket.ticket_number == "7382319992101")
+        ).all()
+
+        assert len(tickets) == 2
+        assert {ticket.pnr for ticket in tickets} == {"ABC123", "DEF456"}
+        assert {ticket.itinerary for ticket in tickets} == {"HAN-SGN", "SGN-HAN"}
+
+
 def test_legacy_ticket_create_endpoint_is_retired(
     test_client,
     test_engine,
@@ -152,7 +192,12 @@ def test_legacy_ticket_create_endpoint_is_retired(
         json={
             "pnr": "LEG123",
             "airline": "VJ",
+            "ticket_number": "7382319992103",
             "passengers": ["NGUYEN VAN A"],
+            "departure_place": "Ha Noi",
+            "arrival_place": "Ho Chi Minh City",
+            "departure_code": "HAN",
+            "arrival_code": "SGN",
             "itinerary": "HAN-SGN",
             "flight_date": datetime(2026, 4, 22, 10, 30, tzinfo=timezone.utc).isoformat(),
             "net_price": 1000000,

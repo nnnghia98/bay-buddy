@@ -9,6 +9,7 @@ Infrastructure, Database, and Stage 4 Financial Core are complete. The system no
 **Current Status:**
 - **Financial Core:** Stage 4 backend is complete and ready for UI integration. Invoices, quotes, public invoice payloads, customer/ticket patch APIs, and invoice locking rules are implemented.
 - **Frontend Finance Flow:** The customer ledger follows App Router best practices. Reads happen through React Server Components, and payment recording uses a Server Action with `useActionState`, `useFormStatus`, shared Zod validation, and optimistic ledger insertion.
+- **Ticket Schema:** Tickets now store explicit route metadata with `ticket_number`, `departure_place`, `arrival_place`, `departure_code`, and `arrival_code`. `itinerary` remains available for compatibility and display, but the richer route fields are the source of truth for new writes.
 - **Authentication Standard:** All write operations to tickets, transactions, invoices, quotes, customers, and related financial records MUST be authenticated.
 - **Next Focus:** Continue the authenticated App Router UI integration on top of the completed backend finance APIs.
 
@@ -115,3 +116,15 @@ When tasked with "Parsing a ticket":
 3. The Backend reads the raw file bytes and submits them directly to the most suitable currently available Gemini model using the GenAI SDK's multimodal part format.
 4. The selected Gemini model uses the system prompt from `AGENT_PARSER.md` (including visual instructions for logos, QR codes, and price tables) to extract structured JSON.
 5. Ensure the returned data passes both the Backend Pydantic validation and the Frontend Zod validation before allowing a database commit.
+
+## ✈️ Ticket Route Standard
+
+- `ticket_number` identifies the airline ticket number and is not unique across rows.
+- Two tickets may share the same `ticket_number` when they represent different legs of a return trip.
+- Store route semantics explicitly on the `ticket` row with:
+  - `departure_place`
+  - `arrival_place`
+  - `departure_code`
+  - `arrival_code`
+- Keep `itinerary` for compatibility and display, but treat it as derived from `departure_code` + `arrival_code` for new ticket writes.
+- Do not use airport-specific field names for city/place data. If airport-level detail is needed later, add separate airport fields instead of overloading the place fields.

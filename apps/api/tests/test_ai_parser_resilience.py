@@ -42,7 +42,12 @@ def test_parse_flight_content_retries_temporary_gemini_unavailable(monkeypatch):
         {
           "pnr": "ABC123",
           "airline": "VJ",
+          "ticket_number": "7382319992101",
           "passengers": ["NGUYEN VAN A"],
+          "departure_place": "Ha Noi",
+          "arrival_place": "Ho Chi Minh City",
+          "departure_code": "HAN",
+          "arrival_code": "SGN",
           "itinerary": "HAN-SGN",
           "flight_date": "2026-04-23T08:00:00",
           "net_price": 1500000,
@@ -84,5 +89,8 @@ def test_parse_flight_content_retries_temporary_gemini_unavailable(monkeypatch):
     parsed = asyncio.run(parse_flight_content(b"fake image bytes", "image/png"))
 
     assert parsed["pnr"] == "ABC123"
+    assert parsed["ticket_number"] == "7382319992101"
+    assert parsed["departure_code"] == "HAN"
+    assert parsed["arrival_code"] == "SGN"
     assert attempts == 2
-    assert model_names == ["gemini-2.5-flash", "gemini-2.5-flash"]
+    assert model_names == ["gemini-3.1-flash-lite", "gemini-3.1-flash-lite"]

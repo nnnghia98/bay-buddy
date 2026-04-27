@@ -58,8 +58,13 @@ Vietjet Air (VJ), Bamboo Airways (QH), and Vietravel Airlines (VU).
 ## Extraction Requirements:
 - **PNR**: 6-character alphanumeric code (booking reference).
 - **Airline**: Map to one of [VNA, VJ, QH, VU]. Use airline name, logo, or branding to determine.
+- **Ticket Number**: Extract the airline ticket number shown on the document.
 - **Passengers**: List of full names in UPPERCASE format.
-- **Itinerary**: Flight route (e.g., "HAN-SGN" or "SGN-DAD-HAN").
+- **Departure Place**: Readable departure city/place name.
+- **Arrival Place**: Readable arrival city/place name.
+- **Departure Code**: Departure place code (e.g., HAN, DAD, SGN).
+- **Arrival Code**: Arrival place code (e.g., HAN, DAD, SGN).
+- **Itinerary**: Flight route derived from the place codes (e.g., "HAN-SGN").
 - **Flight Date**: Convert to ISO-8601 format (YYYY-MM-DDTHH:MM:SS).
 - **Net Price**: Extract the total price. If unclear or not mentioned, default to 0.
 - **Currency**: Default to "VND" for Vietnamese market.
@@ -84,7 +89,12 @@ Return ONLY a valid JSON object with this exact structure:
 {
   "pnr": "string (6 characters)",
   "airline": "string (VNA|VJ|QH|VU)",
+  "ticket_number": "string",
   "passengers": ["UPPERCASE FULLNAME 1", "UPPERCASE FULLNAME 2"],
+  "departure_place": "string",
+  "arrival_place": "string",
+  "departure_code": "string",
+  "arrival_code": "string",
   "itinerary": "string (route format)",
   "flight_date": "ISO-8601 datetime",
   "net_price": number,
@@ -116,7 +126,12 @@ async def parse_flight_content(file_bytes: bytes, mime_type: str) -> Dict[str, A
         {
             "pnr": str,
             "airline": str,
+            "ticket_number": str,
             "passengers": List[str],
+            "departure_place": str,
+            "arrival_place": str,
+            "departure_code": str,
+            "arrival_code": str,
             "itinerary": str,
             "flight_date": str (ISO-8601),
             "net_price": float,
@@ -178,7 +193,19 @@ async def parse_flight_content(file_bytes: bytes, mime_type: str) -> Dict[str, A
         ) from e
 
     # Validate required fields are present
-    required_fields = ["pnr", "airline", "passengers", "itinerary", "flight_date", "net_price"]
+    required_fields = [
+        "pnr",
+        "airline",
+        "ticket_number",
+        "passengers",
+        "departure_place",
+        "arrival_place",
+        "departure_code",
+        "arrival_code",
+        "itinerary",
+        "flight_date",
+        "net_price",
+    ]
     missing_fields = [field for field in required_fields if field not in data]
 
     if missing_fields:
@@ -190,6 +217,10 @@ async def parse_flight_content(file_bytes: bytes, mime_type: str) -> Dict[str, A
     # Ensure currency is set
     if "currency" not in data:
         data["currency"] = "VND"
+
+    data["departure_code"] = str(data["departure_code"]).strip().upper()
+    data["arrival_code"] = str(data["arrival_code"]).strip().upper()
+    data["itinerary"] = f"{data['departure_code']}-{data['arrival_code']}"
 
     return data
 

@@ -33,14 +33,24 @@
 ### Model: Ticket
 - `id`: UUID (PK)
 - `pnr`: String(6) - Unique Booking Reference
+- `ticket_number`: String Nullable - Airline ticket number (not unique; may repeat across outbound/return legs)
 - `airline`: Enum (VNA, VJ, QH, VU)
 - `passengers`: List[String] (JSON type in DB)
-- `itinerary`: String (e.g., "HAN-SGN")
+- `departure_place`: String Nullable (Human-readable origin place, e.g. "Đà Nẵng")
+- `arrival_place`: String Nullable (Human-readable destination place, e.g. "Hồ Chí Minh")
+- `departure_code`: String Nullable (Origin city/place code, e.g. "DAD")
+- `arrival_code`: String Nullable (Destination city/place code, e.g. "SGN")
+- `itinerary`: String (Compatibility/display field, e.g., "HAN-SGN")
 - `flight_date`: DateTime
 - `net_price`: Float (Supplier/Airline cost)
 - `selling_price`: Float (Price sold to Customer)
 - `status`: Enum (DRAFT, CONFIRMED, VOID, REFUNDED)
 - `customer_id`: UUID (FK to Customer)
+
+### Ticket Route Rule
+- New ticket writes should treat `departure_place`, `arrival_place`, `departure_code`, and `arrival_code` as the structured source-of-truth route fields.
+- `itinerary` remains in the schema for backward compatibility and display, and should be derived from the route codes when both are available.
+- Do not overload place fields with airport-level data. If the product later needs exact airport names/codes, add dedicated airport fields alongside the current place fields.
 
 ### Model: Transaction
 - `id`: UUID (PK)

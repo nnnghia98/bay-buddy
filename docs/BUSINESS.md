@@ -27,6 +27,17 @@ Each ticket parsed into the system follows a specific lifecycle. Status changes 
 | **VOID**      | Cancelled shortly after booking (usually same day).       | Reverses the debt completely.                      |
 | **REFUNDED**  | Ticket returned after a period for a partial/full refund. | Requires a 'Credit' transaction to adjust balance. |
 
+### Ticket Identity & Route Data
+
+- Every ticket should store the airline `ticket_number` when available.
+- `ticket_number` is not a unique business key. Multiple rows may share the same number for return-trip scenarios.
+- Route data should be captured explicitly with:
+  - `departure_place`
+  - `arrival_place`
+  - `departure_code`
+  - `arrival_code`
+- `itinerary` should remain available for display and compatibility, but it is not the preferred structured source for new data entry.
+
 ## 2. Pricing Architecture
 
 The system distinguishes between what the airline charges and what the customer pays.

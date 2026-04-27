@@ -79,13 +79,39 @@ class TicketConfirmPayload(BaseModel):
         description="6-character PNR booking reference code.",
     )
     airline: Airline = Field(description="Carrier code: VNA | VJ | QH | VU.")
+    ticket_number: Optional[str] = Field(
+        default=None,
+        max_length=50,
+        description="Airline ticket number.",
+    )
     passengers: List[str] = Field(
         min_length=1,
         description="List of passenger full names (UPPERCASE). At least one required.",
     )
-    itinerary: str = Field(
+    departure_place: Optional[str] = Field(
+        default=None,
+        max_length=255,
+        description="Readable departure place, e.g. Da Nang City.",
+    )
+    arrival_place: Optional[str] = Field(
+        default=None,
+        max_length=255,
+        description="Readable arrival place, e.g. Ho Chi Minh City.",
+    )
+    departure_code: Optional[str] = Field(
+        default=None,
+        max_length=10,
+        description="Departure place code, e.g. DAD.",
+    )
+    arrival_code: Optional[str] = Field(
+        default=None,
+        max_length=10,
+        description="Arrival place code, e.g. SGN.",
+    )
+    itinerary: Optional[str] = Field(
+        default=None,
         max_length=100,
-        description='Flight route string, e.g. "HAN-SGN".',
+        description='Flight route string, e.g. "HAN-SGN". Derived from codes when omitted.',
     )
     flight_date: datetime = Field(description="Scheduled departure datetime (ISO-8601 / UTC).")
 
@@ -126,6 +152,44 @@ class TicketConfirmPayload(BaseModel):
                     f"net_price + service_fee ({self.net_price} + {self.service_fee} = {computed}). "
                     "Please correct the pricing fields."
                 )
+        return self
+
+    @model_validator(mode="after")
+    def validate_route_details(self) -> "TicketConfirmPayload":
+        self.ticket_number = (self.ticket_number or "").strip() or None
+        self.departure_place = (self.departure_place or "").strip() or None
+        self.arrival_place = (self.arrival_place or "").strip() or None
+
+        departure_code = (self.departure_code or "").strip().upper() or None
+        arrival_code = (self.arrival_code or "").strip().upper() or None
+        itinerary = (self.itinerary or "").strip().upper() or None
+
+        if (departure_code is None) != (arrival_code is None):
+            raise ValueError("departure_code and arrival_code must be provided together.")
+
+        if departure_code and arrival_code:
+            computed_itinerary = f"{departure_code}-{arrival_code}"
+            if itinerary and itinerary != computed_itinerary:
+                raise ValueError(
+                    f"itinerary '{itinerary}' must match departure/arrival codes "
+                    f"('{computed_itinerary}')."
+                )
+            itinerary = computed_itinerary
+
+        if itinerary is None:
+            raise ValueError(
+                "Either itinerary or both departure_code and arrival_code are required."
+            )
+
+        if departure_code is None or arrival_code is None:
+            route_parts = [part.strip().upper() for part in itinerary.split("-") if part.strip()]
+            if len(route_parts) >= 2:
+                departure_code = route_parts[0]
+                arrival_code = route_parts[-1]
+
+        self.departure_code = departure_code
+        self.arrival_code = arrival_code
+        self.itinerary = itinerary
         return self
 
 
@@ -311,7 +375,12 @@ def create_ticket_with_transaction(
     ticket = Ticket(
         pnr=payload.pnr,
         airline=payload.airline,
+        ticket_number=payload.ticket_number,
         passengers=payload.passengers,
+        departure_place=payload.departure_place,
+        arrival_place=payload.arrival_place,
+        departure_code=payload.departure_code,
+        arrival_code=payload.arrival_code,
         itinerary=payload.itinerary,
         flight_date=payload.flight_date,
         net_price=payload.net_price,

@@ -12,9 +12,9 @@ These rows represent flight bookings and translate directly into the **`Ticket`*
 | **Nội dung** | `passengers` | `Ticket` | The name of the passenger(s). Stored as a JSON array in the database. |
 | **Mã chỗ** | `pnr` | `Ticket` | The 6-character Unique Booking Reference (e.g., `FKWODX`). |
 | **Hãng** | `airline` | `Ticket` | Mapped to the `Airline` Enum (e.g., `VN`, `VJ`). |
-| **Số Vé** | *N/A (See Note)* | `Ticket` | The 13-digit ticket number. *Note: We can add a `ticket_number` column to the Ticket table, or append this to the `passengers` JSON data.* |
+| **Số Vé** | `ticket_number` | `Ticket` | The airline ticket number stored directly on the ticket row. It is indexed but not unique because return-trip legs may share the same number. |
 | **Loại Vé** | *N/A (See Note)* | `Ticket` | Ticket class (e.g., `B`, `Eco1`). Can be stored in a `note` field or a newly added column if necessary. |
-| **Hành Trình Đi/Về** | `itinerary` | `Ticket` | Combined into the itinerary string (e.g., `DAD-HAN`). |
+| **Hành Trình Đi/Về** | `departure_place`, `arrival_place`, `departure_code`, `arrival_code`, `itinerary` | `Ticket` | Route data is now stored as explicit place/code pairs, while `itinerary` remains available as a derived compatibility/display field (e.g., `DAD-HAN`). |
 | **Giá Hệ Thống** | `net_price` | `Ticket` | Supplier/Airline cost. |
 | **Giá Thu** | `selling_price`| `Ticket` | Price sold to the customer (creates positive debt). |
 

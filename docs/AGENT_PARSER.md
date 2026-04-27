@@ -19,9 +19,14 @@ Extract structured data from flight booking confirmations issued by Vietnam Airl
 ## Extraction Requirements
 
 - **PNR**: 6-character alphanumeric booking reference code.
+- **Ticket Number**: Extract the airline ticket number when visible.
 - **Airline**: Map to one of [VNA, VJ, QH, VU]. Use airline name, logo context, or branding color to determine.
 - **Passengers**: List of full names in UPPERCASE format.
-- **Itinerary**: Flight route (e.g., `HAN-SGN` or `SGN-DAD-HAN`).
+- **Departure Place**: Human-readable origin place/city (e.g., `Đà Nẵng`).
+- **Arrival Place**: Human-readable destination place/city (e.g., `Hồ Chí Minh`).
+- **Departure Code**: Origin city/place code (e.g., `DAD`).
+- **Arrival Code**: Destination city/place code (e.g., `SGN`).
+- **Itinerary**: Compatibility/display route derived from the primary codes (e.g., `DAD-SGN`).
 - **Flight Date**: Convert to ISO-8601 format (`YYYY-MM-DDTHH:MM:SS`).
 - **Net Price**: Extract the total price. If unclear or absent, default to `0`.
 - **Currency**: Default to `VND` for the Vietnamese market.
@@ -52,13 +57,14 @@ When the input is an **image or PDF**, apply the following visual analysis strat
 - Recognize currency formatting: `2.500.000 VND`, `2,500,000 VND`, or `VND 2500000` are all equivalent.
 
 ### 4. Flight Segment Layout
-- Itinerary is commonly displayed as a row with departure airport code → arrival airport code (e.g., `SGN → HAN`).
+- Route data is commonly displayed as a row with departure code → arrival code (e.g., `SGN → HAN`).
 - Look for IATA 3-letter airport codes. If city names are used instead, map them:
   - Hà Nội / Hanoi → `HAN`
   - TP.HCM / Hồ Chí Minh / Saigon → `SGN`
   - Đà Nẵng / Da Nang → `DAD`
   - Phú Quốc / Phu Quoc → `PQC`
   - Nha Trang / Cam Ranh → `CXR`
+- When city/place names are visible, return both the human-readable place fields and the normalized codes.
 
 ---
 
@@ -66,8 +72,13 @@ When the input is an **image or PDF**, apply the following visual analysis strat
 Return ONLY a valid JSON object with no markdown, no explanation:
 {
   "pnr": "string (6 characters)",
+  "ticket_number": "string",
   "airline": "string (VNA|VJ|QH|VU)",
   "passengers": ["UPPERCASE FULLNAME 1", "UPPERCASE FULLNAME 2"],
+  "departure_place": "string",
+  "arrival_place": "string",
+  "departure_code": "string",
+  "arrival_code": "string",
   "itinerary": "string (e.g. SGN-HAN)",
   "flight_date": "ISO-8601 datetime string",
   "net_price": number,

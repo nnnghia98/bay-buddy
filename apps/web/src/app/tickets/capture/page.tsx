@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import * as React from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -41,10 +41,15 @@ const ticketSchema = z.object({
   customerName: z.string().min(1, "Customer Name is required"),
   pnr: z.string().min(1, "PNR is required"),
   airline: z.string().min(1, "Airline is required"),
+  ticketNumber: z.string().min(1, "Ticket Number is required"),
   flightDate: z.string().min(1, "Flight Date is required"),
   passengers: z
     .array(passengerSchema)
     .min(1, "At least one passenger is required"),
+  departurePlace: z.string().min(1, "Departure Place is required"),
+  arrivalPlace: z.string().min(1, "Arrival Place is required"),
+  departureCode: z.string().min(1, "Departure Code is required"),
+  arrivalCode: z.string().min(1, "Arrival Code is required"),
   route: z.string().min(1, "Route is required"),
   totalPrice: z.preprocess(
     (val) => Number(val),
@@ -56,8 +61,13 @@ type TicketFormValues = {
   customerName: string;
   pnr: string;
   airline: string;
+  ticketNumber: string;
   flightDate: string;
   passengers: { name: string }[];
+  departurePlace: string;
+  arrivalPlace: string;
+  departureCode: string;
+  arrivalCode: string;
   route: string;
   totalPrice: number;
 };
@@ -69,7 +79,12 @@ type TicketFormValues = {
 interface ParsedFlightData {
   pnr: string;
   airline: string;
+  ticket_number: string;
   passengers: string[];
+  departure_place: string;
+  arrival_place: string;
+  departure_code: string;
+  arrival_code: string;
   itinerary: string;
   flight_date: string;
   net_price: number;
@@ -95,7 +110,12 @@ async function saveTicket(data: TicketFormValues) {
     customer_name: data.customerName,
     pnr: data.pnr,
     airline: data.airline,
+    ticket_number: data.ticketNumber,
     passengers: data.passengers.map((p) => p.name),
+    departure_place: data.departurePlace,
+    arrival_place: data.arrivalPlace,
+    departure_code: data.departureCode.toUpperCase(),
+    arrival_code: data.arrivalCode.toUpperCase(),
     itinerary: data.route,
     flight_date: new Date(data.flightDate).toISOString(),
     net_price: data.totalPrice,
@@ -133,8 +153,13 @@ export default function CaptureTicketPage() {
       customerName: "",
       pnr: "",
       airline: "",
+      ticketNumber: "",
       flightDate: "",
       passengers: [{ name: "" }],
+      departurePlace: "",
+      arrivalPlace: "",
+      departureCode: "",
+      arrivalCode: "",
       route: "",
       totalPrice: 0,
     },
@@ -144,6 +169,27 @@ export default function CaptureTicketPage() {
     control: form.control,
     name: "passengers",
   });
+  const departureCode = useWatch({
+    control: form.control,
+    name: "departureCode",
+  });
+  const arrivalCode = useWatch({
+    control: form.control,
+    name: "arrivalCode",
+  });
+
+  React.useEffect(() => {
+    const normalizedDepartureCode = departureCode?.trim().toUpperCase();
+    const normalizedArrivalCode = arrivalCode?.trim().toUpperCase();
+
+    if (!normalizedDepartureCode || !normalizedArrivalCode) {
+      return;
+    }
+
+    form.setValue("route", `${normalizedDepartureCode}-${normalizedArrivalCode}`, {
+      shouldDirty: true,
+    });
+  }, [arrivalCode, departureCode, form]);
 
   // ---------- File handling ----------
 
@@ -188,6 +234,11 @@ export default function CaptureTicketPage() {
     onSuccess: (data) => {
       form.setValue("pnr", data.pnr);
       form.setValue("airline", data.airline);
+      form.setValue("ticketNumber", data.ticket_number);
+      form.setValue("departurePlace", data.departure_place);
+      form.setValue("arrivalPlace", data.arrival_place);
+      form.setValue("departureCode", data.departure_code);
+      form.setValue("arrivalCode", data.arrival_code);
       form.setValue("route", data.itinerary);
 
       const dateStr = data.flight_date ? data.flight_date.slice(0, 16) : "";
@@ -430,13 +481,83 @@ export default function CaptureTicketPage() {
               </div>
             </div>
 
-            {/* Route & Date */}
+            <div className="space-y-2">
+              <Label htmlFor="ticketNumber">Số vé</Label>
+              <Input
+                id="ticketNumber"
+                placeholder="Ví dụ: 7382319992101"
+                {...form.register("ticketNumber")}
+              />
+              {form.formState.errors.ticketNumber && (
+                <p className="text-xs text-red-500">
+                  {form.formState.errors.ticketNumber.message}
+                </p>
+              )}
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="departurePlace">Nơi đi</Label>
+                <Input
+                  id="departurePlace"
+                  placeholder="Ví dụ: Da Nang City"
+                  {...form.register("departurePlace")}
+                />
+                {form.formState.errors.departurePlace && (
+                  <p className="text-xs text-red-500">
+                    {form.formState.errors.departurePlace.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="arrivalPlace">Nơi đến</Label>
+                <Input
+                  id="arrivalPlace"
+                  placeholder="Ví dụ: Ho Chi Minh City"
+                  {...form.register("arrivalPlace")}
+                />
+                {form.formState.errors.arrivalPlace && (
+                  <p className="text-xs text-red-500">
+                    {form.formState.errors.arrivalPlace.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Route & Date */}
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="departureCode">Mã nơi đi</Label>
+                <Input
+                  id="departureCode"
+                  placeholder="Ví dụ: DAD"
+                  {...form.register("departureCode")}
+                />
+                {form.formState.errors.departureCode && (
+                  <p className="text-xs text-red-500">
+                    {form.formState.errors.departureCode.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="arrivalCode">Mã nơi đến</Label>
+                <Input
+                  id="arrivalCode"
+                  placeholder="Ví dụ: SGN"
+                  {...form.register("arrivalCode")}
+                />
+                {form.formState.errors.arrivalCode && (
+                  <p className="text-xs text-red-500">
+                    {form.formState.errors.arrivalCode.message}
+                  </p>
+                )}
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="route">Hành trình</Label>
                 <Input
                   id="route"
                   placeholder="Ví dụ: SGN-HAN"
+                  readOnly
                   {...form.register("route")}
                 />
                 {form.formState.errors.route && (

@@ -47,6 +47,32 @@ class TicketBase(SQLModel):
     airline: Airline = Field(
         description="Carrier code: VNA (Vietnam Airlines), VJ (Vietjet), QH (Bamboo), VU (Vietravel).",
     )
+    ticket_number: Optional[str] = Field(
+        default=None,
+        index=True,
+        max_length=50,
+        description="Airline ticket number. May repeat across outbound/return ticket rows.",
+    )
+    departure_place: Optional[str] = Field(
+        default=None,
+        max_length=255,
+        description="Human-readable departure place, e.g. Da Nang City.",
+    )
+    arrival_place: Optional[str] = Field(
+        default=None,
+        max_length=255,
+        description="Human-readable arrival place, e.g. Ho Chi Minh City.",
+    )
+    departure_code: Optional[str] = Field(
+        default=None,
+        max_length=10,
+        description="Compact departure place code, e.g. DAD.",
+    )
+    arrival_code: Optional[str] = Field(
+        default=None,
+        max_length=10,
+        description="Compact arrival place code, e.g. SGN.",
+    )
     # Hành trình – e.g. "HAN-SGN"
     itinerary: str = Field(
         max_length=100,
@@ -140,7 +166,12 @@ class TicketUpdate(SQLModel):
 
     pnr: Optional[str] = Field(default=None, min_length=6, max_length=6)
     airline: Optional[Airline] = None
+    ticket_number: Optional[str] = Field(default=None, max_length=50)
     passengers: Optional[List[str]] = None
+    departure_place: Optional[str] = Field(default=None, max_length=255)
+    arrival_place: Optional[str] = Field(default=None, max_length=255)
+    departure_code: Optional[str] = Field(default=None, max_length=10)
+    arrival_code: Optional[str] = Field(default=None, max_length=10)
     itinerary: Optional[str] = Field(default=None, max_length=100)
     flight_date: Optional[datetime] = None
     net_price: Optional[float] = Field(default=None, ge=0)
