@@ -1,4 +1,8 @@
 export default {
+  login: {
+    usernameLabel: "Username",
+    usernamePlaceholder: "Username",
+  },
   appShell: {
     home: "Home",
   },

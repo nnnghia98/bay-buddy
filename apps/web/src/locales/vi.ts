@@ -1,4 +1,8 @@
 export default {
+  login: {
+    usernameLabel: "Tên đăng nhập",
+    usernamePlaceholder: "Tên đăng nhập",
+  },
   appShell: {
     home: "Trang chủ",
   },

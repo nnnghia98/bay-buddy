@@ -38,19 +38,19 @@ const TicketBaseSchema = z.object({
   airline: AirlineSchema,
 
   /** Airline ticket number. Maps to Python: ticket_number */
-  ticket_number: z.string().min(1).max(50).optional(),
+  ticket_number: z.string().min(1).max(50).nullable().optional(),
 
   /** Human-readable departure place. Maps to Python: departure_place */
-  departure_place: z.string().min(1).max(255).optional(),
+  departure_place: z.string().min(1).max(255).nullable().optional(),
 
   /** Human-readable arrival place. Maps to Python: arrival_place */
-  arrival_place: z.string().min(1).max(255).optional(),
+  arrival_place: z.string().min(1).max(255).nullable().optional(),
 
   /** Departure place code. Maps to Python: departure_code */
-  departure_code: z.string().min(1).max(10).toUpperCase().optional(),
+  departure_code: z.string().min(1).max(10).toUpperCase().nullable().optional(),
 
   /** Arrival place code. Maps to Python: arrival_code */
-  arrival_code: z.string().min(1).max(10).toUpperCase().optional(),
+  arrival_code: z.string().min(1).max(10).toUpperCase().nullable().optional(),
 
   /**
    * Flight route string (hành trình).

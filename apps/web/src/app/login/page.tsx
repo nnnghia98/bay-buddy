@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/lib/auth-context"
 import { apiFetch } from "@/lib/api"
+import { useI18n } from "@/locales/client"
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -45,6 +46,7 @@ async function loginRequest(values: LoginValues): Promise<LoginResponse> {
 
 export default function LoginPage() {
   const router = useRouter()
+  const t = useI18n()
   const { login, token, isReady } = useAuth()
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
@@ -84,38 +86,29 @@ export default function LoginPage() {
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl items-center justify-center">
         <div className="w-full max-w-2xl overflow-hidden rounded-[32px] border border-border bg-white shadow-[var(--shadow-xl),var(--theme-shadow-soft)]">
           <div className="px-8 py-10 sm:px-10 sm:py-12">
-            <div className="mb-8 space-y-2">
-              <div className="inline-flex items-center">
+            <div className="mb-8 flex justify-center">
+              <div className="inline-flex items-center justify-center bg-white px-3 py-2">
                 <Image
-                  alt="Bay Buddy logo"
-                  className="h-14 w-auto"
+                  alt="Bay Buddy"
+                  className="h-16 w-auto sm:h-[4.5rem]"
                   height={820}
                   priority
-                  src="/branding/logo-bay-buddy-v1-crop.png"
-                  width={1020}
+                  src="/branding/logo-bay-buddy-text-v1.png"
+                  width={2450}
                 />
               </div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-                Tài khoản nội bộ
-              </p>
-              <h2 className="text-3xl font-medium tracking-[-0.02em] text-foreground">
-                Chào mừng quay lại
-              </h2>
-              <p className="text-sm leading-6 text-muted-foreground">
-                Nhập tên đăng nhập và mật khẩu để nhận access token làm việc.
-              </p>
             </div>
 
             <form className="space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
               <div className="space-y-2">
-                <Label htmlFor="username">Tên đăng nhập</Label>
+                <Label htmlFor="username">{t("login.usernameLabel")}</Label>
                 <div className="relative">
                   <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="username"
                     autoComplete="username"
                     className="pl-10"
-                    placeholder="staff.username"
+                    placeholder={t("login.usernamePlaceholder")}
                     {...form.register("username")}
                   />
                 </div>
