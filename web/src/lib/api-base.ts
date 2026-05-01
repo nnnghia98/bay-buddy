@@ -1,0 +1,29 @@
+const DEFAULT_PUBLIC_API_BASE_URL = "http://localhost:6768/api/v1"
+const DEFAULT_INTERNAL_API_BASE_URL = "http://localhost:6768/api/v1"
+
+function normalizeBaseUrl(value: string): string {
+  return value.replace(/\/$/, "")
+}
+
+export function getClientApiBaseUrl(): string {
+  return normalizeBaseUrl(
+    process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_PUBLIC_API_BASE_URL,
+  )
+}
+
+export function getServerApiBaseUrl(): string {
+  const defaultServerBaseUrl =
+    process.env.NODE_ENV === "development"
+      ? DEFAULT_PUBLIC_API_BASE_URL
+      : DEFAULT_INTERNAL_API_BASE_URL
+
+  return normalizeBaseUrl(
+    process.env.INTERNAL_API_BASE_URL ??
+      process.env.NEXT_PUBLIC_API_BASE_URL ??
+      defaultServerBaseUrl,
+  )
+}
+
+export function buildApiUrl(path: string, baseUrl: string): string {
+  return `${baseUrl}/${path.replace(/^\//, "")}`
+}

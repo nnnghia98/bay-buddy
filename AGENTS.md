@@ -94,13 +94,13 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 
 ## 🚀 Common Commands
 
-### Backend (apps/api)
+### Backend (api)
 
 - **Install Dependencies**: `poetry install`
 - **Run Development Server**: `yarn api` (from project root) or `poetry run uvicorn main:app --reload --port 6768`
 - **Database Migrations**: `poetry run alembic upgrade head`
 
-### Frontend (apps/web)
+### Frontend (web)
 
 - **Install Dependencies**: `yarn install`
 - **Run Development Server**: `yarn web` (from project root) or `yarn dev --port 6769`

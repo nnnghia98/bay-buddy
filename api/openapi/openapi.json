@@ -1,0 +1,3194 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bay Buddy API",
+    "description": "Flight & Debt Management System for Vietnamese travel agencies. Powered by FastAPI, SQLModel, and Gemini AI.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Login",
+        "description": "Authenticate a user from OAuth2 form fields and return a JWT access token.",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_api_v1_auth_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Get Current User Profile",
+        "description": "Return the authenticated user's public profile.",
+        "operationId": "get_current_user_profile_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ai/parse": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Parse flight confirmation file",
+        "description": "Extract structured flight data from an uploaded image or PDF using Gemini 2.5 Flash. Accepts multipart/form-data with a single 'file' field. Returns JSON matching the Ticket model schema suitable for database storage.",
+        "operationId": "parse_flight_api_v1_ai_parse_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_parse_flight_api_v1_ai_parse_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParseFlightResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/health": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Check AI service health",
+        "description": "Verify that the AI service is properly configured.",
+        "operationId": "ai_health_check_api_v1_ai_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Ai Health Check Api V1 Ai Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get Current User Profile",
+        "description": "Get the currently authenticated user's profile.",
+        "operationId": "get_current_user_profile_api_v1_users_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Current User Profile Api V1 Users Me Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Create User",
+        "description": "Create a new user. Only ADMIN can create other users (or staff).",
+        "operationId": "create_user_api_v1_users__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Create User Api V1 Users  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "List Users",
+        "description": "List all users (ADMIN only).",
+        "operationId": "list_users_api_v1_users__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response List Users Api V1 Users  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/": {
+      "post": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Create Customer",
+        "description": "Create a new customer.",
+        "operationId": "create_customer_api_v1_customers__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Create Customer Api V1 Customers  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "List Customers",
+        "description": "List all customers for the directory page.",
+        "operationId": "list_customers_api_v1_customers__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response List Customers Api V1 Customers  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{customer_id}": {
+      "get": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Get Customer",
+        "description": "Get a specific customer by ID.",
+        "operationId": "get_customer_api_v1_customers__customer_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Customer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Customer Api V1 Customers  Customer Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Update Customer",
+        "description": "Partially update a customer and enforce unique email/tax code constraints.",
+        "operationId": "update_customer_api_v1_customers__customer_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Customer Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Customer Api V1 Customers  Customer Id  Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{customer_id}/ledger": {
+      "get": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Get Customer Ledger Route",
+        "description": "Return the customer's ledger with ticket and transaction history.",
+        "operationId": "get_customer_ledger_route_api_v1_customers__customer_id__ledger_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Customer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Customer Ledger Route Api V1 Customers  Customer Id  Ledger Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{customer_id}/payments": {
+      "post": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Record Customer Payment",
+        "description": "Record a manual payment for a customer and reduce their balance.",
+        "operationId": "record_customer_payment_api_v1_customers__customer_id__payments_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Customer Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordPaymentPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Record Customer Payment Api V1 Customers  Customer Id  Payments Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tickets/confirm": {
+      "post": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Confirm & save an AI-parsed ticket",
+        "description": "Accepts the user-reviewed ticket data from the frontend. Automatically resolves or creates the customer record by name, saves the ticket as CONFIRMED, creates a CHARGE transaction for the debt, and updates the customer balance. All changes are committed atomically. Business rule: selling_price = net_price + service_fee (BUSINESS.md §2).",
+        "operationId": "confirm_ticket_api_v1_tickets_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketConfirmPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Confirm Ticket Api V1 Tickets Confirm Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tickets/": {
+      "post": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Create Ticket",
+        "description": "Legacy write path retired in favor of POST /confirm.\n\nThe confirm flow is the only supported ledger-safe ticket mutation because it\ncreates the matching CHARGE transaction and updates customer.balance atomically.",
+        "operationId": "create_ticket_api_v1_tickets__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Create Ticket Api V1 Tickets  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List Tickets",
+        "description": "List all tickets (paginated).",
+        "operationId": "list_tickets_api_v1_tickets__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response List Tickets Api V1 Tickets  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tickets/{ticket_id}": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Get Ticket",
+        "description": "Get a specific ticket by UUID.",
+        "operationId": "get_ticket_api_v1_tickets__ticket_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Ticket Api V1 Tickets  Ticket Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Update Ticket",
+        "description": "Legacy write path retired in favor of the confirm-only ticket flow.",
+        "operationId": "update_ticket_api_v1_tickets__ticket_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Ticket Api V1 Tickets  Ticket Id  Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tickets/{ticket_id}/void": {
+      "post": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Void Ticket Route",
+        "description": "Reverse the confirmed ticket debt and mark the ticket VOID.",
+        "operationId": "void_ticket_route_api_v1_tickets__ticket_id__void_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Void Ticket Route Api V1 Tickets  Ticket Id  Void Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tickets/{ticket_id}/refund": {
+      "post": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Refund Ticket Route",
+        "description": "Record a refund credit adjustment and mark the ticket REFUNDED.",
+        "operationId": "refund_ticket_route_api_v1_tickets__ticket_id__refund_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketRefundPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Refund Ticket Route Api V1 Tickets  Ticket Id  Refund Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tickets/{ticket_id}/reassign": {
+      "post": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Reassign Ticket Route",
+        "description": "Move a confirmed ticket and its debt to another customer.",
+        "operationId": "reassign_ticket_route_api_v1_tickets__ticket_id__reassign_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketReassignPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Reassign Ticket Route Api V1 Tickets  Ticket Id  Reassign Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/transactions/": {
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Create Transaction",
+        "description": "Create a new transaction and update the customer's balance.\nThe signed debt impact is derived from `category`.",
+        "operationId": "create_transaction_api_v1_transactions__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Create Transaction Api V1 Transactions  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "List Transactions",
+        "description": "List all transactions.",
+        "operationId": "list_transactions_api_v1_transactions__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response List Transactions Api V1 Transactions  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/finance/invoices": {
+      "post": {
+        "tags": [
+          "Finance"
+        ],
+        "summary": "Create Invoice Route",
+        "description": "Generate a draft invoice from selected tickets in one atomic transaction.",
+        "operationId": "create_invoice_route_api_v1_finance_invoices_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Create Invoice Route Api V1 Finance Invoices Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Finance"
+        ],
+        "summary": "List Invoices Route",
+        "description": "List customer invoices with optional status/date filters.",
+        "operationId": "list_invoices_route_api_v1_finance_invoices_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Customer Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/InvoiceStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response List Invoices Route Api V1 Finance Invoices Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/finance/invoices/{invoice_id}": {
+      "get": {
+        "tags": [
+          "Finance"
+        ],
+        "summary": "Get Invoice Route",
+        "description": "Fetch full invoice details including line items and amount in words.",
+        "operationId": "get_invoice_route_api_v1_finance_invoices__invoice_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "invoice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Invoice Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Invoice Route Api V1 Finance Invoices  Invoice Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Finance"
+        ],
+        "summary": "Update Invoice Route",
+        "description": "Update mutable draft invoice fields. Issued/paid invoices are read-only.",
+        "operationId": "update_invoice_route_api_v1_finance_invoices__invoice_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "invoice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Invoice Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Invoice Route Api V1 Finance Invoices  Invoice Id  Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/finance/invoices/{invoice_id}/public": {
+      "get": {
+        "tags": [
+          "Finance"
+        ],
+        "summary": "Get Invoice Public Route",
+        "description": "Return a printable/public invoice payload using immutable snapshots only.",
+        "operationId": "get_invoice_public_route_api_v1_finance_invoices__invoice_id__public_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "invoice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Invoice Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Invoice Public Route Api V1 Finance Invoices  Invoice Id  Public Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/finance/invoices/{invoice_id}/status": {
+      "patch": {
+        "tags": [
+          "Finance"
+        ],
+        "summary": "Update Invoice Status Route",
+        "description": "Update invoice lifecycle status and lock linked transactions on issue.",
+        "operationId": "update_invoice_status_route_api_v1_finance_invoices__invoice_id__status_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "invoice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Invoice Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceStatusUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Invoice Status Route Api V1 Finance Invoices  Invoice Id  Status Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/finance/quotes": {
+      "post": {
+        "tags": [
+          "Finance"
+        ],
+        "summary": "Create Quote Route",
+        "description": "Create an informational quote without touching the ledger.",
+        "operationId": "create_quote_route_api_v1_finance_quotes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Quote Route Api V1 Finance Quotes Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/finance/quotes/{quote_id}": {
+      "get": {
+        "tags": [
+          "Finance"
+        ],
+        "summary": "Get Quote Route",
+        "description": "Fetch full quote details from immutable snapshot fields.",
+        "operationId": "get_quote_route_api_v1_finance_quotes__quote_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "quote_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Quote Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Quote Route Api V1 Finance Quotes  Quote Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/finance/quotes/{quote_id}/convert-to-invoice": {
+      "post": {
+        "tags": [
+          "Finance"
+        ],
+        "summary": "Convert Quote To Invoice Route",
+        "description": "Accept a quote and convert it into a draft invoice.",
+        "operationId": "convert_quote_to_invoice_route_api_v1_finance_quotes__quote_id__convert_to_invoice_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "quote_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Quote Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Convert Quote To Invoice Route Api V1 Finance Quotes  Quote Id  Convert To Invoice Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Health Check",
+        "description": "Lightweight liveness probe for deployment platforms.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Check Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Airline": {
+        "type": "string",
+        "enum": [
+          "VNA",
+          "VJ",
+          "QH",
+          "VU"
+        ],
+        "title": "Airline",
+        "description": "Supported Vietnamese airlines mapped to their IATA-style codes."
+      },
+      "Body_login_api_v1_auth_login_post": {
+        "properties": {
+          "grant_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^password$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grant Type"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "title": "Password"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": ""
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "format": "password",
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Body_login_api_v1_auth_login_post"
+      },
+      "Body_parse_flight_api_v1_ai_parse_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File",
+            "description": "Image (JPEG/PNG/WebP) or PDF of a flight booking confirmation."
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_flight_api_v1_ai_parse_post"
+      },
+      "CustomerCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Full name of the individual or registered business name."
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "description": "Optional customer email used for contact and invoice delivery."
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone",
+            "description": "Optional customer phone number."
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address",
+            "description": "Optional billing/customer address."
+          },
+          "tax_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Code",
+            "description": "Optional Vietnamese tax code for invoicing."
+          },
+          "type": {
+            "$ref": "#/components/schemas/CustomerType",
+            "description": "INDIVIDUAL for personal travellers; BUSINESS for corporate accounts.",
+            "default": "INDIVIDUAL"
+          },
+          "balance": {
+            "type": "number",
+            "title": "Balance",
+            "description": "Current debt balance (công nợ). Positive = customer owes; Negative = customer has credit.",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CustomerCreate",
+        "description": "Payload accepted by POST /customers."
+      },
+      "CustomerType": {
+        "type": "string",
+        "enum": [
+          "INDIVIDUAL",
+          "BUSINESS"
+        ],
+        "title": "CustomerType",
+        "description": "Distinguishes individual travellers from corporate/business accounts."
+      },
+      "CustomerUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "tax_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Code"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomerType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "balance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance"
+          }
+        },
+        "type": "object",
+        "title": "CustomerUpdate",
+        "description": "All fields optional for partial PATCH payloads."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InvoiceCreate": {
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Customer Id"
+          },
+          "ticket_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Ticket Ids"
+          },
+          "tax_amount": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Tax Amount",
+            "default": 0.0
+          },
+          "discount_amount": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Discount Amount",
+            "default": 0.0
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "customer_id"
+        ],
+        "title": "InvoiceCreate",
+        "description": "Payload for POST /invoices."
+      },
+      "InvoiceStatus": {
+        "type": "string",
+        "enum": [
+          "DRAFT",
+          "ISSUED",
+          "PAID",
+          "CANCELLED"
+        ],
+        "title": "InvoiceStatus",
+        "description": "Lifecycle state for quotes / invoices under VN financial workflows."
+      },
+      "InvoiceStatusUpdate": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/InvoiceStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "InvoiceStatusUpdate",
+        "description": "Payload for PATCH /invoices/{id}/status."
+      },
+      "InvoiceUpdate": {
+        "properties": {
+          "tax_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Amount"
+          },
+          "discount_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discount Amount"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "title": "InvoiceUpdate",
+        "description": "Draft-only mutable invoice fields."
+      },
+      "ParseFlightResponse": {
+        "properties": {
+          "pnr": {
+            "type": "string",
+            "title": "Pnr",
+            "description": "6-character PNR booking reference code."
+          },
+          "airline": {
+            "type": "string",
+            "title": "Airline",
+            "description": "Airline code: VNA, VJ, QH, or VU."
+          },
+          "ticket_number": {
+            "type": "string",
+            "title": "Ticket Number",
+            "description": "Airline ticket number."
+          },
+          "passengers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Passengers",
+            "description": "List of passenger names in UPPERCASE."
+          },
+          "departure_place": {
+            "type": "string",
+            "title": "Departure Place",
+            "description": "Readable departure place name."
+          },
+          "arrival_place": {
+            "type": "string",
+            "title": "Arrival Place",
+            "description": "Readable arrival place name."
+          },
+          "departure_code": {
+            "type": "string",
+            "title": "Departure Code",
+            "description": "Departure place code, e.g. DAD."
+          },
+          "arrival_code": {
+            "type": "string",
+            "title": "Arrival Code",
+            "description": "Arrival place code, e.g. SGN."
+          },
+          "itinerary": {
+            "type": "string",
+            "title": "Itinerary",
+            "description": "Flight route (e.g., 'HAN-SGN')."
+          },
+          "flight_date": {
+            "type": "string",
+            "title": "Flight Date",
+            "description": "Departure datetime in ISO-8601 format."
+          },
+          "net_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Net Price",
+            "description": "Total net price from airline/supplier."
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency",
+            "description": "Currency code, defaults to VND.",
+            "default": "VND"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pnr",
+          "airline",
+          "ticket_number",
+          "passengers",
+          "departure_place",
+          "arrival_place",
+          "departure_code",
+          "arrival_code",
+          "itinerary",
+          "flight_date",
+          "net_price"
+        ],
+        "title": "ParseFlightResponse",
+        "description": "Response schema matching AGENT_PARSER.md output format."
+      },
+      "QuoteCreate": {
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Customer Id"
+          },
+          "ticket_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Ticket Ids"
+          },
+          "tax_amount": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Tax Amount",
+            "default": 0.0
+          },
+          "discount_amount": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Discount Amount",
+            "default": 0.0
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Valid Until"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "customer_id",
+          "valid_until"
+        ],
+        "title": "QuoteCreate",
+        "description": "Payload for POST /quotes."
+      },
+      "RecordPaymentPayload": {
+        "properties": {
+          "amount": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Payment amount in VND."
+          },
+          "method": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Method",
+            "description": "Payment method label, e.g. Chuyển khoản or Tiền mặt."
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note",
+            "description": "Required payment note or transfer reference."
+          },
+          "evidence_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Url",
+            "description": "Optional payment receipt / proof URL."
+          },
+          "linked_ticket_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Ticket Id",
+            "description": "Optional ticket UUID for specific reconciliation (đích danh)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount",
+          "method"
+        ],
+        "title": "RecordPaymentPayload",
+        "description": "Payload accepted by POST /customers/{id}/payments."
+      },
+      "TicketConfirmPayload": {
+        "properties": {
+          "customer_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Customer Name",
+            "description": "Full name of the customer. Used to look up or create the customer record."
+          },
+          "customer_type": {
+            "$ref": "#/components/schemas/CustomerType",
+            "description": "INDIVIDUAL or BUSINESS. Only used when creating a new customer.",
+            "default": "INDIVIDUAL"
+          },
+          "pnr": {
+            "type": "string",
+            "maxLength": 6,
+            "minLength": 6,
+            "title": "Pnr",
+            "description": "6-character PNR booking reference code."
+          },
+          "airline": {
+            "$ref": "#/components/schemas/Airline",
+            "description": "Carrier code: VNA | VJ | QH | VU."
+          },
+          "ticket_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Number",
+            "description": "Airline ticket number."
+          },
+          "seat_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seat Code",
+            "description": "Optional seat assignment code, e.g. 12A."
+          },
+          "fare_class": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fare Class",
+            "description": "Optional fare class / fare family label from the source ticket."
+          },
+          "passengers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Passengers",
+            "description": "List of passenger full names (UPPERCASE). At least one required."
+          },
+          "departure_place": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departure Place",
+            "description": "Readable departure place, e.g. Da Nang City."
+          },
+          "arrival_place": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrival Place",
+            "description": "Readable arrival place, e.g. Ho Chi Minh City."
+          },
+          "departure_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departure Code",
+            "description": "Departure place code, e.g. DAD."
+          },
+          "arrival_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrival Code",
+            "description": "Arrival place code, e.g. SGN."
+          },
+          "itinerary": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Itinerary",
+            "description": "Flight route string, e.g. \"HAN-SGN\". Derived from codes when omitted."
+          },
+          "flight_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Flight Date",
+            "description": "Scheduled departure datetime (ISO-8601 / UTC)."
+          },
+          "net_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Net Price",
+            "description": "Net cost from airline/supplier (giá gốc). ≥ 0."
+          },
+          "service_fee": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Service Fee",
+            "description": "Agent profit margin (phí dịch vụ). selling_price = net_price + service_fee. Defaults to 0.",
+            "default": 0.0
+          },
+          "selling_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selling Price",
+            "description": "Final price charged to the customer (giá bán). If omitted, computed as net_price + service_fee. If provided, must equal net_price + service_fee."
+          },
+          "discount": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Discount",
+            "description": "Optional discount amount applied to the ticket in VND.",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "customer_name",
+          "pnr",
+          "airline",
+          "passengers",
+          "flight_date",
+          "net_price"
+        ],
+        "title": "TicketConfirmPayload",
+        "description": "Payload sent by the frontend when the user confirms an AI-parsed ticket.\n\nCustomer identification:\n    The user can identify the customer by name (and optionally `customer_type`).\n    The service will look up an existing customer by name (case-insensitive) or\n    create a new one if no match is found.\n\nPricing (docs/BUSINESS.md §2):\n    selling_price = net_price + service_fee\n    If `selling_price` is omitted, the service derives it automatically.\n    If both `service_fee` and `selling_price` are supplied they must be consistent."
+      },
+      "TicketCreate": {
+        "properties": {
+          "pnr": {
+            "type": "string",
+            "maxLength": 6,
+            "minLength": 6,
+            "title": "Pnr",
+            "description": "6-character PNR (Passenger Name Record) booking reference code. May repeat across passenger rows in group bookings."
+          },
+          "airline": {
+            "$ref": "#/components/schemas/Airline",
+            "description": "Carrier code: VNA (Vietnam Airlines), VJ (Vietjet), QH (Bamboo), VU (Vietravel)."
+          },
+          "ticket_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Number",
+            "description": "Airline ticket number. May repeat across outbound/return ticket rows."
+          },
+          "seat_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seat Code",
+            "description": "Optional seat assignment code, e.g. 12A."
+          },
+          "fare_class": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fare Class",
+            "description": "Optional fare class / fare family label from the source ticket, e.g. B or Flexible."
+          },
+          "departure_place": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departure Place",
+            "description": "Human-readable departure place, e.g. Da Nang City."
+          },
+          "arrival_place": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrival Place",
+            "description": "Human-readable arrival place, e.g. Ho Chi Minh City."
+          },
+          "departure_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departure Code",
+            "description": "Compact departure place code, e.g. DAD."
+          },
+          "arrival_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrival Code",
+            "description": "Compact arrival place code, e.g. SGN."
+          },
+          "itinerary": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Itinerary",
+            "description": "Flight route string (hành trình), e.g. \"HAN-SGN\" or \"SGN-DAD-HAN\"."
+          },
+          "flight_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Flight Date",
+            "description": "Scheduled departure datetime stored in ISO-8601 / UTC."
+          },
+          "net_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Net Price",
+            "description": "Net cost from airline/supplier (giá gốc). Must be ≥ 0."
+          },
+          "selling_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Selling Price",
+            "description": "Selling price charged to the customer (giá bán). Must be ≥ 0."
+          },
+          "discount": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Discount",
+            "description": "Optional discount amount applied to the ticket in VND.",
+            "default": 0.0
+          },
+          "status": {
+            "$ref": "#/components/schemas/TicketStatus",
+            "description": "Lifecycle state of the ticket (DRAFT, CONFIRMED, VOID, REFUNDED).",
+            "default": "DRAFT"
+          },
+          "customer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Customer Id"
+          },
+          "passengers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Passengers",
+            "description": "At least one passenger name is required."
+          }
+        },
+        "type": "object",
+        "required": [
+          "pnr",
+          "airline",
+          "itinerary",
+          "flight_date",
+          "net_price",
+          "selling_price",
+          "customer_id"
+        ],
+        "title": "TicketCreate",
+        "description": "Payload accepted by POST /tickets (after AI-extraction confirmation)."
+      },
+      "TicketReassignPayload": {
+        "properties": {
+          "new_customer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "New Customer Id",
+            "description": "UUID of the target customer."
+          }
+        },
+        "type": "object",
+        "required": [
+          "new_customer_id"
+        ],
+        "title": "TicketReassignPayload",
+        "description": "Payload for moving a confirmed ticket to another customer."
+      },
+      "TicketRefundPayload": {
+        "properties": {
+          "amount": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Refund amount in VND."
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount"
+        ],
+        "title": "TicketRefundPayload",
+        "description": "Payload for partial or full ticket refunds."
+      },
+      "TicketStatus": {
+        "type": "string",
+        "enum": [
+          "DRAFT",
+          "CONFIRMED",
+          "VOID",
+          "REFUNDED"
+        ],
+        "title": "TicketStatus",
+        "description": "Lifecycle status of a ticket."
+      },
+      "TicketUpdate": {
+        "properties": {
+          "pnr": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 6,
+                "minLength": 6
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pnr"
+          },
+          "airline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Airline"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ticket_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Number"
+          },
+          "seat_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seat Code"
+          },
+          "fare_class": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fare Class"
+          },
+          "passengers": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passengers"
+          },
+          "departure_place": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departure Place"
+          },
+          "arrival_place": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrival Place"
+          },
+          "departure_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departure Code"
+          },
+          "arrival_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrival Code"
+          },
+          "itinerary": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Itinerary"
+          },
+          "flight_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flight Date"
+          },
+          "net_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Price"
+          },
+          "service_fee": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Fee",
+            "description": "Optional service fee used to recompute selling_price."
+          },
+          "selling_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selling Price"
+          },
+          "discount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discount"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "customer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Id"
+          }
+        },
+        "type": "object",
+        "title": "TicketUpdate",
+        "description": "All fields optional for partial PATCH payloads."
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token"
+        ],
+        "title": "TokenResponse",
+        "description": "JSON response returned after a successful login."
+      },
+      "TransactionCategory": {
+        "type": "string",
+        "enum": [
+          "TICKET_PURCHASE",
+          "PAYMENT",
+          "DISCOUNT",
+          "ADDITIONAL_FEE",
+          "REFUND"
+        ],
+        "title": "TransactionCategory",
+        "description": "Vietnamese-market transaction categories used for reconciliation and audit."
+      },
+      "TransactionCreate": {
+        "properties": {
+          "amount": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Transaction amount. Must be a positive value (direction is encoded in `type`)."
+          },
+          "type": {
+            "$ref": "#/components/schemas/TransactionType",
+            "description": "Legacy direction enum kept in sync with category."
+          },
+          "category": {
+            "$ref": "#/components/schemas/TransactionCategory",
+            "description": "VN-market category used for reconciliation and running balance rules: TICKET_PURCHASE | PAYMENT | DISCOUNT | ADDITIONAL_FEE | REFUND.",
+            "default": "TICKET_PURCHASE"
+          },
+          "method": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Method",
+            "description": "Payment method label, e.g. \"Bank Transfer\", \"Cash\", \"Momo\"."
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note",
+            "description": "Reference/note text. Required for manual payments and manual adjustments."
+          },
+          "evidence_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Url",
+            "description": "Optional receipt / payment-proof URL attached to the transaction."
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At",
+            "description": "UTC timestamp of when the business event actually happened."
+          },
+          "customer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Customer Id"
+          },
+          "linked_ticket_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Ticket Id",
+            "description": "UUID of the Ticket explicitly reconciled to this transaction."
+          },
+          "is_refund_confirmed": {
+            "type": "boolean",
+            "title": "Is Refund Confirmed",
+            "description": "True once an outbound refund / overpayment return has been confirmed.",
+            "default": false
+          },
+          "is_invoiced": {
+            "type": "boolean",
+            "title": "Is Invoiced",
+            "description": "True once this transaction has been locked into an issued invoice.",
+            "default": false
+          },
+          "invoice_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Id",
+            "description": "Optional invoice UUID for duplicate-billing prevention."
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount",
+          "type",
+          "method",
+          "customer_id"
+        ],
+        "title": "TransactionCreate",
+        "description": "Payload accepted by POST /transactions."
+      },
+      "TransactionType": {
+        "type": "string",
+        "enum": [
+          "PAYMENT",
+          "CHARGE",
+          "REFUND"
+        ],
+        "title": "TransactionType",
+        "description": "Types of financial transactions that affect a Customer's balance (công nợ)."
+      },
+      "UserCreate": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 3,
+            "title": "Username",
+            "description": "Unique login identifier for the system user."
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole",
+            "description": "Access level: ADMIN has full privileges; STAFF has limited access.",
+            "default": "STAFF"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Soft-delete / deactivation flag. Inactive users cannot log in.",
+            "default": true
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Password",
+            "description": "Plain-text password (hashed before storage)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "UserCreate",
+        "description": "Payload accepted by POST /users. The plain-text password is hashed before storage."
+      },
+      "UserRead": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 3,
+            "title": "Username",
+            "description": "Unique login identifier for the system user."
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole",
+            "description": "Access level: ADMIN has full privileges; STAFF has limited access.",
+            "default": "STAFF"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Soft-delete / deactivation flag. Inactive users cannot log in.",
+            "default": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "id"
+        ],
+        "title": "UserRead",
+        "description": "Safe public representation – hashed_password is intentionally excluded."
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "ADMIN",
+          "STAFF"
+        ],
+        "title": "UserRole",
+        "description": "Roles available to internal system users."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "/api/v1/auth/login"
+          }
+        }
+      }
+    }
+  }
+}

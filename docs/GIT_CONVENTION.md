@@ -19,8 +19,8 @@ All commit messages must follow this pattern:
 
 ### Scopes (Workspace):
 
-- `api`: Changes within `apps/api`.
-- `web`: Changes within `apps/web`.
+- `api`: Changes within `api/`.
+- `web`: Changes within `web/`.
 - `root`: Changes in the root directory (e.g., package.json, .gitignore).
 - `docs`: Changes inside the `docs/` folder.
 - `config`: CI/CD or environment configuration changes.

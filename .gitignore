@@ -31,7 +31,7 @@ ENV/
 # --- Database & Alembic ---
 *.db
 *.sqlite3
-apps/api/alembic/versions/*.pyc
+api/alembic/versions/*.pyc
 
 # --- IDE & OS ---
 .vscode/

@@ -2,8 +2,8 @@
   "name": "bay-buddy",
   "private": true,
   "scripts": {
-    "api": "cd apps/api && poetry run uvicorn main:app --reload --port 6768",
-    "web": "cd apps/web && yarn dev --port 6769"
+    "api": "cd api && poetry run uvicorn main:app --reload --port 6768",
+    "web": "cd web && yarn dev --port 6769"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

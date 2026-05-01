@@ -1,0 +1,1495 @@
+{
+  "meta": {
+    "source_file": "ve_rows_grouped_by_customer.json",
+    "total_rows": 57,
+    "pricing_rule_priority": [
+      "N=K+M when M!=0",
+      "else N=K+L"
+    ],
+    "all_formula_match": true
+  },
+  "rows": [
+    {
+      "source_row": 3,
+      "customer_name": "PHAM DUC QUANG",
+      "ticket": {
+        "ticket_number": "7382319992101",
+        "pnr": "FKWODX",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "DAD-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-01T11:49:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2489000,
+        "formula_used": "K+M",
+        "formula_expected": 2489000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 4,
+      "customer_name": "DINH HUU TUYEN",
+      "ticket": {
+        "ticket_number": "7382319992102",
+        "pnr": "FKWODX",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "DAD-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-01T11:49:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2489000,
+        "formula_used": "K+M",
+        "formula_expected": 2489000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 5,
+      "customer_name": "HA THI ANH TUYET",
+      "ticket": {
+        "ticket_number": "7382319992103",
+        "pnr": "FKWODX",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "DAD-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-01T11:49:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2489000,
+        "formula_used": "K+M",
+        "formula_expected": 2489000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 6,
+      "customer_name": "LE THI THUC",
+      "ticket": {
+        "ticket_number": "7382319992104",
+        "pnr": "FKWODX",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "DAD-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-01T11:49:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2489000,
+        "formula_used": "K+M",
+        "formula_expected": 2489000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 7,
+      "customer_name": "NGUYEN THI THANH VAN",
+      "ticket": {
+        "ticket_number": "7382319992105",
+        "pnr": "FKWODX",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "DAD-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-01T11:49:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2489000,
+        "formula_used": "K+M",
+        "formula_expected": 2489000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 8,
+      "customer_name": "SHINICHI KUDO",
+      "ticket": {
+        "ticket_number": "7382319992152",
+        "pnr": "FMEDZ3",
+        "airline_code": "VN",
+        "ticket_type": "K-K",
+        "departure_raw": "SGN-THD",
+        "return_raw": "THD-SGN",
+        "issued_at": "2026-04-01T13:25:00"
+      },
+      "pricing": {
+        "system_price_k": 5739000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 5729000,
+        "formula_used": "K+M",
+        "formula_expected": 5729000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 9,
+      "customer_name": "LE QUOC THINH",
+      "ticket": {
+        "ticket_number": "7382319996788",
+        "pnr": "FR4QI6",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "HAN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-01T18:32:00"
+      },
+      "pricing": {
+        "system_price_k": 2114000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2104000,
+        "formula_used": "K+M",
+        "formula_expected": 2104000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 10,
+      "customer_name": "NGUYEN HOANG THINH",
+      "ticket": {
+        "ticket_number": null,
+        "pnr": "G226XU",
+        "airline_code": "VJ",
+        "ticket_type": "Eco1",
+        "departure_raw": "VCA-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-02T00:00:00"
+      },
+      "pricing": {
+        "system_price_k": 2268200,
+        "fee_l": 5000,
+        "discount_m": 0,
+        "customer_paid_n": 2273200,
+        "formula_used": "K+L",
+        "formula_expected": 2273200,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 11,
+      "customer_name": "DAM KHANH VY",
+      "ticket": {
+        "ticket_number": "7382320011599",
+        "pnr": "EQG3BP",
+        "airline_code": "VN",
+        "ticket_type": "L",
+        "departure_raw": "DAD-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-02T10:03:00"
+      },
+      "pricing": {
+        "system_price_k": 2048000,
+        "fee_l": 0,
+        "discount_m": -5000,
+        "customer_paid_n": 2043000,
+        "formula_used": "K+M",
+        "formula_expected": 2043000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 12,
+      "customer_name": "DAM KHANH VY",
+      "ticket": {
+        "ticket_number": "7382320014700",
+        "pnr": "EQG3BP",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "HAN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-02T10:03:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2489000,
+        "formula_used": "K+M",
+        "formula_expected": 2489000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 15,
+      "customer_name": "LE QUOC THINH",
+      "ticket": {
+        "ticket_number": "7382320040720",
+        "pnr": "FR4QI6",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "DAD-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-03T09:09:00"
+      },
+      "pricing": {
+        "system_price_k": 2114000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2104000,
+        "formula_used": "K+M",
+        "formula_expected": 2104000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 16,
+      "customer_name": "SUGAMOTO DAI",
+      "ticket": {
+        "ticket_number": "7382320040728",
+        "pnr": "D4G22A",
+        "airline_code": "VN",
+        "ticket_type": "H",
+        "departure_raw": "HAN-SGN",
+        "return_raw": null,
+        "issued_at": "2026-04-03T09:19:00"
+      },
+      "pricing": {
+        "system_price_k": 3290000,
+        "fee_l": 0,
+        "discount_m": -5000,
+        "customer_paid_n": 3285000,
+        "formula_used": "K+M",
+        "formula_expected": 3285000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 17,
+      "customer_name": "TRAN KHAC NHAT TRUONG",
+      "ticket": {
+        "ticket_number": "7382320040729",
+        "pnr": "D4GLJY",
+        "airline_code": "VN",
+        "ticket_type": "B-H",
+        "departure_raw": "SGN-HAN",
+        "return_raw": "HAN-SGN",
+        "issued_at": "2026-04-03T09:22:00"
+      },
+      "pricing": {
+        "system_price_k": 5853000,
+        "fee_l": 0,
+        "discount_m": -15000,
+        "customer_paid_n": 5838000,
+        "formula_used": "K+M",
+        "formula_expected": 5838000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 18,
+      "customer_name": "SHIBATA MASAMITSU",
+      "ticket": {
+        "ticket_number": "7382320040748",
+        "pnr": "DLQ2E7",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "DAD-SGN",
+        "return_raw": null,
+        "issued_at": "2026-04-03T10:11:00"
+      },
+      "pricing": {
+        "system_price_k": 2114000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2104000,
+        "formula_used": "K+M",
+        "formula_expected": 2104000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 19,
+      "customer_name": "SHIBATA MASAMITSU",
+      "ticket": {
+        "ticket_number": "7382320040749",
+        "pnr": "DLQ2E7",
+        "airline_code": "VN",
+        "ticket_type": "L",
+        "departure_raw": "SGN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-03T10:11:00"
+      },
+      "pricing": {
+        "system_price_k": 1693000,
+        "fee_l": 0,
+        "discount_m": -5000,
+        "customer_paid_n": 1688000,
+        "formula_used": "K+M",
+        "formula_expected": 1688000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 20,
+      "customer_name": "TAKASHI KASHIWABA",
+      "ticket": {
+        "ticket_number": "7382320040752",
+        "pnr": "DLSSGT",
+        "airline_code": "VN",
+        "ticket_type": "H",
+        "departure_raw": "SGN-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-03T10:20:00"
+      },
+      "pricing": {
+        "system_price_k": 3290000,
+        "fee_l": 0,
+        "discount_m": -5000,
+        "customer_paid_n": 3285000,
+        "formula_used": "K+M",
+        "formula_expected": 3285000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 21,
+      "customer_name": "TAKASHI KASHIWABA",
+      "ticket": {
+        "ticket_number": "7382320040753",
+        "pnr": "DLSSGT",
+        "airline_code": "VN",
+        "ticket_type": "L",
+        "departure_raw": "HAN-SGN",
+        "return_raw": null,
+        "issued_at": "2026-04-03T10:20:00"
+      },
+      "pricing": {
+        "system_price_k": 2836000,
+        "fee_l": 0,
+        "discount_m": -5000,
+        "customer_paid_n": 2831000,
+        "formula_used": "K+M",
+        "formula_expected": 2831000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 22,
+      "customer_name": "HIRABAYASHI YOSHITAKA",
+      "ticket": {
+        "ticket_number": "7382320040756",
+        "pnr": "DMDJ3N",
+        "airline_code": "VN",
+        "ticket_type": "H",
+        "departure_raw": "SGN-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-03T10:30:00"
+      },
+      "pricing": {
+        "system_price_k": 3290000,
+        "fee_l": 0,
+        "discount_m": -5000,
+        "customer_paid_n": 3285000,
+        "formula_used": "K+M",
+        "formula_expected": 3285000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 23,
+      "customer_name": "HIRABAYASHI YOSHITAKA",
+      "ticket": {
+        "ticket_number": "7382320040757",
+        "pnr": "DMDJ3N",
+        "airline_code": "VN",
+        "ticket_type": "L",
+        "departure_raw": "HAN-SGN",
+        "return_raw": null,
+        "issued_at": "2026-04-03T10:30:00"
+      },
+      "pricing": {
+        "system_price_k": 2836000,
+        "fee_l": 0,
+        "discount_m": -5000,
+        "customer_paid_n": 2831000,
+        "formula_used": "K+M",
+        "formula_expected": 2831000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 24,
+      "customer_name": "NGUYEN VAN TUAN",
+      "ticket": {
+        "ticket_number": "7382320049075",
+        "pnr": "DQT3Z2",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "DAD-SGN",
+        "return_raw": null,
+        "issued_at": "2026-04-03T17:16:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2489000,
+        "formula_used": "K+M",
+        "formula_expected": 2489000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 25,
+      "customer_name": "NGUYEN VAN TUAN",
+      "ticket": {
+        "ticket_number": "7382320049076",
+        "pnr": "DQT3Z2",
+        "airline_code": "VN",
+        "ticket_type": "H",
+        "departure_raw": "SGN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-03T17:16:00"
+      },
+      "pricing": {
+        "system_price_k": 2232000,
+        "fee_l": 0,
+        "discount_m": -5000,
+        "customer_paid_n": 2227000,
+        "formula_used": "K+M",
+        "formula_expected": 2227000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 26,
+      "customer_name": "NAGAI ZENICHI",
+      "ticket": {
+        "ticket_number": "7382320049080",
+        "pnr": "DQGE4M",
+        "airline_code": "VN",
+        "ticket_type": "B-H",
+        "departure_raw": "DAD-SGN",
+        "return_raw": "SGN-DAD",
+        "issued_at": "2026-04-03T17:20:00"
+      },
+      "pricing": {
+        "system_price_k": 4012000,
+        "fee_l": 0,
+        "discount_m": -15000,
+        "customer_paid_n": 3997000,
+        "formula_used": "K+M",
+        "formula_expected": 3997000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 31,
+      "customer_name": "VO QUOC THANH",
+      "ticket": {
+        "ticket_number": "7382320100610",
+        "pnr": "F6VHBK",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "SGN-HUI",
+        "return_raw": null,
+        "issued_at": "2026-04-06T11:30:00"
+      },
+      "pricing": {
+        "system_price_k": 2114000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2104000,
+        "formula_used": "K+M",
+        "formula_expected": 2104000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 32,
+      "customer_name": "DAM QUANG TUAN",
+      "ticket": {
+        "ticket_number": "7382320100648",
+        "pnr": "E4IXUV",
+        "airline_code": "VN",
+        "ticket_type": "J",
+        "departure_raw": "SGN-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-06T13:10:00"
+      },
+      "pricing": {
+        "system_price_k": 8776000,
+        "fee_l": 0,
+        "discount_m": -30000,
+        "customer_paid_n": 8746000,
+        "formula_used": "K+M",
+        "formula_expected": 8746000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 33,
+      "customer_name": "NGUYEN HUU QUOC ANH",
+      "ticket": {
+        "ticket_number": "7382320106065",
+        "pnr": "FAHZ6J",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "DAD-SGN",
+        "return_raw": null,
+        "issued_at": "2026-04-06T16:26:00"
+      },
+      "pricing": {
+        "system_price_k": 2114000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2104000,
+        "formula_used": "K+M",
+        "formula_expected": 2104000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 34,
+      "customer_name": "LE THI THUC",
+      "ticket": {
+        "ticket_number": "7382320119362",
+        "pnr": "FKWODX",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "HAN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-07T08:44:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2489000,
+        "formula_used": "K+M",
+        "formula_expected": 2489000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 35,
+      "customer_name": "PHAM DUC QUANG",
+      "ticket": {
+        "ticket_number": "7382320119363",
+        "pnr": "FKWODX",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "HAN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-07T08:44:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -8000,
+        "customer_paid_n": 2491000,
+        "formula_used": "K+M",
+        "formula_expected": 2491000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 36,
+      "customer_name": "DINH HUU TUYEN",
+      "ticket": {
+        "ticket_number": "7382320119364",
+        "pnr": "FKWODX",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "HAN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-07T08:44:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -8000,
+        "customer_paid_n": 2491000,
+        "formula_used": "K+M",
+        "formula_expected": 2491000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 37,
+      "customer_name": "HA THI ANH TUYET",
+      "ticket": {
+        "ticket_number": "7382320119365",
+        "pnr": "FKWODX",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "HAN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-07T08:44:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -8000,
+        "customer_paid_n": 2491000,
+        "formula_used": "K+M",
+        "formula_expected": 2491000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 38,
+      "customer_name": "DAM QUANG TUAN",
+      "ticket": {
+        "ticket_number": "7382320123184",
+        "pnr": "FOMZSB",
+        "airline_code": "VN",
+        "ticket_type": "J",
+        "departure_raw": "HAN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-07T12:04:00"
+      },
+      "pricing": {
+        "system_price_k": 4780000,
+        "fee_l": 0,
+        "discount_m": -24000,
+        "customer_paid_n": 4756000,
+        "formula_used": "K+M",
+        "formula_expected": 4756000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 42,
+      "customer_name": "PHAN NGOC DOAN",
+      "ticket": {
+        "ticket_number": null,
+        "pnr": "HLCOQ5",
+        "airline_code": "VU",
+        "ticket_type": "FLEXIBLE S",
+        "departure_raw": "DAD-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-08T07:55:00"
+      },
+      "pricing": {
+        "system_price_k": 2071640,
+        "fee_l": 5000,
+        "discount_m": 0,
+        "customer_paid_n": 2076640,
+        "formula_used": "K+L",
+        "formula_expected": 2076640,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 43,
+      "customer_name": "DANG NGOC ANH",
+      "ticket": {
+        "ticket_number": "7382320146297",
+        "pnr": "D62WJS",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "DAD-SGN",
+        "return_raw": null,
+        "issued_at": "2026-04-08T09:30:00"
+      },
+      "pricing": {
+        "system_price_k": 2114000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2104000,
+        "formula_used": "K+M",
+        "formula_expected": 2104000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 44,
+      "customer_name": "NGUYEN HUU QUOC ANH",
+      "ticket": {
+        "ticket_number": "7382320174141",
+        "pnr": "DMD9VO",
+        "airline_code": "VN",
+        "ticket_type": "S",
+        "departure_raw": "SGN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-09T09:03:00"
+      },
+      "pricing": {
+        "system_price_k": 2004000,
+        "fee_l": 0,
+        "discount_m": -5000,
+        "customer_paid_n": 1999000,
+        "formula_used": "K+M",
+        "formula_expected": 1999000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 45,
+      "customer_name": "DAM QUANG TUAN",
+      "ticket": {
+        "ticket_number": "7382320180563",
+        "pnr": "DQLWQ6",
+        "airline_code": "VN",
+        "ticket_type": "J",
+        "departure_raw": "DAD-SGN",
+        "return_raw": null,
+        "issued_at": "2026-04-09T14:04:00"
+      },
+      "pricing": {
+        "system_price_k": 4780000,
+        "fee_l": 0,
+        "discount_m": -30000,
+        "customer_paid_n": 4750000,
+        "formula_used": "K+M",
+        "formula_expected": 4750000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 46,
+      "customer_name": "HA KIM UYEN",
+      "ticket": {
+        "ticket_number": "7382320186095",
+        "pnr": "DS3S66",
+        "airline_code": "VN",
+        "ticket_type": "K-B",
+        "departure_raw": "DAD-HAN",
+        "return_raw": "HAN-DAD",
+        "issued_at": "2026-04-09T18:18:00"
+      },
+      "pricing": {
+        "system_price_k": 3961000,
+        "fee_l": 0,
+        "discount_m": -12000,
+        "customer_paid_n": 3949000,
+        "formula_used": "K+M",
+        "formula_expected": 3949000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 47,
+      "customer_name": "NGUYEN KIM THUY MINH",
+      "ticket": {
+        "ticket_number": "7382320186096",
+        "pnr": "DS3S66",
+        "airline_code": "VN",
+        "ticket_type": "K",
+        "departure_raw": "DAD-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-09T18:18:00"
+      },
+      "pricing": {
+        "system_price_k": 2167000,
+        "fee_l": 0,
+        "discount_m": -4000,
+        "customer_paid_n": 2163000,
+        "formula_used": "K+M",
+        "formula_expected": 2163000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 48,
+      "customer_name": "NGUYEN KIM THUY MINH",
+      "ticket": {
+        "ticket_number": "7382320186097",
+        "pnr": "DS3S66",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "HAN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-09T18:18:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -8000,
+        "customer_paid_n": 2491000,
+        "formula_used": "K+M",
+        "formula_expected": 2491000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 51,
+      "customer_name": "PHAN NGOC DOAN",
+      "ticket": {
+        "ticket_number": "7382320199216",
+        "pnr": "E5D3VJ",
+        "airline_code": "VN",
+        "ticket_type": "J",
+        "departure_raw": "HPH-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-10T07:47:00"
+      },
+      "pricing": {
+        "system_price_k": 3808000,
+        "fee_l": 0,
+        "discount_m": -24000,
+        "customer_paid_n": 3784000,
+        "formula_used": "K+M",
+        "formula_expected": 3784000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 52,
+      "customer_name": "NGUYEN THI THANH VAN",
+      "ticket": {
+        "ticket_number": "7382320199254",
+        "pnr": "D9JBGH",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "HAN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-10T09:42:00"
+      },
+      "pricing": {
+        "system_price_k": 2114000,
+        "fee_l": 0,
+        "discount_m": -8000,
+        "customer_paid_n": 2106000,
+        "formula_used": "K+M",
+        "formula_expected": 2106000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 53,
+      "customer_name": "DANG NGOC ANH",
+      "ticket": {
+        "ticket_number": null,
+        "pnr": "WJJZZH",
+        "airline_code": "VJ",
+        "ticket_type": "Eco1",
+        "departure_raw": "SGN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-10T00:00:00"
+      },
+      "pricing": {
+        "system_price_k": 1933400,
+        "fee_l": 5000,
+        "discount_m": 0,
+        "customer_paid_n": 1938400,
+        "formula_used": "K+L",
+        "formula_expected": 1938400,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 54,
+      "customer_name": "TRAN DINH BAC",
+      "ticket": {
+        "ticket_number": "7382320207402",
+        "pnr": "E98F7W",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "DAD-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-10T13:03:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -8000,
+        "customer_paid_n": 2491000,
+        "formula_used": "K+M",
+        "formula_expected": 2491000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 55,
+      "customer_name": "DAM MANH DUC",
+      "ticket": {
+        "ticket_number": "7382320207429",
+        "pnr": "E8KZWV",
+        "airline_code": "VN",
+        "ticket_type": "J",
+        "departure_raw": "DAD-SGN",
+        "return_raw": null,
+        "issued_at": "2026-04-10T14:01:00"
+      },
+      "pricing": {
+        "system_price_k": 4780000,
+        "fee_l": 0,
+        "discount_m": -24000,
+        "customer_paid_n": 4756000,
+        "formula_used": "K+M",
+        "formula_expected": 4756000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 56,
+      "customer_name": "TRAN KHAC NHAT TRUONG",
+      "ticket": {
+        "ticket_number": "7382320207449",
+        "pnr": "E6CNS6",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "SGN-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-10T14:25:00"
+      },
+      "pricing": {
+        "system_price_k": 3107000,
+        "fee_l": 0,
+        "discount_m": -8000,
+        "customer_paid_n": 3099000,
+        "formula_used": "K+M",
+        "formula_expected": 3099000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 57,
+      "customer_name": "VO/VAN KHIEM",
+      "ticket": {
+        "ticket_number": "8092450840771",
+        "pnr": "E9DKT5",
+        "airline_code": "9G",
+        "ticket_type": "M-N",
+        "departure_raw": "DAD-SGN",
+        "return_raw": "SGN-DAD",
+        "issued_at": "2026-04-10T00:00:00"
+      },
+      "pricing": {
+        "system_price_k": 3391000,
+        "fee_l": 0,
+        "discount_m": 0,
+        "customer_paid_n": 3391000,
+        "formula_used": "K+L",
+        "formula_expected": 3391000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 59,
+      "customer_name": "NGUYEN HUU BACH",
+      "ticket": {
+        "ticket_number": "7382320233741",
+        "pnr": "ETWPNQ",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "SGN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-11T18:05:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -8000,
+        "customer_paid_n": 2491000,
+        "formula_used": "K+M",
+        "formula_expected": 2491000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 60,
+      "customer_name": "TRAN KHAC NHAT TRUONG",
+      "ticket": {
+        "ticket_number": "7382320233751",
+        "pnr": "E6CNS6",
+        "airline_code": "VN",
+        "ticket_type": "K",
+        "departure_raw": "VII-SGN",
+        "return_raw": null,
+        "issued_at": "2026-04-11T18:27:00"
+      },
+      "pricing": {
+        "system_price_k": 2418000,
+        "fee_l": 0,
+        "discount_m": -4000,
+        "customer_paid_n": 2414000,
+        "formula_used": "K+M",
+        "formula_expected": 2414000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 62,
+      "customer_name": "NGUYEN LUONG GIAP",
+      "ticket": {
+        "ticket_number": "7382320245189",
+        "pnr": "FD4WHG",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "DAD-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-12T18:50:00"
+      },
+      "pricing": {
+        "system_price_k": 2114000,
+        "fee_l": 0,
+        "discount_m": -8000,
+        "customer_paid_n": 2106000,
+        "formula_used": "K+M",
+        "formula_expected": 2106000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 68,
+      "customer_name": "DAM QUANG TUAN",
+      "ticket": {
+        "ticket_number": "7382320252339",
+        "pnr": "FD4ZHH",
+        "airline_code": "VN",
+        "ticket_type": "J",
+        "departure_raw": "SGN-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-13T08:24:00"
+      },
+      "pricing": {
+        "system_price_k": 8776000,
+        "fee_l": 0,
+        "discount_m": -30000,
+        "customer_paid_n": 8746000,
+        "formula_used": "K+M",
+        "formula_expected": 8746000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 69,
+      "customer_name": "NGUYEN LUONG GIAP",
+      "ticket": {
+        "ticket_number": "7382320257200",
+        "pnr": "FD4WHG",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "HAN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-13T10:45:00"
+      },
+      "pricing": {
+        "system_price_k": 2114000,
+        "fee_l": 0,
+        "discount_m": -10000,
+        "customer_paid_n": 2104000,
+        "formula_used": "K+M",
+        "formula_expected": 2104000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 70,
+      "customer_name": "NGUYEN HUU BACH",
+      "ticket": {
+        "ticket_number": "7382320257277",
+        "pnr": "ETWPNQ",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "DAD-SGN",
+        "return_raw": null,
+        "issued_at": "2026-04-13T13:44:00"
+      },
+      "pricing": {
+        "system_price_k": 2499000,
+        "fee_l": 0,
+        "discount_m": -8000,
+        "customer_paid_n": 2491000,
+        "formula_used": "K+M",
+        "formula_expected": 2491000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 73,
+      "customer_name": "DAM QUANG TUAN",
+      "ticket": {
+        "ticket_number": "7382320268097",
+        "pnr": "FVLZ5V",
+        "airline_code": "VN",
+        "ticket_type": "J",
+        "departure_raw": "SGN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-13T19:34:00"
+      },
+      "pricing": {
+        "system_price_k": 4780000,
+        "fee_l": 0,
+        "discount_m": -24000,
+        "customer_paid_n": 4756000,
+        "formula_used": "K+M",
+        "formula_expected": 4756000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 74,
+      "customer_name": "DAM QUANG TUAN",
+      "ticket": {
+        "ticket_number": "7382320281875",
+        "pnr": "FVLZ5V",
+        "airline_code": "VN",
+        "ticket_type": "W",
+        "departure_raw": "HAN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-14T11:33:00"
+      },
+      "pricing": {
+        "system_price_k": 3579000,
+        "fee_l": 0,
+        "discount_m": -8000,
+        "customer_paid_n": 3571000,
+        "formula_used": "K+M",
+        "formula_expected": 3571000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 75,
+      "customer_name": "LE DUC DUNG",
+      "ticket": {
+        "ticket_number": "7382320286512",
+        "pnr": "D9I5FS",
+        "airline_code": "VN",
+        "ticket_type": "W",
+        "departure_raw": "HAN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-14T12:21:00"
+      },
+      "pricing": {
+        "system_price_k": 3579000,
+        "fee_l": 0,
+        "discount_m": -8000,
+        "customer_paid_n": 3571000,
+        "formula_used": "K+M",
+        "formula_expected": 3571000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 76,
+      "customer_name": "TRAN LE HONG",
+      "ticket": {
+        "ticket_number": "7382320289011",
+        "pnr": "D9RCLK",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "DAD-HAN",
+        "return_raw": null,
+        "issued_at": "2026-04-14T14:37:00"
+      },
+      "pricing": {
+        "system_price_k": 2114000,
+        "fee_l": 0,
+        "discount_m": -8000,
+        "customer_paid_n": 2106000,
+        "formula_used": "K+M",
+        "formula_expected": 2106000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 77,
+      "customer_name": "TRAN LE HONG",
+      "ticket": {
+        "ticket_number": "7382320289099",
+        "pnr": "D9RCLK",
+        "airline_code": "VN",
+        "ticket_type": "B",
+        "departure_raw": "HAN-DAD",
+        "return_raw": null,
+        "issued_at": "2026-04-14T16:30:00"
+      },
+      "pricing": {
+        "system_price_k": 2114000,
+        "fee_l": 0,
+        "discount_m": -8000,
+        "customer_paid_n": 2106000,
+        "formula_used": "K+M",
+        "formula_expected": 2106000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 84,
+      "customer_name": "HO MINH CHAU",
+      "ticket": {
+        "ticket_number": "7382320315116",
+        "pnr": "DSDAFW",
+        "airline_code": "VN",
+        "ticket_type": "B-B",
+        "departure_raw": "DAD-SGN",
+        "return_raw": "SGN-DAD",
+        "issued_at": "2026-04-15T14:35:00"
+      },
+      "pricing": {
+        "system_price_k": 4227000,
+        "fee_l": 0,
+        "discount_m": -20000,
+        "customer_paid_n": 4207000,
+        "formula_used": "K+M",
+        "formula_expected": 4207000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    },
+    {
+      "source_row": 88,
+      "customer_name": "DAM QUANG TUAN",
+      "ticket": {
+        "ticket_number": "7382320334088",
+        "pnr": "EBK4QL",
+        "airline_code": "VN",
+        "ticket_type": "J",
+        "departure_raw": "DAD-SGN",
+        "return_raw": null,
+        "issued_at": "2026-04-16T14:35:00"
+      },
+      "pricing": {
+        "system_price_k": 4780000,
+        "fee_l": 0,
+        "discount_m": -30000,
+        "customer_paid_n": 4750000,
+        "formula_used": "K+M",
+        "formula_expected": 4750000,
+        "formula_match": true
+      },
+      "import_rules": {
+        "ticket_number_optional_if_pnr_present": true,
+        "valid_ticket_identifier": true
+      }
+    }
+  ]
+}

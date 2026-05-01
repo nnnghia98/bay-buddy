@@ -9,7 +9,7 @@
 ## 🏗️ PAST PHASES: THE FOUNDATION (COMPLETED)
 
 ### Phase 1: Infrastructure & Tech Stack
-- [x] Monorepo setup with **Turborepo** & **Next.js (App Router)**.
+- [x] Service workspace setup with **separate `api/` and `web/` services**.
 - [x] Styling with **Tailwind CSS v4** & **shadcn/ui**.
 - [x] Database architecture with **PostgreSQL** & **Prisma**.
 - [x] Centralized design tokens in `globals.css`.

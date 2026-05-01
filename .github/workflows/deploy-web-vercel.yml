@@ -1,0 +1,48 @@
+name: Deploy Web to Vercel
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "web/**"
+      - ".github/workflows/deploy-web-vercel.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: vercel-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy web
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Vercel credentials
+        run: |
+          test -n "$VERCEL_TOKEN"
+          test -n "$VERCEL_ORG_ID"
+          test -n "$VERCEL_PROJECT_ID"
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull production env
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+        working-directory: ./web
+
+      - name: Build web
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+        working-directory: ./web
+
+      - name: Deploy web
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        working-directory: ./web
