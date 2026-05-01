@@ -38,11 +38,13 @@ class TicketBase(SQLModel):
 
     # Mã đặt chỗ – unique 6-character alphanumeric booking reference.
     pnr: str = Field(
-        unique=True,
         index=True,
         min_length=6,
         max_length=6,
-        description="6-character PNR (Passenger Name Record) booking reference code.",
+        description=(
+            "6-character PNR (Passenger Name Record) booking reference code. "
+            "May repeat across passenger rows in group bookings."
+        ),
     )
     airline: Airline = Field(
         description="Carrier code: VNA (Vietnam Airlines), VJ (Vietjet), QH (Bamboo), VU (Vietravel).",
@@ -52,6 +54,16 @@ class TicketBase(SQLModel):
         index=True,
         max_length=50,
         description="Airline ticket number. May repeat across outbound/return ticket rows.",
+    )
+    seat_code: Optional[str] = Field(
+        default=None,
+        max_length=20,
+        description="Optional seat assignment code, e.g. 12A.",
+    )
+    fare_class: Optional[str] = Field(
+        default=None,
+        max_length=50,
+        description="Optional fare class / fare family label from the source ticket, e.g. B or Flexible.",
     )
     departure_place: Optional[str] = Field(
         default=None,
@@ -90,6 +102,11 @@ class TicketBase(SQLModel):
     selling_price: float = Field(
         ge=0,
         description="Selling price charged to the customer (giá bán). Must be ≥ 0.",
+    )
+    discount: float = Field(
+        default=0.0,
+        ge=0,
+        description="Optional discount amount applied to the ticket in VND.",
     )
 
     status: TicketStatus = Field(
@@ -167,6 +184,8 @@ class TicketUpdate(SQLModel):
     pnr: Optional[str] = Field(default=None, min_length=6, max_length=6)
     airline: Optional[Airline] = None
     ticket_number: Optional[str] = Field(default=None, max_length=50)
+    seat_code: Optional[str] = Field(default=None, max_length=20)
+    fare_class: Optional[str] = Field(default=None, max_length=50)
     passengers: Optional[List[str]] = None
     departure_place: Optional[str] = Field(default=None, max_length=255)
     arrival_place: Optional[str] = Field(default=None, max_length=255)
@@ -181,5 +200,6 @@ class TicketUpdate(SQLModel):
         description="Optional service fee used to recompute selling_price.",
     )
     selling_price: Optional[float] = Field(default=None, ge=0)
+    discount: Optional[float] = Field(default=None, ge=0)
     status: Optional[TicketStatus] = None
     customer_id: Optional[uuid.UUID] = None
