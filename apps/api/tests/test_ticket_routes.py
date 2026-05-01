@@ -70,6 +70,9 @@ def _confirm_payload() -> dict:
         "net_price": 1000000,
         "service_fee": 200000,
         "selling_price": 1200000,
+        "discount": 10000,
+        "fare_class": "B",
+        "seat_code": "12A",
     }
 
 
@@ -179,6 +182,27 @@ def test_confirm_ticket_allows_shared_ticket_numbers_for_return_flights(
         assert len(tickets) == 2
         assert {ticket.pnr for ticket in tickets} == {"ABC123", "DEF456"}
         assert {ticket.itinerary for ticket in tickets} == {"HAN-SGN", "SGN-HAN"}
+
+
+def test_confirm_ticket_persists_discount_fare_class_and_seat_code(
+    test_client,
+    test_engine,
+):
+    response = test_client.post("/api/v1/tickets/confirm", json=_confirm_payload())
+
+    assert response.status_code == 201
+    payload = response.json()["data"]
+
+    assert payload["ticket"]["discount"] == pytest.approx(10000)
+    assert payload["ticket"]["fare_class"] == "B"
+    assert payload["ticket"]["seat_code"] == "12A"
+
+    with Session(test_engine) as session:
+        ticket = session.exec(select(Ticket).where(Ticket.pnr == "ABC123")).one()
+
+        assert ticket.discount == pytest.approx(10000)
+        assert ticket.fare_class == "B"
+        assert ticket.seat_code == "12A"
 
 
 def test_legacy_ticket_create_endpoint_is_retired(

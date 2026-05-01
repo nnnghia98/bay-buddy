@@ -84,6 +84,16 @@ class TicketConfirmPayload(BaseModel):
         max_length=50,
         description="Airline ticket number.",
     )
+    seat_code: Optional[str] = Field(
+        default=None,
+        max_length=20,
+        description="Optional seat assignment code, e.g. 12A.",
+    )
+    fare_class: Optional[str] = Field(
+        default=None,
+        max_length=50,
+        description="Optional fare class / fare family label from the source ticket.",
+    )
     passengers: List[str] = Field(
         min_length=1,
         description="List of passenger full names (UPPERCASE). At least one required.",
@@ -134,6 +144,11 @@ class TicketConfirmPayload(BaseModel):
             "If provided, must equal net_price + service_fee."
         ),
     )
+    discount: float = Field(
+        default=0.0,
+        ge=0,
+        description="Optional discount amount applied to the ticket in VND.",
+    )
 
     @model_validator(mode="after")
     def validate_and_compute_selling_price(self) -> "TicketConfirmPayload":
@@ -157,6 +172,8 @@ class TicketConfirmPayload(BaseModel):
     @model_validator(mode="after")
     def validate_route_details(self) -> "TicketConfirmPayload":
         self.ticket_number = (self.ticket_number or "").strip() or None
+        self.seat_code = (self.seat_code or "").strip().upper() or None
+        self.fare_class = (self.fare_class or "").strip() or None
         self.departure_place = (self.departure_place or "").strip() or None
         self.arrival_place = (self.arrival_place or "").strip() or None
 
@@ -376,6 +393,8 @@ def create_ticket_with_transaction(
         pnr=payload.pnr,
         airline=payload.airline,
         ticket_number=payload.ticket_number,
+        seat_code=payload.seat_code,
+        fare_class=payload.fare_class,
         passengers=payload.passengers,
         departure_place=payload.departure_place,
         arrival_place=payload.arrival_place,
@@ -385,6 +404,7 @@ def create_ticket_with_transaction(
         flight_date=payload.flight_date,
         net_price=payload.net_price,
         selling_price=selling_price,
+        discount=payload.discount,
         status=TicketStatus.CONFIRMED,
         customer_id=customer.id,
     )

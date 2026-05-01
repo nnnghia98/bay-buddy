@@ -13,9 +13,11 @@ These rows represent flight bookings and translate directly into the **`Ticket`*
 | **Mã chỗ** | `pnr` | `Ticket` | The 6-character Unique Booking Reference (e.g., `FKWODX`). |
 | **Hãng** | `airline` | `Ticket` | Mapped to the `Airline` Enum (e.g., `VN`, `VJ`). |
 | **Số Vé** | `ticket_number` | `Ticket` | The airline ticket number stored directly on the ticket row. It is indexed but not unique because return-trip legs may share the same number. |
-| **Loại Vé** | *N/A (See Note)* | `Ticket` | Ticket class (e.g., `B`, `Eco1`). Can be stored in a `note` field or a newly added column if necessary. |
+| **Loại Vé** | `fare_class` | `Ticket` | Raw fare class / fare family value from the sheet (e.g., `B`, `Eco1`, `Flexible`). |
+| **Ghế / số ghế** | `seat_code` | `Ticket` | Optional seat assignment code if future source files include it (e.g., `12A`). |
 | **Hành Trình Đi/Về** | `departure_place`, `arrival_place`, `departure_code`, `arrival_code`, `itinerary` | `Ticket` | Route data is now stored as explicit place/code pairs, while `itinerary` remains available as a derived compatibility/display field (e.g., `DAD-HAN`). |
 | **Giá Hệ Thống** | `net_price` | `Ticket` | Supplier/Airline cost. |
+| **Chiết Khấu** | `discount` | `Ticket` | Discount amount stored directly on the ticket row in VND. |
 | **Giá Thu** | `selling_price`| `Ticket` | Price sold to the customer (creates positive debt). |
 
 ---
