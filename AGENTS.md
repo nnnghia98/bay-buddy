@@ -119,6 +119,7 @@ When tasked with "Parsing a ticket":
 
 ## ✈️ Ticket Route Standard
 
+- `pnr` (Mã chỗ) can repeat across multiple rows when passengers belong to the same booking group; do not treat `pnr` as a globally unique ticket identity.
 - `ticket_number` identifies the airline ticket number and is not unique across rows.
 - Two tickets may share the same `ticket_number` when they represent different legs of a return trip.
 - Store route semantics explicitly on the `ticket` row with:
