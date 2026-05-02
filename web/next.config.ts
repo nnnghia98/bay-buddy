@@ -3,9 +3,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  outputFileTracingRoot: path.join(__dirname, "../.."),
+  outputFileTracingRoot: __dirname,
   turbopack: {
-    root: path.join(__dirname, "../.."),
+    root: __dirname,
   },
 };
 
