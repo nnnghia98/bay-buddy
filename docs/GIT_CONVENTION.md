@@ -34,7 +34,7 @@ The body should provide a concise summary of "What" and "Why" (not "How").
 
 ## 3. Strict Rule: NO AUTO-PUSH
 
-- When the user says "commit code follows workspace and git convention", the Agent MUST:
+- When the user says **"commit code"** or **"commit code follows workspace and git convention"**, the Agent MUST:
   1. Run `git add .`
   2. Run `git commit -m "<formatted message>"`
   3. **STOP.** Do NOT run `git push`.
