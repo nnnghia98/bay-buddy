@@ -15,6 +15,7 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from database import create_db_and_tables
 from runtime_env_logging import log_runtime_environment_summary
@@ -36,6 +37,10 @@ app = FastAPI(
     redoc_url="/redoc",
     swagger_ui_parameters={"persistAuthorization": True},
 )
+
+# Respect proxy-forwarded scheme/host headers (Railway, Vercel, etc.)
+# so framework-generated redirects keep https instead of downgrading to http.
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 # ---------------------------------------------------------------------------
 # CORS

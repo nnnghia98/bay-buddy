@@ -67,9 +67,9 @@ async function loadFinancialSummarySnapshot() {
 
   try {
     const [customers, tickets, transactions] = await Promise.all([
-      fetchCollection("/customers?limit=1000", token, customerDirectorySchema),
-      fetchCollection("/tickets?limit=1000", token, ticketListSchema),
-      fetchCollection("/transactions?limit=5000", token, transactionListSchema),
+      fetchCollection("/customers/?limit=1000", token, customerDirectorySchema),
+      fetchCollection("/tickets/?limit=1000", token, ticketListSchema),
+      fetchCollection("/transactions/?limit=5000", token, transactionListSchema),
     ])
 
     return buildFinancialSummarySnapshot({

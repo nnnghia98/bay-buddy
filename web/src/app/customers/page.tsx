@@ -47,7 +47,7 @@ function getInitials(fullName: string): string {
 }
 
 async function fetchCustomers(): Promise<CustomerDirectoryItem[]> {
-  const payload = await apiFetchData<unknown>("/customers")
+  const payload = await apiFetchData<unknown>("/customers/")
   return customerDirectorySchema.parse(payload)
 }
 
