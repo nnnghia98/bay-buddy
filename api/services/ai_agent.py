@@ -1,5 +1,5 @@
 """
-services/ai_agent.py – AI-powered flight data extraction using Google Gemini 2.5 Flash.
+services/ai_agent.py – AI-powered flight data extraction using Google Gemini.
 
 Supports multimodal input: images (JPEG, PNG, WebP) and PDF documents.
 Extraction logic reference: docs/AGENT_PARSER.md
@@ -15,12 +15,13 @@ from google import genai
 from google.genai.errors import APIError
 from google.genai import types
 
+from core.settings import settings
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 
-GEMINI_MODEL_NAME = "gemini-3.1-flash-lite"
+GEMINI_MODEL_NAME = settings.gemini_model
 GEMINI_MAX_ATTEMPTS = 3
 GEMINI_RETRY_DELAYS_SECONDS = (1.0, 2.0)
 
@@ -114,7 +115,7 @@ async def parse_flight_content(file_bytes: bytes, mime_type: str) -> Dict[str, A
     """
     Parse a flight confirmation file (image or PDF) into structured JSON.
 
-    Uses Google Gemini 2.5 Flash with multimodal input to visually extract
+    Uses the configured Gemini model with multimodal input to visually extract
     structured flight data from uploaded booking confirmation files.
 
     Args:

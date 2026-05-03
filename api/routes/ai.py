@@ -62,7 +62,7 @@ class ParseFlightResponse(BaseModel):
     status_code=status.HTTP_200_OK,
     summary="Parse flight confirmation file",
     description=(
-        "Extract structured flight data from an uploaded image or PDF using Gemini 2.5 Flash. "
+        "Extract structured flight data from an uploaded image or PDF using the configured Gemini model. "
         "Accepts multipart/form-data with a single 'file' field. "
         "Returns JSON matching the Ticket model schema suitable for database storage."
     ),
@@ -73,7 +73,7 @@ async def parse_flight(
     """
     Parse an uploaded flight confirmation file into structured JSON.
 
-    Uses Google Gemini 2.5 Flash (multimodal) to extract:
+    Uses the configured Gemini model (multimodal) to extract:
     - PNR (booking reference)
     - Airline code
     - Passenger names
