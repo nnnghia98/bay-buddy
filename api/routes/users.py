@@ -1,3 +1,4 @@
+import uuid
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -5,7 +6,7 @@ from sqlmodel import select
 
 from core.auth import CurrentUserDep, hash_password
 from database import SessionDep
-from models.user import User, UserCreate, UserRead
+from models.user import User, UserCreate, UserRead, UserUpdate
 from core.responses import success_response
 
 router = APIRouter()
@@ -66,3 +67,52 @@ async def list_users(session: SessionDep, current_user: CurrentUserDep, skip: in
     users = session.exec(statement).all()
     users_read = [UserRead.model_validate(u).model_dump() for u in users]
     return success_response(users_read)
+
+
+@router.patch("/{user_id}", response_model=dict)
+async def update_user(
+    user_id: uuid.UUID,
+    *,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+    user_in: UserUpdate,
+):
+    """Update a user account. Only ADMIN can edit staff accounts."""
+    if current_user.role != "ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
+        )
+
+    user = session.get(User, user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    update_data = user_in.model_dump(exclude_unset=True)
+
+    if "username" in update_data:
+        statement = select(User).where(
+            User.username == update_data["username"],
+            User.id != user_id,
+        )
+        existing_user = session.exec(statement).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already registered",
+            )
+
+    if "password" in update_data:
+        user.hashed_password = hash_password(update_data.pop("password"))
+
+    for field, value in update_data.items():
+        setattr(user, field, value)
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    user_read = UserRead.model_validate(user)
+    return success_response(user_read.model_dump())

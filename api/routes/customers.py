@@ -48,6 +48,7 @@ async def list_customers(
             full_name=customer.name,
             phone=customer.phone,
             current_balance=customer.balance,
+            is_active=customer.is_active,
         ).model_dump(mode="json")
         for customer in customers
     ]
@@ -84,6 +85,12 @@ async def update_customer(
         )
 
     update_data = customer_in.model_dump(exclude_unset=True)
+
+    if "is_active" in update_data and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions",
+        )
 
     normalized_email = update_data.get("email")
     if normalized_email is not None:

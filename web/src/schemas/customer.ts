@@ -32,6 +32,21 @@ const CustomerBaseSchema = z.object({
    * Maps to Python: balance
    */
   balance: z.number().default(0),
+
+  /** Soft-archive flag. Archived customers remain in history. */
+  is_active: z.boolean().default(true),
+
+  /** Optional customer email used for billing and contact. */
+  email: z.string().email().max(255).nullable().optional(),
+
+  /** Optional customer phone number. */
+  phone: z.string().max(30).nullable().optional(),
+
+  /** Optional billing address. */
+  address: z.string().max(500).nullable().optional(),
+
+  /** Optional tax code for invoice issuance. */
+  tax_code: z.string().max(100).nullable().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -67,6 +82,12 @@ export const CustomerUpdateSchema = z.object({
 
   /** Direct balance override – normally mutated via Transactions only. */
   balance: z.number().optional(),
+
+  is_active: z.boolean().optional(),
+  email: z.string().email().max(255).nullable().optional(),
+  phone: z.string().max(30).nullable().optional(),
+  address: z.string().max(500).nullable().optional(),
+  tax_code: z.string().max(100).nullable().optional(),
 });
 
 export type CustomerUpdate = z.infer<typeof CustomerUpdateSchema>;
@@ -114,6 +135,7 @@ export const CustomerDirectoryItemSchema = z.object({
   full_name: z.string(),
   phone: z.string().nullable().optional(),
   current_balance: z.number(),
+  is_active: z.boolean().default(true),
 });
 
 export type CustomerDirectoryItem = z.infer<typeof CustomerDirectoryItemSchema>;

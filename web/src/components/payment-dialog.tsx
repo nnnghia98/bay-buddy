@@ -46,6 +46,7 @@ type PaymentDialogProps = {
   ticketOptions: TicketOption[]
   onOptimisticSubmit: (payload: OptimisticPaymentPayload) => void
   onSettled: (status: "success" | "error") => void
+  disabled?: boolean
 }
 
 type ClientErrors = Partial<Record<keyof RecordPaymentFormValues, string>>
@@ -83,6 +84,7 @@ export function PaymentDialog({
   ticketOptions,
   onOptimisticSubmit,
   onSettled,
+  disabled = false,
 }: PaymentDialogProps) {
   const t = useI18n()
   const router = useRouter()
@@ -175,7 +177,7 @@ export function PaymentDialog({
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
-        <Button size="lg">
+        <Button disabled={disabled} size="lg">
           <Wallet className="h-4 w-4" />
           {t("customers.ledger.paymentDialog.open")}
         </Button>

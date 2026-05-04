@@ -10,6 +10,7 @@ import { CustomerLedgerClient } from "@/components/customer-ledger-client"
 import { Button } from "@/components/ui/button"
 import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
 import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
+import { fetchCurrentUser } from "@/lib/server-users"
 import { getI18n } from "@/locales/server"
 import { CustomerLedgerSchema, type CustomerLedger } from "@/schemas"
 
@@ -68,8 +69,11 @@ async function fetchCustomerLedger(customerId: string): Promise<CustomerLedger |
 
 export default async function CustomerLedgerPage({ params }: PageProps) {
   const { id: customerId } = await params
-  const t = await getI18n()
-  const ledger = await fetchCustomerLedger(customerId)
+  const [t, ledger, currentUser] = await Promise.all([
+    getI18n(),
+    fetchCustomerLedger(customerId),
+    fetchCurrentUser(),
+  ])
 
   return (
     <div className="space-y-4">
@@ -79,7 +83,11 @@ export default async function CustomerLedgerPage({ params }: PageProps) {
         </Button>
       </div>
 
-      <CustomerLedgerClient customerId={customerId} initialLedger={ledger} />
+      <CustomerLedgerClient
+        currentUserRole={currentUser.role}
+        customerId={customerId}
+        initialLedger={ledger}
+      />
 
       <CommandPanel>
         <CommandPanelHeader

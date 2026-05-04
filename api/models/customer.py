@@ -72,6 +72,10 @@ class CustomerBase(SQLModel):
             "Positive = customer owes; Negative = customer has credit."
         ),
     )
+    is_active: bool = Field(
+        default=True,
+        description="Soft-archive flag. Inactive customers stay in history but should be treated as archived in the UI.",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -119,6 +123,7 @@ class CustomerDirectoryItem(SQLModel):
     full_name: str
     phone: Optional[str] = None
     current_balance: float
+    is_active: bool = True
 
 
 class CustomerUpdate(SQLModel):
@@ -131,3 +136,4 @@ class CustomerUpdate(SQLModel):
     tax_code: Optional[str] = Field(default=None, max_length=100)
     type: Optional[CustomerType] = None
     balance: Optional[float] = None
+    is_active: Optional[bool] = None

@@ -66,7 +66,7 @@ const navItems: NavItem[] = [
   { label: "Hóa đơn", href: "/invoices", icon: FileText },
   { label: "Nhập vé", href: "/tickets/capture", icon: Ticket },
   { label: "Báo cáo", href: "/reports", icon: FileText, disabled: true },
-  { label: "Thiết lập", href: "/settings", icon: Settings, disabled: true },
+  { label: "Thiết lập", href: "/settings", icon: Settings },
 ]
 
 function getInitials(value: string): string {
@@ -125,6 +125,10 @@ function useBreadcrumbs(
         { label: "Báo giá", href: pathname },
         { label: "Tài liệu tài chính", href: pathname },
       ]
+    }
+
+    if (pathname.startsWith("/settings")) {
+      return [{ label: "Thiết lập", href: pathname }]
     }
 
     return [{ label: "Bay Buddy", href: pathname }]

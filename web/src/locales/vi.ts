@@ -6,6 +6,96 @@ export default {
   appShell: {
     home: "Trang chủ",
   },
+  settings: {
+    eyebrow: "Thiết lập hệ thống",
+    restricted: {
+      title: "Bạn không có quyền quản lý tài khoản nhân viên.",
+      description: "Trang này chỉ dành cho quản trị viên để cấu hình tài khoản nội bộ.",
+      contact:
+        "Liên hệ quản trị viên nếu bạn cần thay đổi quyền truy cập hoặc trạng thái tài khoản.",
+    },
+    guidance: {
+      title: "Nguyên tắc vận hành",
+      description: "Quản lý tài khoản nội bộ theo hướng an toàn, rõ quyền và dễ kiểm soát.",
+      access:
+        "Chỉ quản trị viên mới được tạo mới, chỉnh sửa vai trò hoặc tạm ngưng tài khoản nhân viên.",
+      status:
+        "Tạm ngưng chỉ đổi trạng thái `is_active` để giữ lịch sử đăng nhập và phân quyền, không xóa vĩnh viễn dữ liệu.",
+    },
+    users: {
+      eyebrow: "Quản lý tài khoản",
+      title: "Thêm, chỉnh sửa và tạm ngưng tài khoản nội bộ trong một bảng điều hành gọn gàng.",
+      description:
+        "Toàn bộ thao tác quản trị nhân sự nội bộ được gom về đây để kiểm soát quyền truy cập rõ ràng hơn.",
+      createAction: "Thêm tài khoản",
+      editAction: "Chỉnh sửa",
+      deactivateAction: "Tạm ngưng",
+      reactivateAction: "Kích hoạt lại",
+      toggleSubmitting: "Đang cập nhật...",
+      currentSession: "Phiên hiện tại",
+      currentUserChip: "Bạn",
+      empty: "Chưa có tài khoản nội bộ nào.",
+      metrics: {
+        total: "Tổng tài khoản",
+        active: "Đang hoạt động",
+        inactive: "Tạm ngưng",
+      },
+      columns: {
+        username: "Tên đăng nhập",
+        role: "Vai trò",
+        status: "Trạng thái",
+        actions: "Thao tác",
+      },
+      roles: {
+        ADMIN: "Quản trị viên",
+        STAFF: "Nhân viên",
+      },
+      statuses: {
+        active: "Đang hoạt động",
+        inactive: "Tạm ngưng",
+      },
+      fields: {
+        username: "Tên đăng nhập",
+        usernamePlaceholder: "vd: admin.finance",
+        password: "Mật khẩu",
+        passwordPlaceholder: "Nhập mật khẩu",
+        passwordHint: "Để trống nếu bạn không muốn thay đổi mật khẩu hiện tại.",
+        role: "Vai trò",
+        status: "Trạng thái tài khoản",
+      },
+      dialogs: {
+        cancel: "Đóng",
+        create: {
+          title: "Thêm tài khoản nội bộ",
+          description: "Tạo nhanh tài khoản mới và gán quyền truy cập phù hợp.",
+          submit: "Tạo tài khoản",
+          submitting: "Đang tạo...",
+        },
+        edit: {
+          title: "Cập nhật tài khoản",
+          description: "Điều chỉnh tên đăng nhập, vai trò, mật khẩu hoặc trạng thái sử dụng.",
+          submit: "Lưu thay đổi",
+          submitting: "Đang lưu...",
+        },
+      },
+      actions: {
+        invalidInput: "Vui lòng kiểm tra lại thông tin tài khoản.",
+        missingAuth: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+        createSuccess: "Đã tạo tài khoản thành công.",
+        updateSuccess: "Đã cập nhật tài khoản thành công.",
+        toggleSuccess: "Đã cập nhật trạng thái tài khoản.",
+        failure: "Không thể cập nhật tài khoản lúc này.",
+      },
+      validation: {
+        usernameMin: "Tên đăng nhập phải có ít nhất 3 ký tự.",
+        usernameMax: "Tên đăng nhập không được vượt quá 50 ký tự.",
+        passwordMin: "Mật khẩu phải có ít nhất 8 ký tự.",
+        roleRequired: "Vui lòng chọn vai trò.",
+        userIdInvalid: "Mã tài khoản không hợp lệ.",
+        statusRequired: "Vui lòng chọn trạng thái tài khoản.",
+      },
+    },
+  },
   dashboard: {
     summary: {
       eyebrow: "Tổng quan tài chính",
@@ -262,6 +352,63 @@ export default {
         missingAuth: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
         failure: "Không thể ghi nhận thanh toán lúc này.",
         success: "Đã ghi nhận thanh toán thành công.",
+      },
+    },
+    management: {
+      editAction: "Chỉnh sửa khách hàng",
+      archiveAction: "Lưu trữ",
+      reactivateAction: "Kích hoạt lại",
+      toggleSubmitting: "Đang cập nhật...",
+      types: {
+        INDIVIDUAL: "Cá nhân",
+        BUSINESS: "Doanh nghiệp",
+      },
+      statuses: {
+        active: "Đang hoạt động",
+        archived: "Đã lưu trữ",
+      },
+      fields: {
+        name: "Tên khách hàng",
+        namePlaceholder: "Ví dụ: Công ty Bay Buddy",
+        type: "Loại khách hàng",
+        status: "Trạng thái khách hàng",
+        phone: "Số điện thoại",
+        phonePlaceholder: "0909...",
+        email: "Email",
+        emailPlaceholder: "contact@example.com",
+        address: "Địa chỉ",
+        addressPlaceholder: "1 Nguyễn Huệ, Quận 1",
+        taxCode: "Mã số thuế",
+        taxCodePlaceholder: "0312345678",
+      },
+      dialogs: {
+        cancel: "Đóng",
+        edit: {
+          title: "Cập nhật khách hàng",
+          description:
+            "Điều chỉnh thông tin liên hệ và trạng thái lưu trữ mà không làm thay đổi lịch sử công nợ.",
+          submit: "Lưu thay đổi",
+          submitting: "Đang lưu...",
+        },
+      },
+      actions: {
+        invalidInput: "Vui lòng kiểm tra lại thông tin khách hàng.",
+        missingAuth: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+        updateSuccess: "Đã cập nhật khách hàng thành công.",
+        toggleSuccess: "Đã cập nhật trạng thái khách hàng.",
+        failure: "Không thể cập nhật khách hàng lúc này.",
+      },
+      validation: {
+        customerIdInvalid: "Mã khách hàng không hợp lệ.",
+        nameRequired: "Vui lòng nhập tên khách hàng.",
+        nameMax: "Tên khách hàng không được vượt quá 255 ký tự.",
+        emailInvalid: "Email khách hàng không hợp lệ.",
+        emailMax: "Email không được vượt quá 255 ký tự.",
+        phoneMax: "Số điện thoại không được vượt quá 30 ký tự.",
+        addressMax: "Địa chỉ không được vượt quá 500 ký tự.",
+        taxCodeMax: "Mã số thuế không được vượt quá 100 ký tự.",
+        typeRequired: "Vui lòng chọn loại khách hàng.",
+        statusRequired: "Vui lòng chọn trạng thái khách hàng.",
       },
     },
   },

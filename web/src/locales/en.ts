@@ -6,6 +6,96 @@ export default {
   appShell: {
     home: "Home",
   },
+  settings: {
+    eyebrow: "System settings",
+    restricted: {
+      title: "You do not have permission to manage staff accounts.",
+      description: "This page is reserved for administrators managing internal accounts.",
+      contact:
+        "Contact an administrator if you need access changes or account status updates.",
+    },
+    guidance: {
+      title: "Operating guidance",
+      description: "Manage internal accounts in a way that stays safe, role-aware, and auditable.",
+      access:
+        "Only administrators can create accounts, change roles, or deactivate staff access.",
+      status:
+        "Deactivation only changes the `is_active` status so login history and role assignments stay intact. No records are permanently deleted.",
+    },
+    users: {
+      eyebrow: "Account management",
+      title: "Add, edit, and pause internal accounts from one compact work surface.",
+      description:
+        "All internal staff account controls live here so access changes stay explicit and easy to audit.",
+      createAction: "Add account",
+      editAction: "Edit",
+      deactivateAction: "Deactivate",
+      reactivateAction: "Reactivate",
+      toggleSubmitting: "Updating...",
+      currentSession: "Current session",
+      currentUserChip: "You",
+      empty: "No internal accounts are available yet.",
+      metrics: {
+        total: "Total accounts",
+        active: "Active",
+        inactive: "Inactive",
+      },
+      columns: {
+        username: "Username",
+        role: "Role",
+        status: "Status",
+        actions: "Actions",
+      },
+      roles: {
+        ADMIN: "Administrator",
+        STAFF: "Staff",
+      },
+      statuses: {
+        active: "Active",
+        inactive: "Inactive",
+      },
+      fields: {
+        username: "Username",
+        usernamePlaceholder: "e.g. admin.finance",
+        password: "Password",
+        passwordPlaceholder: "Enter a password",
+        passwordHint: "Leave blank if you do not want to change the current password.",
+        role: "Role",
+        status: "Account status",
+      },
+      dialogs: {
+        cancel: "Close",
+        create: {
+          title: "Add internal account",
+          description: "Create a new account quickly and assign the right access level.",
+          submit: "Create account",
+          submitting: "Creating...",
+        },
+        edit: {
+          title: "Update account",
+          description: "Adjust the username, role, password, or active status.",
+          submit: "Save changes",
+          submitting: "Saving...",
+        },
+      },
+      actions: {
+        invalidInput: "Please review the account details.",
+        missingAuth: "Your session has expired. Please sign in again.",
+        createSuccess: "Account created successfully.",
+        updateSuccess: "Account updated successfully.",
+        toggleSuccess: "Account status updated.",
+        failure: "Unable to update the account right now.",
+      },
+      validation: {
+        usernameMin: "Username must be at least 3 characters.",
+        usernameMax: "Username must be at most 50 characters.",
+        passwordMin: "Password must be at least 8 characters.",
+        roleRequired: "Please choose a role.",
+        userIdInvalid: "User id is invalid.",
+        statusRequired: "Please choose an account status.",
+      },
+    },
+  },
   dashboard: {
     summary: {
       eyebrow: "Financial overview",
@@ -262,6 +352,63 @@ export default {
         missingAuth: "Your session has expired. Please sign in again.",
         failure: "Unable to record payment right now.",
         success: "Payment recorded successfully.",
+      },
+    },
+    management: {
+      editAction: "Edit customer",
+      archiveAction: "Archive",
+      reactivateAction: "Reactivate",
+      toggleSubmitting: "Updating...",
+      types: {
+        INDIVIDUAL: "Individual",
+        BUSINESS: "Business",
+      },
+      statuses: {
+        active: "Active",
+        archived: "Archived",
+      },
+      fields: {
+        name: "Customer name",
+        namePlaceholder: "For example: Bay Buddy Company",
+        type: "Customer type",
+        status: "Customer status",
+        phone: "Phone number",
+        phonePlaceholder: "0909...",
+        email: "Email",
+        emailPlaceholder: "contact@example.com",
+        address: "Address",
+        addressPlaceholder: "1 Nguyen Hue, District 1",
+        taxCode: "Tax code",
+        taxCodePlaceholder: "0312345678",
+      },
+      dialogs: {
+        cancel: "Close",
+        edit: {
+          title: "Update customer",
+          description:
+            "Adjust contact information and archive status without changing the ledger history.",
+          submit: "Save changes",
+          submitting: "Saving...",
+        },
+      },
+      actions: {
+        invalidInput: "Please review the customer details.",
+        missingAuth: "Your session has expired. Please sign in again.",
+        updateSuccess: "Customer updated successfully.",
+        toggleSuccess: "Customer status updated.",
+        failure: "Unable to update the customer right now.",
+      },
+      validation: {
+        customerIdInvalid: "Customer id is invalid.",
+        nameRequired: "Please enter the customer name.",
+        nameMax: "Customer name must be at most 255 characters.",
+        emailInvalid: "Customer email is invalid.",
+        emailMax: "Email must be at most 255 characters.",
+        phoneMax: "Phone number must be at most 30 characters.",
+        addressMax: "Address must be at most 500 characters.",
+        taxCodeMax: "Tax code must be at most 100 characters.",
+        typeRequired: "Please choose a customer type.",
+        statusRequired: "Please choose a customer status.",
       },
     },
   },

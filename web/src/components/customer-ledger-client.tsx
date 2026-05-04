@@ -1,7 +1,16 @@
 "use client"
 
 import * as React from "react"
+import { useActionState } from "react"
+import { useFormStatus } from "react-dom"
+import { Loader2, PencilLine } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
+import {
+  toggleCustomerActiveAction,
+  updateCustomerAction,
+} from "@/actions/customer-management"
 import { PaymentDialog } from "@/components/payment-dialog"
 import {
   CommandPanel,
@@ -9,6 +18,18 @@ import {
   StatusChip,
   TableScrollArea,
 } from "@/components/command-center"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Table,
   TableBody,
@@ -24,12 +45,22 @@ import {
 } from "@/lib/finance-core"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
-import type { CustomerLedger } from "@/schemas"
+import {
+  createUpdateCustomerFormSchema,
+  getCustomerManagementValidationMessages,
+  initialCustomerManagementActionState,
+  type CustomerLedger,
+  type CustomerManagementActionState,
+  type CustomerManagementField,
+} from "@/schemas"
 
 type CustomerLedgerClientProps = {
+  currentUserRole: "ADMIN" | "STAFF"
   customerId: string
   initialLedger: CustomerLedger | null
 }
+
+type CustomerClientErrors = Partial<Record<CustomerManagementField, string>>
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("vi-VN", {
@@ -58,7 +89,352 @@ function formatDate(value: Date): string {
   return `${day}/${month}/${year} ${hours}:${minutes}`
 }
 
+function CustomerActionSubmitButton({
+  idleLabel,
+  pendingLabel,
+  variant = "default",
+}: {
+  idleLabel: string
+  pendingLabel: string
+  variant?: "default" | "outline"
+}) {
+  const { pending } = useFormStatus()
+
+  return (
+    <Button disabled={pending} type="submit" variant={variant}>
+      {pending ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {pendingLabel}
+        </>
+      ) : (
+        idleLabel
+      )}
+    </Button>
+  )
+}
+
+function getCustomerFieldError(
+  field: CustomerManagementField,
+  clientErrors: CustomerClientErrors,
+  state: CustomerManagementActionState,
+): string | undefined {
+  return clientErrors[field] ?? state.fieldErrors[field]
+}
+
+function EditCustomerDialog({
+  customer,
+}: {
+  customer: CustomerLedger["customer"]
+}) {
+  const t = useI18n()
+  const router = useRouter()
+  const [open, setOpen] = React.useState(false)
+  const [clientErrors, setClientErrors] = React.useState<CustomerClientErrors>({})
+  const [name, setName] = React.useState(customer.name)
+  const [type, setType] = React.useState(customer.type)
+  const [isActive, setIsActive] = React.useState(customer.is_active)
+  const [email, setEmail] = React.useState(customer.email ?? "")
+  const [phone, setPhone] = React.useState(customer.phone ?? "")
+  const [address, setAddress] = React.useState(customer.address ?? "")
+  const [taxCode, setTaxCode] = React.useState(customer.tax_code ?? "")
+  const [state, formAction] = useActionState(
+    updateCustomerAction,
+    initialCustomerManagementActionState,
+  )
+  const validationMessages = React.useMemo(
+    () => getCustomerManagementValidationMessages(t),
+    [t],
+  )
+  const formSchema = React.useMemo(
+    () => createUpdateCustomerFormSchema(validationMessages),
+    [validationMessages],
+  )
+
+  React.useEffect(() => {
+    if (open) {
+      setName(customer.name)
+      setType(customer.type)
+      setIsActive(customer.is_active)
+      setEmail(customer.email ?? "")
+      setPhone(customer.phone ?? "")
+      setAddress(customer.address ?? "")
+      setTaxCode(customer.tax_code ?? "")
+      setClientErrors({})
+    }
+  }, [customer, open])
+
+  React.useEffect(() => {
+    if (state.status === "success") {
+      toast.success(state.message ?? t("customers.management.actions.updateSuccess"))
+      setOpen(false)
+      setClientErrors({})
+      router.refresh()
+      return
+    }
+
+    if (state.status === "error" && state.submittedAt) {
+      toast.error(state.message ?? t("customers.management.actions.failure"))
+    }
+  }, [router, state, t])
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const formData = new FormData(event.currentTarget)
+    const parsedValues = formSchema.safeParse({
+      customer_id: formData.get("customer_id"),
+      name: formData.get("name"),
+      type: formData.get("type"),
+      is_active: formData.get("is_active"),
+      email: formData.get("email"),
+      phone: formData.get("phone"),
+      address: formData.get("address"),
+      tax_code: formData.get("tax_code"),
+    })
+
+    if (!parsedValues.success) {
+      event.preventDefault()
+      const flattenedErrors = parsedValues.error.flatten().fieldErrors
+      setClientErrors({
+        customer_id: flattenedErrors.customer_id?.[0],
+        name: flattenedErrors.name?.[0],
+        type: flattenedErrors.type?.[0],
+        is_active: flattenedErrors.is_active?.[0],
+        email: flattenedErrors.email?.[0],
+        phone: flattenedErrors.phone?.[0],
+        address: flattenedErrors.address?.[0],
+        tax_code: flattenedErrors.tax_code?.[0],
+      })
+      return
+    }
+
+    setClientErrors({})
+  }
+
+  const selectClassName =
+    "flex h-11 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
+
+  return (
+    <Dialog onOpenChange={setOpen} open={open}>
+      <DialogTrigger asChild>
+        <Button size="lg" variant="outline">
+          <PencilLine className="h-4 w-4" />
+          {t("customers.management.editAction")}
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent className="w-[min(92vw,42rem)]">
+        <DialogHeader>
+          <DialogTitle>{t("customers.management.dialogs.edit.title")}</DialogTitle>
+          <DialogDescription>
+            {t("customers.management.dialogs.edit.description")}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form action={formAction} className="space-y-5" onSubmit={handleSubmit}>
+          <input name="customer_id" type="hidden" value={customer.id} />
+
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="customer-name">
+                {t("customers.management.fields.name")}
+              </Label>
+              <Input
+                id="customer-name"
+                name="name"
+                onChange={(event) => setName(event.target.value)}
+                placeholder={t("customers.management.fields.namePlaceholder")}
+                value={name}
+              />
+              {getCustomerFieldError("name", clientErrors, state) ? (
+                <p className="text-sm text-red-600">
+                  {getCustomerFieldError("name", clientErrors, state)}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="customer-type">
+                  {t("customers.management.fields.type")}
+                </Label>
+                <select
+                  className={selectClassName}
+                  id="customer-type"
+                  name="type"
+                  onChange={(event) =>
+                    setType(event.target.value as CustomerLedger["customer"]["type"])
+                  }
+                  value={type}
+                >
+                  <option value="INDIVIDUAL">
+                    {t("customers.management.types.INDIVIDUAL")}
+                  </option>
+                  <option value="BUSINESS">
+                    {t("customers.management.types.BUSINESS")}
+                  </option>
+                </select>
+                {getCustomerFieldError("type", clientErrors, state) ? (
+                  <p className="text-sm text-red-600">
+                    {getCustomerFieldError("type", clientErrors, state)}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="customer-status">
+                  {t("customers.management.fields.status")}
+                </Label>
+                <select
+                  className={selectClassName}
+                  id="customer-status"
+                  name="is_active"
+                  onChange={(event) => setIsActive(event.target.value === "true")}
+                  value={String(isActive)}
+                >
+                  <option value="true">{t("customers.management.statuses.active")}</option>
+                  <option value="false">{t("customers.management.statuses.archived")}</option>
+                </select>
+                {getCustomerFieldError("is_active", clientErrors, state) ? (
+                  <p className="text-sm text-red-600">
+                    {getCustomerFieldError("is_active", clientErrors, state)}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="customer-phone">
+                  {t("customers.management.fields.phone")}
+                </Label>
+                <Input
+                  id="customer-phone"
+                  name="phone"
+                  onChange={(event) => setPhone(event.target.value)}
+                  placeholder={t("customers.management.fields.phonePlaceholder")}
+                  value={phone}
+                />
+                {getCustomerFieldError("phone", clientErrors, state) ? (
+                  <p className="text-sm text-red-600">
+                    {getCustomerFieldError("phone", clientErrors, state)}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="customer-email">
+                  {t("customers.management.fields.email")}
+                </Label>
+                <Input
+                  id="customer-email"
+                  name="email"
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder={t("customers.management.fields.emailPlaceholder")}
+                  value={email}
+                />
+                {getCustomerFieldError("email", clientErrors, state) ? (
+                  <p className="text-sm text-red-600">
+                    {getCustomerFieldError("email", clientErrors, state)}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="customer-address">
+                {t("customers.management.fields.address")}
+              </Label>
+              <Input
+                id="customer-address"
+                name="address"
+                onChange={(event) => setAddress(event.target.value)}
+                placeholder={t("customers.management.fields.addressPlaceholder")}
+                value={address}
+              />
+              {getCustomerFieldError("address", clientErrors, state) ? (
+                <p className="text-sm text-red-600">
+                  {getCustomerFieldError("address", clientErrors, state)}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="customer-tax-code">
+                {t("customers.management.fields.taxCode")}
+              </Label>
+              <Input
+                id="customer-tax-code"
+                name="tax_code"
+                onChange={(event) => setTaxCode(event.target.value)}
+                placeholder={t("customers.management.fields.taxCodePlaceholder")}
+                value={taxCode}
+              />
+              {getCustomerFieldError("tax_code", clientErrors, state) ? (
+                <p className="text-sm text-red-600">
+                  {getCustomerFieldError("tax_code", clientErrors, state)}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button onClick={() => setOpen(false)} type="button" variant="outline">
+              {t("customers.management.dialogs.cancel")}
+            </Button>
+            <CustomerActionSubmitButton
+              idleLabel={t("customers.management.dialogs.edit.submit")}
+              pendingLabel={t("customers.management.dialogs.edit.submitting")}
+            />
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function ToggleCustomerStatusButton({
+  customer,
+}: {
+  customer: CustomerLedger["customer"]
+}) {
+  const t = useI18n()
+  const router = useRouter()
+  const [state, formAction] = useActionState(
+    toggleCustomerActiveAction,
+    initialCustomerManagementActionState,
+  )
+
+  React.useEffect(() => {
+    if (state.status === "success") {
+      toast.success(state.message ?? t("customers.management.actions.toggleSuccess"))
+      router.refresh()
+      return
+    }
+
+    if (state.status === "error" && state.submittedAt) {
+      toast.error(state.message ?? t("customers.management.actions.failure"))
+    }
+  }, [router, state, t])
+
+  return (
+    <form action={formAction}>
+      <input name="customer_id" type="hidden" value={customer.id} />
+      <input name="is_active" type="hidden" value={String(!customer.is_active)} />
+      <CustomerActionSubmitButton
+        idleLabel={
+          customer.is_active
+            ? t("customers.management.archiveAction")
+            : t("customers.management.reactivateAction")
+        }
+        pendingLabel={t("customers.management.toggleSubmitting")}
+        variant="outline"
+      />
+    </form>
+  )
+}
+
 export function CustomerLedgerClient({
+  currentUserRole,
   customerId,
   initialLedger,
 }: CustomerLedgerClientProps) {
@@ -70,6 +446,11 @@ export function CustomerLedgerClient({
         name: "",
         type: "INDIVIDUAL",
         balance: 0,
+        is_active: true,
+        email: null,
+        phone: null,
+        address: null,
+        tax_code: null,
       },
       current_balance: 0,
       balance_state: "settled",
@@ -140,6 +521,9 @@ export function CustomerLedgerClient({
     settled: t("customers.ledger.balanceStates.settled"),
     credit: t("customers.ledger.balanceStates.credit"),
   } as const
+  const customerStatusLabel = ledger.customer.is_active
+    ? t("customers.management.statuses.active")
+    : t("customers.management.statuses.archived")
 
   const getEntryTypeLabel = (
     entryType: CustomerLedger["entries"][number]["entry_type"],
@@ -163,12 +547,19 @@ export function CustomerLedgerClient({
           title={ledger.customer.name}
           description={`${t("customers.ledger.customerId")}: ${ledger.customer.id}`}
           action={
-            <PaymentDialog
-              customerId={customerId}
-              onOptimisticSubmit={handleOptimisticSubmit}
-              onSettled={handleActionSettled}
-              ticketOptions={ticketOptions}
-            />
+            <div className="flex flex-wrap justify-end gap-2">
+              <EditCustomerDialog customer={ledger.customer} />
+              {currentUserRole === "ADMIN" ? (
+                <ToggleCustomerStatusButton customer={ledger.customer} />
+              ) : null}
+              <PaymentDialog
+                customerId={customerId}
+                disabled={!ledger.customer.is_active}
+                onOptimisticSubmit={handleOptimisticSubmit}
+                onSettled={handleActionSettled}
+                ticketOptions={ticketOptions}
+              />
+            </div>
           }
         />
         <div className="grid gap-3 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -183,9 +574,9 @@ export function CustomerLedgerClient({
             </div>
             <div className="rounded-lg border border-border bg-secondary/35 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-                {t("financeDocuments.common.status")}
+                {t("customers.management.fields.status")}
               </p>
-              <div className="mt-2">
+              <div className="mt-2 flex flex-wrap gap-2">
                 <StatusChip
                   tone={
                     ledger.balance_state === "debt"
@@ -196,6 +587,9 @@ export function CustomerLedgerClient({
                   }
                 >
                   {balanceStateLabels[ledger.balance_state]}
+                </StatusChip>
+                <StatusChip tone={ledger.customer.is_active ? "success" : "warning"}>
+                  {customerStatusLabel}
                 </StatusChip>
               </div>
             </div>

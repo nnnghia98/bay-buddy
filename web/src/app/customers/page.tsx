@@ -111,20 +111,20 @@ export default function CustomersPage() {
   }
 
   const customerRows = customersQuery.isLoading ? (
-    <TableRow>
-      <TableCell className="py-12 text-center text-muted-foreground" colSpan={3}>
+      <TableRow>
+      <TableCell className="py-12 text-center text-muted-foreground" colSpan={4}>
         {t("customers.directory.loading")}
       </TableCell>
     </TableRow>
   ) : customersQuery.isError ? (
     <TableRow>
-      <TableCell className="py-12 text-center text-red-600" colSpan={3}>
+      <TableCell className="py-12 text-center text-red-600" colSpan={4}>
         {t("customers.directory.error")}
       </TableCell>
     </TableRow>
   ) : filteredCustomers.length === 0 ? (
     <TableRow>
-      <TableCell className="py-12 text-center text-muted-foreground" colSpan={3}>
+      <TableCell className="py-12 text-center text-muted-foreground" colSpan={4}>
         {t("customers.directory.empty")}
       </TableCell>
     </TableRow>
@@ -134,6 +134,7 @@ export default function CustomersPage() {
         key={customer.id}
         className="cursor-pointer hover:bg-accent/45"
         onClick={() => router.push(`/customers/${customer.id}`)}
+        data-state={customer.is_active ? "active" : "inactive"}
       >
         <TableCell className="px-6 py-5">
           <div className="flex items-center gap-4">
@@ -150,6 +151,13 @@ export default function CustomersPage() {
         </TableCell>
         <TableCell className="px-6 py-5 text-muted-foreground">
           {customer.phone ? customer.phone : t("financeDocuments.common.notUpdated")}
+        </TableCell>
+        <TableCell className="px-6 py-5">
+          <StatusChip tone={customer.is_active ? "success" : "warning"}>
+            {customer.is_active
+              ? t("customers.management.statuses.active")
+              : t("customers.management.statuses.archived")}
+          </StatusChip>
         </TableCell>
         <TableCell
           className={cn(
@@ -226,6 +234,7 @@ export default function CustomersPage() {
               <TableRow className="bg-secondary/55 hover:bg-secondary/55">
                 <TableHead>{t("financeDocuments.common.customer")}</TableHead>
                 <TableHead>{t("customers.directory.columns.phone")}</TableHead>
+                <TableHead>{t("customers.management.fields.status")}</TableHead>
                 <TableHead className="text-right">
                   {t("customers.ledger.currentBalance")}
                 </TableHead>
