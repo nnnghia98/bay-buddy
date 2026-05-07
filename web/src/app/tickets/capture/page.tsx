@@ -265,6 +265,7 @@ export default function CaptureTicketPage() {
       if (error instanceof ApiError && error.status === 401) {
         logout();
         router.replace("/login");
+        return;
       }
       toast.error(error.message);
     },

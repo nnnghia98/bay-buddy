@@ -6,6 +6,7 @@ import { FinancialSummaryDashboard } from "@/components/financial-summary-dashbo
 import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
 import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
 import { buildFinancialSummarySnapshot } from "@/lib/dashboard"
+import { parseRevenueFromParam } from "@/lib/revenue-cutoff"
 import { CustomerDirectoryItemSchema } from "@/schemas/customer"
 import { TicketReadSchema } from "@/schemas/ticket"
 import { TransactionReadSchema } from "@/schemas/transaction"
@@ -15,6 +16,7 @@ const API_BASE_URL = getServerApiBaseUrl()
 const customerDirectorySchema = z.array(CustomerDirectoryItemSchema)
 const ticketListSchema = z.array(TicketReadSchema)
 const transactionListSchema = z.array(TransactionReadSchema)
+const REVENUE_FROM_PARAM = "revenue_from"
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -58,7 +60,7 @@ async function fetchCollection<TSchema extends z.ZodTypeAny>(
   return schema.parse(payload)
 }
 
-async function loadFinancialSummarySnapshot() {
+async function loadFinancialSummarySnapshot(input?: { revenueFromParam?: string }) {
   const token = (await cookies()).get(AUTH_TOKEN_COOKIE_KEY)?.value
 
   if (!token) {
@@ -66,24 +68,63 @@ async function loadFinancialSummarySnapshot() {
   }
 
   try {
-    const [customers, tickets, transactions] = await Promise.all([
-      fetchCollection("/customers/?limit=1000", token, customerDirectorySchema),
-      fetchCollection("/tickets/?limit=1000", token, ticketListSchema),
-      fetchCollection("/transactions/?limit=5000", token, transactionListSchema),
-    ])
+    const [customersResult, ticketsResult, transactionsResult] =
+      await Promise.allSettled([
+        fetchCollection("/customers?limit=500", token, customerDirectorySchema),
+        fetchCollection("/tickets?limit=500", token, ticketListSchema),
+        fetchCollection("/transactions?limit=1000", token, transactionListSchema),
+      ])
+
+    const customers =
+      customersResult.status === "fulfilled" ? customersResult.value : []
+    const tickets = ticketsResult.status === "fulfilled" ? ticketsResult.value : []
+    const transactions =
+      transactionsResult.status === "fulfilled" ? transactionsResult.value : []
+
+    if (customersResult.status === "rejected") {
+      console.error("[dashboard] customers collection failed", customersResult.reason)
+    }
+    if (ticketsResult.status === "rejected") {
+      console.error("[dashboard] tickets collection failed", ticketsResult.reason)
+    }
+    if (transactionsResult.status === "rejected") {
+      console.error(
+        "[dashboard] transactions collection failed",
+        transactionsResult.reason,
+      )
+    }
+
+    if (
+      customersResult.status === "rejected" &&
+      ticketsResult.status === "rejected" &&
+      transactionsResult.status === "rejected"
+    ) {
+      throw new Error("All dashboard collections failed")
+    }
 
     return buildFinancialSummarySnapshot({
       customers,
       tickets,
       transactions,
+      revenueFrom: parseRevenueFromParam(input?.revenueFromParam),
     })
-  } catch {
+  } catch (error) {
+    console.error("[dashboard] Failed to load financial summary snapshot", error)
     return null
   }
 }
 
-export default async function Home() {
-  const summary = await loadFinancialSummarySnapshot()
+export default async function Home({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const params = searchParams ? await searchParams : undefined
+  const revenueFromRaw = params?.[REVENUE_FROM_PARAM]
+  const revenueFromParam = Array.isArray(revenueFromRaw)
+    ? revenueFromRaw[0]
+    : revenueFromRaw
+  const summary = await loadFinancialSummarySnapshot({ revenueFromParam })
 
   return <FinancialSummaryDashboard summary={summary} />
 }

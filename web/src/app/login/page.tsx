@@ -70,7 +70,7 @@ export default function LoginPage() {
     try {
       const response = await loginRequest(values)
       login(response.access_token)
-      toast.success("Logged in successfully")
+      toast.success(t("login.successToast"))
       router.replace("/")
     } catch (error) {
       const message =

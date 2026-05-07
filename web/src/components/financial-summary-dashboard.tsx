@@ -1,7 +1,11 @@
 "use client"
 
 import Link from "next/link"
+import * as React from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
+  Eye,
+  EyeOff,
   Landmark,
   Plane,
   ReceiptText,
@@ -18,6 +22,7 @@ import {
   TableScrollArea,
 } from "@/components/command-center"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -31,7 +36,10 @@ import { useI18n } from "@/locales/client"
 
 type FinancialSummaryDashboardProps = {
   summary: FinancialSummarySnapshot | null
+  initialRevenueVisible?: boolean
 }
+const REVENUE_FROM_PARAM = "revenue_from"
+const REVENUE_FROM_STORAGE_KEY = "baybuddy:dashboard:revenue-from"
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("vi-VN", {
@@ -102,8 +110,37 @@ function getActivityTone(
 
 export function FinancialSummaryDashboard({
   summary,
+  initialRevenueVisible = false,
 }: FinancialSummaryDashboardProps) {
   const t = useI18n()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [isRevenueVisible, setIsRevenueVisible] = React.useState(initialRevenueVisible)
+  const [revenueFromInput, setRevenueFromInput] = React.useState("")
+
+  React.useEffect(() => {
+    if (!summary) {
+      return
+    }
+
+    setRevenueFromInput(summary.revenueFromDate)
+  }, [summary])
+
+  React.useEffect(() => {
+    if (!summary) {
+      return
+    }
+
+    const storedCutoff = window.localStorage.getItem(REVENUE_FROM_STORAGE_KEY)
+    if (!storedCutoff || storedCutoff === summary.revenueFromDate) {
+      return
+    }
+
+    const params = new URLSearchParams(searchParams.toString())
+    params.set(REVENUE_FROM_PARAM, storedCutoff)
+    router.replace(`${pathname}?${params.toString()}`)
+  }, [pathname, router, searchParams, summary])
 
   if (!summary) {
     return (
@@ -218,7 +255,7 @@ export function FinancialSummaryDashboard({
       key: "revenue",
       icon: WalletCards,
       label: t("dashboard.summary.widgets.revenue.label"),
-      value: formatCurrency(summary.totalRevenue),
+      value: isRevenueVisible ? formatCurrency(summary.totalRevenue) : "••••••",
       detail: `${summary.confirmedTickets} ${t("dashboard.summary.widgets.revenue.detail")}`,
     },
     {
@@ -236,6 +273,17 @@ export function FinancialSummaryDashboard({
       detail: `${summary.customersWithDebt} ${t("dashboard.summary.widgets.receivables.detail")}`,
     },
   ]
+
+  const applyRevenueCutoff = () => {
+    if (!revenueFromInput) {
+      return
+    }
+
+    const params = new URLSearchParams(searchParams.toString())
+    params.set(REVENUE_FROM_PARAM, revenueFromInput)
+    window.localStorage.setItem(REVENUE_FROM_STORAGE_KEY, revenueFromInput)
+    router.replace(`${pathname}?${params.toString()}`)
+  }
 
   return (
     <div className="space-y-5 text-foreground">
@@ -275,14 +323,57 @@ export function FinancialSummaryDashboard({
                     <p className="text-sm leading-6 text-muted-foreground">
                       {widget.detail}
                     </p>
+                    {widget.key === "revenue" ? (
+                      <p className="text-xs text-muted-foreground">
+                        {t("dashboard.summary.widgets.revenue.cutoffHint")}
+                      </p>
+                    ) : null}
                   </div>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-white text-primary">
-                    <Icon aria-hidden="true" className="h-4 w-4" />
+                  <div className="flex flex-col items-end gap-2">
+                    {widget.key === "revenue" ? (
+                      <Button
+                        aria-label={
+                          isRevenueVisible
+                            ? t("dashboard.summary.widgets.revenue.hide")
+                            : t("dashboard.summary.widgets.revenue.show")
+                        }
+                        onClick={() => setIsRevenueVisible((current) => !current)}
+                        size="icon"
+                        type="button"
+                        variant="outline"
+                      >
+                        {isRevenueVisible ? (
+                          <EyeOff aria-hidden="true" className="h-4 w-4" />
+                        ) : (
+                          <Eye aria-hidden="true" className="h-4 w-4" />
+                        )}
+                      </Button>
+                    ) : null}
+                    <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-white text-primary">
+                      <Icon aria-hidden="true" className="h-4 w-4" />
+                    </div>
                   </div>
                 </div>
               </div>
             )
           })}
+        </div>
+        <div className="flex flex-col gap-3 border-t border-border px-4 py-3 md:flex-row md:items-end">
+          <div className="w-full md:max-w-xs">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+              {t("dashboard.summary.widgets.revenue.cutoffLabel")}
+            </label>
+            <Input
+              className="mt-2 h-10"
+              max={summary.updatedAt.slice(0, 10)}
+              onChange={(event) => setRevenueFromInput(event.target.value)}
+              type="date"
+              value={revenueFromInput}
+            />
+          </div>
+          <Button onClick={applyRevenueCutoff} type="button" variant="outline">
+            {t("dashboard.summary.widgets.revenue.applyCutoff")}
+          </Button>
         </div>
         <div className="grid gap-px border-t border-border bg-border sm:grid-cols-2">
           <div className="bg-secondary/70 px-5 py-4">

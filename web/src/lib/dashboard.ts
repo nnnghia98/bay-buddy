@@ -46,6 +46,7 @@ export type DashboardRecentActivity = {
 
 export type FinancialSummarySnapshot = {
   totalRevenue: number
+  revenueFromDate: string
   totalNetProfit: number
   totalReceivables: number
   totalHeldCredit: number
@@ -301,12 +302,27 @@ export function buildFinancialSummarySnapshot(input: {
   customers: readonly CustomerDirectoryItem[]
   tickets: readonly TicketRead[]
   transactions: readonly TransactionRead[]
+  revenueFrom?: Date
 }): FinancialSummarySnapshot {
+  const revenueFromDateKey = input.revenueFrom
+    ? getDateKey(input.revenueFrom)
+    : null
   const confirmedTickets = input.tickets.filter(
     (ticket) => ticket.status === "CONFIRMED",
   )
-  const totalRevenue = confirmedTickets.reduce(
-    (sum, ticket) => sum + ticket.selling_price,
+  const totalRevenue = input.transactions.reduce(
+    (sum, transaction) => {
+      if (!REVENUE_TRANSACTION_CATEGORIES.has(transaction.category)) {
+        return sum
+      }
+
+      const transactionDateKey = getDateKey(transaction.created_at)
+      if (revenueFromDateKey && transactionDateKey < revenueFromDateKey) {
+        return sum
+      }
+
+      return sum + transaction.amount
+    },
     0,
   )
   const totalNetProfit = confirmedTickets.reduce(
@@ -332,6 +348,7 @@ export function buildFinancialSummarySnapshot(input: {
 
   return {
     totalRevenue,
+    revenueFromDate: revenueFromDateKey ?? "",
     totalNetProfit,
     totalReceivables,
     totalHeldCredit,

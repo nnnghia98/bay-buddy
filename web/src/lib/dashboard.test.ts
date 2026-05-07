@@ -100,6 +100,40 @@ const transactions: TransactionRead[] = [
 ]
 
 describe("buildFinancialSummarySnapshot command center fields", () => {
+  it("counts revenue from ledger transactions on or after the cutoff date", () => {
+    const snapshot = buildFinancialSummarySnapshot({
+      customers: [customerA],
+      tickets: [ticketA],
+      transactions: [
+        transactions[0],
+        {
+          ...transactions[0],
+          id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+          category: "ADDITIONAL_FEE",
+          amount: 100_000,
+          created_at: new Date("2026-04-26T04:00:00.000Z"),
+        },
+      ],
+      revenueFrom: new Date("2026-04-25T00:00:00.000Z"),
+    })
+
+    expect(snapshot.totalRevenue).toBe(100_000)
+    expect(snapshot.revenueFromDate).toBe("2026-04-25")
+  })
+
+  it("handles zero revenue denominator safely for percentage metrics", () => {
+    const snapshot = buildFinancialSummarySnapshot({
+      customers: [customerA],
+      tickets: [],
+      transactions: [],
+      revenueFrom: new Date("2026-05-01T00:00:00.000Z"),
+    })
+
+    expect(snapshot.totalRevenue).toBe(0)
+    expect(snapshot.averageMarginPercent).toBe(0)
+    expect(snapshot.receivablesRatioPercent).toBe(0)
+  })
+
   it("builds action queues for debt, credit, and draft ticket work", () => {
     const snapshot = buildFinancialSummarySnapshot({
       customers: [customerA, customerB, customerC],

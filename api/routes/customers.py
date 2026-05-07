@@ -14,6 +14,10 @@ from models.customer import (
     CustomerUpdate,
 )
 from models.enums import UserRole
+from models.invoice import Invoice
+from models.quote import Quote
+from models.ticket import Ticket
+from models.transaction import Transaction
 from services.finance_service import (
     RecordPaymentPayload,
     get_customer_ledger,
@@ -27,7 +31,7 @@ async def create_customer(
     *, session: SessionDep, current_user: CurrentUserDep, customer_in: CustomerCreate
 ):
     """Create a new customer."""
-    require_user_roles(current_user, UserRole.ADMIN, UserRole.STAFF)
+    require_user_roles(current_user, UserRole.ADMIN)
     db_customer = Customer.model_validate(customer_in)
     session.add(db_customer)
     session.commit()
@@ -75,7 +79,7 @@ async def update_customer(
     current_user: CurrentUserDep,
 ):
     """Partially update a customer and enforce unique email/tax code constraints."""
-    require_user_roles(current_user, UserRole.ADMIN, UserRole.STAFF)
+    require_user_roles(current_user, UserRole.ADMIN)
 
     customer = session.get(Customer, customer_id)
     if not customer:
@@ -85,12 +89,6 @@ async def update_customer(
         )
 
     update_data = customer_in.model_dump(exclude_unset=True)
-
-    if "is_active" in update_data and current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions",
-        )
 
     normalized_email = update_data.get("email")
     if normalized_email is not None:
@@ -128,6 +126,47 @@ async def update_customer(
     session.refresh(customer)
 
     return success_response(CustomerRead.model_validate(customer).model_dump(mode="json"))
+
+
+@router.delete("/{customer_id}", response_model=dict)
+async def delete_customer(
+    customer_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+):
+    """Delete a customer when no related finance/ticket records exist."""
+    require_user_roles(current_user, UserRole.ADMIN)
+
+    customer = session.get(Customer, customer_id)
+    if not customer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer not found",
+        )
+
+    has_tickets = session.exec(
+        select(Ticket.id).where(Ticket.customer_id == customer_id).limit(1)
+    ).first()
+    has_transactions = session.exec(
+        select(Transaction.id).where(Transaction.customer_id == customer_id).limit(1)
+    ).first()
+    has_invoices = session.exec(
+        select(Invoice.id).where(Invoice.customer_id == customer_id).limit(1)
+    ).first()
+    has_quotes = session.exec(
+        select(Quote.id).where(Quote.customer_id == customer_id).limit(1)
+    ).first()
+
+    if has_tickets or has_transactions or has_invoices or has_quotes:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Customer has related records. Archive instead of deleting.",
+        )
+
+    session.delete(customer)
+    session.commit()
+
+    return success_response({"id": str(customer_id), "deleted": True})
 
 
 @router.get("/{customer_id}/ledger", response_model=dict)

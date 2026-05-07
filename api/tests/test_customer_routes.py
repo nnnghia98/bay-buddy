@@ -81,7 +81,7 @@ def test_staff_cannot_archive_customer() -> None:
     assert response.json()["detail"] == "Not enough permissions"
 
 
-def test_staff_can_edit_customer_contact_fields() -> None:
+def test_staff_cannot_edit_customer_contact_fields() -> None:
     client, session = create_test_client(role=UserRole.STAFF)
     customer = seed_customer(session)
 
@@ -95,12 +95,8 @@ def test_staff_can_edit_customer_contact_fields() -> None:
 
     clear_overrides()
 
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["success"] is True
-    assert payload["data"]["name"] == "Cong ty Bay Buddy Updated"
-    assert payload["data"]["phone"] == "0909123456"
-    assert payload["data"]["is_active"] is True
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Not enough permissions"
 
 
 def test_admin_can_archive_customer() -> None:
@@ -119,6 +115,39 @@ def test_admin_can_archive_customer() -> None:
     assert payload["success"] is True
     assert payload["data"]["id"] == str(customer.id)
     assert payload["data"]["is_active"] is False
+
+
+def test_staff_cannot_create_customer() -> None:
+    client, session = create_test_client(role=UserRole.STAFF)
+    del session
+
+    response = client.post(
+        "/api/v1/customers/",
+        json={
+            "name": "Staff Attempt",
+            "type": "INDIVIDUAL",
+        },
+    )
+
+    clear_overrides()
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Not enough permissions"
+
+
+def test_admin_can_delete_customer_without_related_records() -> None:
+    client, session = create_test_client(role=UserRole.ADMIN)
+    customer = seed_customer(session)
+
+    response = client.delete(f"/api/v1/customers/{customer.id}")
+
+    clear_overrides()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert payload["data"]["id"] == str(customer.id)
+    assert payload["data"]["deleted"] is True
 
 
 def test_list_customers_includes_archive_status() -> None:

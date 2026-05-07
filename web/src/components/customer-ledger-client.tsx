@@ -548,7 +548,9 @@ export function CustomerLedgerClient({
           description={`${t("customers.ledger.customerId")}: ${ledger.customer.id}`}
           action={
             <div className="flex flex-wrap justify-end gap-2">
-              <EditCustomerDialog customer={ledger.customer} />
+              {currentUserRole === "ADMIN" ? (
+                <EditCustomerDialog customer={ledger.customer} />
+              ) : null}
               {currentUserRole === "ADMIN" ? (
                 <ToggleCustomerStatusButton customer={ledger.customer} />
               ) : null}

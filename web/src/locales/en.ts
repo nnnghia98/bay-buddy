@@ -2,6 +2,7 @@ export default {
   login: {
     usernameLabel: "Username",
     usernamePlaceholder: "Username",
+    successToast: "Signed in successfully.",
   },
   appShell: {
     home: "Home",
@@ -187,6 +188,11 @@ export default {
         revenue: {
           label: "Total revenue",
           detail: "confirmed tickets in the system.",
+          show: "Show revenue",
+          hide: "Hide revenue",
+          cutoffLabel: "Revenue from date",
+          applyCutoff: "Apply cutoff",
+          cutoffHint: "Revenue includes records from the selected cutoff date to now.",
         },
         profit: {
           label: "Net profit",
@@ -260,6 +266,7 @@ export default {
       },
       columns: {
         phone: "Phone number",
+        actions: "Actions",
       },
       loading: "Loading customers...",
       error: "Unable to load customers right now.",
@@ -355,7 +362,9 @@ export default {
       },
     },
     management: {
+      createAction: "Add customer",
       editAction: "Edit customer",
+      deleteAction: "Delete",
       archiveAction: "Archive",
       reactivateAction: "Reactivate",
       toggleSubmitting: "Updating...",
@@ -383,6 +392,14 @@ export default {
       },
       dialogs: {
         cancel: "Close",
+        create: {
+          title: "Create customer",
+          description: "Add a new customer directly from the current customer directory.",
+          submit: "Create customer",
+        },
+        delete: {
+          confirm: "Are you sure you want to delete this customer?",
+        },
         edit: {
           title: "Update customer",
           description:
@@ -394,8 +411,10 @@ export default {
       actions: {
         invalidInput: "Please review the customer details.",
         missingAuth: "Your session has expired. Please sign in again.",
+        createSuccess: "Customer created successfully.",
         updateSuccess: "Customer updated successfully.",
         toggleSuccess: "Customer status updated.",
+        deleteSuccess: "Customer deleted successfully.",
         failure: "Unable to update the customer right now.",
       },
       validation: {

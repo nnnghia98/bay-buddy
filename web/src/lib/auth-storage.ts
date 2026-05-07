@@ -3,6 +3,35 @@ import {
   AUTH_TOKEN_STORAGE_KEY,
 } from "@/lib/auth-token"
 
+function decodeBase64Url(value: string): string {
+  const normalizedValue = value.replace(/-/g, "+").replace(/_/g, "/")
+  const paddingLength = (4 - (normalizedValue.length % 4)) % 4
+  const paddedValue = normalizedValue + "=".repeat(paddingLength)
+
+  return atob(paddedValue)
+}
+
+function isTokenExpired(token: string): boolean {
+  try {
+    const tokenParts = token.split(".")
+    if (tokenParts.length < 2) {
+      return true
+    }
+
+    const payload = JSON.parse(decodeBase64Url(tokenParts[1])) as {
+      exp?: number
+    }
+    if (typeof payload.exp !== "number") {
+      return true
+    }
+
+    const nowInSeconds = Math.floor(Date.now() / 1000)
+    return payload.exp <= nowInSeconds
+  } catch {
+    return true
+  }
+}
+
 function readCookieValue(name: string): string | null {
   if (typeof document === "undefined") {
     return null
@@ -49,6 +78,10 @@ export function setStoredToken(token: string): void {
   if (typeof window === "undefined") {
     return
   }
+  if (isTokenExpired(token)) {
+    clearStoredToken()
+    return
+  }
 
   window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token)
   writeTokenCookie(token)
@@ -78,6 +111,11 @@ export function hydrateAuthTokenFromStorage(): string | null {
   const storedToken = getStoredToken()
   if (storedToken !== cookieToken) {
     setStoredToken(cookieToken)
+  }
+
+  if (isTokenExpired(cookieToken)) {
+    clearStoredToken()
+    return null
   }
 
   return cookieToken

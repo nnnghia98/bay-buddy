@@ -2,6 +2,7 @@ export default {
   login: {
     usernameLabel: "Tên đăng nhập",
     usernamePlaceholder: "Tên đăng nhập",
+    successToast: "Đăng nhập thành công.",
   },
   appShell: {
     home: "Trang chủ",
@@ -187,6 +188,11 @@ export default {
         revenue: {
           label: "Tổng doanh thu",
           detail: "vé đã xác nhận trong hệ thống.",
+          show: "Hiện doanh thu",
+          hide: "Ẩn doanh thu",
+          cutoffLabel: "Tính doanh thu từ ngày",
+          applyCutoff: "Áp dụng mốc",
+          cutoffHint: "Chỉ tính doanh thu từ mốc thời gian đã chọn đến hiện tại.",
         },
         profit: {
           label: "Lợi nhuận ròng",
@@ -260,6 +266,7 @@ export default {
       },
       columns: {
         phone: "Số điện thoại",
+        actions: "Thao tác",
       },
       loading: "Đang tải danh sách khách hàng...",
       error: "Không thể tải danh sách khách hàng lúc này.",
@@ -355,7 +362,9 @@ export default {
       },
     },
     management: {
+      createAction: "Thêm khách hàng",
       editAction: "Chỉnh sửa khách hàng",
+      deleteAction: "Xóa",
       archiveAction: "Lưu trữ",
       reactivateAction: "Kích hoạt lại",
       toggleSubmitting: "Đang cập nhật...",
@@ -383,6 +392,14 @@ export default {
       },
       dialogs: {
         cancel: "Đóng",
+        create: {
+          title: "Tạo khách hàng mới",
+          description: "Thêm khách hàng mới ngay trên danh mục khách hàng hiện tại.",
+          submit: "Tạo khách hàng",
+        },
+        delete: {
+          confirm: "Bạn có chắc muốn xóa khách hàng này không?",
+        },
         edit: {
           title: "Cập nhật khách hàng",
           description:
@@ -394,8 +411,10 @@ export default {
       actions: {
         invalidInput: "Vui lòng kiểm tra lại thông tin khách hàng.",
         missingAuth: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+        createSuccess: "Đã tạo khách hàng thành công.",
         updateSuccess: "Đã cập nhật khách hàng thành công.",
         toggleSuccess: "Đã cập nhật trạng thái khách hàng.",
+        deleteSuccess: "Đã xóa khách hàng thành công.",
         failure: "Không thể cập nhật khách hàng lúc này.",
       },
       validation: {
