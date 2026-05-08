@@ -90,7 +90,7 @@ export default {
       validation: {
         usernameMin: "Username must be at least 3 characters.",
         usernameMax: "Username must be at most 50 characters.",
-        passwordMin: "Password must be at least 8 characters.",
+        passwordRequired: "Please enter a password.",
         roleRequired: "Please choose a role.",
         userIdInvalid: "User id is invalid.",
         statusRequired: "Please choose an account status.",

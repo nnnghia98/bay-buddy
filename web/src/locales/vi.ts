@@ -90,7 +90,7 @@ export default {
       validation: {
         usernameMin: "Tên đăng nhập phải có ít nhất 3 ký tự.",
         usernameMax: "Tên đăng nhập không được vượt quá 50 ký tự.",
-        passwordMin: "Mật khẩu phải có ít nhất 8 ký tự.",
+        passwordRequired: "Vui lòng nhập mật khẩu.",
         roleRequired: "Vui lòng chọn vai trò.",
         userIdInvalid: "Mã tài khoản không hợp lệ.",
         statusRequired: "Vui lòng chọn trạng thái tài khoản.",

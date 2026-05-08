@@ -66,7 +66,7 @@ class User(UserBase, table=True):
 class UserCreate(UserBase):
     """Payload accepted by POST /users. The plain-text password is hashed before storage."""
 
-    password: str = Field(min_length=8, description="Plain-text password (hashed before storage).")
+    password: str = Field(min_length=1, description="Plain-text password (hashed before storage).")
 
 
 class UserRead(UserBase):
@@ -81,4 +81,4 @@ class UserUpdate(SQLModel):
     username: Optional[str] = Field(default=None, min_length=3, max_length=50)
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
-    password: Optional[str] = Field(default=None, min_length=8)
+    password: Optional[str] = Field(default=None, min_length=1)

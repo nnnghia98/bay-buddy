@@ -5,7 +5,7 @@ const userRoles = ["ADMIN", "STAFF"] as const
 export type SettingsUserValidationMessages = {
   usernameMin: string
   usernameMax: string
-  passwordMin: string
+  passwordRequired: string
   roleRequired: string
   userIdInvalid: string
   statusRequired: string
@@ -14,7 +14,7 @@ export type SettingsUserValidationMessages = {
 const defaultSettingsUserValidationMessages: SettingsUserValidationMessages = {
   usernameMin: "Tên đăng nhập phải có ít nhất 3 ký tự.",
   usernameMax: "Tên đăng nhập không được vượt quá 50 ký tự.",
-  passwordMin: "Mật khẩu phải có ít nhất 8 ký tự.",
+  passwordRequired: "Vui lòng nhập mật khẩu.",
   roleRequired: "Vui lòng chọn vai trò.",
   userIdInvalid: "Mã tài khoản không hợp lệ.",
   statusRequired: "Vui lòng chọn trạng thái tài khoản.",
@@ -56,7 +56,7 @@ export function getSettingsUserValidationMessages(
   return {
     usernameMin: t("settings.users.validation.usernameMin"),
     usernameMax: t("settings.users.validation.usernameMax"),
-    passwordMin: t("settings.users.validation.passwordMin"),
+    passwordRequired: t("settings.users.validation.passwordRequired"),
     roleRequired: t("settings.users.validation.roleRequired"),
     userIdInvalid: t("settings.users.validation.userIdInvalid"),
     statusRequired: t("settings.users.validation.statusRequired"),
@@ -72,7 +72,7 @@ export function createCreateUserFormSchema(
       .trim()
       .min(3, messages.usernameMin)
       .max(50, messages.usernameMax),
-    password: z.string().min(8, messages.passwordMin),
+    password: z.string().min(1, messages.passwordRequired),
     role: z.enum(userRoles, {
       message: messages.roleRequired,
     }),
@@ -95,7 +95,7 @@ export function createUpdateUserFormSchema(
       .max(50, messages.usernameMax),
     password: z.preprocess(
       normalizeOptionalString,
-      z.string().min(8, messages.passwordMin).optional(),
+      z.string().min(1, messages.passwordRequired).optional(),
     ),
     role: z.enum(userRoles, {
       message: messages.roleRequired,

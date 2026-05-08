@@ -1,17 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { useActionState } from "react"
-import { useFormStatus } from "react-dom"
 import { Loader2, ShieldCheck, ShieldOff, UserCog, UserPlus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
-import {
-  createUserAction,
-  toggleUserActiveAction,
-  updateUserAction,
-} from "@/actions/settings-users"
 import {
   CommandPanel,
   CommandPanelHeader,
@@ -38,15 +31,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { apiFetchData } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
 import {
   createCreateUserFormSchema,
   createUpdateUserFormSchema,
   getSettingsUserValidationMessages,
-  initialSettingsUserActionState,
   type SettingsUserActionField,
-  type SettingsUserActionState,
   type UserRead,
 } from "@/schemas"
 
@@ -65,14 +57,14 @@ type ClientErrors = Partial<Record<SettingsUserActionField, string>>
 function SettingsActionSubmitButton({
   idleLabel,
   pendingLabel,
+  pending,
   variant = "default",
 }: {
   idleLabel: string
   pendingLabel: string
+  pending: boolean
   variant?: "default" | "outline"
 }) {
-  const { pending } = useFormStatus()
-
   return (
     <Button disabled={pending} type="submit" variant={variant}>
       {pending ? (
@@ -94,9 +86,9 @@ function formatRoleLabel(role: UserRead["role"], t: ReturnType<typeof useI18n>):
 function getFieldError(
   field: SettingsUserActionField,
   clientErrors: ClientErrors,
-  state: SettingsUserActionState,
+  serverErrors: ClientErrors,
 ): string | undefined {
-  return clientErrors[field] ?? state.fieldErrors[field]
+  return clientErrors[field] ?? serverErrors[field]
 }
 
 function UserEditorDialog({ mode, user }: UserEditorProps) {
@@ -108,10 +100,8 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
   const [password, setPassword] = React.useState("")
   const [role, setRole] = React.useState<UserRead["role"]>(user?.role ?? "STAFF")
   const [isActive, setIsActive] = React.useState(user?.is_active ?? true)
-  const [state, formAction] = useActionState(
-    mode === "create" ? createUserAction : updateUserAction,
-    initialSettingsUserActionState,
-  )
+  const [isPending, setIsPending] = React.useState(false)
+  const [serverErrors, setServerErrors] = React.useState<ClientErrors>({})
 
   const validationMessages = React.useMemo(
     () => getSettingsUserValidationMessages(t),
@@ -133,25 +123,15 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
       setRole(user?.role ?? "STAFF")
       setIsActive(user?.is_active ?? true)
       setClientErrors({})
+      setServerErrors({})
     }
   }, [open, user])
 
-  React.useEffect(() => {
-    if (state.status === "success") {
-      toast.success(state.message ?? t("settings.users.actions.updateSuccess"))
-      setOpen(false)
-      setClientErrors({})
-      router.refresh()
-      return
-    }
-
-    if (state.status === "error" && state.submittedAt) {
-      toast.error(state.message ?? t("settings.users.actions.failure"))
-    }
-  }, [router, state, t])
-
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     const formData = new FormData(event.currentTarget)
+    setServerErrors({})
+
     if (mode === "create") {
       const parsedValues = createUserFormSchema.safeParse({
         username: formData.get("username"),
@@ -161,8 +141,6 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
       })
 
       if (!parsedValues.success) {
-        event.preventDefault()
-
         const flattenedErrors = parsedValues.error.flatten().fieldErrors
         setClientErrors({
           username: flattenedErrors.username?.[0],
@@ -182,8 +160,6 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
       })
 
       if (!parsedValues.success) {
-        event.preventDefault()
-
         const flattenedErrors = parsedValues.error.flatten().fieldErrors
         setClientErrors({
           user_id: flattenedErrors.user_id?.[0],
@@ -197,6 +173,55 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
     }
 
     setClientErrors({})
+    setIsPending(true)
+
+    const payload = {
+      username: String(formData.get("username") ?? "").trim(),
+      password: String(formData.get("password") ?? ""),
+      role: String(formData.get("role") ?? "STAFF"),
+      is_active: String(formData.get("is_active") ?? "true") === "true",
+    }
+
+    const submitPromise =
+      mode === "create"
+        ? apiFetchData<unknown>("/users/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          })
+        : apiFetchData<unknown>(`/users/${user?.id ?? ""}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ...payload,
+              password: payload.password.trim() ? payload.password : undefined,
+            }),
+          })
+
+    void submitPromise
+      .then(() => {
+        toast.success(
+          mode === "create"
+            ? t("settings.users.actions.createSuccess")
+            : t("settings.users.actions.updateSuccess"),
+        )
+        setOpen(false)
+        setClientErrors({})
+        setServerErrors({})
+        router.refresh()
+      })
+      .catch((error) => {
+        const message =
+          error instanceof Error ? error.message : t("settings.users.actions.failure")
+        toast.error(message)
+      })
+      .finally(() => {
+        setIsPending(false)
+      })
   }
 
   const isCreateMode = mode === "create"
@@ -234,7 +259,7 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
 
-        <form action={formAction} className="space-y-5" onSubmit={handleSubmit}>
+        <form className="space-y-5" onSubmit={handleSubmit}>
           {!isCreateMode && user ? (
             <input name="user_id" type="hidden" value={user.id} />
           ) : null}
@@ -251,9 +276,9 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
                 placeholder={t("settings.users.fields.usernamePlaceholder")}
                 value={username}
               />
-              {getFieldError("username", clientErrors, state) ? (
+              {getFieldError("username", clientErrors, serverErrors) ? (
                 <p className="text-sm text-red-600">
-                  {getFieldError("username", clientErrors, state)}
+                  {getFieldError("username", clientErrors, serverErrors)}
                 </p>
               ) : null}
             </div>
@@ -275,9 +300,9 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
                   {t("settings.users.fields.passwordHint")}
                 </p>
               ) : null}
-              {getFieldError("password", clientErrors, state) ? (
+              {getFieldError("password", clientErrors, serverErrors) ? (
                 <p className="text-sm text-red-600">
-                  {getFieldError("password", clientErrors, state)}
+                  {getFieldError("password", clientErrors, serverErrors)}
                 </p>
               ) : null}
             </div>
@@ -297,9 +322,9 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
                   <option value="ADMIN">{t("settings.users.roles.ADMIN")}</option>
                   <option value="STAFF">{t("settings.users.roles.STAFF")}</option>
                 </select>
-                {getFieldError("role", clientErrors, state) ? (
+                {getFieldError("role", clientErrors, serverErrors) ? (
                   <p className="text-sm text-red-600">
-                    {getFieldError("role", clientErrors, state)}
+                    {getFieldError("role", clientErrors, serverErrors)}
                   </p>
                 ) : null}
               </div>
@@ -318,9 +343,9 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
                   <option value="true">{t("settings.users.statuses.active")}</option>
                   <option value="false">{t("settings.users.statuses.inactive")}</option>
                 </select>
-                {getFieldError("is_active", clientErrors, state) ? (
+                {getFieldError("is_active", clientErrors, serverErrors) ? (
                   <p className="text-sm text-red-600">
-                    {getFieldError("is_active", clientErrors, state)}
+                    {getFieldError("is_active", clientErrors, serverErrors)}
                   </p>
                 ) : null}
               </div>
@@ -334,6 +359,7 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
             <SettingsActionSubmitButton
               idleLabel={submitLabel}
               pendingLabel={pendingLabel}
+              pending={isPending}
             />
           </DialogFooter>
         </form>
@@ -351,22 +377,7 @@ function ToggleUserStatusButton({
 }) {
   const t = useI18n()
   const router = useRouter()
-  const [state, formAction] = useActionState(
-    toggleUserActiveAction,
-    initialSettingsUserActionState,
-  )
-
-  React.useEffect(() => {
-    if (state.status === "success") {
-      toast.success(state.message ?? t("settings.users.actions.toggleSuccess"))
-      router.refresh()
-      return
-    }
-
-    if (state.status === "error" && state.submittedAt) {
-      toast.error(state.message ?? t("settings.users.actions.failure"))
-    }
-  }, [router, state, t])
+  const [isPending, setIsPending] = React.useState(false)
 
   if (isCurrentUser) {
     return (
@@ -377,19 +388,46 @@ function ToggleUserStatusButton({
   }
 
   return (
-    <form action={formAction}>
-      <input name="user_id" type="hidden" value={user.id} />
-      <input name="is_active" type="hidden" value={String(!user.is_active)} />
-      <SettingsActionSubmitButton
-        idleLabel={
-          user.is_active
-            ? t("settings.users.deactivateAction")
-            : t("settings.users.reactivateAction")
-        }
-        pendingLabel={t("settings.users.toggleSubmitting")}
-        variant="outline"
-      />
-    </form>
+    <Button
+      disabled={isPending}
+      onClick={() => {
+        setIsPending(true)
+        void apiFetchData(`/users/${user.id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            is_active: !user.is_active,
+          }),
+        })
+          .then(() => {
+            toast.success(t("settings.users.actions.toggleSuccess"))
+            router.refresh()
+          })
+          .catch((error) => {
+            const message =
+              error instanceof Error ? error.message : t("settings.users.actions.failure")
+            toast.error(message)
+          })
+          .finally(() => {
+            setIsPending(false)
+          })
+      }}
+      type="button"
+      variant="outline"
+    >
+      {isPending ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {t("settings.users.toggleSubmitting")}
+        </>
+      ) : user.is_active ? (
+        t("settings.users.deactivateAction")
+      ) : (
+        t("settings.users.reactivateAction")
+      )}
+    </Button>
   )
 }
 

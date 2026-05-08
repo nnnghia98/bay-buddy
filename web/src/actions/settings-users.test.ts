@@ -40,8 +40,8 @@ vi.mock("@/locales/server", () => ({
         "Tên đăng nhập phải có ít nhất 3 ký tự.",
       "settings.users.validation.usernameMax":
         "Tên đăng nhập không được vượt quá 50 ký tự.",
-      "settings.users.validation.passwordMin":
-        "Mật khẩu phải có ít nhất 8 ký tự.",
+      "settings.users.validation.passwordRequired":
+        "Vui lòng nhập mật khẩu.",
       "settings.users.validation.roleRequired":
         "Vui lòng chọn vai trò.",
       "settings.users.validation.userIdInvalid":
@@ -77,7 +77,6 @@ describe("settings user actions", () => {
       message: "Vui lòng kiểm tra lại thông tin tài khoản.",
       fieldErrors: {
         username: "Tên đăng nhập phải có ít nhất 3 ký tự.",
-        password: "Mật khẩu phải có ít nhất 8 ký tự.",
         role: "Vui lòng chọn vai trò.",
       },
     })
