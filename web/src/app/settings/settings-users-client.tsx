@@ -152,34 +152,48 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     const formData = new FormData(event.currentTarget)
-    const parsedValues =
-      mode === "create"
-        ? createUserFormSchema.safeParse({
-            username: formData.get("username"),
-            password: formData.get("password"),
-            role: formData.get("role"),
-            is_active: formData.get("is_active"),
-          })
-        : updateUserFormSchema.safeParse({
-            user_id: formData.get("user_id"),
-            username: formData.get("username"),
-            password: formData.get("password"),
-            role: formData.get("role"),
-            is_active: formData.get("is_active"),
-          })
-
-    if (!parsedValues.success) {
-      event.preventDefault()
-
-      const flattenedErrors = parsedValues.error.flatten().fieldErrors
-      setClientErrors({
-        user_id: flattenedErrors.user_id?.[0],
-        username: flattenedErrors.username?.[0],
-        password: flattenedErrors.password?.[0],
-        role: flattenedErrors.role?.[0],
-        is_active: flattenedErrors.is_active?.[0],
+    if (mode === "create") {
+      const parsedValues = createUserFormSchema.safeParse({
+        username: formData.get("username"),
+        password: formData.get("password"),
+        role: formData.get("role"),
+        is_active: formData.get("is_active"),
       })
-      return
+
+      if (!parsedValues.success) {
+        event.preventDefault()
+
+        const flattenedErrors = parsedValues.error.flatten().fieldErrors
+        setClientErrors({
+          username: flattenedErrors.username?.[0],
+          password: flattenedErrors.password?.[0],
+          role: flattenedErrors.role?.[0],
+          is_active: flattenedErrors.is_active?.[0],
+        })
+        return
+      }
+    } else {
+      const parsedValues = updateUserFormSchema.safeParse({
+        user_id: formData.get("user_id"),
+        username: formData.get("username"),
+        password: formData.get("password"),
+        role: formData.get("role"),
+        is_active: formData.get("is_active"),
+      })
+
+      if (!parsedValues.success) {
+        event.preventDefault()
+
+        const flattenedErrors = parsedValues.error.flatten().fieldErrors
+        setClientErrors({
+          user_id: flattenedErrors.user_id?.[0],
+          username: flattenedErrors.username?.[0],
+          password: flattenedErrors.password?.[0],
+          role: flattenedErrors.role?.[0],
+          is_active: flattenedErrors.is_active?.[0],
+        })
+        return
+      }
     }
 
     setClientErrors({})
