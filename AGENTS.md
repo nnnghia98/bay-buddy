@@ -107,6 +107,23 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 - **Build Production**: `yarn build`
 - **Add Packages**: `yarn add <package_name>`
 
+## 🧾 Git Commit Convention (Strict)
+
+- The agent MUST follow `docs/GIT_CONVENTION.md` for every commit request.
+- Trigger phrase: when the user message includes `commit code` (or `commit code follows workspace and git convention`), treat this as mandatory enforcement of `docs/GIT_CONVENTION.md`.
+- Commit message format MUST be: `<type>(<scope>): <subject>`.
+- Scope MUST match workspace impact:
+  - `api` for `api/`
+  - `web` for `web/`
+  - `root` for repository root files
+  - `docs` for `docs/`
+  - `config` for CI/CD or environment config
+- Commit body MUST summarize **What** and **Why** (not **How**) using concise bullets when multiple changes exist.
+- For `commit code` requests, workflow MUST be:
+  1. `git add .`
+  2. `git commit` using the required convention format/body
+  3. STOP (MUST NOT run `git push` unless explicitly asked by user)
+
 ## 🤖 Agentic Workflow
 
 When tasked with "Parsing a ticket":
