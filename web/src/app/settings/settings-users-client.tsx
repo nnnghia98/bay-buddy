@@ -5,12 +5,7 @@ import { Loader2, ShieldCheck, ShieldOff, UserCog, UserPlus } from "lucide-react
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
-import {
-  CommandPanel,
-  CommandPanelHeader,
-  StatusChip,
-  TableScrollArea,
-} from "@/components/command-center"
+import { StatusChip, TableScrollArea } from "@/components/command-center"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -439,22 +434,20 @@ export function SettingsUsersClient({
 
   if (currentUser.role !== "ADMIN") {
     return (
-      <div className="space-y-4 text-foreground">
-        <CommandPanel>
-          <CommandPanelHeader
-            eyebrow={t("settings.eyebrow")}
-            title={t("settings.restricted.title")}
-            description={t("settings.restricted.description")}
-          />
-          <div className="flex items-start gap-4 px-4 py-5">
+      <div className="pb-12 text-foreground">
+        <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+          <div className="flex items-start gap-4 px-5 py-8">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-amber-200 bg-amber-50 text-amber-800">
-              <ShieldOff className="h-5 w-5" />
+              <ShieldOff className="h-5 w-5" aria-hidden="true" />
             </div>
-            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-              {t("settings.restricted.contact")}
-            </p>
+            <div>
+              <h1 className="text-base font-semibold text-foreground">{t("settings.restricted.title")}</h1>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+                {t("settings.restricted.contact")}
+              </p>
+            </div>
           </div>
-        </CommandPanel>
+        </div>
       </div>
     )
   }
@@ -463,80 +456,80 @@ export function SettingsUsersClient({
   const inactiveUsers = users.length - activeUsers
 
   return (
-    <div className="space-y-4 text-foreground">
-      <CommandPanel>
-        <CommandPanelHeader
-          eyebrow={t("settings.users.eyebrow")}
-          title={t("settings.users.title")}
-          description={t("settings.users.description")}
-          action={<UserEditorDialog mode="create" />}
-        />
-        <div className="grid gap-3 border-b border-border px-4 py-3 md:grid-cols-3">
-          <div className="rounded-lg border border-border bg-secondary/35 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("settings.users.metrics.total")}
+    <div className="space-y-6 pb-12 text-foreground">
+      {/* Metric strip */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        {[
+          { label: t("settings.users.metrics.total"), value: users.length },
+          { label: t("settings.users.metrics.active"), value: activeUsers },
+          { label: t("settings.users.metrics.inactive"), value: inactiveUsers },
+        ].map((m) => (
+          <div
+            key={m.label}
+            className="overflow-hidden rounded-xl border border-border bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
+              <UserCog className="h-4 w-4" aria-hidden="true" />
+            </div>
+            <p className="mt-3.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+              {m.label}
             </p>
-            <p className="mt-2 text-2xl font-medium text-foreground">{users.length}</p>
+            <p className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-foreground">{m.value}</p>
           </div>
-          <div className="rounded-lg border border-border bg-secondary/35 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("settings.users.metrics.active")}
-            </p>
-            <p className="mt-2 text-2xl font-medium text-foreground">{activeUsers}</p>
-          </div>
-          <div className="rounded-lg border border-border bg-secondary/35 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("settings.users.metrics.inactive")}
-            </p>
-            <p className="mt-2 text-2xl font-medium text-foreground">{inactiveUsers}</p>
-          </div>
+        ))}
+      </div>
+
+      {/* Users table */}
+      <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+            {t("settings.users.title")}
+          </p>
+          <UserEditorDialog mode="create" />
         </div>
 
         {users.length === 0 ? (
-          <div className="px-6 py-14 text-center">
-            <p className="text-sm font-medium text-foreground">
-              {t("settings.users.empty")}
-            </p>
+          <div className="px-6 py-14 text-center text-sm text-muted-foreground">
+            {t("settings.users.empty")}
           </div>
         ) : (
           <TableScrollArea>
             <Table>
               <TableHeader>
-                <TableRow className="bg-secondary/55 hover:bg-secondary/55">
-                  <TableHead>{t("settings.users.columns.username")}</TableHead>
-                  <TableHead>{t("settings.users.columns.role")}</TableHead>
-                  <TableHead>{t("settings.users.columns.status")}</TableHead>
-                  <TableHead className="text-right">
-                    {t("settings.users.columns.actions")}
-                  </TableHead>
+                <TableRow className="bg-secondary/40 hover:bg-secondary/40">
+                  <TableHead className="px-5">{t("settings.users.columns.username")}</TableHead>
+                  <TableHead className="px-5">{t("settings.users.columns.role")}</TableHead>
+                  <TableHead className="px-5">{t("settings.users.columns.status")}</TableHead>
+                  <TableHead className="px-5 text-right">{t("settings.users.columns.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((user) => {
                   const isCurrentUser = currentUser.id === user.id
-
                   return (
                     <TableRow key={user.id}>
-                      <TableCell>
+                      <TableCell className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <div
                             className={cn(
-                              "flex h-11 w-11 items-center justify-center rounded-[14px] border text-primary",
+                              "flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border",
                               user.is_active
-                                ? "border-primary/15 bg-accent"
+                                ? "border-primary/15 bg-accent text-primary"
                                 : "border-border bg-secondary/50 text-muted-foreground",
                             )}
                           >
-                            <UserCog className="h-4 w-4" />
+                            <UserCog className="h-4 w-4" aria-hidden="true" />
                           </div>
-                          <div className="space-y-1">
-                            <p className="font-medium text-foreground">{user.username}</p>
-                            <p className="text-xs text-muted-foreground">{user.id.slice(0, 8)}</p>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{user.username}</p>
+                            <p className="text-[11px] text-muted-foreground">#{user.id.slice(0, 8)}</p>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{formatRoleLabel(user.role, t)}</TableCell>
-                      <TableCell>
+                      <TableCell className="px-5 py-3.5 text-sm text-muted-foreground">
+                        {formatRoleLabel(user.role, t)}
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5">
                         <div className="inline-flex items-center gap-2">
                           <StatusChip tone={user.is_active ? "success" : "warning"}>
                             {user.is_active
@@ -544,19 +537,14 @@ export function SettingsUsersClient({
                               : t("settings.users.statuses.inactive")}
                           </StatusChip>
                           {isCurrentUser ? (
-                            <StatusChip tone="info">
-                              {t("settings.users.currentUserChip")}
-                            </StatusChip>
+                            <StatusChip tone="info">{t("settings.users.currentUserChip")}</StatusChip>
                           ) : null}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="px-5 py-3.5 text-right">
                         <div className="inline-flex flex-wrap justify-end gap-2">
                           <UserEditorDialog mode="edit" user={user} />
-                          <ToggleUserStatusButton
-                            isCurrentUser={isCurrentUser}
-                            user={user}
-                          />
+                          <ToggleUserStatusButton isCurrentUser={isCurrentUser} user={user} />
                         </div>
                       </TableCell>
                     </TableRow>
@@ -566,32 +554,26 @@ export function SettingsUsersClient({
             </Table>
           </TableScrollArea>
         )}
-      </CommandPanel>
+      </div>
 
-      <CommandPanel>
-        <CommandPanelHeader
-          title={t("settings.guidance.title")}
-          description={t("settings.guidance.description")}
-        />
-        <div className="grid gap-3 px-4 py-4 md:grid-cols-2">
-          <div className="rounded-lg border border-border bg-secondary/35 p-4">
-            <div className="flex items-start gap-3">
-              <ShieldCheck className="mt-0.5 h-4 w-4 text-primary" />
-              <p className="text-sm leading-6 text-muted-foreground">
-                {t("settings.guidance.access")}
-              </p>
-            </div>
+      {/* Guidance notes */}
+      <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+        <div className="border-b border-border px-5 py-3.5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+            {t("settings.guidance.title")}
+          </p>
+        </div>
+        <div className="grid gap-0 divide-y divide-border md:grid-cols-2 md:divide-x md:divide-y-0">
+          <div className="flex items-start gap-3 px-5 py-4">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <p className="text-sm leading-6 text-muted-foreground">{t("settings.guidance.access")}</p>
           </div>
-          <div className="rounded-lg border border-border bg-secondary/35 p-4">
-            <div className="flex items-start gap-3">
-              <UserCog className="mt-0.5 h-4 w-4 text-primary" />
-              <p className="text-sm leading-6 text-muted-foreground">
-                {t("settings.guidance.status")}
-              </p>
-            </div>
+          <div className="flex items-start gap-3 px-5 py-4">
+            <UserCog className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <p className="text-sm leading-6 text-muted-foreground">{t("settings.guidance.status")}</p>
           </div>
         </div>
-      </CommandPanel>
+      </div>
     </div>
   )
 }
