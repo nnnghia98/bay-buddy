@@ -4,6 +4,7 @@ import Link from "next/link"
 import * as React from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
+  ArrowRight,
   Eye,
   EyeOff,
   Landmark,
@@ -12,15 +13,11 @@ import {
   TrendingUp,
   Users,
   WalletCards,
+  Clock,
+  AlertTriangle,
 } from "lucide-react"
 
-import {
-  CommandActionLink,
-  CommandPanel,
-  CommandPanelHeader,
-  StatusChip,
-  TableScrollArea,
-} from "@/components/command-center"
+import { StatusChip, TableScrollArea } from "@/components/command-center"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -66,46 +63,85 @@ function formatDateTime(value: string | Date): string {
   }).format(new Date(value))
 }
 
+function formatDateShort(value: string | Date): string {
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(value))
+}
+
 function formatSignedCurrency(amount: number): string {
   if (amount === 0) {
     return formatCurrency(amount)
   }
-
   const sign = amount > 0 ? "+" : "-"
-
   return `${sign}${formatCurrency(Math.abs(amount))}`
 }
 
 function getQueueTone(
   severity: FinancialSummarySnapshot["actionQueues"][number]["severity"],
 ): "neutral" | "warning" | "danger" {
-  if (severity === "high") {
-    return "danger"
-  }
-
-  if (severity === "medium") {
-    return "warning"
-  }
-
+  if (severity === "high") return "danger"
+  if (severity === "medium") return "warning"
   return "neutral"
 }
 
 function getActivityTone(
   type: FinancialSummarySnapshot["recentActivity"][number]["type"],
 ): "neutral" | "info" | "warning" | "danger" {
-  if (type === "ticket") {
-    return "info"
-  }
-
-  if (type === "refund") {
-    return "danger"
-  }
-
-  if (type === "adjustment") {
-    return "warning"
-  }
-
+  if (type === "ticket") return "info"
+  if (type === "refund") return "danger"
+  if (type === "adjustment") return "warning"
   return "neutral"
+}
+
+// ---------------------------------------------------------------------------
+// Section header — compact, no outer card
+// ---------------------------------------------------------------------------
+function SectionHeader({
+  title,
+  id,
+  action,
+}: {
+  title: string
+  id?: string
+  action?: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center justify-between pb-3">
+      <h2
+        id={id}
+        className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary"
+      >
+        {title}
+      </h2>
+      {action}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Panel: white card with border — replaces CommandPanel
+// ---------------------------------------------------------------------------
+function Panel({
+  children,
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={[
+        "overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      {...props}
+    >
+      {children}
+    </div>
+  )
 }
 
 export function FinancialSummaryDashboard({
@@ -120,23 +156,14 @@ export function FinancialSummaryDashboard({
   const [revenueFromInput, setRevenueFromInput] = React.useState("")
 
   React.useEffect(() => {
-    if (!summary) {
-      return
-    }
-
+    if (!summary) return
     setRevenueFromInput(summary.revenueFromDate)
   }, [summary])
 
   React.useEffect(() => {
-    if (!summary) {
-      return
-    }
-
+    if (!summary) return
     const storedCutoff = window.localStorage.getItem(REVENUE_FROM_STORAGE_KEY)
-    if (!storedCutoff || storedCutoff === summary.revenueFromDate) {
-      return
-    }
-
+    if (!storedCutoff || storedCutoff === summary.revenueFromDate) return
     const params = new URLSearchParams(searchParams.toString())
     params.set(REVENUE_FROM_PARAM, storedCutoff)
     router.replace(`${pathname}?${params.toString()}`)
@@ -144,81 +171,49 @@ export function FinancialSummaryDashboard({
 
   if (!summary) {
     return (
-      <section className="overflow-hidden rounded-md border border-border bg-white">
-        <div className="border-b border-border bg-secondary px-5 py-4">
-          <p className="text-xs font-semibold uppercase text-primary">
-            {t("dashboard.summary.eyebrow")}
-          </p>
-        </div>
+      <Panel>
         <div className="px-5 py-8">
-          <h1 className="text-2xl font-medium text-foreground">
+          <h1 className="text-xl font-medium text-foreground">
             {t("dashboard.summary.unavailableTitle")}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             {t("dashboard.summary.unavailableDescription")}
           </p>
         </div>
-      </section>
+      </Panel>
     )
   }
 
   const getQueueLabel = (
     key: FinancialSummarySnapshot["actionQueues"][number]["key"],
   ): string => {
-    if (key === "heldCredit") {
-      return t("dashboard.summary.commandCenter.queues.heldCredit.label")
-    }
-
-    if (key === "draftTickets") {
-      return t("dashboard.summary.commandCenter.queues.draftTickets.label")
-    }
-
+    if (key === "heldCredit") return t("dashboard.summary.commandCenter.queues.heldCredit.label")
+    if (key === "draftTickets") return t("dashboard.summary.commandCenter.queues.draftTickets.label")
     return t("dashboard.summary.commandCenter.queues.receivables.label")
   }
 
   const getQueueDescription = (
     key: FinancialSummarySnapshot["actionQueues"][number]["key"],
   ): string => {
-    if (key === "heldCredit") {
-      return t("dashboard.summary.commandCenter.queues.heldCredit.description")
-    }
-
-    if (key === "draftTickets") {
-      return t("dashboard.summary.commandCenter.queues.draftTickets.description")
-    }
-
+    if (key === "heldCredit") return t("dashboard.summary.commandCenter.queues.heldCredit.description")
+    if (key === "draftTickets") return t("dashboard.summary.commandCenter.queues.draftTickets.description")
     return t("dashboard.summary.commandCenter.queues.receivables.description")
   }
 
   const getQueueAmountCaption = (
     key: FinancialSummarySnapshot["actionQueues"][number]["key"],
   ): string => {
-    if (key === "heldCredit") {
-      return t("dashboard.summary.commandCenter.queueAmounts.heldCredit")
-    }
-
-    if (key === "draftTickets") {
-      return t("dashboard.summary.commandCenter.queueAmounts.draftTickets")
-    }
-
+    if (key === "heldCredit") return t("dashboard.summary.commandCenter.queueAmounts.heldCredit")
+    if (key === "draftTickets") return t("dashboard.summary.commandCenter.queueAmounts.draftTickets")
     return t("dashboard.summary.commandCenter.queueAmounts.receivables")
   }
 
   const getActivityTypeLabel = (
     type: FinancialSummarySnapshot["recentActivity"][number]["type"],
   ): string => {
-    if (type === "ticket") {
-      return t("dashboard.summary.commandCenter.recent.types.ticket")
-    }
-
-    if (type === "adjustment") {
-      return t("dashboard.summary.commandCenter.recent.types.adjustment")
-    }
-
-    if (type === "refund") {
-      return t("dashboard.summary.commandCenter.recent.types.refund")
-    }
-
+    if (type === "ticket") return t("dashboard.summary.commandCenter.recent.types.ticket")
+    if (type === "adjustment") return t("dashboard.summary.commandCenter.recent.types.adjustment")
+    if (type === "refund") return t("dashboard.summary.commandCenter.recent.types.refund")
     return t("dashboard.summary.commandCenter.recent.types.payment")
   }
 
@@ -226,361 +221,398 @@ export function FinancialSummaryDashboard({
     activity: FinancialSummarySnapshot["recentActivity"][number],
   ): string => {
     const title = activity.title.trim()
-
-    if (title) {
-      return title
-    }
-
-    if (activity.category === "PAYMENT") {
-      return t("dashboard.summary.commandCenter.recent.fallbacks.payment")
-    }
-
-    if (activity.category === "DISCOUNT") {
-      return t("dashboard.summary.commandCenter.recent.fallbacks.discount")
-    }
-
-    if (activity.category === "ADDITIONAL_FEE") {
-      return t("dashboard.summary.commandCenter.recent.fallbacks.additionalFee")
-    }
-
-    if (activity.category === "REFUND") {
-      return t("dashboard.summary.commandCenter.recent.fallbacks.refund")
-    }
-
+    if (title) return title
+    if (activity.category === "PAYMENT") return t("dashboard.summary.commandCenter.recent.fallbacks.payment")
+    if (activity.category === "DISCOUNT") return t("dashboard.summary.commandCenter.recent.fallbacks.discount")
+    if (activity.category === "ADDITIONAL_FEE") return t("dashboard.summary.commandCenter.recent.fallbacks.additionalFee")
+    if (activity.category === "REFUND") return t("dashboard.summary.commandCenter.recent.fallbacks.refund")
     return t("dashboard.summary.commandCenter.recent.fallbacks.ticketPurchase")
   }
 
-  const primaryWidgets = [
-    {
-      key: "revenue",
-      icon: WalletCards,
-      label: t("dashboard.summary.widgets.revenue.label"),
-      value: isRevenueVisible ? formatCurrency(summary.totalRevenue) : "••••••",
-      detail: `${summary.confirmedTickets} ${t("dashboard.summary.widgets.revenue.detail")}`,
-    },
-    {
-      key: "profit",
-      icon: TrendingUp,
-      label: t("dashboard.summary.widgets.profit.label"),
-      value: formatCurrency(summary.totalNetProfit),
-      detail: `${formatPercent(summary.averageMarginPercent)}% ${t("dashboard.summary.widgets.profit.detail")}`,
-    },
-    {
-      key: "receivables",
-      icon: Landmark,
-      label: t("dashboard.summary.widgets.receivables.label"),
-      value: formatCurrency(summary.totalReceivables),
-      detail: `${summary.customersWithDebt} ${t("dashboard.summary.widgets.receivables.detail")}`,
-    },
-  ]
-
   const applyRevenueCutoff = () => {
-    if (!revenueFromInput) {
-      return
-    }
-
+    if (!revenueFromInput) return
     const params = new URLSearchParams(searchParams.toString())
     params.set(REVENUE_FROM_PARAM, revenueFromInput)
     window.localStorage.setItem(REVENUE_FROM_STORAGE_KEY, revenueFromInput)
     router.replace(`${pathname}?${params.toString()}`)
   }
 
+  const shortcuts = [
+    {
+      href: "/customers",
+      icon: Users,
+      label: t("dashboard.summary.commandCenter.shortcuts.customers.label"),
+      description: t("dashboard.summary.commandCenter.shortcuts.customers.description"),
+    },
+    {
+      href: "/tickets/capture",
+      icon: Plane,
+      label: t("dashboard.summary.commandCenter.shortcuts.tickets.label"),
+      description: t("dashboard.summary.commandCenter.shortcuts.tickets.description"),
+    },
+    {
+      href: "/invoices",
+      icon: ReceiptText,
+      label: t("dashboard.summary.commandCenter.shortcuts.invoices.label"),
+      description: t("dashboard.summary.commandCenter.shortcuts.invoices.description"),
+    },
+  ]
+
   return (
-    <div className="space-y-5 text-foreground">
-      <CommandPanel>
-        <CommandPanelHeader
-          eyebrow={t("dashboard.summary.eyebrow")}
-          title={t("dashboard.summary.commandCenter.title")}
-          description={t("dashboard.summary.commandCenter.description")}
-          action={
-            <Button asChild size="sm" variant="outline">
-              <Link href="/customers">
-                {t("dashboard.summary.commandCenter.shortcuts.customers.label")}
-              </Link>
-            </Button>
-          }
-        />
-        <div
-          aria-label={t("dashboard.summary.primaryAriaLabel")}
-          className="grid gap-3 p-4 lg:grid-cols-3"
-        >
-          {primaryWidgets.map((widget) => {
-            const Icon = widget.icon
+    <div className="space-y-6 pb-12 text-foreground">
 
-            return (
-              <div
-                key={widget.key}
-                className="rounded-lg border border-border bg-secondary/35 p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-                      {widget.label}
-                    </p>
-                    <p className="text-2xl font-medium tracking-[-0.02em] text-foreground">
-                      {widget.value}
-                    </p>
-                    <p className="text-sm leading-6 text-muted-foreground">
-                      {widget.detail}
-                    </p>
-                    {widget.key === "revenue" ? (
-                      <p className="text-xs text-muted-foreground">
-                        {t("dashboard.summary.widgets.revenue.cutoffHint")}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    {widget.key === "revenue" ? (
-                      <Button
-                        aria-label={
-                          isRevenueVisible
-                            ? t("dashboard.summary.widgets.revenue.hide")
-                            : t("dashboard.summary.widgets.revenue.show")
-                        }
-                        onClick={() => setIsRevenueVisible((current) => !current)}
-                        size="icon"
-                        type="button"
-                        variant="outline"
-                      >
-                        {isRevenueVisible ? (
-                          <EyeOff aria-hidden="true" className="h-4 w-4" />
-                        ) : (
-                          <Eye aria-hidden="true" className="h-4 w-4" />
-                        )}
-                      </Button>
-                    ) : null}
-                    <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-white text-primary">
-                      <Icon aria-hidden="true" className="h-4 w-4" />
-                    </div>
-                  </div>
-                </div>
+      {/* ------------------------------------------------------------------ */}
+      {/* Metric strip                                                        */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        {/* Revenue */}
+        <Panel>
+          <div className="p-5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
+                <WalletCards className="h-4 w-4" aria-hidden="true" />
               </div>
-            )
-          })}
-        </div>
-        <div className="flex flex-col gap-3 border-t border-border px-4 py-3 md:flex-row md:items-end">
-          <div className="w-full md:max-w-xs">
-            <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("dashboard.summary.widgets.revenue.cutoffLabel")}
-            </label>
-            <Input
-              className="mt-2 h-10"
-              max={summary.updatedAt.slice(0, 10)}
-              onChange={(event) => setRevenueFromInput(event.target.value)}
-              type="date"
-              value={revenueFromInput}
-            />
-          </div>
-          <Button onClick={applyRevenueCutoff} type="button" variant="outline">
-            {t("dashboard.summary.widgets.revenue.applyCutoff")}
-          </Button>
-        </div>
-        <div className="grid gap-px border-t border-border bg-border sm:grid-cols-2">
-          <div className="bg-secondary/70 px-5 py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
-              {t("dashboard.summary.snapshot.label")}
-            </p>
-            <p className="mt-2 text-sm font-medium text-foreground">
-              {formatDateTime(summary.updatedAt)}
-            </p>
-          </div>
-          <div className="bg-secondary/70 px-5 py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
-              {t("dashboard.summary.snapshot.sourceLabel")}
-            </p>
-            <p className="mt-2 text-sm font-medium text-foreground">
-              {t("dashboard.summary.snapshot.sourceValue")}
-            </p>
-          </div>
-        </div>
-      </CommandPanel>
-
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-        <CommandPanel aria-labelledby="dashboard-work-queues-title">
-          <CommandPanelHeader
-            description={t(
-              "dashboard.summary.commandCenter.needsAction.description",
-            )}
-            eyebrow={t("dashboard.summary.commandCenter.needsAction.eyebrow")}
-            title={t("dashboard.summary.commandCenter.needsAction.title")}
-            titleId="dashboard-work-queues-title"
-          />
-          <div className="divide-y divide-border">
-            {summary.actionQueues.map((queue) => (
-              <Link
-                className="grid gap-3 px-5 py-4 transition-colors hover:bg-accent/45 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                href={queue.href}
-                key={queue.key}
+              <Button
+                aria-label={
+                  isRevenueVisible
+                    ? t("dashboard.summary.widgets.revenue.hide")
+                    : t("dashboard.summary.widgets.revenue.show")
+                }
+                onClick={() => setIsRevenueVisible((v) => !v)}
+                size="icon"
+                type="button"
+                variant="ghost"
+                className="h-8 w-8 shrink-0 text-muted-foreground"
               >
-                <span className="min-w-0">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">
-                      {getQueueLabel(queue.key)}
-                    </span>
-                    <StatusChip tone={getQueueTone(queue.severity)}>
-                      {queue.count}
-                    </StatusChip>
-                  </span>
-                  <span className="mt-1 block text-sm leading-6 text-muted-foreground">
-                    {getQueueDescription(queue.key)}
-                  </span>
-                </span>
-                <span className="text-left sm:text-right">
-                  <span className="block text-sm font-medium text-foreground">
-                    {formatCurrency(queue.amount)}
-                  </span>
-                  <span className="mt-1 block text-xs text-muted-foreground">
-                    {getQueueAmountCaption(queue.key)}
-                  </span>
-                </span>
-              </Link>
-            ))}
+                {isRevenueVisible ? (
+                  <EyeOff aria-hidden="true" className="h-4 w-4" />
+                ) : (
+                  <Eye aria-hidden="true" className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+              {t("dashboard.summary.widgets.revenue.label")}
+            </p>
+            <p className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-foreground">
+              {isRevenueVisible ? formatCurrency(summary.totalRevenue) : "••••••"}
+            </p>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              {summary.confirmedTickets} {t("dashboard.summary.widgets.revenue.detail")}
+            </p>
           </div>
-        </CommandPanel>
+          {/* Revenue cutoff control */}
+          <div className="flex items-end gap-2 border-t border-border px-5 py-3">
+            <div className="flex-1">
+              <label className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                {t("dashboard.summary.widgets.revenue.cutoffLabel")}
+              </label>
+              <Input
+                className="mt-1 h-8 text-xs"
+                max={summary.updatedAt.slice(0, 10)}
+                onChange={(e) => setRevenueFromInput(e.target.value)}
+                type="date"
+                value={revenueFromInput}
+              />
+            </div>
+            <Button
+              onClick={applyRevenueCutoff}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 shrink-0 text-xs"
+            >
+              {t("dashboard.summary.widgets.revenue.applyCutoff")}
+            </Button>
+          </div>
+        </Panel>
 
-        <CommandPanel aria-labelledby="dashboard-shortcuts-title">
-          <CommandPanelHeader
-            eyebrow={t("dashboard.summary.commandCenter.shortcuts.eyebrow")}
-            title={t("dashboard.summary.commandCenter.shortcuts.title")}
-            titleId="dashboard-shortcuts-title"
-          />
-          <div className="grid gap-3 p-4">
-            <CommandActionLink
-              description={t(
-                "dashboard.summary.commandCenter.shortcuts.customers.description",
-              )}
-              href="/customers"
-              icon={Users}
-              label={t("dashboard.summary.commandCenter.shortcuts.customers.label")}
-            />
-            <CommandActionLink
-              description={t(
-                "dashboard.summary.commandCenter.shortcuts.tickets.description",
-              )}
-              href="/tickets/capture"
-              icon={Plane}
-              label={t("dashboard.summary.commandCenter.shortcuts.tickets.label")}
-            />
-            <CommandActionLink
-              description={t(
-                "dashboard.summary.commandCenter.shortcuts.invoices.description",
-              )}
-              href="/invoices"
-              icon={ReceiptText}
-              label={t("dashboard.summary.commandCenter.shortcuts.invoices.label")}
-            />
+        {/* Net Profit */}
+        <Panel>
+          <div className="p-5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
+              <TrendingUp className="h-4 w-4" aria-hidden="true" />
+            </div>
+            <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+              {t("dashboard.summary.widgets.profit.label")}
+            </p>
+            <p className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-foreground">
+              {formatCurrency(summary.totalNetProfit)}
+            </p>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              {formatPercent(summary.averageMarginPercent)}% {t("dashboard.summary.widgets.profit.detail")}
+            </p>
           </div>
-        </CommandPanel>
+        </Panel>
+
+        {/* Receivables */}
+        <Panel>
+          <div className="p-5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
+              <Landmark className="h-4 w-4" aria-hidden="true" />
+            </div>
+            <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+              {t("dashboard.summary.widgets.receivables.label")}
+            </p>
+            <p className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-foreground">
+              {formatCurrency(summary.totalReceivables)}
+            </p>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              {summary.customersWithDebt} {t("dashboard.summary.widgets.receivables.detail")}
+            </p>
+          </div>
+        </Panel>
       </div>
 
-      <CommandPanel aria-labelledby="dashboard-top-debtors-title">
-        <CommandPanelHeader
-          description={t("dashboard.summary.analytics.topDebtors.description")}
-          eyebrow={t("dashboard.summary.analytics.topDebtors.eyebrow")}
-          title={t("dashboard.summary.analytics.topDebtors.title")}
-          titleId="dashboard-top-debtors-title"
-        />
-        {summary.topDebtors.length === 0 ? (
-          <div className="px-5 py-8 text-sm text-muted-foreground">
-            {t("dashboard.summary.analytics.topDebtors.empty")}
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {summary.topDebtors.map((debtor, index) => (
-              <Link
-                className="grid gap-3 px-5 py-3 transition-colors hover:bg-accent/45 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                href={`/customers/${debtor.id}`}
-                key={debtor.id}
-              >
-                <span className="min-w-0">
-                  <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-secondary text-[10px] font-semibold text-muted-foreground">
-                      {index + 1}
-                    </span>
-                    <span className="truncate">{debtor.name}</span>
-                  </span>
-                  <span className="mt-2 block">
-                    <StatusChip
-                      tone={debtor.status === "high" ? "danger" : "warning"}
-                    >
-                      {debtor.status === "high"
-                        ? t("dashboard.summary.analytics.topDebtors.status.high")
-                        : t(
-                            "dashboard.summary.analytics.topDebtors.status.medium",
-                          )}
-                    </StatusChip>
-                  </span>
-                </span>
-                <span className="text-left sm:text-right">
-                  <span className="block text-sm font-medium text-foreground">
-                    {formatCurrency(debtor.outstandingBalance)}
-                  </span>
-                  <span className="mt-1 block text-xs text-muted-foreground">
-                    {t("dashboard.summary.analytics.topDebtors.balanceLabel")}
-                  </span>
-                </span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </CommandPanel>
+      {/* ------------------------------------------------------------------ */}
+      {/* Main two-column layout                                              */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)]">
 
-      <CommandPanel aria-labelledby="dashboard-recent-activity-title">
-        <CommandPanelHeader
-          description={t("dashboard.summary.commandCenter.recent.description")}
-          eyebrow={t("dashboard.summary.commandCenter.recent.eyebrow")}
-          title={t("dashboard.summary.commandCenter.recent.title")}
-          titleId="dashboard-recent-activity-title"
-        />
-        {summary.recentActivity.length === 0 ? (
-          <div className="px-5 py-8 text-sm text-muted-foreground">
-            {t("dashboard.summary.commandCenter.recent.empty")}
-          </div>
-        ) : (
-          <TableScrollArea>
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>
-                    {t("dashboard.summary.commandCenter.recent.columns.activity")}
-                  </TableHead>
-                  <TableHead className="text-right">
-                    {t("dashboard.summary.commandCenter.recent.columns.amount")}
-                  </TableHead>
-                  <TableHead className="text-right">
-                    {t("dashboard.summary.commandCenter.recent.columns.time")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {summary.recentActivity.map((activity) => (
-                  <TableRow key={activity.id}>
-                    <TableCell className="min-w-[260px]">
-                      <Link
-                        className="group inline-flex max-w-full flex-col gap-2"
-                        href={activity.href}
-                      >
-                        <StatusChip tone={getActivityTone(activity.type)}>
-                          {getActivityTypeLabel(activity.type)}
-                        </StatusChip>
-                        <span className="truncate text-sm font-medium text-foreground group-hover:text-primary">
-                          {getActivityTitle(activity)}
+        {/* Left: Work Queues */}
+        <div className="space-y-6">
+          <div>
+            <SectionHeader
+              title={t("dashboard.summary.commandCenter.needsAction.title")}
+              id="dashboard-work-queues-title"
+            />
+            <Panel aria-labelledby="dashboard-work-queues-title">
+              <div className="divide-y divide-border">
+                {summary.actionQueues.map((queue) => (
+                  <Link
+                    key={queue.key}
+                    href={queue.href}
+                    className="grid gap-3 px-5 py-4 transition-colors hover:bg-accent/45 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                  >
+                    <span className="min-w-0">
+                      <span className="flex flex-wrap items-center gap-2">
+                        {queue.severity !== "low" && (
+                          <AlertTriangle
+                            className={[
+                              "h-3.5 w-3.5 shrink-0",
+                              queue.severity === "high" ? "text-rose-500" : "text-amber-500",
+                            ].join(" ")}
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span className="text-sm font-medium text-foreground">
+                          {getQueueLabel(queue.key)}
                         </span>
-                      </Link>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-right text-sm font-medium text-foreground">
-                      {formatSignedCurrency(activity.amount)}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-right text-sm text-muted-foreground">
-                      {formatDateTime(activity.createdAt)}
-                    </TableCell>
-                  </TableRow>
+                        <StatusChip tone={getQueueTone(queue.severity)}>
+                          {queue.count}
+                        </StatusChip>
+                      </span>
+                      <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                        {getQueueDescription(queue.key)}
+                      </span>
+                    </span>
+                    <span className="flex items-center justify-between gap-4 sm:flex-col sm:items-end sm:gap-0.5">
+                      <span className="text-sm font-semibold text-foreground">
+                        {formatCurrency(queue.amount)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {getQueueAmountCaption(queue.key)}
+                      </span>
+                    </span>
+                  </Link>
                 ))}
-              </TableBody>
-            </Table>
-          </TableScrollArea>
-        )}
-      </CommandPanel>
+              </div>
+            </Panel>
+          </div>
+
+          {/* Top Debtors */}
+          <div>
+            <SectionHeader
+              title={t("dashboard.summary.analytics.topDebtors.title")}
+              id="dashboard-top-debtors-title"
+              action={
+                <Link
+                  href="/customers"
+                  className="flex items-center gap-1 text-xs text-primary transition-opacity hover:opacity-75"
+                >
+                  {t("dashboard.summary.commandCenter.shortcuts.customers.label")}
+                  <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                </Link>
+              }
+            />
+            <Panel aria-labelledby="dashboard-top-debtors-title">
+              {summary.topDebtors.length === 0 ? (
+                <div className="px-5 py-8 text-sm text-muted-foreground">
+                  {t("dashboard.summary.analytics.topDebtors.empty")}
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {summary.topDebtors.map((debtor, index) => (
+                    <Link
+                      key={debtor.id}
+                      href={`/customers/${debtor.id}`}
+                      className="grid gap-3 px-5 py-3.5 transition-colors hover:bg-accent/45 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                    >
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-2.5 text-sm font-medium text-foreground">
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-secondary text-[10px] font-semibold text-muted-foreground">
+                            {index + 1}
+                          </span>
+                          <span className="truncate">{debtor.name}</span>
+                        </span>
+                        <span className="mt-2 block">
+                          <StatusChip tone={debtor.status === "high" ? "danger" : "warning"}>
+                            {debtor.status === "high"
+                              ? t("dashboard.summary.analytics.topDebtors.status.high")
+                              : t("dashboard.summary.analytics.topDebtors.status.medium")}
+                          </StatusChip>
+                        </span>
+                      </span>
+                      <span className="text-left sm:text-right">
+                        <span className="block text-sm font-semibold text-foreground">
+                          {formatCurrency(debtor.outstandingBalance)}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                          {t("dashboard.summary.analytics.topDebtors.balanceLabel")}
+                        </span>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </Panel>
+          </div>
+        </div>
+
+        {/* Right: Shortcuts + snapshot metadata */}
+        <div className="space-y-6">
+          <div>
+            <SectionHeader
+              title={t("dashboard.summary.commandCenter.shortcuts.title")}
+              id="dashboard-shortcuts-title"
+            />
+            <div className="space-y-2" aria-labelledby="dashboard-shortcuts-title">
+              {shortcuts.map((s) => {
+                const Icon = s.icon
+                return (
+                  <Link
+                    key={s.href}
+                    href={s.href}
+                    className="group flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-3.5 transition-all duration-150 hover:border-primary/25 hover:bg-accent/45 hover:shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-primary transition-colors group-hover:border-primary/20 group-hover:bg-white">
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-foreground">
+                        {s.label}
+                      </span>
+                      <span className="mt-0.5 block text-xs leading-4 text-muted-foreground">
+                        {s.description}
+                      </span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" aria-hidden="true" />
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Snapshot metadata */}
+          <div>
+            <SectionHeader title={t("dashboard.summary.snapshot.label")} />
+            <Panel>
+              <div className="divide-y divide-border">
+                <div className="flex items-start gap-3 px-4 py-3.5">
+                  <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      {t("dashboard.summary.snapshot.label")}
+                    </p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">
+                      {formatDateTime(summary.updatedAt)}
+                    </p>
+                  </div>
+                </div>
+                <div className="px-4 py-3.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    {t("dashboard.summary.snapshot.sourceLabel")}
+                  </p>
+                  <p className="mt-0.5 text-sm font-medium text-foreground">
+                    {t("dashboard.summary.snapshot.sourceValue")}
+                  </p>
+                </div>
+                {summary.revenueFromDate && (
+                  <div className="px-4 py-3.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      {t("dashboard.summary.widgets.revenue.cutoffLabel")}
+                    </p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">
+                      {formatDateShort(summary.revenueFromDate)}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Panel>
+          </div>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Recent Activity — full width                                        */}
+      {/* ------------------------------------------------------------------ */}
+      <div>
+        <SectionHeader
+          title={t("dashboard.summary.commandCenter.recent.title")}
+          id="dashboard-recent-activity-title"
+        />
+        <Panel aria-labelledby="dashboard-recent-activity-title">
+          {summary.recentActivity.length === 0 ? (
+            <div className="px-5 py-8 text-sm text-muted-foreground">
+              {t("dashboard.summary.commandCenter.recent.empty")}
+            </div>
+          ) : (
+            <TableScrollArea>
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>
+                      {t("dashboard.summary.commandCenter.recent.columns.activity")}
+                    </TableHead>
+                    <TableHead className="text-right">
+                      {t("dashboard.summary.commandCenter.recent.columns.amount")}
+                    </TableHead>
+                    <TableHead className="text-right">
+                      {t("dashboard.summary.commandCenter.recent.columns.time")}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {summary.recentActivity.map((activity) => (
+                    <TableRow key={activity.id}>
+                      <TableCell className="min-w-[240px]">
+                        <Link
+                          className="group inline-flex max-w-full flex-col gap-1.5"
+                          href={activity.href}
+                        >
+                          <StatusChip tone={getActivityTone(activity.type)}>
+                            {getActivityTypeLabel(activity.type)}
+                          </StatusChip>
+                          <span className="truncate text-sm font-medium text-foreground group-hover:text-primary">
+                            {getActivityTitle(activity)}
+                          </span>
+                        </Link>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-right text-sm font-semibold text-foreground">
+                        {formatSignedCurrency(activity.amount)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-right text-xs text-muted-foreground">
+                        {formatDateTime(activity.createdAt)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableScrollArea>
+          )}
+        </Panel>
+      </div>
+
     </div>
   )
 }
