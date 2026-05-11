@@ -3,16 +3,21 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        "rounded-[24px] border border-border bg-card text-card-foreground shadow-[var(--shadow-sm),var(--theme-shadow-soft)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[var(--shadow-md),var(--theme-shadow-soft)] motion-reduce:transform-none motion-reduce:transition-none",
-        className,
-      )}
-      {...props}
-    />
-  ),
+  ({ className, onClick, ...props }, ref) => {
+    const isInteractive = !!onClick || props.role === "button" || props.tabIndex === 0;
+    return (
+      <div
+        ref={ref}
+        onClick={onClick}
+        className={cn(
+          "rounded-[24px] border border-border bg-card text-card-foreground shadow-[var(--shadow-sm),var(--theme-shadow-soft)] motion-reduce:transform-none motion-reduce:transition-none",
+          isInteractive && "transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[var(--shadow-md),var(--theme-shadow-soft)] cursor-pointer",
+          className,
+        )}
+        {...props}
+      />
+    )
+  },
 )
 Card.displayName = "Card"
 

@@ -16,15 +16,15 @@ import {
   FileText,
   X,
   Loader2,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 
-import {
-  CommandPanel,
-  CommandPanelHeader,
-} from "@/components/command-center";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
@@ -34,26 +34,26 @@ import { cn } from "@/lib/utils";
 // ---------------------------------------------------------------------------
 
 const passengerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1, "Vui lòng nhập tên hành khách"),
 });
 
 const ticketSchema = z.object({
-  customerName: z.string().min(1, "Customer Name is required"),
-  pnr: z.string().min(1, "PNR is required"),
-  airline: z.string().min(1, "Airline is required"),
-  ticketNumber: z.string().min(1, "Ticket Number is required"),
-  flightDate: z.string().min(1, "Flight Date is required"),
+  customerName: z.string().min(1, "Tên khách hàng là bắt buộc"),
+  pnr: z.string().min(1, "PNR là bắt buộc"),
+  airline: z.string().min(1, "Hãng bay là bắt buộc"),
+  ticketNumber: z.string().min(1, "Số vé là bắt buộc"),
+  flightDate: z.string().min(1, "Ngày bay là bắt buộc"),
   passengers: z
     .array(passengerSchema)
-    .min(1, "At least one passenger is required"),
-  departurePlace: z.string().min(1, "Departure Place is required"),
-  arrivalPlace: z.string().min(1, "Arrival Place is required"),
-  departureCode: z.string().min(1, "Departure Code is required"),
-  arrivalCode: z.string().min(1, "Arrival Code is required"),
-  route: z.string().min(1, "Route is required"),
+    .min(1, "Cần ít nhất 1 hành khách"),
+  departurePlace: z.string().min(1, "Nơi đi là bắt buộc"),
+  arrivalPlace: z.string().min(1, "Nơi đến là bắt buộc"),
+  departureCode: z.string().min(1, "Mã nơi đi là bắt buộc"),
+  arrivalCode: z.string().min(1, "Mã nơi đến là bắt buộc"),
+  route: z.string().min(1, "Hành trình là bắt buộc"),
   totalPrice: z.preprocess(
     (val) => Number(val),
-    z.number().min(0, "Must be a positive number"),
+    z.number().min(0, "Giá trị phải lớn hơn hoặc bằng 0"),
   ),
 });
 
@@ -213,6 +213,39 @@ export default function CaptureTicketPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // ---------- Paste handling ----------
+
+  React.useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      // Ignore if user is currently typing in an input
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith("image/") || item.type === "application/pdf") {
+          const pastedFile = item.getAsFile();
+          if (pastedFile) {
+            handleFile(pastedFile);
+            e.preventDefault();
+            break;
+          }
+        }
+      }
+    };
+
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewUrl]);
+
   // ---------- Drag-and-drop ----------
 
   const onDragOver = (e: React.DragEvent) => {
@@ -246,7 +279,12 @@ export default function CaptureTicketPage() {
 
       form.setValue("totalPrice", data.net_price);
       replace(data.passengers.map((name) => ({ name })));
+      
+      toast.success("Đã trích xuất dữ liệu thành công. Vui lòng kiểm tra lại.");
     },
+    onError: (error) => {
+      toast.error(error.message || "Lỗi khi trích xuất dữ liệu");
+    }
   });
 
   const handleParseWithAI = () => {
@@ -259,7 +297,8 @@ export default function CaptureTicketPage() {
     mutationFn: saveTicket,
     onSuccess: () => {
       toast.success("Đã lưu vé và ghi nhận công nợ.");
-      // router.push("/tickets");
+      form.reset();
+      clearFile();
     },
     onError: (error) => {
       if (error instanceof ApiError && error.status === 401) {
@@ -277,6 +316,7 @@ export default function CaptureTicketPage() {
 
   const isImage = file?.type.startsWith("image/");
   const isPDF = file?.type === "application/pdf";
+  const hasExtractedData = mutation.isSuccess;
 
   if (!isReady || !token) {
     return null;
@@ -287,137 +327,148 @@ export default function CaptureTicketPage() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="space-y-4">
-      <CommandPanel>
-        <CommandPanelHeader
-          eyebrow="Ticket Capture"
-          title="Nhập vé bằng AI từ booking confirmation hoặc e-ticket PDF."
-          description="Tải chứng từ lên, trích xuất dữ liệu chuyến bay với Gemini và kiểm tra lại trước khi lưu để tạo phát sinh công nợ cho khách hàng."
-        />
-
-        <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2 lg:items-start">
+    <div className="space-y-4 pb-12">
+      <div className="grid grid-cols-1 gap-8 p-4 lg:grid-cols-[400px_1fr] xl:grid-cols-[450px_1fr] lg:items-start">
           {/* ---------------------------------------------------------------- */}
-          {/* Left column – File upload / Preview                              */}
+          {/* Left column – File upload / Preview (Sticky)                     */}
           {/* ---------------------------------------------------------------- */}
-          <div className="flex flex-col gap-4">
-            <div>
-              <Label className="text-base font-medium text-foreground">
-                Chứng từ đặt chỗ
-              </Label>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Hỗ trợ ảnh JPEG, PNG, WebP hoặc file PDF e-ticket.
-              </p>
-            </div>
-
-            {/* Hidden native file input */}
-            <input
-              ref={fileInputRef}
-              id="file-upload-input"
-              type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleFile(f);
-              }}
-            />
-
-            {/* Drop zone */}
-            <div
-              role="button"
-              tabIndex={0}
-              aria-label="Upload ticket file"
-              onClick={() => fileInputRef.current?.click()}
-              onKeyDown={(e) =>
-                e.key === "Enter" && fileInputRef.current?.click()
-              }
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              className={cn(
-                "relative flex min-h-[300px] cursor-pointer select-none flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors",
-                isDragging
-                  ? "border-primary bg-accent/65"
-                  : "border-border bg-secondary hover:border-primary/35 hover:bg-accent/45",
-              )}
-            >
-              {/* Preview area */}
-              {isImage && previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt="Ticket preview"
-                  className="max-h-72 max-w-full rounded-lg object-contain p-2"
+          <div className="flex flex-col gap-4 lg:sticky lg:top-6">
+            <Card className="border-border shadow-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Chứng từ đặt chỗ</CardTitle>
+                <CardDescription>Hỗ trợ ảnh JPEG, PNG, WebP hoặc file PDF e-ticket.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                {/* Hidden native file input */}
+                <input
+                  ref={fileInputRef}
+                  id="file-upload-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleFile(f);
+                  }}
                 />
-              ) : isPDF ? (
-                <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
-                  <FileText
-                    className="h-16 w-16 text-primary"
-                    strokeWidth={1.5}
-                  />
-                  <span className="text-sm font-medium text-foreground">
-                    {file!.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {(file!.size / 1024).toFixed(1)} KB - PDF document
-                  </span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-3 p-8 text-center text-muted-foreground">
-                  <UploadCloud className="h-12 w-12" strokeWidth={1.5} />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      Kéo thả hoặc bấm để tải file lên
-                    </p>
-                    <p className="mt-1 text-xs">JPEG, PNG, WebP hoặc PDF</p>
-                  </div>
-                </div>
-              )}
-            </div>
 
-            {/* File info bar + Clear button */}
-            {file && (
-              <div className="flex items-center justify-between rounded-xl border border-border bg-secondary px-3 py-3 text-sm">
-                <span className="max-w-[80%] truncate text-foreground">
-                  {file.name}
-                </span>
-                <button
-                  type="button"
-                  onClick={clearFile}
-                  className="ml-2 shrink-0 rounded-lg p-1 text-muted-foreground transition-colors hover:bg-white hover:text-red-500"
-                  aria-label="Remove file"
+                {/* Drop zone */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Upload ticket file"
+                  onClick={() => fileInputRef.current?.click()}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && fileInputRef.current?.click()
+                  }
+                  onDragOver={onDragOver}
+                  onDragLeave={onDragLeave}
+                  onDrop={onDrop}
+                  className={cn(
+                    "relative flex min-h-[320px] cursor-pointer select-none flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors overflow-hidden",
+                    isDragging
+                      ? "border-primary bg-accent/65"
+                      : "border-border bg-secondary/50 hover:border-primary/35 hover:bg-accent/45",
+                  )}
                 >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            )}
+                  {/* Preview area */}
+                  {isImage && previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Ticket preview"
+                      className="w-full h-full object-contain p-2 absolute inset-0 m-auto"
+                    />
+                  ) : isPDF ? (
+                    <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
+                      <FileText
+                        className="h-16 w-16 text-primary/80"
+                        strokeWidth={1.5}
+                      />
+                      <span className="text-sm font-medium text-foreground text-center px-4 truncate max-w-full">
+                        {file!.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {(file!.size / 1024).toFixed(1)} KB - PDF document
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 p-8 text-center text-muted-foreground">
+                      <UploadCloud className="h-12 w-12 text-muted-foreground/60" strokeWidth={1.5} />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          Kéo thả, dán (Ctrl+V) hoặc bấm để tải file
+                        </p>
+                        <p className="mt-1 text-xs">JPEG, PNG, WebP hoặc PDF</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Parsing Overlay */}
+                  {mutation.isPending && (
+                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-10">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
+                      <p className="text-sm font-medium">AI đang trích xuất dữ liệu...</p>
+                      <p className="text-xs text-muted-foreground mt-1">Quá trình này có thể mất vài giây</p>
+                    </div>
+                  )}
+                </div>
 
-            {/* Error from mutation */}
-            {mutation.isError && (
-              <p className="text-sm text-red-500">
-                {(mutation.error as Error).message}
-              </p>
-            )}
+                {/* File info bar + Clear button */}
+                {file && !mutation.isPending && (
+                  <div className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <FileText className="h-4 w-4 shrink-0 text-primary" />
+                      <span className="truncate text-foreground font-medium">
+                        {file.name}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearFile}
+                      className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-500"
+                      aria-label="Remove file"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
 
-            {/* Parse button */}
-            <Button
-              id="parse-with-ai-btn"
-              onClick={handleParseWithAI}
-              className="mt-1 w-full justify-center"
-              size="lg"
-              disabled={!file || mutation.isPending}
-            >
-              {mutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang phân tích...
-                </>
-              ) : (
-                <>
-                  <Wand2 className="mr-2 h-4 w-4" />
-                  Trích xuất bằng AI
-                </>
-              )}
-            </Button>
+                {/* Parse button */}
+                <Button
+                  id="parse-with-ai-btn"
+                  onClick={handleParseWithAI}
+                  className="w-full"
+                  size="lg"
+                  disabled={!file || mutation.isPending}
+                >
+                  {mutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Đang phân tích...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="mr-2 h-4 w-4" />
+                      Trích xuất bằng AI
+                    </>
+                  )}
+                </Button>
+
+                {hasExtractedData && (
+                  <div className="flex items-start gap-2 rounded-lg bg-green-50 px-3 py-2.5 text-sm text-green-800 border border-green-100">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-green-600" />
+                    <p>Dữ liệu đã được trích xuất. Vui lòng kiểm tra và chỉnh sửa nếu cần trước khi lưu.</p>
+                  </div>
+                )}
+                
+                {mutation.isError && (
+                  <div className="flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-800 border border-red-100">
+                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600" />
+                    <p>{(mutation.error as Error).message}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {/* ---------------------------------------------------------------- */}
@@ -426,231 +477,267 @@ export default function CaptureTicketPage() {
           <form
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onSubmit={form.handleSubmit(onSubmit as any)}
-            className="flex flex-col gap-5"
+            className="flex flex-col gap-6"
           >
-            <div>
-              <h2 className="text-base font-medium tracking-[-0.02em] text-foreground">
-                Thông tin vé
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Kiểm tra lại dữ liệu trích xuất trước khi xác nhận lưu vào hệ thống.
-              </p>
-            </div>
+            {/* Customer & Price Card */}
+            <Card className="border-border shadow-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Thông tin giao dịch</CardTitle>
+                <CardDescription>Khách hàng thanh toán và giá trị vé (công nợ sẽ được ghi nhận cho khách hàng này).</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="customerName" className="font-semibold text-foreground">Tên khách hàng <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="customerName"
+                      placeholder="Ví dụ: Nguyen Van A"
+                      className={cn(hasExtractedData && "border-primary/20 bg-primary/5")}
+                      {...form.register("customerName")}
+                    />
+                    {form.formState.errors.customerName && (
+                      <p className="text-xs text-red-500 font-medium">
+                        {form.formState.errors.customerName.message}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="totalPrice" className="font-semibold text-foreground">Giá gốc (VND) <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="totalPrice"
+                      type="number"
+                      min={0}
+                      placeholder="0"
+                      className={cn("font-medium", hasExtractedData && "border-primary/20 bg-primary/5")}
+                      {...form.register("totalPrice")}
+                    />
+                    {form.formState.errors.totalPrice && (
+                      <p className="text-xs text-red-500 font-medium">
+                        {form.formState.errors.totalPrice.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Customer Name */}
-            <div className="space-y-2">
-              <Label htmlFor="customerName">Tên khách hàng</Label>
-              <Input
-                id="customerName"
-                placeholder="Ví dụ: Nguyen Van A"
-                {...form.register("customerName")}
-              />
-              {form.formState.errors.customerName && (
-                <p className="text-xs text-red-500">
-                  {form.formState.errors.customerName.message}
-                </p>
-              )}
-            </div>
+            {/* Flight Details Card */}
+            <Card className="border-border shadow-sm">
+              <CardHeader className="pb-4 border-b border-border/40 mb-4">
+                <CardTitle className="text-lg">Chi tiết chuyến bay</CardTitle>
+                <CardDescription>Thông tin hành trình và mã đặt chỗ.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* PNR + Airline row */}
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="pnr">Mã đặt chỗ (PNR) <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="pnr"
+                      placeholder="Ví dụ: XYZ987"
+                      className={cn("uppercase", hasExtractedData && "border-primary/20 bg-primary/5")}
+                      {...form.register("pnr")}
+                    />
+                    {form.formState.errors.pnr && (
+                      <p className="text-xs text-red-500">
+                        {form.formState.errors.pnr.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="airline">Hãng bay <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="airline"
+                      placeholder="Ví dụ: VNA"
+                      className={cn("uppercase", hasExtractedData && "border-primary/20 bg-primary/5")}
+                      {...form.register("airline")}
+                    />
+                    {form.formState.errors.airline && (
+                      <p className="text-xs text-red-500">
+                        {form.formState.errors.airline.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ticketNumber">Số vé <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="ticketNumber"
+                      placeholder="Ví dụ: 7382319992101"
+                      className={cn(hasExtractedData && "border-primary/20 bg-primary/5")}
+                      {...form.register("ticketNumber")}
+                    />
+                    {form.formState.errors.ticketNumber && (
+                      <p className="text-xs text-red-500">
+                        {form.formState.errors.ticketNumber.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
 
-            {/* PNR + Airline row */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="pnr">PNR / Mã đặt chỗ</Label>
-                <Input
-                  id="pnr"
-                  placeholder="Ví dụ: XYZ987"
-                  {...form.register("pnr")}
-                />
-                {form.formState.errors.pnr && (
-                  <p className="text-xs text-red-500">
-                    {form.formState.errors.pnr.message}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="airline">Hãng bay</Label>
-                <Input
-                  id="airline"
-                  placeholder="Ví dụ: VNA"
-                  {...form.register("airline")}
-                />
-                {form.formState.errors.airline && (
-                  <p className="text-xs text-red-500">
-                    {form.formState.errors.airline.message}
-                  </p>
-                )}
-              </div>
-            </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="departurePlace">Nơi đi <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="departurePlace"
+                      placeholder="Ví dụ: Da Nang City"
+                      className={cn(hasExtractedData && "border-primary/20 bg-primary/5")}
+                      {...form.register("departurePlace")}
+                    />
+                    {form.formState.errors.departurePlace && (
+                      <p className="text-xs text-red-500">
+                        {form.formState.errors.departurePlace.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="arrivalPlace">Nơi đến <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="arrivalPlace"
+                      placeholder="Ví dụ: Ho Chi Minh City"
+                      className={cn(hasExtractedData && "border-primary/20 bg-primary/5")}
+                      {...form.register("arrivalPlace")}
+                    />
+                    {form.formState.errors.arrivalPlace && (
+                      <p className="text-xs text-red-500">
+                        {form.formState.errors.arrivalPlace.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="ticketNumber">Số vé</Label>
-              <Input
-                id="ticketNumber"
-                placeholder="Ví dụ: 7382319992101"
-                {...form.register("ticketNumber")}
-              />
-              {form.formState.errors.ticketNumber && (
-                <p className="text-xs text-red-500">
-                  {form.formState.errors.ticketNumber.message}
-                </p>
-              )}
-            </div>
+                {/* Route & Date */}
+                <div className="grid gap-4 sm:grid-cols-3 bg-secondary/30 p-4 rounded-xl border border-border/50">
+                  <div className="space-y-2">
+                    <Label htmlFor="departureCode">Mã nơi đi <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="departureCode"
+                      placeholder="Ví dụ: DAD"
+                      className={cn("uppercase bg-background", hasExtractedData && "border-primary/20 bg-primary/5")}
+                      {...form.register("departureCode")}
+                    />
+                    {form.formState.errors.departureCode && (
+                      <p className="text-xs text-red-500">
+                        {form.formState.errors.departureCode.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="arrivalCode">Mã nơi đến <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="arrivalCode"
+                      placeholder="Ví dụ: SGN"
+                      className={cn("uppercase bg-background", hasExtractedData && "border-primary/20 bg-primary/5")}
+                      {...form.register("arrivalCode")}
+                    />
+                    {form.formState.errors.arrivalCode && (
+                      <p className="text-xs text-red-500">
+                        {form.formState.errors.arrivalCode.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="route">Hành trình</Label>
+                    <Input
+                      id="route"
+                      placeholder="Ví dụ: DAD-SGN"
+                      readOnly
+                      className="bg-muted/50 text-muted-foreground uppercase"
+                      {...form.register("route")}
+                    />
+                    {form.formState.errors.route && (
+                      <p className="text-xs text-red-500">
+                        {form.formState.errors.route.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-2 sm:max-w-[300px]">
+                  <Label htmlFor="flightDate">Ngày giờ bay <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="flightDate"
+                    type="datetime-local"
+                    className={cn(hasExtractedData && "border-primary/20 bg-primary/5")}
+                    {...form.register("flightDate")}
+                  />
+                  {form.formState.errors.flightDate && (
+                    <p className="text-xs text-red-500">
+                      {form.formState.errors.flightDate.message}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="departurePlace">Nơi đi</Label>
-                <Input
-                  id="departurePlace"
-                  placeholder="Ví dụ: Da Nang City"
-                  {...form.register("departurePlace")}
-                />
-                {form.formState.errors.departurePlace && (
-                  <p className="text-xs text-red-500">
-                    {form.formState.errors.departurePlace.message}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="arrivalPlace">Nơi đến</Label>
-                <Input
-                  id="arrivalPlace"
-                  placeholder="Ví dụ: Ho Chi Minh City"
-                  {...form.register("arrivalPlace")}
-                />
-                {form.formState.errors.arrivalPlace && (
-                  <p className="text-xs text-red-500">
-                    {form.formState.errors.arrivalPlace.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Route & Date */}
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="departureCode">Mã nơi đi</Label>
-                <Input
-                  id="departureCode"
-                  placeholder="Ví dụ: DAD"
-                  {...form.register("departureCode")}
-                />
-                {form.formState.errors.departureCode && (
-                  <p className="text-xs text-red-500">
-                    {form.formState.errors.departureCode.message}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="arrivalCode">Mã nơi đến</Label>
-                <Input
-                  id="arrivalCode"
-                  placeholder="Ví dụ: SGN"
-                  {...form.register("arrivalCode")}
-                />
-                {form.formState.errors.arrivalCode && (
-                  <p className="text-xs text-red-500">
-                    {form.formState.errors.arrivalCode.message}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="route">Hành trình</Label>
-                <Input
-                  id="route"
-                  placeholder="Ví dụ: SGN-HAN"
-                  readOnly
-                  {...form.register("route")}
-                />
-                {form.formState.errors.route && (
-                  <p className="text-xs text-red-500">
-                    {form.formState.errors.route.message}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="flightDate">Ngày bay</Label>
-                <Input
-                  id="flightDate"
-                  type="datetime-local"
-                  {...form.register("flightDate")}
-                />
-                {form.formState.errors.flightDate && (
-                  <p className="text-xs text-red-500">
-                    {form.formState.errors.flightDate.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Total Price */}
-            <div className="space-y-2">
-              <Label htmlFor="totalPrice">Giá gốc (VND)</Label>
-              <Input
-                id="totalPrice"
-                type="number"
-                min={0}
-                placeholder="0"
-                {...form.register("totalPrice")}
-              />
-              {form.formState.errors.totalPrice && (
-                <p className="text-xs text-red-500">
-                  {form.formState.errors.totalPrice.message}
-                </p>
-              )}
-            </div>
-
-            {/* Passengers */}
-            <div className="space-y-3 pt-1">
-              <div className="flex items-center justify-between">
-                <Label>Hành khách</Label>
+            {/* Passengers Card */}
+            <Card className="border-border shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <div>
+                  <CardTitle className="text-lg">Hành khách</CardTitle>
+                  <CardDescription>Danh sách người bay trên vé này.</CardDescription>
+                </div>
                 <Button
                   type="button"
                   id="add-passenger-btn"
                   variant="outline"
                   size="sm"
                   onClick={() => append({ name: "" })}
+                  className="shrink-0"
                 >
-                  <Plus className="mr-1.5 h-3 w-3" />
-                  Thêm
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  Thêm người
                 </Button>
-              </div>
-
-              {fields.map((field, index) => (
-                <div key={field.id} className="flex items-start gap-2">
-                  <div className="flex-1 space-y-1">
-                    <Input
-                      id={`passenger-${index}`}
-                      placeholder={`Tên hành khách ${index + 1}`}
-                      {...form.register(`passengers.${index}.name`)}
-                    />
-                    {form.formState.errors.passengers?.[index]?.name && (
-                      <p className="text-xs text-red-500">
-                        {form.formState.errors.passengers[index]?.name?.message}
-                      </p>
-                    )}
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="flex items-start gap-3">
+                    <div className="flex-1 space-y-1">
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground text-sm font-medium">
+                          {index + 1}.
+                        </div>
+                        <Input
+                          id={`passenger-${index}`}
+                          placeholder="Tên hành khách"
+                          className={cn("pl-8 uppercase", hasExtractedData && "border-primary/20 bg-primary/5")}
+                          {...form.register(`passengers.${index}.name`)}
+                        />
+                      </div>
+                      {form.formState.errors.passengers?.[index]?.name && (
+                        <p className="text-xs text-red-500 px-1">
+                          {form.formState.errors.passengers[index]?.name?.message}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 text-muted-foreground hover:bg-red-50 hover:text-red-600"
+                      onClick={() => remove(index)}
+                      disabled={fields.length === 1}
+                      aria-label={`Remove passenger ${index + 1}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0 text-muted-foreground hover:text-red-600"
-                    onClick={() => remove(index)}
-                    disabled={fields.length === 1}
-                    aria-label={`Remove passenger ${index + 1}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </CardContent>
+            </Card>
 
-            {/* Submit */}
-            <div className="mt-auto flex justify-end border-t border-border pt-4">
+            {/* Submit Action */}
+            <div className="flex items-center justify-between rounded-xl bg-primary/5 border border-primary/10 p-4">
+              <div>
+                <p className="text-sm font-medium text-foreground">Xác nhận tạo công nợ</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Vé sau khi lưu sẽ được tính vào công nợ của khách hàng.</p>
+              </div>
               <Button
                 id="save-ticket-btn"
                 type="submit"
                 size="lg"
                 disabled={saveMutation.isPending}
+                className="shrink-0"
               >
                 {saveMutation.isPending ? (
                   <>
@@ -664,7 +751,6 @@ export default function CaptureTicketPage() {
             </div>
           </form>
         </div>
-      </CommandPanel>
     </div>
   );
 }
