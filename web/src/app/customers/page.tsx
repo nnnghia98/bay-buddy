@@ -2,17 +2,12 @@
 
 import * as React from "react"
 import { useQuery } from "@tanstack/react-query"
-import { ArrowRight, PencilLine, Plus, Search, Trash2 } from "lucide-react"
+import { ArrowRight, Landmark, Loader2, PencilLine, Plus, Search, Trash2, Users, WalletCards } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { z } from "zod"
 
-import {
-  CommandPanel,
-  CommandPanelHeader,
-  StatusChip,
-  TableScrollArea,
-} from "@/components/command-center"
+import { StatusChip, TableScrollArea } from "@/components/command-center"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -74,6 +69,33 @@ async function fetchCurrentUser(): Promise<z.infer<typeof currentUserSchema>> {
   return currentUserSchema.parse(payload)
 }
 
+// ---------------------------------------------------------------------------
+// Metric card — consistent with new dashboard style
+// ---------------------------------------------------------------------------
+function MetricCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ComponentType<{ className?: string; "aria-hidden"?: "true" }>
+  label: string
+  value: string | number
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
+        <Icon className="h-4 w-4" aria-hidden="true" />
+      </div>
+      <p className="mt-3.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-foreground">
+        {value}
+      </p>
+    </div>
+  )
+}
+
 export default function CustomersPage() {
   const t = useI18n()
   const router = useRouter()
@@ -122,22 +144,16 @@ export default function CustomersPage() {
   }, [customersQuery.error, logout, router])
 
   const createCustomer = async () => {
-    if (!isAdmin) {
-      return
-    }
-
+    if (!isAdmin) return
     if (!createName.trim()) {
       toast.error(t("customers.management.validation.nameRequired"))
       return
     }
-
     setIsSubmittingCreate(true)
     try {
       await apiFetchData("/customers/", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: createName.trim(),
           type: createType,
@@ -171,9 +187,7 @@ export default function CustomersPage() {
     try {
       await apiFetchData(`/customers/${customerId}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
       toast.success(t("customers.management.actions.updateSuccess"))
@@ -193,9 +207,7 @@ export default function CustomersPage() {
     setIsMutatingCustomerId(customerId)
     setIsSubmittingDelete(true)
     try {
-      await apiFetchData(`/customers/${customerId}`, {
-        method: "DELETE",
-      })
+      await apiFetchData(`/customers/${customerId}`, { method: "DELETE" })
       toast.success(t("customers.management.actions.deleteSuccess"))
       setIsDeleteOpen(false)
       setSelectedCustomer(null)
@@ -210,55 +222,52 @@ export default function CustomersPage() {
   }
 
   const normalizedSearch = deferredSearchValue.trim().toLowerCase()
-
   const filteredCustomers = !normalizedSearch
     ? customersQuery.data ?? []
     : (customersQuery.data ?? []).filter((customer) => {
         const fullName = customer.full_name.toLowerCase()
         const phone = customer.phone?.toLowerCase() ?? ""
-
         return fullName.includes(normalizedSearch) || phone.includes(normalizedSearch)
       })
 
   const directoryStats = React.useMemo(() => {
     const customers = customersQuery.data ?? []
-
-    const outstanding = customers.reduce((sum, customer) => {
-      return customer.current_balance > 0 ? sum + customer.current_balance : sum
-    }, 0)
-
-    const credit = customers.reduce((sum, customer) => {
-      return customer.current_balance < 0 ? sum + Math.abs(customer.current_balance) : sum
-    }, 0)
-
-    return {
-      totalCustomers: customers.length,
-      outstanding,
-      credit,
-    }
+    const outstanding = customers.reduce(
+      (sum, c) => (c.current_balance > 0 ? sum + c.current_balance : sum),
+      0,
+    )
+    const credit = customers.reduce(
+      (sum, c) => (c.current_balance < 0 ? sum + Math.abs(c.current_balance) : sum),
+      0,
+    )
+    return { totalCustomers: customers.length, outstanding, credit }
   }, [customersQuery.data])
 
-  if (!isReady || !token) {
-    return null
-  }
+  if (!isReady || !token) return null
 
   const tableColumnCount = isAdmin ? 5 : 4
 
+  // ---------------------------------------------------------------------------
+  // Table body states
+  // ---------------------------------------------------------------------------
   const customerRows = customersQuery.isLoading ? (
-      <TableRow>
-      <TableCell className="py-12 text-center text-muted-foreground" colSpan={tableColumnCount}>
-        {t("customers.directory.loading")}
+    <TableRow>
+      <TableCell className="py-16 text-center" colSpan={tableColumnCount}>
+        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm">{t("customers.directory.loading")}</span>
+        </div>
       </TableCell>
     </TableRow>
   ) : customersQuery.isError ? (
     <TableRow>
-      <TableCell className="py-12 text-center text-red-600" colSpan={tableColumnCount}>
+      <TableCell className="py-12 text-center text-sm text-red-600" colSpan={tableColumnCount}>
         {t("customers.directory.error")}
       </TableCell>
     </TableRow>
   ) : filteredCustomers.length === 0 ? (
     <TableRow>
-      <TableCell className="py-12 text-center text-muted-foreground" colSpan={tableColumnCount}>
+      <TableCell className="py-12 text-center text-sm text-muted-foreground" colSpan={tableColumnCount}>
         {t("customers.directory.empty")}
       </TableCell>
     </TableRow>
@@ -270,78 +279,93 @@ export default function CustomersPage() {
         onClick={() => router.push(`/customers/${customer.id}`)}
         data-state={customer.is_active ? "active" : "inactive"}
       >
-        <TableCell className="px-6 py-5">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-accent text-sm font-semibold text-primary">
+        {/* Name + initials */}
+        <TableCell className="px-5 py-3.5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-accent text-xs font-semibold text-primary">
               {getInitials(customer.full_name)}
             </div>
-            <div className="space-y-1">
-              <div className="font-medium text-foreground">{customer.full_name}</div>
-              <div className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                {t("customers.ledger.customerId")}: {customer.id.slice(0, 8)}
+            <div>
+              <div className="text-sm font-medium text-foreground leading-snug">
+                {customer.full_name}
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                #{customer.id.slice(0, 8)}
               </div>
             </div>
           </div>
         </TableCell>
-        <TableCell className="px-6 py-5 text-muted-foreground">
-          {customer.phone ? customer.phone : t("financeDocuments.common.notUpdated")}
+
+        {/* Phone */}
+        <TableCell className="px-5 py-3.5 text-sm text-muted-foreground">
+          {customer.phone ?? t("financeDocuments.common.notUpdated")}
         </TableCell>
-        <TableCell className="px-6 py-5">
+
+        {/* Status */}
+        <TableCell className="px-5 py-3.5">
           <StatusChip tone={customer.is_active ? "success" : "warning"}>
             {customer.is_active
               ? t("customers.management.statuses.active")
               : t("customers.management.statuses.archived")}
           </StatusChip>
         </TableCell>
-        <TableCell
-          className={cn(
-            "px-6 py-5 text-right font-semibold",
-            customer.current_balance > 0
-              ? "text-red-600"
-              : customer.current_balance < 0
-                ? "text-primary"
-                : "text-foreground",
-          )}
-        >
+
+        {/* Balance */}
+        <TableCell className="px-5 py-3.5 text-right">
           <div className="inline-flex items-center justify-end gap-2">
             {customer.current_balance < 0 ? (
               <StatusChip tone="info">
                 {t("customers.ledger.balanceStates.credit")}
               </StatusChip>
             ) : null}
-            <span>{formatCurrency(Math.abs(customer.current_balance))}</span>
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            <span
+              className={cn(
+                "text-sm font-semibold",
+                customer.current_balance > 0
+                  ? "text-red-600"
+                  : customer.current_balance < 0
+                    ? "text-primary"
+                    : "text-foreground",
+              )}
+            >
+              {formatCurrency(Math.abs(customer.current_balance))}
+            </span>
+            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50" aria-hidden="true" />
           </div>
         </TableCell>
+
+        {/* Admin actions */}
         {isAdmin ? (
-          <TableCell className="px-6 py-5">
-            <div className="flex items-center justify-end gap-2">
+          <TableCell className="px-5 py-3.5">
+            <div className="flex items-center justify-end gap-1.5">
               <Button
                 disabled={Boolean(isMutatingCustomerId)}
-                onClick={(event) => {
-                  event.stopPropagation()
+                onClick={(e) => {
+                  e.stopPropagation()
                   setSelectedCustomer(customer)
                   setEditName(customer.full_name)
                   setIsEditOpen(true)
                 }}
                 size="icon"
                 type="button"
-                variant="outline"
+                variant="ghost"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
               >
-                <PencilLine className="h-4 w-4" />
+                <PencilLine className="h-3.5 w-3.5" />
               </Button>
               <Button
                 disabled={Boolean(isMutatingCustomerId)}
-                onClick={(event) => {
-                  event.stopPropagation()
+                onClick={(e) => {
+                  e.stopPropagation()
                   setSelectedCustomer(customer)
                   setIsDeleteOpen(true)
                 }}
                 size="icon"
                 type="button"
-                variant="outline"
+                variant="ghost"
+                className="h-8 w-8 text-muted-foreground hover:text-red-600"
               >
-                <Trash2 className="h-4 w-4 text-red-600" />
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
           </TableCell>
@@ -351,186 +375,183 @@ export default function CustomersPage() {
   )
 
   return (
-    <div className="space-y-4 text-foreground">
-      <CommandPanel>
-        <CommandPanelHeader
-          eyebrow={t("customers.directory.eyebrow")}
-          title={t("customers.directory.title")}
-          description={t("customers.directory.description")}
-          action={
-            <div className="flex w-full max-w-3xl items-center justify-end gap-2">
-              <div className="relative w-full max-w-sm">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  className="h-10 pl-9"
-                  onChange={(event) => setSearchValue(event.target.value)}
-                  placeholder={t("customers.directory.searchPlaceholder")}
-                  value={searchValue}
-                />
+    <div className="space-y-6 pb-12 text-foreground">
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Page action bar                                                     */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="relative w-full max-w-xs">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Input
+            className="h-9 pl-9 text-sm"
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder={t("customers.directory.searchPlaceholder")}
+            value={searchValue}
+          />
+        </div>
+        {isAdmin ? (
+          <Dialog onOpenChange={setIsCreateOpen} open={isCreateOpen}>
+            <DialogTrigger asChild>
+              <Button type="button" size="sm">
+                <Plus className="h-4 w-4" />
+                {t("customers.management.createAction")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="w-[min(92vw,42rem)]">
+              <DialogHeader>
+                <DialogTitle>{t("customers.management.dialogs.create.title")}</DialogTitle>
+                <DialogDescription>
+                  {t("customers.management.dialogs.create.description")}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="create-customer-name">
+                    {t("customers.management.fields.name")}
+                  </Label>
+                  <Input
+                    id="create-customer-name"
+                    onChange={(e) => setCreateName(e.target.value)}
+                    placeholder={t("customers.management.fields.namePlaceholder")}
+                    value={createName}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="create-customer-type">
+                    {t("customers.management.fields.type")}
+                  </Label>
+                  <select
+                    className="flex h-11 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
+                    id="create-customer-type"
+                    onChange={(e) => setCreateType(e.target.value as "INDIVIDUAL" | "BUSINESS")}
+                    value={createType}
+                  >
+                    <option value="INDIVIDUAL">{t("customers.management.types.INDIVIDUAL")}</option>
+                    <option value="BUSINESS">{t("customers.management.types.BUSINESS")}</option>
+                  </select>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="create-customer-phone">
+                      {t("customers.management.fields.phone")}
+                    </Label>
+                    <Input
+                      id="create-customer-phone"
+                      onChange={(e) => setCreatePhone(e.target.value)}
+                      placeholder={t("customers.management.fields.phonePlaceholder")}
+                      value={createPhone}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-customer-email">
+                      {t("customers.management.fields.email")}
+                    </Label>
+                    <Input
+                      id="create-customer-email"
+                      onChange={(e) => setCreateEmail(e.target.value)}
+                      placeholder={t("customers.management.fields.emailPlaceholder")}
+                      value={createEmail}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="create-customer-address">
+                    {t("customers.management.fields.address")}
+                  </Label>
+                  <Input
+                    id="create-customer-address"
+                    onChange={(e) => setCreateAddress(e.target.value)}
+                    placeholder={t("customers.management.fields.addressPlaceholder")}
+                    value={createAddress}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="create-customer-tax-code">
+                    {t("customers.management.fields.taxCode")}
+                  </Label>
+                  <Input
+                    id="create-customer-tax-code"
+                    onChange={(e) => setCreateTaxCode(e.target.value)}
+                    placeholder={t("customers.management.fields.taxCodePlaceholder")}
+                    value={createTaxCode}
+                  />
+                </div>
               </div>
-              {isAdmin ? (
-                <Dialog onOpenChange={setIsCreateOpen} open={isCreateOpen}>
-                  <DialogTrigger asChild>
-                    <Button type="button">
-                      <Plus className="h-4 w-4" />
-                      {t("customers.management.createAction")}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="w-[min(92vw,42rem)]">
-                    <DialogHeader>
-                      <DialogTitle>{t("customers.management.dialogs.create.title")}</DialogTitle>
-                      <DialogDescription>
-                        {t("customers.management.dialogs.create.description")}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="create-customer-name">
-                          {t("customers.management.fields.name")}
-                        </Label>
-                        <Input
-                          id="create-customer-name"
-                          onChange={(event) => setCreateName(event.target.value)}
-                          placeholder={t("customers.management.fields.namePlaceholder")}
-                          value={createName}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="create-customer-type">
-                          {t("customers.management.fields.type")}
-                        </Label>
-                        <select
-                          className="flex h-11 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
-                          id="create-customer-type"
-                          onChange={(event) =>
-                            setCreateType(event.target.value as "INDIVIDUAL" | "BUSINESS")
-                          }
-                          value={createType}
-                        >
-                          <option value="INDIVIDUAL">
-                            {t("customers.management.types.INDIVIDUAL")}
-                          </option>
-                          <option value="BUSINESS">
-                            {t("customers.management.types.BUSINESS")}
-                          </option>
-                        </select>
-                      </div>
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="create-customer-phone">
-                            {t("customers.management.fields.phone")}
-                          </Label>
-                          <Input
-                            id="create-customer-phone"
-                            onChange={(event) => setCreatePhone(event.target.value)}
-                            placeholder={t("customers.management.fields.phonePlaceholder")}
-                            value={createPhone}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="create-customer-email">
-                            {t("customers.management.fields.email")}
-                          </Label>
-                          <Input
-                            id="create-customer-email"
-                            onChange={(event) => setCreateEmail(event.target.value)}
-                            placeholder={t("customers.management.fields.emailPlaceholder")}
-                            value={createEmail}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="create-customer-address">
-                          {t("customers.management.fields.address")}
-                        </Label>
-                        <Input
-                          id="create-customer-address"
-                          onChange={(event) => setCreateAddress(event.target.value)}
-                          placeholder={t("customers.management.fields.addressPlaceholder")}
-                          value={createAddress}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="create-customer-tax-code">
-                          {t("customers.management.fields.taxCode")}
-                        </Label>
-                        <Input
-                          id="create-customer-tax-code"
-                          onChange={(event) => setCreateTaxCode(event.target.value)}
-                          placeholder={t("customers.management.fields.taxCodePlaceholder")}
-                          value={createTaxCode}
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        onClick={() => setIsCreateOpen(false)}
-                        type="button"
-                        variant="outline"
-                      >
-                        {t("customers.management.dialogs.cancel")}
-                      </Button>
-                      <Button
-                        disabled={isSubmittingCreate}
-                        onClick={() => void createCustomer()}
-                        type="button"
-                      >
-                        {t("customers.management.dialogs.create.submit")}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              ) : null}
-            </div>
-          }
+              <DialogFooter>
+                <Button onClick={() => setIsCreateOpen(false)} type="button" variant="outline">
+                  {t("customers.management.dialogs.cancel")}
+                </Button>
+                <Button
+                  disabled={isSubmittingCreate}
+                  onClick={() => void createCustomer()}
+                  type="button"
+                >
+                  {isSubmittingCreate && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {t("customers.management.dialogs.create.submit")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        ) : null}
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Metric strip                                                        */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <MetricCard
+          icon={Users}
+          label={t("customers.directory.metrics.totalCustomers")}
+          value={customersQuery.isLoading ? "—" : directoryStats.totalCustomers}
         />
-        <div className="grid gap-3 border-b border-border px-4 py-3 md:grid-cols-3">
-          <div className="rounded-lg border border-border bg-secondary/35 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("customers.directory.metrics.totalCustomers")}
-            </p>
-            <p className="mt-2 text-2xl font-medium text-foreground">
-              {directoryStats.totalCustomers}
-            </p>
-          </div>
-          <div className="rounded-lg border border-border bg-secondary/35 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("dashboard.summary.widgets.receivables.label")}
-            </p>
-            <p className="mt-2 text-2xl font-medium text-foreground">
-              {formatCurrency(directoryStats.outstanding)}
-            </p>
-          </div>
-          <div className="rounded-lg border border-border bg-secondary/35 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("customers.ledger.balanceStates.credit")}
-            </p>
-            <p className="mt-2 text-2xl font-medium text-foreground">
-              {formatCurrency(directoryStats.credit)}
-            </p>
-          </div>
+        <MetricCard
+          icon={Landmark}
+          label={t("dashboard.summary.widgets.receivables.label")}
+          value={customersQuery.isLoading ? "—" : formatCurrency(directoryStats.outstanding)}
+        />
+        <MetricCard
+          icon={WalletCards}
+          label={t("customers.ledger.balanceStates.credit")}
+          value={customersQuery.isLoading ? "—" : formatCurrency(directoryStats.credit)}
+        />
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Customer table                                                      */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+            {t("customers.directory.title")}
+          </p>
+          {customersQuery.data && (
+            <span className="text-xs text-muted-foreground">
+              {filteredCustomers.length} / {customersQuery.data.length}
+            </span>
+          )}
         </div>
         <TableScrollArea>
           <Table>
             <TableHeader>
-              <TableRow className="bg-secondary/55 hover:bg-secondary/55">
-                <TableHead>{t("financeDocuments.common.customer")}</TableHead>
-                <TableHead>{t("customers.directory.columns.phone")}</TableHead>
-                <TableHead>{t("customers.management.fields.status")}</TableHead>
-                <TableHead className="text-right">
-                  {t("customers.ledger.currentBalance")}
-                </TableHead>
+              <TableRow className="bg-secondary/40 hover:bg-secondary/40">
+                <TableHead className="px-5">{t("financeDocuments.common.customer")}</TableHead>
+                <TableHead className="px-5">{t("customers.directory.columns.phone")}</TableHead>
+                <TableHead className="px-5">{t("customers.management.fields.status")}</TableHead>
+                <TableHead className="px-5 text-right">{t("customers.ledger.currentBalance")}</TableHead>
                 {isAdmin ? (
-                  <TableHead className="text-right">
-                    {t("customers.directory.columns.actions")}
-                  </TableHead>
+                  <TableHead className="px-5 text-right">{t("customers.directory.columns.actions")}</TableHead>
                 ) : null}
               </TableRow>
             </TableHeader>
             <TableBody>{customerRows}</TableBody>
           </Table>
         </TableScrollArea>
-      </CommandPanel>
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Admin dialogs — edit & delete                                       */}
+      {/* ------------------------------------------------------------------ */}
       {isAdmin ? (
         <>
           <Dialog onOpenChange={setIsEditOpen} open={isEditOpen}>
@@ -547,7 +568,7 @@ export default function CustomersPage() {
                 </Label>
                 <Input
                   id="edit-customer-name"
-                  onChange={(event) => setEditName(event.target.value)}
+                  onChange={(e) => setEditName(e.target.value)}
                   placeholder={t("customers.management.fields.namePlaceholder")}
                   value={editName}
                 />
@@ -559,13 +580,12 @@ export default function CustomersPage() {
                 <Button
                   disabled={isSubmittingEdit || !selectedCustomer || !editName.trim()}
                   onClick={() => {
-                    if (!selectedCustomer || !editName.trim()) {
-                      return
-                    }
+                    if (!selectedCustomer || !editName.trim()) return
                     void updateCustomerInline(selectedCustomer.id, { name: editName.trim() })
                   }}
                   type="button"
                 >
+                  {isSubmittingEdit && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {t("customers.management.dialogs.edit.submit")}
                 </Button>
               </DialogFooter>
@@ -587,13 +607,13 @@ export default function CustomersPage() {
                 <Button
                   disabled={isSubmittingDelete || !selectedCustomer}
                   onClick={() => {
-                    if (!selectedCustomer) {
-                      return
-                    }
+                    if (!selectedCustomer) return
                     void deleteCustomer(selectedCustomer.id)
                   }}
                   type="button"
+                  className="bg-red-600 hover:bg-red-700"
                 >
+                  {isSubmittingDelete && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {t("customers.management.deleteAction")}
                 </Button>
               </DialogFooter>
