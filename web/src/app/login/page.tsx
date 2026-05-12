@@ -78,21 +78,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Left brand panel — direct flex child so it stretches to min-h-screen */}
-      <div className="relative hidden w-[420px] shrink-0 flex-col justify-between overflow-hidden bg-[#f0f4fb] p-10 lg:flex">
-        {/* Dot-grid texture */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage: "radial-gradient(circle, #c8d6ef 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-            opacity: 0.45,
-          }}
-        />
-        {/* Top: logo */}
-        <div className="relative z-10">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-12">
+      <div className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="mb-8 flex justify-center">
           <Image
             alt="Bay Buddy"
             className="h-14 w-auto object-contain"
@@ -102,118 +91,89 @@ export default function LoginPage() {
             width={1020}
           />
         </div>
-        {/* Bottom: tagline */}
-        <div className="relative z-10 space-y-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-            Bay Buddy
-          </p>
-          <h1 className="text-2xl font-semibold leading-snug tracking-[-0.02em] text-foreground">
-            Quản lý công nợ<br />hàng không thông minh
+
+        {/* Heading */}
+        <div className="mb-8 space-y-1 text-center">
+          <h1 className="text-xl font-semibold tracking-[-0.02em] text-foreground">
+            {t("login.title")}
           </h1>
-          <p className="max-w-xs text-sm leading-6 text-muted-foreground">
-            Nhập vé, theo dõi khách hàng và ghi nhận thanh toán — tất cả trong một luồng thống nhất.
+          <p className="text-sm text-muted-foreground">
+            {t("login.subtitle")}
           </p>
         </div>
-      </div>
 
-      {/* Right: login form */}
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
-        {/* Mobile-only logo */}
-        <div className="mb-8 lg:hidden">
-          <Image
-            alt="Bay Buddy"
-            className="h-12 w-auto object-contain"
-            height={820}
-            priority
-            src="/branding/logo-bay-buddy-v1-crop.png"
-            width={1020}
-          />
-        </div>
-
-        <div className="w-full max-w-sm">
-          {/* Heading */}
-          <div className="mb-8 space-y-1">
-            <h2 className="text-xl font-semibold tracking-[-0.02em] text-foreground">
-              {t("login.title")}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {t("login.subtitle")}
-            </p>
+        {/* Form */}
+        <form className="space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
+          {/* Username */}
+          <div className="space-y-2">
+            <Label htmlFor="username">{t("login.usernameLabel")}</Label>
+            <div className="relative">
+              <User
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                id="username"
+                autoComplete="username"
+                className="pl-10"
+                placeholder={t("login.usernamePlaceholder")}
+                {...form.register("username")}
+              />
+            </div>
+            {form.formState.errors.username && (
+              <p className="text-xs text-red-600">
+                {form.formState.errors.username.message}
+              </p>
+            )}
           </div>
 
-          {/* Form */}
-          <form className="space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
-            {/* Username */}
-            <div className="space-y-2">
-              <Label htmlFor="username">{t("login.usernameLabel")}</Label>
-              <div className="relative">
-                <User
-                  className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <Input
-                  id="username"
-                  autoComplete="username"
-                  className="pl-10"
-                  placeholder={t("login.usernamePlaceholder")}
-                  {...form.register("username")}
-                />
-              </div>
-              {form.formState.errors.username && (
-                <p className="text-xs text-red-600">
-                  {form.formState.errors.username.message}
-                </p>
-              )}
+          {/* Password */}
+          <div className="space-y-2">
+            <Label htmlFor="password">{t("login.passwordLabel")}</Label>
+            <div className="relative">
+              <Lock
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                className="pl-10"
+                placeholder="••••••••"
+                {...form.register("password")}
+              />
             </div>
+            {form.formState.errors.password && (
+              <p className="text-xs text-red-600">
+                {form.formState.errors.password.message}
+              </p>
+            )}
+          </div>
 
-            {/* Password */}
-            <div className="space-y-2">
-              <Label htmlFor="password">{t("login.passwordLabel")}</Label>
-              <div className="relative">
-                <Lock
-                  className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  className="pl-10"
-                  placeholder="••••••••"
-                  {...form.register("password")}
-                />
-              </div>
-              {form.formState.errors.password && (
-                <p className="text-xs text-red-600">
-                  {form.formState.errors.password.message}
-                </p>
-              )}
-            </div>
+          {/* Submit */}
+          <Button
+            className="w-full justify-center"
+            disabled={isSubmitting}
+            size="lg"
+            type="submit"
+            id="login-submit-btn"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                {t("login.submitting")}
+              </>
+            ) : (
+              t("login.submit")
+            )}
+          </Button>
+        </form>
 
-            {/* Submit */}
-            <Button
-              className="w-full justify-center"
-              disabled={isSubmitting}
-              size="lg"
-              type="submit"
-              id="login-submit-btn"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                  {t("login.submitting")}
-                </>
-              ) : (
-                t("login.submit")
-              )}
-            </Button>
-          </form>
-
-          {/* Footer note */}
-          <p className="mt-8 text-center text-xs text-muted-foreground">
-            Bay Buddy &copy; {new Date().getFullYear()}
-          </p>
-        </div>
+        {/* Footer */}
+        <p className="mt-8 text-center text-xs text-muted-foreground">
+          Bay Buddy &copy; {new Date().getFullYear()}
+        </p>
       </div>
     </div>
   )
