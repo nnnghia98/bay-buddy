@@ -1,7 +1,12 @@
 export default {
   login: {
+    title: "Sign in",
+    subtitle: "Please sign in to continue.",
     usernameLabel: "Username",
     usernamePlaceholder: "Username",
+    passwordLabel: "Password",
+    submit: "Sign in",
+    submitting: "Signing in...",
     successToast: "Signed in successfully.",
   },
   appShell: {

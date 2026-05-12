@@ -1,7 +1,12 @@
 export default {
   login: {
+    title: "Đăng nhập",
+    subtitle: "Vui lòng đăng nhập để tiếp tục.",
     usernameLabel: "Tên đăng nhập",
     usernamePlaceholder: "Tên đăng nhập",
+    passwordLabel: "Mật khẩu",
+    submit: "Đăng nhập",
+    submitting: "Đang đăng nhập...",
     successToast: "Đăng nhập thành công.",
   },
   appShell: {

@@ -37,20 +37,26 @@ const passengerSchema = z.object({
   name: z.string().min(1, "Vui lòng nhập tên hành khách"),
 });
 
+const optionalTextField = z.preprocess((value) => {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}, z.string().optional());
+
 const ticketSchema = z.object({
-  customerName: z.string().min(1, "Tên khách hàng là bắt buộc"),
-  pnr: z.string().min(1, "PNR là bắt buộc"),
+  customerName: optionalTextField,
+  pnr: optionalTextField,
   airline: z.string().min(1, "Hãng bay là bắt buộc"),
   ticketNumber: z.string().min(1, "Số vé là bắt buộc"),
-  flightDate: z.string().min(1, "Ngày bay là bắt buộc"),
+  flightDate: optionalTextField,
   passengers: z
     .array(passengerSchema)
     .min(1, "Cần ít nhất 1 hành khách"),
-  departurePlace: z.string().min(1, "Nơi đi là bắt buộc"),
-  arrivalPlace: z.string().min(1, "Nơi đến là bắt buộc"),
-  departureCode: z.string().min(1, "Mã nơi đi là bắt buộc"),
-  arrivalCode: z.string().min(1, "Mã nơi đến là bắt buộc"),
-  route: z.string().min(1, "Hành trình là bắt buộc"),
+  departurePlace: optionalTextField,
+  arrivalPlace: optionalTextField,
+  departureCode: optionalTextField,
+  arrivalCode: optionalTextField,
+  route: optionalTextField,
   totalPrice: z.preprocess(
     (val) => Number(val),
     z.number().min(0, "Giá trị phải lớn hơn hoặc bằng 0"),
@@ -58,17 +64,17 @@ const ticketSchema = z.object({
 });
 
 type TicketFormValues = {
-  customerName: string;
-  pnr: string;
+  customerName?: string;
+  pnr?: string;
   airline: string;
   ticketNumber: string;
-  flightDate: string;
+  flightDate?: string;
   passengers: { name: string }[];
-  departurePlace: string;
-  arrivalPlace: string;
-  departureCode: string;
-  arrivalCode: string;
-  route: string;
+  departurePlace?: string;
+  arrivalPlace?: string;
+  departureCode?: string;
+  arrivalCode?: string;
+  route?: string;
   totalPrice: number;
 };
 
@@ -106,18 +112,30 @@ async function parseFileWithAI(file: File): Promise<ParsedFlightData> {
 }
 
 async function saveTicket(data: TicketFormValues) {
+  const firstPassengerName = data.passengers
+    .map((passenger) => passenger.name.trim())
+    .find(Boolean);
+  const fallbackCodeFromTicket = data.ticketNumber.trim().slice(-6).toUpperCase().padStart(6, "X");
+  const departureCode = data.departureCode?.trim().toUpperCase();
+  const arrivalCode = data.arrivalCode?.trim().toUpperCase();
+  const derivedItineraryFromCodes =
+    departureCode && arrivalCode ? `${departureCode}-${arrivalCode}` : undefined;
+  const itinerary = data.route?.trim().toUpperCase() || derivedItineraryFromCodes || "UNK-UNK";
+
   const payload = {
-    customer_name: data.customerName,
-    pnr: data.pnr,
+    customer_name: data.customerName?.trim() || firstPassengerName || "Unknown Passenger",
+    pnr: data.pnr?.trim().toUpperCase() || fallbackCodeFromTicket,
     airline: data.airline,
     ticket_number: data.ticketNumber,
     passengers: data.passengers.map((p) => p.name),
-    departure_place: data.departurePlace,
-    arrival_place: data.arrivalPlace,
-    departure_code: data.departureCode.toUpperCase(),
-    arrival_code: data.arrivalCode.toUpperCase(),
-    itinerary: data.route,
-    flight_date: new Date(data.flightDate).toISOString(),
+    departure_place: data.departurePlace?.trim() || null,
+    arrival_place: data.arrivalPlace?.trim() || null,
+    departure_code: departureCode || null,
+    arrival_code: arrivalCode || null,
+    itinerary,
+    flight_date: data.flightDate
+      ? new Date(data.flightDate).toISOString()
+      : new Date().toISOString(),
     net_price: data.totalPrice,
   };
 
@@ -488,7 +506,7 @@ export default function CaptureTicketPage() {
               <CardContent>
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="customerName" className="font-semibold text-foreground">Tên khách hàng <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="customerName" className="font-semibold text-foreground">Tên khách hàng</Label>
                     <Input
                       id="customerName"
                       placeholder="Ví dụ: Nguyen Van A"
@@ -532,7 +550,7 @@ export default function CaptureTicketPage() {
                 {/* PNR + Airline row */}
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="space-y-2">
-                    <Label htmlFor="pnr">Mã đặt chỗ (PNR) <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="pnr">Mã đặt chỗ (PNR)</Label>
                     <Input
                       id="pnr"
                       placeholder="Ví dụ: XYZ987"
@@ -577,7 +595,7 @@ export default function CaptureTicketPage() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="departurePlace">Nơi đi <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="departurePlace">Nơi đi</Label>
                     <Input
                       id="departurePlace"
                       placeholder="Ví dụ: Da Nang City"
@@ -591,7 +609,7 @@ export default function CaptureTicketPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="arrivalPlace">Nơi đến <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="arrivalPlace">Nơi đến</Label>
                     <Input
                       id="arrivalPlace"
                       placeholder="Ví dụ: Ho Chi Minh City"
@@ -609,7 +627,7 @@ export default function CaptureTicketPage() {
                 {/* Route & Date */}
                 <div className="grid gap-4 sm:grid-cols-3 bg-secondary/30 p-4 rounded-xl border border-border/50">
                   <div className="space-y-2">
-                    <Label htmlFor="departureCode">Mã nơi đi <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="departureCode">Mã nơi đi</Label>
                     <Input
                       id="departureCode"
                       placeholder="Ví dụ: DAD"
@@ -623,7 +641,7 @@ export default function CaptureTicketPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="arrivalCode">Mã nơi đến <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="arrivalCode">Mã nơi đến</Label>
                     <Input
                       id="arrivalCode"
                       placeholder="Ví dụ: SGN"
@@ -654,7 +672,7 @@ export default function CaptureTicketPage() {
                 </div>
                 
                 <div className="space-y-2 sm:max-w-[300px]">
-                  <Label htmlFor="flightDate">Ngày giờ bay <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="flightDate">Ngày giờ bay</Label>
                   <Input
                     id="flightDate"
                     type="datetime-local"
@@ -674,7 +692,7 @@ export default function CaptureTicketPage() {
             <Card className="border-border shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                 <div>
-                  <CardTitle className="text-lg">Hành khách</CardTitle>
+                  <CardTitle className="text-lg">Hành khách <span className="text-red-500">*</span></CardTitle>
                   <CardDescription>Danh sách người bay trên vé này.</CardDescription>
                 </div>
                 <Button
