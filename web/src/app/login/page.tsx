@@ -43,52 +43,6 @@ async function loginRequest(values: LoginValues): Promise<LoginResponse> {
 }
 
 // ---------------------------------------------------------------------------
-// Brand panel — left side on lg+
-// ---------------------------------------------------------------------------
-function BrandPanel() {
-  return (
-    <div className="relative hidden flex-col justify-between overflow-hidden bg-[#f0f4fb] p-10 lg:flex">
-      {/* Subtle grid texture */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, #c8d6ef 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-          opacity: 0.45,
-        }}
-      />
-
-      {/* Top: logo */}
-      <div className="relative z-10">
-        <Image
-          alt="Bay Buddy"
-          className="h-14 w-auto object-contain"
-          height={820}
-          priority
-          src="/branding/logo-bay-buddy-v1-crop.png"
-          width={1020}
-        />
-      </div>
-
-      {/* Bottom: tagline */}
-      <div className="relative z-10 space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-          Bay Buddy
-        </p>
-        <h1 className="text-2xl font-semibold leading-snug tracking-[-0.02em] text-foreground">
-          Quản lý công nợ<br />hàng không thông minh
-        </h1>
-        <p className="max-w-xs text-sm leading-6 text-muted-foreground">
-          Nhập vé, theo dõi khách hàng và ghi nhận thanh toán — tất cả trong một luồng thống nhất.
-        </p>
-      </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 export default function LoginPage() {
@@ -125,9 +79,41 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Left brand panel (desktop only) */}
-      <div className="w-[420px] shrink-0">
-        <BrandPanel />
+      {/* Left brand panel — direct flex child so it stretches to min-h-screen */}
+      <div className="relative hidden w-[420px] shrink-0 flex-col justify-between overflow-hidden bg-[#f0f4fb] p-10 lg:flex">
+        {/* Dot-grid texture */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: "radial-gradient(circle, #c8d6ef 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+            opacity: 0.45,
+          }}
+        />
+        {/* Top: logo */}
+        <div className="relative z-10">
+          <Image
+            alt="Bay Buddy"
+            className="h-14 w-auto object-contain"
+            height={820}
+            priority
+            src="/branding/logo-bay-buddy-v1-crop.png"
+            width={1020}
+          />
+        </div>
+        {/* Bottom: tagline */}
+        <div className="relative z-10 space-y-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+            Bay Buddy
+          </p>
+          <h1 className="text-2xl font-semibold leading-snug tracking-[-0.02em] text-foreground">
+            Quản lý công nợ<br />hàng không thông minh
+          </h1>
+          <p className="max-w-xs text-sm leading-6 text-muted-foreground">
+            Nhập vé, theo dõi khách hàng và ghi nhận thanh toán — tất cả trong một luồng thống nhất.
+          </p>
+        </div>
       </div>
 
       {/* Right: login form */}
