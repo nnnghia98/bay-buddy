@@ -115,7 +115,10 @@ export default function LoginPage() {
               <Input
                 id="username"
                 autoComplete="username"
-                className="pl-10"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                className="pl-10 text-base md:text-sm"
                 placeholder={t("login.usernamePlaceholder")}
                 {...form.register("username")}
               />
