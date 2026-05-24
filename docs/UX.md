@@ -174,7 +174,7 @@ Forms must follow the App Router standard from the DNA:
 - The homepage breadcrumb label should be locale-aware and read as `Trang chủ` in Vietnamese and `Home` in English.
 - The sidebar logo should feel like a calm brand anchor, centered and visually lightweight, without an extra decorative card container around it.
 - Breadcrumbs should clarify location without becoming the main navigation.
-- Quick search can be introduced later, but disabled UI should not look clickable.
+- Quick search can be introduced later only when it is fully implemented and interactive. Do not show placeholder shell utilities that look clickable.
 - Mobile navigation must preserve access to the same major work areas.
 
 ### Empty States

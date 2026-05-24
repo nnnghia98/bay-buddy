@@ -6,7 +6,6 @@ import { FinancialSummaryDashboard } from "@/components/financial-summary-dashbo
 import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
 import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
 import { buildFinancialSummarySnapshot } from "@/lib/dashboard"
-import { parseRevenueFromParam } from "@/lib/revenue-cutoff"
 import { CustomerDirectoryItemSchema } from "@/schemas/customer"
 import { TicketReadSchema } from "@/schemas/ticket"
 import { TransactionReadSchema } from "@/schemas/transaction"
@@ -16,7 +15,6 @@ const API_BASE_URL = getServerApiBaseUrl()
 const customerDirectorySchema = z.array(CustomerDirectoryItemSchema)
 const ticketListSchema = z.array(TicketReadSchema)
 const transactionListSchema = z.array(TransactionReadSchema)
-const REVENUE_FROM_PARAM = "revenue_from"
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -60,7 +58,7 @@ async function fetchCollection<TSchema extends z.ZodTypeAny>(
   return schema.parse(payload)
 }
 
-async function loadFinancialSummarySnapshot(input?: { revenueFromParam?: string }) {
+async function loadFinancialSummarySnapshot() {
   const token = (await cookies()).get(AUTH_TOKEN_COOKIE_KEY)?.value
 
   if (!token) {
@@ -106,7 +104,6 @@ async function loadFinancialSummarySnapshot(input?: { revenueFromParam?: string 
       customers,
       tickets,
       transactions,
-      revenueFrom: parseRevenueFromParam(input?.revenueFromParam),
     })
   } catch (error) {
     console.error("[dashboard] Failed to load financial summary snapshot", error)
@@ -114,17 +111,8 @@ async function loadFinancialSummarySnapshot(input?: { revenueFromParam?: string 
   }
 }
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>
-}) {
-  const params = searchParams ? await searchParams : undefined
-  const revenueFromRaw = params?.[REVENUE_FROM_PARAM]
-  const revenueFromParam = Array.isArray(revenueFromRaw)
-    ? revenueFromRaw[0]
-    : revenueFromRaw
-  const summary = await loadFinancialSummarySnapshot({ revenueFromParam })
+export default async function Home() {
+  const summary = await loadFinancialSummarySnapshot()
 
   return <FinancialSummaryDashboard summary={summary} />
 }

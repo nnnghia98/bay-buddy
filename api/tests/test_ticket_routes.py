@@ -185,7 +185,7 @@ def test_confirm_ticket_allows_shared_ticket_numbers_for_return_flights(
         assert {ticket.itinerary for ticket in tickets} == {"HAN-SGN", "SGN-HAN"}
 
 
-def test_confirm_ticket_persists_discount_fare_class_and_seat_code(
+def test_confirm_ticket_persists_pricing_fields_and_records_customer_debt(
     test_client,
     test_engine,
 ):
@@ -194,6 +194,8 @@ def test_confirm_ticket_persists_discount_fare_class_and_seat_code(
     assert response.status_code == 201
     payload = response.json()["data"]
 
+    assert payload["ticket"]["net_price"] == pytest.approx(1000000)
+    assert payload["ticket"]["selling_price"] == pytest.approx(1200000)
     assert payload["ticket"]["discount"] == pytest.approx(10000)
     assert payload["ticket"]["true_income"] == pytest.approx(210000)
     assert payload["ticket"]["fare_class"] == "B"
@@ -201,11 +203,20 @@ def test_confirm_ticket_persists_discount_fare_class_and_seat_code(
 
     with Session(test_engine) as session:
         ticket = session.exec(select(Ticket).where(Ticket.pnr == "ABC123")).one()
+        transaction = session.exec(
+            select(Transaction).where(Transaction.linked_ticket_id == ticket.id)
+        ).one()
+        customer = session.get(Customer, ticket.customer_id)
 
+        assert ticket.net_price == pytest.approx(1000000)
+        assert ticket.selling_price == pytest.approx(1200000)
         assert ticket.discount == pytest.approx(10000)
         assert ticket.true_income == pytest.approx(210000)
         assert ticket.fare_class == "B"
         assert ticket.seat_code == "12A"
+        assert transaction.amount == pytest.approx(1200000)
+        assert customer is not None
+        assert customer.balance == pytest.approx(1200000)
 
 
 def test_legacy_ticket_create_endpoint_is_retired(

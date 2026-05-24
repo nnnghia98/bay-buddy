@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import {
   ChevronDown,
+  Database,
   FileText,
   Menu,
   Settings,
@@ -54,19 +55,29 @@ type CustomerSummary = {
   name: string
 }
 
+type NavLabelKey =
+  | "tickets"
+  | "customers"
+  | "invoices"
+  | "reports"
+  | "settings"
+  | "dataCenter"
+
 type NavItem = {
-  label: string
+  labelKey: NavLabelKey
   href: string
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>
+  adminOnly?: boolean
   disabled?: boolean
 }
 
 const navItems: NavItem[] = [
-  { label: "Nhập vé", href: "/tickets/input", icon: Ticket },
-  { label: "Khách hàng", href: "/customers", icon: Users },
-  { label: "Hóa đơn", href: "/invoices", icon: FileText, disabled: true },
-  { label: "Báo cáo", href: "/reports", icon: FileText, disabled: true },
-  { label: "Thiết lập", href: "/settings", icon: Settings },
+  { labelKey: "tickets", href: "/tickets/input", icon: Ticket },
+  { labelKey: "customers", href: "/customers", icon: Users },
+  { labelKey: "invoices", href: "/invoices", icon: FileText, disabled: true },
+  { labelKey: "reports", href: "/reports", icon: FileText, disabled: true },
+  { labelKey: "settings", href: "/settings", icon: Settings },
+  { labelKey: "dataCenter", href: "/data_center", icon: Database, adminOnly: true },
 ]
 
 function getInitials(value: string): string {
@@ -85,6 +96,18 @@ function formatRoleLabel(role: string): string {
 function useBreadcrumbs(
   pathname: string,
   homeLabel: string,
+  labels: {
+    customers: string
+    customerDetail: string
+    tickets: string
+    aiTicketInput: string
+    invoices: string
+    financeDocuments: string
+    quotes: string
+    settings: string
+    dataCenter: string
+    fallback: string
+  },
   customerName?: string,
 ) {
   return React.useMemo(() => {
@@ -93,14 +116,14 @@ function useBreadcrumbs(
     }
 
     if (pathname === "/customers") {
-      return [{ label: "Khách hàng", href: "/customers" }]
+      return [{ label: labels.customers, href: "/customers" }]
     }
 
     if (pathname.startsWith("/customers/")) {
       return [
-        { label: "Khách hàng", href: "/customers" },
+        { label: labels.customers, href: "/customers" },
         {
-          label: customerName?.trim() || "Chi tiết khách hàng",
+          label: customerName?.trim() || labels.customerDetail,
           href: pathname,
         },
       ]
@@ -108,44 +131,57 @@ function useBreadcrumbs(
 
     if (pathname.startsWith("/tickets/input")) {
       return [
-        { label: "Vé máy bay", href: "/tickets/input" },
-        { label: "Nhập vé bằng AI", href: pathname },
+        { label: labels.tickets, href: "/tickets/input" },
+        { label: labels.aiTicketInput, href: pathname },
       ]
     }
 
     if (pathname.startsWith("/invoices")) {
       return [
-        { label: "Hóa đơn", href: "/invoices" },
-        { label: "Tài liệu tài chính", href: pathname },
+        { label: labels.invoices, href: "/invoices" },
+        { label: labels.financeDocuments, href: pathname },
       ]
     }
 
     if (pathname.startsWith("/quotes")) {
       return [
-        { label: "Báo giá", href: pathname },
-        { label: "Tài liệu tài chính", href: pathname },
+        { label: labels.quotes, href: pathname },
+        { label: labels.financeDocuments, href: pathname },
       ]
     }
 
     if (pathname.startsWith("/settings")) {
-      return [{ label: "Thiết lập", href: pathname }]
+      return [{ label: labels.settings, href: pathname }]
     }
 
-    return [{ label: "Bay Buddy", href: pathname }]
-  }, [customerName, homeLabel, pathname])
+    if (pathname.startsWith("/data_center")) {
+      return [{ label: labels.dataCenter, href: pathname }]
+    }
+
+    return [{ label: labels.fallback, href: pathname }]
+  }, [customerName, homeLabel, labels, pathname])
 }
 
 function ShellNavigation({
+  currentUserRole,
   pathname,
   onNavigate,
 }: {
+  currentUserRole?: string
   pathname: string
   onNavigate?: () => void
 }) {
+  const t = useI18n()
+
   return (
     <nav className="space-y-2">
       {navItems.map((item) => {
+        if (item.adminOnly && currentUserRole !== "ADMIN") {
+          return null
+        }
+
         const Icon = item.icon
+        const label = t(`appShell.nav.${item.labelKey}`)
         const isActive =
           !item.disabled &&
           (pathname === item.href ||
@@ -167,10 +203,10 @@ function ShellNavigation({
             >
               <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
             </div>
-            <span className="flex-1 text-left">{item.label}</span>
+            <span className="flex-1 text-left">{label}</span>
             {item.disabled ? (
               <span className="rounded-full border border-border bg-white px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#75839a]">
-                Sắp có
+                {t("appShell.comingSoon")}
               </span>
             ) : null}
           </>
@@ -178,7 +214,7 @@ function ShellNavigation({
 
         if (item.disabled) {
           return (
-            <div aria-disabled="true" className={itemClasses} key={item.label}>
+            <div aria-disabled="true" className={itemClasses} key={item.labelKey}>
               {content}
             </div>
           )
@@ -250,6 +286,21 @@ export function AppShell({ children }: AppShellProps) {
   const breadcrumbs = useBreadcrumbs(
     pathname,
     t("appShell.home"),
+    React.useMemo(
+      () => ({
+        aiTicketInput: t("appShell.breadcrumbs.aiTicketInput"),
+        customerDetail: t("appShell.breadcrumbs.customerDetail"),
+        customers: t("appShell.nav.customers"),
+        dataCenter: t("appShell.nav.dataCenter"),
+        fallback: t("appShell.breadcrumbs.fallback"),
+        financeDocuments: t("appShell.breadcrumbs.financeDocuments"),
+        invoices: t("appShell.nav.invoices"),
+        quotes: t("appShell.breadcrumbs.quotes"),
+        settings: t("appShell.nav.settings"),
+        tickets: t("appShell.breadcrumbs.tickets"),
+      }),
+      [t],
+    ),
     customerQuery.data?.name,
   )
   const userName = userQuery.data?.username ?? "Staff"
@@ -291,7 +342,11 @@ export function AppShell({ children }: AppShellProps) {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto py-4">
-            <ShellNavigation onNavigate={() => setIsSidebarOpen(false)} pathname={pathname} />
+            <ShellNavigation
+              currentUserRole={userQuery.data?.role}
+              onNavigate={() => setIsSidebarOpen(false)}
+              pathname={pathname}
+            />
           </div>
           <div className="border-t border-border px-2 pt-4">
             <p className="text-sm font-medium text-foreground">{userName}</p>
@@ -342,6 +397,7 @@ export function AppShell({ children }: AppShellProps) {
                   </SheetHeader>
                   <div className="flex-1 overflow-y-auto px-4 py-5">
                     <ShellNavigation
+                      currentUserRole={userQuery.data?.role}
                       onNavigate={() => setIsSidebarOpen(false)}
                       pathname={pathname}
                     />
@@ -374,10 +430,6 @@ export function AppShell({ children }: AppShellProps) {
                 ))}
               </nav>
             </div>
-
-            <Button className="hidden md:inline-flex" size="sm" type="button" variant="outline">
-              Tìm nhanh
-            </Button>
 
             <details className="group relative">
               <summary className="flex cursor-pointer list-none items-center gap-3 rounded-[16px] border border-border bg-white px-3 py-2 shadow-[var(--shadow-sm)] transition-all duration-200 hover:border-primary/20">

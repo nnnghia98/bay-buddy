@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, status
 from sqlmodel import select
@@ -13,11 +14,12 @@ from models.customer import (
     CustomerRead,
     CustomerUpdate,
 )
-from models.enums import UserRole
+from models.enums import UserRole, get_transaction_balance_delta
 from models.invoice import Invoice
 from models.quote import Quote
 from models.ticket import Ticket
 from models.transaction import Transaction
+from services.system_settings_service import get_app_base_datetime
 from services.finance_service import (
     RecordPaymentPayload,
     get_customer_ledger,
@@ -25,6 +27,29 @@ from services.finance_service import (
 )
 
 router = APIRouter()
+
+
+def _calculate_customer_active_balance(
+    *,
+    session: SessionDep,
+    customer_id: uuid.UUID,
+    base_datetime: datetime,
+) -> float:
+    transactions = session.exec(
+        select(Transaction).where(
+            Transaction.customer_id == customer_id,
+            Transaction.occurred_at >= base_datetime,
+        )
+    ).all()
+    return sum(
+        get_transaction_balance_delta(
+            amount=transaction.amount,
+            transaction_category=transaction.category,
+            transaction_type=transaction.type,
+            linked_ticket_id=transaction.linked_ticket_id,
+        )
+        for transaction in transactions
+    )
 
 @router.post("/", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def create_customer(
@@ -44,6 +69,8 @@ async def list_customers(
     session: SessionDep, current_user: CurrentUserDep, skip: int = 0, limit: int = 100
 ):
     """List all customers for the directory page."""
+    del current_user
+    base_datetime = get_app_base_datetime(session=session)
     statement = select(Customer).order_by(Customer.name).offset(skip).limit(limit)
     customers = session.exec(statement).all()
     customer_directory = [
@@ -51,7 +78,15 @@ async def list_customers(
             id=customer.id,
             full_name=customer.name,
             phone=customer.phone,
-            current_balance=customer.balance,
+            current_balance=(
+                _calculate_customer_active_balance(
+                    session=session,
+                    customer_id=customer.id,
+                    base_datetime=base_datetime,
+                )
+                if base_datetime is not None
+                else customer.balance
+            ),
             is_active=customer.is_active,
         ).model_dump(mode="json")
         for customer in customers

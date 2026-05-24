@@ -11,6 +11,190 @@ export default {
   },
   appShell: {
     home: "Trang chủ",
+    comingSoon: "Sắp có",
+    quickSearch: "Tìm nhanh",
+    nav: {
+      tickets: "Nhập vé",
+      customers: "Khách hàng",
+      invoices: "Hóa đơn",
+      reports: "Báo cáo",
+      settings: "Thiết lập",
+      dataCenter: "Trung tâm dữ liệu",
+    },
+    breadcrumbs: {
+      aiTicketInput: "Nhập vé",
+      customerDetail: "Chi tiết khách hàng",
+      fallback: "Bay Buddy",
+      financeDocuments: "Tài liệu tài chính",
+      quotes: "Báo giá",
+      tickets: "Vé máy bay",
+    },
+  },
+  dataCenter: {
+    eyebrow: "Quản trị dữ liệu",
+    title: "Trung tâm dữ liệu",
+    description:
+      "Màn hình chỉ dành cho quản trị viên để sao lưu CSV theo phạm vi, xem dữ liệu đang chọn và đặt lại dữ liệu sau xác nhận.",
+    reviewOnly: "Thao tác admin",
+    connectLater: "Chưa kết nối",
+    restricted: {
+      title: "Bạn không có quyền truy cập trung tâm dữ liệu.",
+      description:
+        "Khu vực này chỉ dành cho quản trị viên vì các thao tác dữ liệu có thể ảnh hưởng toàn bộ hệ thống.",
+    },
+    metrics: {
+      scope: "Phạm vi",
+      tables: "Bảng dữ liệu",
+      selectedTables: "{count}/{total} bảng",
+      backup: "Sao lưu",
+      backupValue: "CSV từng bảng",
+      access: "Quyền truy cập",
+      accessValue: "ADMIN",
+    },
+    baseDateTime: {
+      eyebrow: "Mốc dữ liệu ứng dụng",
+      description:
+        "Mốc này là thời điểm bắt đầu dữ liệu đang hoạt động của toàn bộ ứng dụng.",
+      label: "Mốc ngày giờ cơ sở",
+      clear: "Tắt mốc",
+      save: "Lưu mốc",
+      saving: "Đang lưu...",
+      hint:
+        "Các truy vấn và thao tác ghi thông thường chỉ tính dữ liệu từ mốc này trở đi. Dữ liệu cũ hơn vẫn còn trong CSDL nhưng được xem là đã vô hiệu hóa.",
+      loadFailure: "Không thể tải mốc dữ liệu ứng dụng.",
+      saveSuccess: "Đã cập nhật mốc dữ liệu ứng dụng.",
+      saveFailure: "Không thể cập nhật mốc dữ liệu ứng dụng.",
+    },
+    range: {
+      eyebrow: "Phạm vi thời gian",
+      fromLabel: "Từ ngày giờ",
+      toLabel: "Đến ngày giờ",
+      fromShort: "Từ",
+      toShort: "Đến",
+      fromAll: "Từ đầu",
+      toAll: "Đến hiện tại",
+      allValue: "ALL",
+      reset: "Đặt về ALL",
+      hint:
+        "Phạm vi này sẽ áp dụng cho sao lưu CSV và đặt lại dữ liệu. Nếu không chọn từ ngày hoặc đến ngày, thao tác mặc định là ALL.",
+    },
+    preview: {
+      eyebrow: "Dữ liệu đang chọn",
+      description:
+        "Bảng này cho quản trị viên thấy phạm vi dữ liệu sẽ được sao lưu hoặc xóa theo mốc thời gian đã chọn.",
+      pendingCount: "Chờ truy vấn",
+      backupIntent: "Sao lưu",
+      wipeIntent: "Có thể xóa",
+      queryAction: "Truy vấn dữ liệu",
+      queryPending: "Đang truy vấn...",
+      querySuccess: "Đã truy vấn dữ liệu theo phạm vi đã chọn.",
+      queryFailure: "Không thể truy vấn dữ liệu lúc này.",
+      selectedCount: "{count}/{total} bảng đã chọn",
+      selectionHint:
+        "Chọn những bảng được phép sao lưu hoặc xóa. Bảng không chọn sẽ không được gửi vào thao tác.",
+      selectAll: "Chọn tất cả",
+      clearSelection: "Bỏ chọn",
+      notSelected: "Không chọn",
+      selectTableAria: "Chọn bảng {table}",
+      hint:
+        "Hãy truy vấn phạm vi hiện tại trước khi sao lưu hoặc xóa để xác nhận các bản ghi đang chọn.",
+      columns: {
+        select: "Chọn",
+        table: "Bảng",
+        scope: "Phạm vi áp dụng",
+        records: "Số bản ghi",
+        intent: "Mục đích",
+      },
+    },
+    actions: {
+      missingAuth: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      backupAction: "Tải bản sao lưu",
+      backupPending: "Đang sao lưu...",
+      backupSuccess: "Đã tạo bản sao lưu CSV.",
+      backupFailure: "Không thể tạo bản sao lưu lúc này.",
+      wipeAction: "Xóa dữ liệu đã chọn",
+      wipePending: "Đang xóa...",
+      wipeSuccess: "Đã xóa {count} bản ghi.",
+      wipeFailure: "Không thể xóa dữ liệu lúc này.",
+      noTableSelected: "Vui lòng chọn ít nhất một bảng dữ liệu.",
+    },
+    operations: {
+      backup: {
+        title: "Sao lưu dữ liệu",
+        description: "Xuất từng bảng thành CSV để kiểm tra, lưu trữ hoặc đối soát nội bộ.",
+      },
+      add: {
+        title: "Nhập thêm dữ liệu",
+        description: "Chuẩn bị luồng nhập CSV có kiểm tra trước khi ghi vào hệ thống.",
+      },
+      remove: {
+        title: "Xóa bản ghi",
+        description: "Xóa có chọn lọc theo bảng và mã bản ghi, dành cho xử lý dữ liệu sai.",
+      },
+      wipe: {
+        title: "Đặt lại CSDL",
+        description: "Luồng nguy hiểm để xóa toàn bộ dữ liệu vận hành sau xác nhận rõ ràng.",
+      },
+    },
+    tables: {
+      eyebrow: "Bảng dữ liệu",
+      meta: "CSV từng bảng",
+      csvReady: "CSV",
+      download: "Tải CSV",
+      columns: {
+        table: "Bảng",
+        csv: "Tệp xuất",
+        mode: "Định dạng",
+        action: "Thao tác",
+      },
+      items: {
+        customers: {
+          label: "Khách hàng",
+          description: "Thông tin khách, công nợ hiện tại và hồ sơ xuất hóa đơn.",
+          file: "customers.csv",
+        },
+        tickets: {
+          label: "Vé",
+          description: "PNR, số vé, hành trình, giá bán và trạng thái ghi nhận.",
+          file: "tickets.csv",
+        },
+        transactions: {
+          label: "Giao dịch",
+          description: "Thanh toán, phụ thu, chiết khấu, hoàn tiền và audit trail.",
+          file: "transactions.csv",
+        },
+        invoices: {
+          label: "Hóa đơn",
+          description: "Ảnh chụp hóa đơn, trạng thái phát hành và tổng tiền.",
+          file: "invoices.csv",
+        },
+        quotes: {
+          label: "Báo giá",
+          description: "Tài liệu báo giá informational và trạng thái chuyển đổi.",
+          file: "quotes.csv",
+        },
+        users: {
+          label: "Tài khoản",
+          description: "Tài khoản nội bộ, vai trò và trạng thái hoạt động.",
+          file: "users.csv",
+        },
+      },
+    },
+    danger: {
+      eyebrow: "Vùng nguy hiểm",
+      locked: "Cần xác nhận",
+      title: "Đặt lại toàn bộ dữ liệu",
+      description:
+        "Nút đặt lại chỉ mở khóa khi quản trị viên nhập đúng cụm xác nhận. Nếu không chọn phạm vi thời gian, thao tác sẽ áp dụng cho ALL.",
+      confirmLabel: "Nhập WIPE DATABASE để mở khóa",
+      confirmHint: "Cụm xác nhận phân biệt chữ hoa, chữ thường.",
+      disabledAction: "Chưa mở khóa",
+      confirmedAction: "Đặt lại dữ liệu",
+      scopeLabel: "Phạm vi xóa",
+      tablesLabel: "Bảng xóa",
+      importNote:
+        "Luồng nhập dữ liệu sẽ dùng CSV theo từng bảng và cần bước xem trước lỗi trước khi ghi thật.",
+    },
   },
   settings: {
     eyebrow: "Thiết lập hệ thống",
@@ -114,56 +298,10 @@ export default {
       unavailableTitle: "Chưa tải được tổng quan tài chính",
       unavailableDescription:
         "Không thể đọc dữ liệu khách hàng hoặc vé lúc này. Vui lòng thử lại sau khi kết nối API ổn định.",
-      snapshot: {
-        label: "Cập nhật lúc",
-        sourceLabel: "Nguồn dữ liệu",
-        sourceValue: "Sổ công nợ + vé đã xác nhận",
-      },
       commandCenter: {
         title: "Trung tâm vận hành hôm nay",
         description:
           "Theo dõi công nợ, vé, thanh toán và các việc cần xử lý tiếp theo.",
-        needsAction: {
-          eyebrow: "Cần xử lý",
-          title: "Hàng đợi công việc",
-          description:
-            "Các nhóm việc có tác động trực tiếp đến công nợ và vận hành.",
-        },
-        queues: {
-          receivables: {
-            label: "Khách còn nợ",
-            description: "Ưu tiên nhắc thanh toán hoặc đối soát.",
-          },
-          heldCredit: {
-            label: "Tiền dư / đặt cọc",
-            description: "Theo dõi số dư âm cần giữ hoặc hoàn lại.",
-          },
-          draftTickets: {
-            label: "Vé nháp",
-            description: "Hoàn tất xác nhận để ghi nhận công nợ.",
-          },
-        },
-        queueAmounts: {
-          receivables: "Số dư phải thu",
-          heldCredit: "Số tiền đang giữ",
-          draftTickets: "Giá trị vé nháp",
-        },
-        shortcuts: {
-          eyebrow: "Thao tác nhanh",
-          title: "Mở luồng làm việc",
-          customers: {
-            label: "Mở khách hàng",
-            description: "Tìm khách và kiểm tra sổ công nợ.",
-          },
-          tickets: {
-            label: "Nhập vé",
-            description: "Tải chứng từ và trích xuất bằng AI.",
-          },
-          invoices: {
-            label: "Hóa đơn",
-            description: "Xem tài liệu tài chính theo khách hàng.",
-          },
-        },
         recent: {
           eyebrow: "Mới nhất",
           title: "Hoạt động gần đây",
@@ -195,9 +333,6 @@ export default {
           detail: "vé đã xác nhận trong hệ thống.",
           show: "Hiện doanh thu",
           hide: "Ẩn doanh thu",
-          cutoffLabel: "Tính doanh thu từ ngày",
-          applyCutoff: "Áp dụng mốc",
-          cutoffHint: "Chỉ tính doanh thu từ mốc thời gian đã chọn đến hiện tại.",
         },
         profit: {
           label: "Lợi nhuận ròng",

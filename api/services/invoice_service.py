@@ -28,6 +28,10 @@ from models.quote import Quote, QuoteConvertResponse, QuoteRead
 from models.quote_item import QuoteItem
 from models.ticket import Ticket
 from models.transaction import Transaction
+from services.system_settings_service import (
+    apply_app_base_datetime,
+    ensure_datetime_is_active,
+)
 
 
 def _normalize_money(value: float) -> float:
@@ -171,6 +175,12 @@ def _get_tickets_by_ids(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Selected tickets must belong to the same customer.",
         )
+    for ticket in tickets:
+        ensure_datetime_is_active(
+            session=session,
+            value=ticket.flight_date,
+            detail="Selected ticket is before the app base date time.",
+        )
     return tickets
 
 
@@ -296,6 +306,11 @@ def list_invoices(*, session: Session, filters: InvoiceListFilters) -> list[Invo
         statement = statement.where(Invoice.created_at >= filters.date_from)
     if filters.date_to is not None:
         statement = statement.where(Invoice.created_at <= filters.date_to)
+    statement = apply_app_base_datetime(
+        session=session,
+        statement=statement,
+        column=Invoice.created_at,
+    )
 
     invoices = session.exec(
         statement.order_by(Invoice.created_at.desc(), Invoice.invoice_number.desc())

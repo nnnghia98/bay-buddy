@@ -53,6 +53,7 @@ from .invoice import (
 from .invoice_item import InvoiceItem, InvoiceItemCreate, InvoiceItemRead
 from .quote import Quote, QuoteConvertResponse, QuoteCreate, QuoteDetail, QuoteRead
 from .quote_item import QuoteItem, QuoteItemRead
+from .system_setting import SystemSetting, SystemSettingRead, SystemSettingUpdate
 from .transaction import Transaction, TransactionCreate, TransactionRead, TransactionUpdate
 
 # Expose SQLModel.metadata so Alembic's env.py can do:
@@ -116,4 +117,8 @@ __all__ = [
     "TransactionCreate",
     "TransactionRead",
     "TransactionUpdate",
+    # SystemSetting
+    "SystemSetting",
+    "SystemSettingRead",
+    "SystemSettingUpdate",
 ]

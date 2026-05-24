@@ -203,6 +203,25 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+input[type="date"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="time"] {
+  position: relative;
+  padding-right: 3rem;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  margin: 0;
+  transform: translateY(-50%);
+}
+
 ::selection {
   background: rgba(27, 97, 201, 0.16);
   color: var(--foreground);

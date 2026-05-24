@@ -35,6 +35,10 @@ from services.ticket_service import (
     refund_confirmed_ticket,
     void_confirmed_ticket,
 )
+from services.system_settings_service import (
+    apply_app_base_datetime,
+    ensure_datetime_is_active,
+)
 
 router = APIRouter()
 
@@ -72,6 +76,11 @@ async def confirm_ticket(
     5. Increment customer.balance by selling_price.
     """
     require_user_roles(current_user, UserRole.ADMIN, UserRole.STAFF)
+    ensure_datetime_is_active(
+        session=session,
+        value=payload.flight_date,
+        detail="Ticket flight date is before the app base date time.",
+    )
     result: TicketConfirmResponse = create_ticket_with_transaction(
         payload=payload,
         session=session,
@@ -123,7 +132,12 @@ async def list_tickets(
     session: SessionDep, current_user: CurrentUserDep, skip: int = 0, limit: int = 100
 ):
     """List all tickets (paginated)."""
-    statement = select(Ticket).offset(skip).limit(limit)
+    del current_user
+    statement = apply_app_base_datetime(
+        session=session,
+        statement=select(Ticket),
+        column=Ticket.flight_date,
+    ).offset(skip).limit(limit)
     tickets = session.exec(statement).all()
     tickets_data = [TicketRead.model_validate(t).model_dump() for t in tickets]
     return success_response(tickets_data)

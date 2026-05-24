@@ -10,6 +10,10 @@ from models.customer import Customer
 from models.enums import get_transaction_balance_delta
 from models.ticket import Ticket
 from models.transaction import Transaction, TransactionCreate, TransactionRead
+from services.system_settings_service import (
+    apply_app_base_datetime,
+    ensure_datetime_is_active,
+)
 
 router = APIRouter()
 
@@ -26,6 +30,11 @@ async def create_transaction(
     The signed debt impact is derived from `category`.
     """
     # Verify customer exists
+    ensure_datetime_is_active(
+        session=session,
+        value=transaction_in.occurred_at,
+        detail="Transaction date time is before the app base date time.",
+    )
     customer = session.get(Customer, transaction_in.customer_id)
     if not customer:
         raise HTTPException(
@@ -44,6 +53,11 @@ async def create_transaction(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Linked ticket does not belong to the customer",
             )
+        ensure_datetime_is_active(
+            session=session,
+            value=linked_ticket.flight_date,
+            detail="Linked ticket is before the app base date time.",
+        )
 
     # Create transaction
     db_transaction = Transaction.model_validate(
@@ -78,12 +92,13 @@ async def list_transactions(
     session: SessionDep, current_user: CurrentUserDep, skip: int = 0, limit: int = 100
 ):
     """List all transactions."""
-    statement = (
-        select(Transaction)
-        .order_by(Transaction.occurred_at, Transaction.created_at, Transaction.id)
-        .offset(skip)
-        .limit(limit)
-    )
+    del current_user
+    statement = apply_app_base_datetime(
+        session=session,
+        statement=select(Transaction),
+        column=Transaction.occurred_at,
+    ).order_by(Transaction.occurred_at, Transaction.created_at, Transaction.id)
+    statement = statement.offset(skip).limit(limit)
     transactions = session.exec(statement).all()
     tx_data = [TransactionRead.model_validate(tx).model_dump() for tx in transactions]
     return success_response(tx_data)

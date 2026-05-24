@@ -58,6 +58,7 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 - **Components**: Use Functional Components and Server Components by default.
 - **UI**: Shadcn UI is the primary component library. Maintain a minimalist and clean aesthetic.
 - **App Shell Navigation**: Treat `/` as the real homepage. Do not duplicate it as a separate left-sidebar destination when the logo already serves as the home entry point. The homepage breadcrumb label must be locale-aware (`Trang chủ` in `vi`, `Home` in `en`).
+- **App Shell Utilities**: Do not show placeholder shell utilities such as quick search unless the feature is fully implemented and interactive. The authenticated header should stay focused on breadcrumbs and the user menu.
 - **Data Fetching**: Prefer React Server Components (RSC) for read operations and initial data loading in App Router.
 - **Mutations**: Use Server Actions for all data mutations, especially creating payments and updating tickets.
 - **Forms**: For App Router forms, prefer `useActionState` / `useFormState` over client-only mutation handlers.

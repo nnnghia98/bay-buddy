@@ -590,7 +590,7 @@ export default function CaptureTicketPage() {
                   ) : (
                     <>
                       <Wand2 className="mr-2 h-4 w-4" />
-                      Trích xuất bằng AI
+                      Nhập vé
                     </>
                   )}
                 </Button>

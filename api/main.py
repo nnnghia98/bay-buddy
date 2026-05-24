@@ -88,16 +88,27 @@ async def on_startup() -> None:
 # Uncomment each line as the corresponding router is implemented.
 # ---------------------------------------------------------------------------
 
-from routes import auth, ai
+from routes import (
+    ai,
+    auth,
+    customers,
+    data_center,
+    finance,
+    settings,
+    tickets,
+    transactions,
+    users,
+)
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(ai.router, prefix="/api/v1/ai", tags=["AI"])
-from routes import customers, finance, tickets, transactions, users
 app.include_router(users.router,        prefix="/api/v1/users",        tags=["Users"])
 app.include_router(customers.router,    prefix="/api/v1/customers",    tags=["Customers"])
 app.include_router(tickets.router,      prefix="/api/v1/tickets",      tags=["Tickets"])
 app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Transactions"])
 app.include_router(finance.router,      prefix="/api/v1/finance",      tags=["Finance"])
+app.include_router(data_center.router,  prefix="/api/v1/data-center",  tags=["Data Center"])
+app.include_router(settings.router,     prefix="/api/v1/settings",     tags=["Settings"])
 
 # ---------------------------------------------------------------------------
 # Health check

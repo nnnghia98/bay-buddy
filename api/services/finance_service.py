@@ -28,6 +28,11 @@ from models.enums import (
 )
 from models.ticket import Ticket
 from models.transaction import Transaction, TransactionRead
+from services.system_settings_service import (
+    apply_app_base_datetime,
+    ensure_datetime_is_active,
+    get_app_base_datetime,
+)
 
 
 class LedgerEntry(BaseModel):
@@ -119,6 +124,12 @@ def _validate_linked_ticket(
             detail="Linked ticket does not belong to the customer",
         )
 
+    ensure_datetime_is_active(
+        session=session,
+        value=linked_ticket.flight_date,
+        detail="Linked ticket is before the app base date time.",
+    )
+
 
 def get_balance_state(balance: float) -> Literal["debt", "settled", "credit"]:
     """Return a UI-friendly state for the current customer balance."""
@@ -138,18 +149,27 @@ def get_customer_ledger(
     """Return the customer's tickets and transactions in chronological order."""
     customer = _get_customer_or_404(session, customer_id)
 
-    tickets = session.exec(
-        select(Ticket)
-        .where(
-            Ticket.customer_id == customer_id,
-            Ticket.status == TicketStatus.CONFIRMED,
-        )
-        .order_by(Ticket.id)
-    ).all()
+    ticket_statement = select(Ticket).where(
+        Ticket.customer_id == customer_id,
+        Ticket.status == TicketStatus.CONFIRMED,
+    )
+    ticket_statement = apply_app_base_datetime(
+        session=session,
+        statement=ticket_statement,
+        column=Ticket.flight_date,
+    )
+    tickets = session.exec(ticket_statement.order_by(Ticket.id)).all()
+
+    transaction_statement = select(Transaction).where(
+        Transaction.customer_id == customer_id,
+    )
+    transaction_statement = apply_app_base_datetime(
+        session=session,
+        statement=transaction_statement,
+        column=Transaction.occurred_at,
+    )
     transactions = session.exec(
-        select(Transaction)
-        .where(Transaction.customer_id == customer_id)
-        .order_by(Transaction.created_at, Transaction.id)
+        transaction_statement.order_by(Transaction.created_at, Transaction.id)
     ).all()
 
     entries: list[LedgerEntry] = []
@@ -213,7 +233,11 @@ def get_customer_ledger(
         running_balance += entry.amount
         entry.running_balance = running_balance
 
-    current_balance = running_balance if entries else customer.balance
+    current_balance = (
+        running_balance
+        if entries or get_app_base_datetime(session=session) is not None
+        else customer.balance
+    )
     return CustomerLedgerResponse(
         customer=CustomerRead.model_validate(customer),
         current_balance=current_balance,
@@ -255,6 +279,11 @@ def record_payment(
         customer_id=customer_id,
         linked_ticket_id=linked_ticket_id,
         created_by=actor_user_id,
+    )
+    ensure_datetime_is_active(
+        session=session,
+        value=payment.occurred_at,
+        detail="Payment date time is before the app base date time.",
     )
 
     try:

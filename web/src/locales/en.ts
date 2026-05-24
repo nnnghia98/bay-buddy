@@ -11,6 +11,190 @@ export default {
   },
   appShell: {
     home: "Home",
+    comingSoon: "Soon",
+    quickSearch: "Quick search",
+    nav: {
+      tickets: "Tickets",
+      customers: "Customers",
+      invoices: "Invoices",
+      reports: "Reports",
+      settings: "Settings",
+      dataCenter: "Data center",
+    },
+    breadcrumbs: {
+      aiTicketInput: "Ticket input",
+      customerDetail: "Customer detail",
+      fallback: "Bay Buddy",
+      financeDocuments: "Financial documents",
+      quotes: "Quotes",
+      tickets: "Flight tickets",
+    },
+  },
+  dataCenter: {
+    eyebrow: "Data administration",
+    title: "Data center",
+    description:
+      "An admin-only screen for scoped CSV backups, selected data review, and confirmed database reset.",
+    reviewOnly: "Admin action",
+    connectLater: "Not connected",
+    restricted: {
+      title: "You do not have permission to access the data center.",
+      description:
+        "This area is reserved for administrators because data operations can affect the whole system.",
+    },
+    metrics: {
+      scope: "Scope",
+      tables: "Data tables",
+      selectedTables: "{count}/{total} tables",
+      backup: "Backup",
+      backupValue: "CSV per table",
+      access: "Access",
+      accessValue: "ADMIN",
+    },
+    baseDateTime: {
+      eyebrow: "App data base date",
+      description:
+        "This is the operational start date and time for active data across the whole app.",
+      label: "Base date and time",
+      clear: "Disable base date",
+      save: "Save base date",
+      saving: "Saving...",
+      hint:
+        "Normal queries and write actions only count data from this moment onward. Older rows stay in the database but are treated as disabled history.",
+      loadFailure: "Unable to load the app base date time.",
+      saveSuccess: "App base date time has been updated.",
+      saveFailure: "Unable to update the app base date time.",
+    },
+    range: {
+      eyebrow: "Date/time scope",
+      fromLabel: "From date and time",
+      toLabel: "To date and time",
+      fromShort: "From",
+      toShort: "To",
+      fromAll: "From start",
+      toAll: "To now",
+      allValue: "ALL",
+      reset: "Reset to ALL",
+      hint:
+        "This scope will apply to CSV backup and data reset. If neither from nor to is selected, the default action is ALL.",
+    },
+    preview: {
+      eyebrow: "Selected data",
+      description:
+        "This table shows administrators which data scope will be backed up or deleted based on the selected date/time range.",
+      pendingCount: "Query pending",
+      backupIntent: "Back up",
+      wipeIntent: "Can wipe",
+      queryAction: "Query data",
+      queryPending: "Querying...",
+      querySuccess: "Selected data has been queried.",
+      queryFailure: "Unable to query selected data right now.",
+      selectedCount: "{count}/{total} tables selected",
+      selectionHint:
+        "Select which tables are allowed for backup or wipe. Unselected tables are not sent to the action.",
+      selectAll: "Select all",
+      clearSelection: "Clear selection",
+      notSelected: "Not selected",
+      selectTableAria: "Select {table} table",
+      hint:
+        "Query the current scope before backup or wipe to confirm the selected records.",
+      columns: {
+        select: "Select",
+        table: "Table",
+        scope: "Applied scope",
+        records: "Records",
+        intent: "Intent",
+      },
+    },
+    actions: {
+      missingAuth: "Your session has expired. Please sign in again.",
+      backupAction: "Download backup",
+      backupPending: "Backing up...",
+      backupSuccess: "CSV backup has been created.",
+      backupFailure: "Unable to create the backup right now.",
+      wipeAction: "Delete selected data",
+      wipePending: "Deleting...",
+      wipeSuccess: "Deleted {count} records.",
+      wipeFailure: "Unable to delete data right now.",
+      noTableSelected: "Select at least one data table.",
+    },
+    operations: {
+      backup: {
+        title: "Back up data",
+        description: "Export each table as CSV for review, retention, or internal reconciliation.",
+      },
+      add: {
+        title: "Add data",
+        description: "Prepare CSV import with validation before anything is written to the system.",
+      },
+      remove: {
+        title: "Remove records",
+        description: "Delete selected rows by table and record id for correcting bad data.",
+      },
+      wipe: {
+        title: "Reset database",
+        description: "Dangerous flow for clearing all operating data after explicit confirmation.",
+      },
+    },
+    tables: {
+      eyebrow: "Data tables",
+      meta: "CSV per table",
+      csvReady: "CSV",
+      download: "Download CSV",
+      columns: {
+        table: "Table",
+        csv: "Export file",
+        mode: "Format",
+        action: "Action",
+      },
+      items: {
+        customers: {
+          label: "Customers",
+          description: "Customer profiles, current balances, and invoice profile data.",
+          file: "customers.csv",
+        },
+        tickets: {
+          label: "Tickets",
+          description: "PNR, ticket numbers, route data, selling prices, and record status.",
+          file: "tickets.csv",
+        },
+        transactions: {
+          label: "Transactions",
+          description: "Payments, fees, discounts, refunds, and audit trail fields.",
+          file: "transactions.csv",
+        },
+        invoices: {
+          label: "Invoices",
+          description: "Invoice snapshots, issue status, and document totals.",
+          file: "invoices.csv",
+        },
+        quotes: {
+          label: "Quotes",
+          description: "Informational quote documents and conversion status.",
+          file: "quotes.csv",
+        },
+        users: {
+          label: "Users",
+          description: "Internal accounts, roles, and active status.",
+          file: "users.csv",
+        },
+      },
+    },
+    danger: {
+      eyebrow: "Danger zone",
+      locked: "Confirmation required",
+      title: "Reset all data",
+      description:
+        "The reset button unlocks only after an administrator enters the exact confirmation phrase. If no date range is selected, the action applies to ALL data.",
+      confirmLabel: "Type WIPE DATABASE to unlock",
+      confirmHint: "The confirmation phrase is case-sensitive.",
+      disabledAction: "Locked",
+      confirmedAction: "Reset data",
+      scopeLabel: "Wipe scope",
+      tablesLabel: "Wipe tables",
+      importNote:
+        "The import flow will use per-table CSV files and should include an error preview before writing real data.",
+    },
   },
   settings: {
     eyebrow: "System settings",
@@ -114,56 +298,10 @@ export default {
       unavailableTitle: "Financial overview unavailable",
       unavailableDescription:
         "We could not read customers or tickets right now. Please try again once the API is available.",
-      snapshot: {
-        label: "Updated at",
-        sourceLabel: "Data source",
-        sourceValue: "Ledger + confirmed tickets",
-      },
       commandCenter: {
         title: "Today command center",
         description:
           "Track receivables, tickets, payments, and the next work that needs attention.",
-        needsAction: {
-          eyebrow: "Needs action",
-          title: "Work queues",
-          description:
-            "Work groups that directly affect debt tracking and operations.",
-        },
-        queues: {
-          receivables: {
-            label: "Customers with debt",
-            description: "Prioritize payment follow-up or reconciliation.",
-          },
-          heldCredit: {
-            label: "Credit / deposit held",
-            description: "Track negative balances to hold or refund.",
-          },
-          draftTickets: {
-            label: "Draft tickets",
-            description: "Confirm tickets to create debt entries.",
-          },
-        },
-        queueAmounts: {
-          receivables: "Outstanding balance",
-          heldCredit: "Held amount",
-          draftTickets: "Draft ticket value",
-        },
-        shortcuts: {
-          eyebrow: "Quick actions",
-          title: "Open workflow",
-          customers: {
-            label: "Open customers",
-            description: "Find a customer and inspect their ledger.",
-          },
-          tickets: {
-            label: "Capture ticket",
-            description: "Upload a document and parse it with AI.",
-          },
-          invoices: {
-            label: "Invoices",
-            description: "Review financial documents by customer.",
-          },
-        },
         recent: {
           eyebrow: "Latest",
           title: "Recent activity",
@@ -195,9 +333,6 @@ export default {
           detail: "confirmed tickets in the system.",
           show: "Show revenue",
           hide: "Hide revenue",
-          cutoffLabel: "Revenue from date",
-          applyCutoff: "Apply cutoff",
-          cutoffHint: "Revenue includes records from the selected cutoff date to now.",
         },
         profit: {
           label: "Net profit",
