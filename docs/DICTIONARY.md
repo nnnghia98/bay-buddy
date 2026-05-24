@@ -7,6 +7,8 @@
 | Số vé | Ticket Number | `ticket_number` |
 | Giá gốc | Net Price | `net_price` |
 | Giá bán | Selling Price | `selling_price` |
+| Chiết khấu hãng | Airline Discount | `discount` |
+| Thu nhập thực | True Income | `true_income` |
 | Phí dịch vụ | Service Fee | `service_fee` |
 | Công nợ | Balance / Debt | `balance` |
 | Hành trình | Itinerary | `itinerary` |

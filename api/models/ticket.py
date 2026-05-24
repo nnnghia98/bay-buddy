@@ -2,10 +2,10 @@
 Ticket model – represents a booked flight ticket.
 
 Schema reference: docs/ARCHITECT.md § Model: Ticket
-Dictionary:       docs/DICTIONARY.md  (pnr, net_price, selling_price, itinerary)
+Dictionary:       docs/DICTIONARY.md  (pnr, net_price, selling_price, discount, true_income, itinerary)
 Agent output:     docs/AGENT_PARSER.md (fields produced by the AI extraction step)
 
-Profit per ticket = selling_price - net_price
+True income per ticket = selling_price + discount - net_price
 """
 
 import uuid
@@ -106,7 +106,11 @@ class TicketBase(SQLModel):
     discount: float = Field(
         default=0.0,
         ge=0,
-        description="Optional discount amount applied to the ticket in VND.",
+        description="Airline add-in / discount amount earned by the agency for this ticket in VND.",
+    )
+    true_income: float = Field(
+        default=0.0,
+        description="Actual ticket income: selling_price + discount - net_price.",
     )
 
     status: TicketStatus = Field(
@@ -155,6 +159,11 @@ class Ticket(TicketBase, table=True):
         """Phí dịch vụ – profit margin on this ticket."""
         return self.selling_price - self.net_price
 
+    @property
+    def computed_true_income(self) -> float:
+        """Thu nhập thực – selling price plus airline discount minus net price."""
+        return self.selling_price + self.discount - self.net_price
+
 
 # ---------------------------------------------------------------------------
 # Request / Response schemas
@@ -201,5 +210,6 @@ class TicketUpdate(SQLModel):
     )
     selling_price: Optional[float] = Field(default=None, ge=0)
     discount: Optional[float] = Field(default=None, ge=0)
+    true_income: Optional[float] = None
     status: Optional[TicketStatus] = None
     customer_id: Optional[uuid.UUID] = None

@@ -206,7 +206,7 @@ function buildActionQueues(input: {
       key: "draftTickets",
       count: draftTickets.length,
       amount: draftTicketAmount,
-      href: "/tickets/capture",
+      href: "/tickets/input",
       severity: getQueueSeverity(draftTicketAmount),
     },
   ]
@@ -326,7 +326,7 @@ export function buildFinancialSummarySnapshot(input: {
     0,
   )
   const totalNetProfit = confirmedTickets.reduce(
-    (sum, ticket) => sum + ticket.service_fee,
+    (sum, ticket) => sum + ticket.true_income,
     0,
   )
   const totalReceivables = input.customers.reduce((sum, customer) => {

@@ -11,6 +11,8 @@
  *   itinerary     → Hành trình  (e.g. "HAN-SGN")
  *   net_price     → Giá gốc     (cost paid to airline/supplier)
  *   selling_price → Giá bán     (price invoiced to customer)
+ *   discount      → Chiết khấu hãng (airline add-in earned by agency)
+ *   true_income   → Thu nhập thực (selling_price + discount - net_price)
  *   service_fee   → Phí dịch vụ (computed: selling_price - net_price)
  *
  * Agent parser output (docs/AGENT_PARSER.md) feeds directly into TicketCreateSchema.
@@ -81,6 +83,15 @@ const TicketBaseSchema = z.object({
     .number({ message: "Selling price (giá bán) is required." })
     .min(0, "Selling price (giá bán) must be ≥ 0."),
 
+  discount: z
+    .number({ message: "Airline discount (chiết khấu hãng) is required." })
+    .min(0, "Airline discount (chiết khấu hãng) must be ≥ 0.")
+    .default(0),
+
+  true_income: z.number({
+    message: "True income (thu nhập thực) is required.",
+  }),
+
   /** Lifecycle state of the ticket. Maps to Python: status */
   status: TicketStatusSchema.default("DRAFT"),
 
@@ -108,6 +119,13 @@ export const TicketCreateSchema = TicketBaseSchema.extend({
     message:
       "Selling price (giá bán) should be ≥ net price (giá gốc). Verify before saving.",
     path: ["selling_price"],
+  }
+).refine(
+  (data) => Math.abs(data.true_income - (data.selling_price + data.discount - data.net_price)) <= 1,
+  {
+    message:
+      "True income (thu nhập thực) must equal selling price + airline discount - net price.",
+    path: ["true_income"],
   }
 );
 
@@ -150,6 +168,8 @@ export const TicketUpdateSchema = z.object({
   flight_date: z.coerce.date().optional(),
   net_price: z.number().min(0).optional(),
   selling_price: z.number().min(0).optional(),
+  discount: z.number().min(0).optional(),
+  true_income: z.number().optional(),
   status: TicketStatusSchema.optional(),
   customer_id: z.string().uuid().optional(),
 });
@@ -165,3 +185,9 @@ export const computeServiceFee = (
   net_price: number,
   selling_price: number
 ): number => calculateServiceFee(net_price, selling_price);
+
+export const computeTrueIncome = (
+  net_price: number,
+  selling_price: number,
+  discount: number
+): number => selling_price + discount - net_price;

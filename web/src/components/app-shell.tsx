@@ -62,9 +62,9 @@ type NavItem = {
 }
 
 const navItems: NavItem[] = [
+  { label: "Nhập vé", href: "/tickets/input", icon: Ticket },
   { label: "Khách hàng", href: "/customers", icon: Users },
-  { label: "Hóa đơn", href: "/invoices", icon: FileText },
-  { label: "Nhập vé", href: "/tickets/capture", icon: Ticket },
+  { label: "Hóa đơn", href: "/invoices", icon: FileText, disabled: true },
   { label: "Báo cáo", href: "/reports", icon: FileText, disabled: true },
   { label: "Thiết lập", href: "/settings", icon: Settings },
 ]
@@ -106,9 +106,9 @@ function useBreadcrumbs(
       ]
     }
 
-    if (pathname.startsWith("/tickets/capture")) {
+    if (pathname.startsWith("/tickets/input")) {
       return [
-        { label: "Vé máy bay", href: "/tickets/capture" },
+        { label: "Vé máy bay", href: "/tickets/input" },
         { label: "Nhập vé bằng AI", href: pathname },
       ]
     }

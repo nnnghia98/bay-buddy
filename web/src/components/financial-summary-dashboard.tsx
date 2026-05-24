@@ -245,7 +245,7 @@ export function FinancialSummaryDashboard({
       description: t("dashboard.summary.commandCenter.shortcuts.customers.description"),
     },
     {
-      href: "/tickets/capture",
+      href: "/tickets/input",
       icon: Plane,
       label: t("dashboard.summary.commandCenter.shortcuts.tickets.label"),
       description: t("dashboard.summary.commandCenter.shortcuts.tickets.description"),

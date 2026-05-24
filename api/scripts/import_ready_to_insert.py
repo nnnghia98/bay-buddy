@@ -142,6 +142,7 @@ def run_import(input_path: Path) -> dict[str, int]:
                 selling_price = float(pricing["customer_paid_n"])
                 discount_raw = float(pricing["discount_m"])
                 discount = abs(discount_raw) if discount_raw < 0 else 0.0
+                true_income = selling_price + discount - net_price
 
                 ticket = Ticket(
                     pnr=(ticket_data.get("pnr") or "UNKNOWN")[:6].upper(),
@@ -159,6 +160,7 @@ def run_import(input_path: Path) -> dict[str, int]:
                     net_price=net_price,
                     selling_price=selling_price,
                     discount=discount,
+                    true_income=true_income,
                     status=TicketStatus.CONFIRMED,
                     customer_id=customer.id,
                 )

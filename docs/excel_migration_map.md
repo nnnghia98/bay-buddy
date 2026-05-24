@@ -17,8 +17,9 @@ These rows represent flight bookings and translate directly into the **`Ticket`*
 | **Ghế / số ghế** | `seat_code` | `Ticket` | Optional seat assignment code if future source files include it (e.g., `12A`). |
 | **Hành Trình Đi/Về** | `departure_place`, `arrival_place`, `departure_code`, `arrival_code`, `itinerary` | `Ticket` | Route data is now stored as explicit place/code pairs, while `itinerary` remains available as a derived compatibility/display field (e.g., `DAD-HAN`). |
 | **Giá Hệ Thống** | `net_price` | `Ticket` | Supplier/Airline cost. |
-| **Chiết Khấu** | `discount` | `Ticket` | Discount amount stored directly on the ticket row in VND. |
+| **Chiết Khấu** | `discount` | `Ticket` | Airline add-in / discount amount earned by the agency in VND. |
 | **Giá Thu** | `selling_price`| `Ticket` | Price sold to the customer (creates positive debt). |
+| **Thu Nhập Thực** | `true_income` | `Ticket` | Actual ticket income: `selling_price + discount - net_price`. |
 
 ---
 

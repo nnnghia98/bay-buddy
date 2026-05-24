@@ -46,7 +46,8 @@
 - `flight_date`: DateTime
 - `net_price`: Float (Supplier/Airline cost)
 - `selling_price`: Float (Price sold to Customer)
-- `discount`: Float (Optional discount amount applied to the ticket)
+- `discount`: Float (Airline add-in / discount amount earned by the agency)
+- `true_income`: Float (Actual ticket income: `selling_price + discount - net_price`)
 - `status`: Enum (DRAFT, CONFIRMED, VOID, REFUNDED)
 - `customer_id`: UUID (FK to Customer)
 

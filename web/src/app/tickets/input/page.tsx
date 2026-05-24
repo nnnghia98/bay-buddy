@@ -18,6 +18,8 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  Pencil,
+  Lock,
 } from "lucide-react";
 
 
@@ -43,6 +45,24 @@ const optionalTextField = z.preprocess((value) => {
   return trimmed.length > 0 ? trimmed : undefined;
 }, z.string().optional());
 
+const moneyField = z.preprocess(
+  (val) => Number(val),
+  z.number().min(0, "Giá trị phải lớn hơn hoặc bằng 0"),
+);
+
+const formatVndInput = (value: number): string =>
+  new Intl.NumberFormat("vi-VN", {
+    maximumFractionDigits: 0,
+  }).format(Number.isFinite(value) ? value : 0);
+
+const parseVndInput = (value: string, allowNegative = false): number => {
+  const isNegative = allowNegative && value.trim().startsWith("-");
+  const digits = value.replace(/\D/g, "");
+  const parsed = digits ? Number(digits) : 0;
+
+  return isNegative ? -parsed : parsed;
+};
+
 const ticketSchema = z.object({
   customerName: optionalTextField,
   pnr: optionalTextField,
@@ -57,11 +77,23 @@ const ticketSchema = z.object({
   departureCode: optionalTextField,
   arrivalCode: optionalTextField,
   route: optionalTextField,
-  totalPrice: z.preprocess(
-    (val) => Number(val),
-    z.number().min(0, "Giá trị phải lớn hơn hoặc bằng 0"),
-  ),
-});
+  totalPrice: moneyField,
+  sellingPrice: moneyField,
+  discount: moneyField,
+  trueIncome: z.preprocess((val) => Number(val), z.number()),
+}).refine(
+  (data) => data.sellingPrice >= data.totalPrice,
+  {
+    message: "Giá bán phải lớn hơn hoặc bằng giá gốc",
+    path: ["sellingPrice"],
+  },
+).refine(
+  (data) => Math.abs(data.trueIncome - (data.sellingPrice + data.discount - data.totalPrice)) <= 1,
+  {
+    message: "Thu nhập thực phải bằng Giá bán + Chiết khấu hãng - Giá gốc",
+    path: ["trueIncome"],
+  },
+);
 
 type TicketFormValues = {
   customerName?: string;
@@ -76,6 +108,9 @@ type TicketFormValues = {
   arrivalCode?: string;
   route?: string;
   totalPrice: number;
+  sellingPrice: number;
+  discount: number;
+  trueIncome: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -137,6 +172,10 @@ async function saveTicket(data: TicketFormValues) {
       ? new Date(data.flightDate).toISOString()
       : new Date().toISOString(),
     net_price: data.totalPrice,
+    service_fee: data.sellingPrice - data.totalPrice,
+    selling_price: data.sellingPrice,
+    discount: data.discount,
+    true_income: data.trueIncome,
   };
 
   return apiFetch("/tickets/confirm", {
@@ -156,6 +195,7 @@ export default function CaptureTicketPage() {
   const [file, setFile] = React.useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
+  const [isTrueIncomeEditable, setIsTrueIncomeEditable] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
@@ -180,6 +220,9 @@ export default function CaptureTicketPage() {
       arrivalCode: "",
       route: "",
       totalPrice: 0,
+      sellingPrice: 0,
+      discount: 0,
+      trueIncome: 0,
     },
   });
 
@@ -195,6 +238,22 @@ export default function CaptureTicketPage() {
     control: form.control,
     name: "arrivalCode",
   });
+  const watchedNetPrice = useWatch({
+    control: form.control,
+    name: "totalPrice",
+  });
+  const watchedSellingPrice = useWatch({
+    control: form.control,
+    name: "sellingPrice",
+  });
+  const watchedDiscount = useWatch({
+    control: form.control,
+    name: "discount",
+  });
+  const watchedTrueIncome = useWatch({
+    control: form.control,
+    name: "trueIncome",
+  });
 
   React.useEffect(() => {
     const normalizedDepartureCode = departureCode?.trim().toUpperCase();
@@ -208,6 +267,67 @@ export default function CaptureTicketPage() {
       shouldDirty: true,
     });
   }, [arrivalCode, departureCode, form]);
+
+  React.useEffect(() => {
+    if (isTrueIncomeEditable) {
+      return;
+    }
+
+    const netPrice = Number(watchedNetPrice) || 0;
+    const sellingPrice = Number(watchedSellingPrice) || 0;
+    const discount = Number(watchedDiscount) || 0;
+
+    form.setValue("trueIncome", sellingPrice + discount - netPrice, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [form, isTrueIncomeEditable, watchedDiscount, watchedNetPrice, watchedSellingPrice]);
+
+  const handleToggleTrueIncomeEdit = () => {
+    setIsTrueIncomeEditable((current) => {
+      if (current) {
+        const netPrice = Number(form.getValues("totalPrice")) || 0;
+        const sellingPrice = Number(form.getValues("sellingPrice")) || 0;
+        const discount = Number(form.getValues("discount")) || 0;
+
+        form.setValue("trueIncome", sellingPrice + discount - netPrice, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+
+      return !current;
+    });
+  };
+
+  const handleMoneyChange = (
+    field: "totalPrice" | "sellingPrice" | "discount",
+    value: string,
+  ) => {
+    form.setValue(field, parseVndInput(value), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
+  const handleTrueIncomeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isTrueIncomeEditable) {
+      return;
+    }
+
+    const trueIncome = parseVndInput(event.target.value, true);
+    const netPrice = Number(form.getValues("totalPrice")) || 0;
+    const discount = Number(form.getValues("discount")) || 0;
+
+    form.setValue("trueIncome", trueIncome, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.setValue("sellingPrice", trueIncome + netPrice - discount, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
 
   // ---------- File handling ----------
 
@@ -296,6 +416,9 @@ export default function CaptureTicketPage() {
       form.setValue("flightDate", dateStr);
 
       form.setValue("totalPrice", data.net_price);
+      form.setValue("sellingPrice", data.net_price);
+      form.setValue("discount", 0);
+      form.setValue("trueIncome", 0);
       replace(data.passengers.map((name) => ({ name })));
       
       toast.success("Đã trích xuất dữ liệu thành công. Vui lòng kiểm tra lại.");
@@ -503,38 +626,142 @@ export default function CaptureTicketPage() {
                 <CardTitle className="text-lg">Thông tin giao dịch</CardTitle>
                 <CardDescription>Khách hàng thanh toán và giá trị vé (công nợ sẽ được ghi nhận cho khách hàng này).</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="customerName" className="font-semibold text-foreground">Tên khách hàng</Label>
-                    <Input
-                      id="customerName"
-                      placeholder="Ví dụ: Nguyen Van A"
-                      className={cn(hasExtractedData && "border-primary/20 bg-primary/5")}
-                      {...form.register("customerName")}
-                    />
-                    {form.formState.errors.customerName && (
-                      <p className="text-xs text-red-500 font-medium">
-                        {form.formState.errors.customerName.message}
-                      </p>
-                    )}
+              <CardContent className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="customerName" className="text-sm font-semibold text-foreground">Tên khách hàng</Label>
+                  <Input
+                    id="customerName"
+                    placeholder="Ví dụ: Nguyen Van A"
+                    className={cn("h-11", hasExtractedData && "border-primary/20 bg-primary/5")}
+                    {...form.register("customerName")}
+                  />
+                  {form.formState.errors.customerName && (
+                    <p className="text-xs text-red-500 font-medium">
+                      {form.formState.errors.customerName.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded-xl border border-border/70 bg-secondary/30 p-4">
+                  <div className="space-y-3">
+                    <div className="grid gap-2 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                      <Label htmlFor="totalPrice" className="text-sm font-semibold text-foreground">Giá gốc <span className="text-red-500">*</span></Label>
+                      <div className="space-y-1">
+                        <div className="relative">
+                        <Input
+                          id="totalPrice"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0"
+                          className={cn("h-11 bg-background pr-14 text-right font-semibold", hasExtractedData && "border-primary/20 bg-primary/5")}
+                          value={formatVndInput(Number(watchedNetPrice) || 0)}
+                          onChange={(event) => handleMoneyChange("totalPrice", event.target.value)}
+                        />
+                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
+                            VND
+                          </span>
+                        </div>
+                        {form.formState.errors.totalPrice && (
+                          <p className="text-xs font-medium text-red-500">
+                            {form.formState.errors.totalPrice.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                      <Label htmlFor="sellingPrice" className="text-sm font-semibold text-foreground">Giá bán <span className="text-red-500">*</span></Label>
+                      <div className="space-y-1">
+                        <div className="relative">
+                        <Input
+                          id="sellingPrice"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0"
+                          className="h-11 bg-background pr-14 text-right font-semibold"
+                          value={formatVndInput(Number(watchedSellingPrice) || 0)}
+                          onChange={(event) => handleMoneyChange("sellingPrice", event.target.value)}
+                        />
+                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
+                            VND
+                          </span>
+                        </div>
+                        {form.formState.errors.sellingPrice && (
+                          <p className="text-xs font-medium text-red-500">
+                            {form.formState.errors.sellingPrice.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                      <Label htmlFor="discount" className="text-sm font-semibold text-foreground">Chiết khấu hãng</Label>
+                      <div className="space-y-1">
+                        <div className="relative">
+                        <Input
+                          id="discount"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0"
+                          className="h-11 bg-background pr-14 text-right font-semibold"
+                          value={formatVndInput(Number(watchedDiscount) || 0)}
+                          onChange={(event) => handleMoneyChange("discount", event.target.value)}
+                        />
+                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
+                            VND
+                          </span>
+                        </div>
+                        {form.formState.errors.discount && (
+                          <p className="text-xs font-medium text-red-500">
+                            {form.formState.errors.discount.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="totalPrice" className="font-semibold text-foreground">Giá gốc (VND) <span className="text-red-500">*</span></Label>
-                    <Input
-                      id="totalPrice"
-                      type="number"
-                      min={0}
-                      placeholder="0"
-                      className={cn("font-medium", hasExtractedData && "border-primary/20 bg-primary/5")}
-                      {...form.register("totalPrice")}
-                    />
-                    {form.formState.errors.totalPrice && (
-                      <p className="text-xs text-red-500 font-medium">
-                        {form.formState.errors.totalPrice.message}
-                      </p>
-                    )}
+
+                  <div className="mt-3 rounded-lg border border-border/70 bg-background px-3 py-2.5">
+                    <div className="grid gap-3 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                      <Label htmlFor="trueIncome" className="text-sm font-semibold text-foreground">Lợi nhuận</Label>
+                      <div className="relative space-y-1">
+                        <Input
+                          id="trueIncome"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0"
+                          readOnly={!isTrueIncomeEditable}
+                          className={cn(
+                            "h-11 border-primary/20 bg-background pr-24 text-right font-semibold text-primary",
+                            !isTrueIncomeEditable && "cursor-default bg-secondary/50 text-primary/90",
+                          )}
+                          value={formatVndInput(Number(watchedTrueIncome) || 0)}
+                          onChange={handleTrueIncomeChange}
+                        />
+                        <span className="pointer-events-none absolute right-12 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
+                          VND
+                        </span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="absolute right-1.5 top-1.5 h-8 w-8 bg-background"
+                          onClick={handleToggleTrueIncomeEdit}
+                          aria-label={isTrueIncomeEditable ? "Khóa thu nhập thực" : "Chỉnh sửa thu nhập thực"}
+                          title={isTrueIncomeEditable ? "Khóa thu nhập thực" : "Chỉnh sửa thu nhập thực"}
+                        >
+                          {isTrueIncomeEditable ? (
+                            <Lock className="h-4 w-4" />
+                          ) : (
+                            <Pencil className="h-4 w-4" />
+                          )}
+                        </Button>
+                        {form.formState.errors.trueIncome && (
+                          <p className="text-xs font-medium text-red-500">
+                            {form.formState.errors.trueIncome.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>

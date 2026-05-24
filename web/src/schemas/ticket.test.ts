@@ -18,6 +18,8 @@ describe("TicketReadSchema", () => {
       flight_date: "2026-04-24T02:00:00.000Z",
       net_price: 1_000_000,
       selling_price: 1_250_000,
+      discount: 50_000,
+      true_income: 300_000,
       service_fee: 250_000,
       status: "CONFIRMED",
       customer_id: "11111111-1111-4111-8111-111111111111",

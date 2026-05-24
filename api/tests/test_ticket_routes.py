@@ -71,6 +71,7 @@ def _confirm_payload() -> dict:
         "service_fee": 200000,
         "selling_price": 1200000,
         "discount": 10000,
+        "true_income": 210000,
         "fare_class": "B",
         "seat_code": "12A",
     }
@@ -194,6 +195,7 @@ def test_confirm_ticket_persists_discount_fare_class_and_seat_code(
     payload = response.json()["data"]
 
     assert payload["ticket"]["discount"] == pytest.approx(10000)
+    assert payload["ticket"]["true_income"] == pytest.approx(210000)
     assert payload["ticket"]["fare_class"] == "B"
     assert payload["ticket"]["seat_code"] == "12A"
 
@@ -201,6 +203,7 @@ def test_confirm_ticket_persists_discount_fare_class_and_seat_code(
         ticket = session.exec(select(Ticket).where(Ticket.pnr == "ABC123")).one()
 
         assert ticket.discount == pytest.approx(10000)
+        assert ticket.true_income == pytest.approx(210000)
         assert ticket.fare_class == "B"
         assert ticket.seat_code == "12A"
 

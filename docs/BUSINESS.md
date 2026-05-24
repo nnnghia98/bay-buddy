@@ -45,7 +45,10 @@ The system distinguishes between what the airline charges and what the customer 
 - **Net Price**: The actual cost from the airline/supplier (VNA, Vietjet, etc.).
 - **Service Fee**: The profit margin added by the agent.
 - **Selling Price**: The final price charged to the customer.
+- **Discount**: The airline add-in / discount amount earned by the agency for each ticket.
+- **True Income**: The actual ticket income after airline discount.
 - **Formula**: `selling_price = net_price + service_fee`
+- **True Income Formula**: `true_income = selling_price + discount - net_price`
 
 > **Note**: Taxes and airport fees are usually included in the `net_price` during AI parsing unless specified otherwise.
 

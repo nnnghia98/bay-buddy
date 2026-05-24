@@ -2,14 +2,14 @@
 services/ticket_service.py – Business logic for ticket creation with automatic debt tracking.
 
 Business rules reference: docs/BUSINESS.md
-  - Selling Price = Net Price + Service Fee          (§2 Pricing Architecture)
+  - True Income = Selling Price + Airline Discount - Net Price (§2 Pricing Architecture)
   - CONFIRMED ticket → increases Customer Balance    (§1 Ticket Lifecycle)
   - Every confirmation auto-creates a CHARGE txn     (§3 Debt Management)
   - Customer Balance = Total Debt – Total Paid       (§3 Balance Calculation)
 
 Flow of create_ticket_with_transaction:
   1. Look up customer by name (case-insensitive). Create if not found.
-  2. Validate selling_price ≥ net_price (formula compliance).
+  2. Validate and compute pricing fields.
   3. Persist Ticket with status = CONFIRMED inside a DB transaction.
   4. Create a CHARGE Transaction linked to the customer AND the ticket.
   5. Increment customer.balance by selling_price.
@@ -56,9 +56,9 @@ class TicketConfirmPayload(BaseModel):
         create a new one if no match is found.
 
     Pricing (docs/BUSINESS.md §2):
-        selling_price = net_price + service_fee
-        If `selling_price` is omitted, the service derives it automatically.
-        If both `service_fee` and `selling_price` are supplied they must be consistent.
+        true_income = selling_price + discount - net_price
+        If `selling_price` is omitted, the service derives it from service_fee.
+        If `true_income` is supplied, it must match the computed income.
     """
 
     # ── Customer fields ──────────────────────────────────────────────────────
@@ -147,13 +147,17 @@ class TicketConfirmPayload(BaseModel):
     discount: float = Field(
         default=0.0,
         ge=0,
-        description="Optional discount amount applied to the ticket in VND.",
+        description="Airline add-in / discount amount earned by the agency for this ticket in VND.",
+    )
+    true_income: Optional[float] = Field(
+        default=None,
+        description="Actual ticket income: selling_price + discount - net_price.",
     )
 
     @model_validator(mode="after")
     def validate_and_compute_selling_price(self) -> "TicketConfirmPayload":
         """
-        Enforce the formula: selling_price = net_price + service_fee (BUSINESS.md §2).
+        Compute selling_price and true_income from the ticket pricing fields.
         """
         computed = self.net_price + self.service_fee
         if self.selling_price is None:
@@ -167,6 +171,16 @@ class TicketConfirmPayload(BaseModel):
                     f"net_price + service_fee ({self.net_price} + {self.service_fee} = {computed}). "
                     "Please correct the pricing fields."
                 )
+
+        computed_true_income = self.selling_price + self.discount - self.net_price
+        if self.true_income is None:
+            self.true_income = computed_true_income
+        elif abs(self.true_income - computed_true_income) > 1.0:
+            raise ValueError(
+                f"true_income ({self.true_income}) must equal "
+                f"selling_price + discount - net_price "
+                f"({self.selling_price} + {self.discount} - {self.net_price} = {computed_true_income})."
+            )
         return self
 
     @model_validator(mode="after")
@@ -388,6 +402,7 @@ def create_ticket_with_transaction(
         )
 
     selling_price = payload.selling_price
+    true_income = payload.true_income
 
     ticket = Ticket(
         pnr=payload.pnr,
@@ -405,6 +420,7 @@ def create_ticket_with_transaction(
         net_price=payload.net_price,
         selling_price=selling_price,
         discount=payload.discount,
+        true_income=true_income,
         status=TicketStatus.CONFIRMED,
         customer_id=customer.id,
     )
