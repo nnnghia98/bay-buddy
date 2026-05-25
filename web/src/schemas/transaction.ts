@@ -98,6 +98,9 @@ export const TransactionReadSchema = TransactionBaseSchema.extend({
    */
   created_at: z.coerce.date(),
 
+  /** Business event timestamp used for ledger ordering and correction forms. */
+  occurred_at: z.coerce.date(),
+
   /** UUID of the authenticated internal user who created the transaction. */
   created_by: z.string().uuid(),
 });
@@ -116,6 +119,7 @@ export const TransactionUpdateSchema = z.object({
   method: z.string().min(1).max(100).optional(),
   note: z.string().max(2000).optional(),
   evidence_url: z.string().url().max(2048).nullable().optional(),
+  occurred_at: z.coerce.date().optional(),
   linked_ticket_id: z.string().uuid().nullable().optional(),
   is_refund_confirmed: z.boolean().optional(),
 });

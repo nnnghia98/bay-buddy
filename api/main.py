@@ -46,9 +46,17 @@ app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 # CORS
 # ---------------------------------------------------------------------------
 
+_default_frontend_origins = ",".join(
+    [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:6769",
+        "http://127.0.0.1:6769",
+    ]
+)
 _allowed_origins: list[str] = [
     origin.strip()
-    for origin in os.getenv("FRONTEND_URL", "http://localhost:6769").split(",")
+    for origin in os.getenv("FRONTEND_URL", _default_frontend_origins).split(",")
     if origin.strip()
 ]
 

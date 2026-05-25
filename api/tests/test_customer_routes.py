@@ -11,6 +11,8 @@ from database import get_session
 from main import app
 from models.customer import Customer
 from models.enums import CustomerType, UserRole
+from models.enums import TransactionCategory, TransactionType
+from models.transaction import Transaction
 from models.user import User
 
 
@@ -165,3 +167,65 @@ def test_list_customers_includes_archive_status() -> None:
         item for item in payload["data"] if item["id"] == str(archived_customer.id)
     )
     assert archived_row["is_active"] is False
+
+
+def test_admin_can_correct_transaction_and_rebalance_customer() -> None:
+    client, session = create_test_client(role=UserRole.ADMIN)
+    customer = seed_customer(session)
+    transaction = Transaction(
+        amount=500000,
+        type=TransactionType.PAYMENT,
+        category=TransactionCategory.PAYMENT,
+        method="Bank transfer",
+        note="Initial payment",
+        customer_id=customer.id,
+        created_by=uuid.uuid4(),
+    )
+    customer.balance = -500000
+    session.add(transaction)
+    session.add(customer)
+    session.commit()
+    session.refresh(transaction)
+
+    response = client.patch(
+        f"/api/v1/transactions/{transaction.id}",
+        json={
+            "amount": 300000,
+            "method": "Cash",
+            "note": "Corrected payment",
+        },
+    )
+
+    clear_overrides()
+
+    assert response.status_code == 200
+    payload = response.json()["data"]
+    assert payload["transaction"]["amount"] == 300000
+    assert payload["customer_new_balance"] == -300000
+
+
+def test_admin_can_delete_transaction_and_rebalance_customer() -> None:
+    client, session = create_test_client(role=UserRole.ADMIN)
+    customer = seed_customer(session)
+    transaction = Transaction(
+        amount=500000,
+        type=TransactionType.PAYMENT,
+        category=TransactionCategory.PAYMENT,
+        method="Bank transfer",
+        note="Initial payment",
+        customer_id=customer.id,
+        created_by=uuid.uuid4(),
+    )
+    customer.balance = -500000
+    session.add(transaction)
+    session.add(customer)
+    session.commit()
+    session.refresh(transaction)
+
+    response = client.delete(f"/api/v1/transactions/{transaction.id}")
+
+    clear_overrides()
+
+    assert response.status_code == 200
+    assert response.json()["data"]["customer_new_balance"] == 0
+    assert session.get(Transaction, transaction.id) is None

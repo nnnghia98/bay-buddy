@@ -192,5 +192,6 @@ class TransactionUpdate(SQLModel):
     method: Optional[str] = Field(default=None, max_length=100)
     note: Optional[str] = None
     evidence_url: Optional[str] = Field(default=None, max_length=2048)
+    occurred_at: Optional[datetime] = None
     linked_ticket_id: Optional[uuid.UUID] = None
     is_refund_confirmed: Optional[bool] = None

@@ -25,12 +25,15 @@ from models.ticket import Ticket, TicketCreate, TicketRead, TicketUpdate
 from services.ticket_service import (
     TicketConfirmPayload,
     TicketConfirmResponse,
+    TicketCorrectionResponse,
     TicketRefundPayload,
     TicketReassignPayload,
     TicketRefundResponse,
     TicketReassignResponse,
     TicketVoidResponse,
+    correct_confirmed_ticket,
     create_ticket_with_transaction,
+    delete_confirmed_ticket_for_admin,
     reassign_confirmed_ticket,
     refund_confirmed_ticket,
     void_confirmed_ticket,
@@ -226,3 +229,35 @@ async def reassign_ticket_route(
         actor_user_id=current_user.id,
     )
     return success_response(result.model_dump())
+
+
+@router.patch("/{ticket_id}/correction", response_model=dict)
+async def correct_ticket_route(
+    ticket_id: uuid.UUID,
+    ticket_in: TicketUpdate,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+):
+    """Admin-only correction for mutable confirmed ticket ledger rows."""
+    require_user_roles(current_user, UserRole.ADMIN)
+    result: TicketCorrectionResponse = correct_confirmed_ticket(
+        ticket_id=ticket_id,
+        payload=ticket_in,
+        session=session,
+    )
+    return success_response(result.model_dump(mode="json"))
+
+
+@router.delete("/{ticket_id}/correction", response_model=dict)
+async def delete_ticket_correction_route(
+    ticket_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+):
+    """Admin-only removal for mutable confirmed ticket ledger rows."""
+    require_user_roles(current_user, UserRole.ADMIN)
+    result: TicketCorrectionResponse = delete_confirmed_ticket_for_admin(
+        ticket_id=ticket_id,
+        session=session,
+    )
+    return success_response(result.model_dump(mode="json"))

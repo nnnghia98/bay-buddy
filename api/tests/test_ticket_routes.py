@@ -32,7 +32,7 @@ def test_client(test_engine):
     fake_user = User(
         id=uuid.uuid4(),
         username="ticket-tester",
-        role=UserRole.STAFF,
+        role=UserRole.ADMIN,
         is_active=True,
         hashed_password="hashed-password",
     )
@@ -365,3 +365,79 @@ def test_ticket_reassign_endpoint_moves_the_ticket_to_a_new_customer(
     assert payload["ticket"]["customer_id"] == str(new_customer.id)
     assert payload["old_customer"]["balance"] == pytest.approx(0.0)
     assert payload["new_customer"]["balance"] == pytest.approx(1200000.0)
+
+
+def test_admin_ticket_correction_updates_debt_transaction_and_balance(
+    test_client,
+    test_engine,
+):
+    customer = _seed_customer(test_engine, balance=1200000.0)
+    ticket = _seed_confirmed_ticket(
+        test_engine,
+        customer=customer,
+        selling_price=1200000.0,
+    )
+    transaction = _seed_ticket_purchase_transaction(
+        test_engine,
+        customer=customer,
+        ticket=ticket,
+        amount=1200000.0,
+    )
+
+    response = test_client.patch(
+        f"/api/v1/tickets/{ticket.id}/correction",
+        json={
+            "pnr": "FIX123",
+            "departure_code": "DAD",
+            "arrival_code": "SGN",
+            "net_price": 1500000,
+            "selling_price": 1800000,
+            "discount": 50000,
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()["data"]
+    assert payload["ticket"]["pnr"] == "FIX123"
+    assert payload["ticket"]["itinerary"] == "DAD-SGN"
+    assert payload["ticket"]["true_income"] == pytest.approx(350000.0)
+    assert payload["customer_new_balance"] == pytest.approx(1800000.0)
+
+    with Session(test_engine) as session:
+        persisted_transaction = session.get(Transaction, transaction.id)
+        persisted_customer = session.get(Customer, customer.id)
+
+        assert persisted_transaction is not None
+        assert persisted_transaction.amount == pytest.approx(1800000.0)
+        assert persisted_customer is not None
+        assert persisted_customer.balance == pytest.approx(1800000.0)
+
+
+def test_admin_ticket_removal_deletes_ticket_purchase_and_reverses_balance(
+    test_client,
+    test_engine,
+):
+    customer = _seed_customer(test_engine, balance=1200000.0)
+    ticket = _seed_confirmed_ticket(
+        test_engine,
+        customer=customer,
+        selling_price=1200000.0,
+    )
+    transaction = _seed_ticket_purchase_transaction(
+        test_engine,
+        customer=customer,
+        ticket=ticket,
+        amount=1200000.0,
+    )
+
+    response = test_client.delete(f"/api/v1/tickets/{ticket.id}/correction")
+
+    assert response.status_code == 200
+    assert response.json()["data"]["deleted"] is True
+
+    with Session(test_engine) as session:
+        assert session.get(Ticket, ticket.id) is None
+        assert session.get(Transaction, transaction.id) is None
+        persisted_customer = session.get(Customer, customer.id)
+        assert persisted_customer is not None
+        assert persisted_customer.balance == pytest.approx(0.0)

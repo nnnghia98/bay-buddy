@@ -11,6 +11,8 @@
 
 import { z } from "zod";
 import { CustomerTypeSchema } from "./enums";
+import { TicketReadSchema } from "./ticket";
+import { TransactionReadSchema } from "./transaction";
 
 // ---------------------------------------------------------------------------
 // Shared base
@@ -102,6 +104,8 @@ export const LedgerEntrySchema = z.object({
   content: z.string(),
   amount: z.number(),
   running_balance: z.number(),
+  ticket: TicketReadSchema.nullable().optional(),
+  transaction: TransactionReadSchema.nullable().optional(),
 });
 
 export type LedgerEntry = z.infer<typeof LedgerEntrySchema>;

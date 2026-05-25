@@ -36,8 +36,9 @@ from models.enums import (
     TransactionType,
     get_transaction_balance_delta,
 )
-from models.ticket import Ticket, TicketRead
+from models.ticket import Ticket, TicketRead, TicketUpdate
 from models.transaction import Transaction, TransactionRead
+from services.system_settings_service import ensure_datetime_is_active
 
 logger = logging.getLogger(__name__)
 
@@ -281,6 +282,16 @@ class TicketReassignResponse(BaseModel):
     new_customer_new_balance: float
 
 
+class TicketCorrectionResponse(BaseModel):
+    """Composite response returned after admin ticket correction/removal."""
+
+    ticket: TicketRead
+    customer: CustomerRead
+    transaction: TransactionRead
+    customer_new_balance: float
+    deleted: bool = False
+
+
 def _get_ticket_or_404(*, session: Session, ticket_id: uuid.UUID) -> Ticket:
     ticket = session.get(Ticket, ticket_id)
     if ticket is None:
@@ -336,6 +347,160 @@ def _prepare_ticket_for_lifecycle_change(
     purchase_transaction.linked_ticket_id = None
     session.add(purchase_transaction)
     return purchase_transaction
+
+
+def _ensure_ticket_has_no_dependent_documents(ticket: Ticket) -> None:
+    if ticket.invoice_items:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ticket is already used by an invoice item.",
+        )
+    if ticket.quote_items:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ticket is already used by a quote item.",
+        )
+
+
+def correct_confirmed_ticket(
+    *,
+    session: Session,
+    ticket_id: uuid.UUID,
+    payload: TicketUpdate,
+) -> TicketCorrectionResponse:
+    """Admin-only correction for mutable confirmed ticket details and debt amount."""
+    ticket = _get_ticket_or_404(session=session, ticket_id=ticket_id)
+    customer = _get_customer_or_404(session=session, customer_id=ticket.customer_id)
+
+    if ticket.status != TicketStatus.CONFIRMED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Only confirmed tickets can be corrected from the ledger.",
+        )
+
+    purchase_transaction = _get_confirmed_ticket_charge(session=session, ticket=ticket)
+    update_data = payload.model_dump(exclude_unset=True)
+
+    if "customer_id" in update_data or "status" in update_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Use explicit lifecycle actions for customer or status changes.",
+        )
+
+    old_selling_price = ticket.selling_price
+    service_fee = update_data.pop("service_fee", None)
+
+    if service_fee is not None:
+        net_price = update_data.get("net_price", ticket.net_price)
+        update_data["selling_price"] = net_price + service_fee
+
+    if "departure_code" in update_data and update_data["departure_code"] is not None:
+        update_data["departure_code"] = update_data["departure_code"].strip().upper()
+    if "arrival_code" in update_data and update_data["arrival_code"] is not None:
+        update_data["arrival_code"] = update_data["arrival_code"].strip().upper()
+    if "pnr" in update_data and update_data["pnr"] is not None:
+        update_data["pnr"] = update_data["pnr"].strip().upper()
+    if "passengers" in update_data and update_data["passengers"] is not None:
+        update_data["passengers"] = [
+            passenger.strip().upper()
+            for passenger in update_data["passengers"]
+            if passenger.strip()
+        ]
+
+    departure_code = update_data.get("departure_code", ticket.departure_code)
+    arrival_code = update_data.get("arrival_code", ticket.arrival_code)
+    if departure_code and arrival_code:
+        update_data["itinerary"] = f"{departure_code}-{arrival_code}"
+
+    for field_name, value in update_data.items():
+        setattr(ticket, field_name, value)
+
+    ticket.true_income = ticket.selling_price + ticket.discount - ticket.net_price
+    purchase_transaction.amount = ticket.selling_price
+    purchase_transaction.note = (
+        f"Auto-debt for PNR {ticket.pnr} – {ticket.itinerary} "
+        f"on {ticket.flight_date.date()}"
+    )
+
+    ensure_datetime_is_active(
+        session=session,
+        value=ticket.flight_date,
+        detail="Ticket flight date is before the app base date time.",
+    )
+
+    try:
+        customer.balance += ticket.selling_price - old_selling_price
+        session.add(ticket)
+        session.add(purchase_transaction)
+        session.add(customer)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    session.refresh(ticket)
+    session.refresh(purchase_transaction)
+    session.refresh(customer)
+
+    return TicketCorrectionResponse(
+        ticket=TicketRead.model_validate(ticket),
+        customer=CustomerRead.model_validate(customer),
+        transaction=TransactionRead.model_validate(purchase_transaction),
+        customer_new_balance=customer.balance,
+    )
+
+
+def delete_confirmed_ticket_for_admin(
+    *,
+    session: Session,
+    ticket_id: uuid.UUID,
+) -> TicketCorrectionResponse:
+    """Remove a mutable confirmed ticket and reverse its automatic debt row."""
+    ticket = _get_ticket_or_404(session=session, ticket_id=ticket_id)
+    customer = _get_customer_or_404(session=session, customer_id=ticket.customer_id)
+
+    if ticket.status != TicketStatus.CONFIRMED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Only confirmed tickets can be removed from the ledger.",
+        )
+
+    _ensure_ticket_has_no_dependent_documents(ticket)
+    purchase_transaction = _get_confirmed_ticket_charge(session=session, ticket=ticket)
+    other_linked_transactions = session.exec(
+        select(Transaction).where(
+            Transaction.linked_ticket_id == ticket.id,
+            Transaction.id != purchase_transaction.id,
+        )
+    ).first()
+    if other_linked_transactions is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ticket has linked payments or adjustments. Remove those first.",
+        )
+
+    response_ticket = TicketRead.model_validate(ticket)
+    response_transaction = TransactionRead.model_validate(purchase_transaction)
+
+    try:
+        customer.balance -= ticket.selling_price
+        session.delete(purchase_transaction)
+        session.delete(ticket)
+        session.add(customer)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    session.refresh(customer)
+
+    return TicketCorrectionResponse(
+        ticket=response_ticket,
+        customer=CustomerRead.model_validate(customer),
+        transaction=response_transaction,
+        customer_new_balance=customer.balance,
+        deleted=True,
+    )
 
 
 def _build_lifecycle_note(

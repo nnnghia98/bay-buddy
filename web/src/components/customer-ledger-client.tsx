@@ -3,10 +3,15 @@
 import * as React from "react"
 import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
-import { Loader2, PencilLine } from "lucide-react"
+import { Loader2, PencilLine, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
+import {
+  updateTicketLedgerRecordAction,
+  updateTransactionLedgerRecordAction,
+  type LedgerCorrectionActionState,
+} from "@/actions/finance"
 import {
   toggleCustomerActiveAction,
   updateCustomerAction,
@@ -61,6 +66,12 @@ type CustomerLedgerClientProps = {
 }
 
 type CustomerClientErrors = Partial<Record<CustomerManagementField, string>>
+type LedgerEntry = CustomerLedger["entries"][number]
+
+const initialLedgerCorrectionActionState: LedgerCorrectionActionState = {
+  status: "idle",
+  fieldErrors: {},
+}
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("vi-VN", {
@@ -87,6 +98,16 @@ function formatDate(value: Date): string {
   const minutes = value.getMinutes().toString().padStart(2, "0")
 
   return `${day}/${month}/${year} ${hours}:${minutes}`
+}
+
+function formatDateTimeLocal(value: Date): string {
+  const year = value.getFullYear()
+  const month = (value.getMonth() + 1).toString().padStart(2, "0")
+  const day = value.getDate().toString().padStart(2, "0")
+  const hours = value.getHours().toString().padStart(2, "0")
+  const minutes = value.getMinutes().toString().padStart(2, "0")
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`
 }
 
 function CustomerActionSubmitButton({
@@ -433,6 +454,447 @@ function ToggleCustomerStatusButton({
   )
 }
 
+function getCorrectionError(
+  field: string,
+  state: LedgerCorrectionActionState | undefined,
+): string | undefined {
+  return state?.fieldErrors?.[field]
+}
+
+function LedgerCorrectionSubmitButton({
+  idleLabel,
+  pendingLabel,
+  destructive = false,
+}: {
+  idleLabel: string
+  pendingLabel: string
+  destructive?: boolean
+}) {
+  const { pending } = useFormStatus()
+
+  return (
+    <Button
+      className={destructive ? "bg-red-600 hover:bg-red-700" : undefined}
+      disabled={pending}
+      type="submit"
+    >
+      {pending ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {pendingLabel}
+        </>
+      ) : (
+        idleLabel
+      )}
+    </Button>
+  )
+}
+
+function LedgerRecordCorrectionDialog({
+  customerId,
+  entry,
+}: {
+  customerId: string
+  entry: LedgerEntry
+}) {
+  const t = useI18n()
+  const router = useRouter()
+  const [open, setOpen] = React.useState(false)
+  const action = entry.entry_type === "ticket"
+    ? updateTicketLedgerRecordAction
+    : updateTransactionLedgerRecordAction
+  const [state, formAction] = useActionState(
+    action,
+    initialLedgerCorrectionActionState,
+  )
+  const ticket = entry.ticket
+  const transaction = entry.transaction
+  const transactionCategoryOptions = [
+    {
+      value: "PAYMENT",
+      label: t("customers.ledger.corrections.categories.PAYMENT"),
+    },
+    {
+      value: "DISCOUNT",
+      label: t("customers.ledger.corrections.categories.DISCOUNT"),
+    },
+    {
+      value: "ADDITIONAL_FEE",
+      label: t("customers.ledger.corrections.categories.ADDITIONAL_FEE"),
+    },
+    {
+      value: "REFUND",
+      label: t("customers.ledger.corrections.categories.REFUND"),
+    },
+  ] as const
+
+  React.useEffect(() => {
+    if (state.status === "success") {
+      toast.success(state.message ?? t("customers.ledger.corrections.updateSuccess"))
+      setOpen(false)
+      router.refresh()
+      return
+    }
+
+    if (state.status === "error" && state.submittedAt) {
+      toast.error(state.message ?? t("customers.ledger.corrections.failure"))
+    }
+  }, [router, state, t])
+
+  if (entry.entry_type === "ticket" && !ticket) {
+    return null
+  }
+
+  if (entry.entry_type !== "ticket" && !transaction) {
+    return null
+  }
+
+  const selectClassName =
+    "flex h-11 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
+
+  return (
+    <Dialog onOpenChange={setOpen} open={open}>
+      <DialogTrigger asChild>
+        <Button
+          aria-label={t("customers.ledger.corrections.edit")}
+          className="h-8 w-8"
+          size="icon"
+          variant="ghost"
+        >
+          <PencilLine className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent className="max-h-[88vh] w-[min(94vw,46rem)] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{t("customers.ledger.corrections.editTitle")}</DialogTitle>
+          <DialogDescription>
+            {t("customers.ledger.corrections.editDescription")}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form action={formAction} className="space-y-5">
+          <input name="customer_id" type="hidden" value={customerId} />
+
+          {entry.entry_type === "ticket" && ticket ? (
+            <>
+              <input name="ticket_id" type="hidden" value={ticket.id} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor={`pnr-${entry.id}`}>{t("customers.ledger.corrections.fields.pnr")}</Label>
+                  <Input id={`pnr-${entry.id}`} name="pnr" defaultValue={ticket.pnr} />
+                  {getCorrectionError("pnr", state) ? (
+                    <p className="text-sm text-red-600">{getCorrectionError("pnr", state)}</p>
+                  ) : null}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`ticket-number-${entry.id}`}>{t("customers.ledger.corrections.fields.ticketNumber")}</Label>
+                  <Input
+                    id={`ticket-number-${entry.id}`}
+                    name="ticket_number"
+                    defaultValue={ticket.ticket_number ?? ""}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`airline-${entry.id}`}>{t("customers.ledger.corrections.fields.airline")}</Label>
+                  <select
+                    className={selectClassName}
+                    id={`airline-${entry.id}`}
+                    name="airline"
+                    defaultValue={ticket.airline}
+                  >
+                    {["VNA", "VJ", "QH", "VU"].map((airline) => (
+                      <option key={airline} value={airline}>{airline}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`flight-date-${entry.id}`}>{t("customers.ledger.corrections.fields.flightDate")}</Label>
+                  <Input
+                    id={`flight-date-${entry.id}`}
+                    name="flight_date"
+                    type="datetime-local"
+                    defaultValue={formatDateTimeLocal(ticket.flight_date)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor={`passengers-${entry.id}`}>{t("customers.ledger.corrections.fields.passengers")}</Label>
+                <textarea
+                  className="min-h-24 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                  id={`passengers-${entry.id}`}
+                  name="passengers"
+                  defaultValue={ticket.passengers.join("\n")}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor={`departure-place-${entry.id}`}>{t("customers.ledger.corrections.fields.departurePlace")}</Label>
+                  <Input
+                    id={`departure-place-${entry.id}`}
+                    name="departure_place"
+                    defaultValue={ticket.departure_place ?? ""}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`arrival-place-${entry.id}`}>{t("customers.ledger.corrections.fields.arrivalPlace")}</Label>
+                  <Input
+                    id={`arrival-place-${entry.id}`}
+                    name="arrival_place"
+                    defaultValue={ticket.arrival_place ?? ""}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`departure-code-${entry.id}`}>{t("customers.ledger.corrections.fields.departureCode")}</Label>
+                  <Input
+                    id={`departure-code-${entry.id}`}
+                    name="departure_code"
+                    defaultValue={ticket.departure_code ?? ""}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`arrival-code-${entry.id}`}>{t("customers.ledger.corrections.fields.arrivalCode")}</Label>
+                  <Input
+                    id={`arrival-code-${entry.id}`}
+                    name="arrival_code"
+                    defaultValue={ticket.arrival_code ?? ""}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor={`net-price-${entry.id}`}>{t("customers.ledger.corrections.fields.netPrice")}</Label>
+                  <Input
+                    id={`net-price-${entry.id}`}
+                    name="net_price"
+                    type="number"
+                    min="0"
+                    defaultValue={ticket.net_price}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`selling-price-${entry.id}`}>{t("customers.ledger.corrections.fields.sellingPrice")}</Label>
+                  <Input
+                    id={`selling-price-${entry.id}`}
+                    name="selling_price"
+                    type="number"
+                    min="0"
+                    defaultValue={ticket.selling_price}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`discount-${entry.id}`}>{t("customers.ledger.corrections.fields.discount")}</Label>
+                  <Input
+                    id={`discount-${entry.id}`}
+                    name="discount"
+                    type="number"
+                    min="0"
+                    defaultValue={ticket.discount}
+                  />
+                </div>
+              </div>
+            </>
+          ) : transaction ? (
+            <>
+              <input name="transaction_id" type="hidden" value={transaction.id} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor={`amount-${entry.id}`}>{t("customers.ledger.corrections.fields.amount")}</Label>
+                  <Input
+                    id={`amount-${entry.id}`}
+                    name="amount"
+                    type="number"
+                    min="1"
+                    defaultValue={transaction.amount}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`occurred-at-${entry.id}`}>{t("customers.ledger.corrections.fields.occurredAt")}</Label>
+                  <Input
+                    id={`occurred-at-${entry.id}`}
+                    name="occurred_at"
+                    type="datetime-local"
+                    defaultValue={formatDateTimeLocal(transaction.occurred_at)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`category-${entry.id}`}>{t("customers.ledger.corrections.fields.category")}</Label>
+                  <select
+                    className={selectClassName}
+                    id={`category-${entry.id}`}
+                    name="category"
+                    defaultValue={transaction.category}
+                  >
+                    {transactionCategoryOptions.map((category) => (
+                      <option key={category.value} value={category.value}>
+                        {category.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`method-${entry.id}`}>{t("customers.ledger.corrections.fields.method")}</Label>
+                  <Input
+                    id={`method-${entry.id}`}
+                    name="method"
+                    defaultValue={transaction.method}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`note-${entry.id}`}>{t("customers.ledger.corrections.fields.note")}</Label>
+                <textarea
+                  className="min-h-24 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                  id={`note-${entry.id}`}
+                  name="note"
+                  defaultValue={transaction.note ?? ""}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`evidence-${entry.id}`}>{t("customers.ledger.corrections.fields.evidence")}</Label>
+                <Input
+                  id={`evidence-${entry.id}`}
+                  name="evidence_url"
+                  defaultValue={transaction.evidence_url ?? ""}
+                />
+              </div>
+            </>
+          ) : null}
+
+          {state.status === "error" && state.message ? (
+            <p role="alert" className="text-sm text-red-600">{state.message}</p>
+          ) : null}
+
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button onClick={() => setOpen(false)} type="button" variant="outline">
+              {t("customers.management.dialogs.cancel")}
+            </Button>
+            <LedgerCorrectionSubmitButton
+              idleLabel={t("customers.ledger.corrections.save")}
+              pendingLabel={t("customers.ledger.corrections.saving")}
+            />
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function DeleteLedgerRecordDialog({
+  entry,
+}: {
+  entry: LedgerEntry
+}) {
+  const t = useI18n()
+  const router = useRouter()
+  const [open, setOpen] = React.useState(false)
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = React.useState(false)
+
+  React.useEffect(() => {
+    if (open) {
+      setErrorMessage(null)
+    }
+  }, [open])
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    setErrorMessage(null)
+
+    try {
+      const response = await fetch("/api/ledger-records", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          record_id: entry.id,
+          record_type: entry.entry_type === "ticket" ? "ticket" : "transaction",
+        }),
+      })
+      const payload = (await response.json().catch(() => null)) as
+        | { error?: string; detail?: string }
+        | null
+
+      if (!response.ok) {
+        const nextError =
+          payload?.detail ?? payload?.error ?? t("customers.ledger.corrections.failure")
+        setErrorMessage(nextError)
+        toast.error(nextError)
+        return
+      }
+
+      toast.success(t("customers.ledger.corrections.deleteSuccess"))
+      setOpen(false)
+      router.refresh()
+    } catch {
+      setErrorMessage(t("customers.ledger.corrections.failure"))
+      toast.error(t("customers.ledger.corrections.failure"))
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  return (
+    <Dialog onOpenChange={setOpen} open={open}>
+      <DialogTrigger asChild>
+        <Button
+          aria-label={t("customers.ledger.corrections.delete")}
+          className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
+          size="icon"
+          variant="ghost"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="w-[min(92vw,34rem)]">
+        <DialogHeader>
+          <DialogTitle>{t("customers.ledger.corrections.deleteTitle")}</DialogTitle>
+          <DialogDescription>
+            {t("customers.ledger.corrections.deleteDescription")}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-5">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {entry.content.trim() || t("customers.ledger.fallbackContent")}
+          </div>
+          {errorMessage ? (
+            <p role="alert" className="text-sm text-red-600">{errorMessage}</p>
+          ) : null}
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button
+              disabled={isDeleting}
+              onClick={() => setOpen(false)}
+              type="button"
+              variant="outline"
+            >
+              {t("customers.management.dialogs.cancel")}
+            </Button>
+            <Button
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+              onClick={handleDelete}
+              type="button"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t("customers.ledger.corrections.deleting")}
+                </>
+              ) : (
+                t("customers.ledger.corrections.deleteConfirm")
+              )}
+            </Button>
+          </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function CustomerLedgerClient({
   currentUserRole,
   customerId,
@@ -633,12 +1095,20 @@ export function CustomerLedgerClient({
                 <TableHead className="text-right">
                   {t("customers.ledger.columns.balance")}
                 </TableHead>
+                {currentUserRole === "ADMIN" ? (
+                  <TableHead className="text-right">
+                    {t("customers.ledger.columns.actions")}
+                  </TableHead>
+                ) : null}
               </TableRow>
             </TableHeader>
             <TableBody>
               {ledger.entries.length === 0 ? (
                 <TableRow>
-                  <TableCell className="py-12 text-center text-muted-foreground" colSpan={5}>
+                  <TableCell
+                    className="py-12 text-center text-muted-foreground"
+                    colSpan={currentUserRole === "ADMIN" ? 6 : 5}
+                  >
                     {t("customers.ledger.empty")}
                   </TableCell>
                 </TableRow>
@@ -681,6 +1151,19 @@ export function CustomerLedgerClient({
                     <TableCell className="px-6 py-5 text-right font-medium text-foreground">
                       {formatCurrency(entry.running_balance)}
                     </TableCell>
+                    {currentUserRole === "ADMIN" ? (
+                      <TableCell className="px-6 py-5 text-right">
+                        <div className="flex justify-end gap-1">
+                          <LedgerRecordCorrectionDialog
+                            customerId={customerId}
+                            entry={entry}
+                          />
+                          <DeleteLedgerRecordDialog
+                            entry={entry}
+                          />
+                        </div>
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 ))
               )}

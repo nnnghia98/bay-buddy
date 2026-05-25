@@ -23,11 +23,12 @@ from models.enums import (
     TransactionCategory,
     TicketStatus,
     TransactionType,
+    get_expected_transaction_type,
     get_transaction_balance_delta,
     is_cash_transaction_category,
 )
-from models.ticket import Ticket
-from models.transaction import Transaction, TransactionRead
+from models.ticket import Ticket, TicketRead
+from models.transaction import Transaction, TransactionRead, TransactionUpdate
 from services.system_settings_service import (
     apply_app_base_datetime,
     ensure_datetime_is_active,
@@ -44,6 +45,8 @@ class LedgerEntry(BaseModel):
     content: str
     amount: float
     running_balance: float
+    ticket: Optional["TicketRead"] = None
+    transaction: Optional[TransactionRead] = None
 
 
 class CustomerLedgerResponse(BaseModel):
@@ -131,6 +134,22 @@ def _validate_linked_ticket(
     )
 
 
+def _ensure_transaction_is_mutable(transaction: Transaction) -> None:
+    if transaction.is_invoiced or transaction.invoice_id is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Transaction is locked by an issued invoice.",
+        )
+    if (
+        transaction.category == TransactionCategory.TICKET_PURCHASE
+        and transaction.linked_ticket_id is not None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Use the ticket correction endpoint for ticket purchase rows.",
+        )
+
+
 def get_balance_state(balance: float) -> Literal["debt", "settled", "credit"]:
     """Return a UI-friendly state for the current customer balance."""
 
@@ -201,6 +220,7 @@ def get_customer_ledger(
                 content=(transaction.note or transaction.method).strip(),
                 amount=amount,
                 running_balance=0,
+                transaction=TransactionRead.model_validate(transaction),
             )
         )
 
@@ -217,6 +237,12 @@ def get_customer_ledger(
                 content=ticket.pnr,
                 amount=ticket.selling_price,
                 running_balance=0,
+                ticket=TicketRead.model_validate(ticket),
+                transaction=(
+                    TransactionRead.model_validate(charge_transaction)
+                    if charge_transaction
+                    else None
+                ),
             )
         )
 
@@ -304,6 +330,118 @@ def record_payment(
     return RecordPaymentResponse(
         customer=CustomerRead.model_validate(customer),
         transaction=TransactionRead.model_validate(payment),
+        customer_new_balance=customer.balance,
+        balance_state=get_balance_state(customer.balance),
+    )
+
+
+def update_transaction_for_admin(
+    *,
+    transaction_id: uuid.UUID,
+    payload: TransactionUpdate,
+    session: Session,
+) -> RecordPaymentResponse:
+    """Correct a mutable transaction and rebalance the owning customer."""
+    transaction = session.get(Transaction, transaction_id)
+    if transaction is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Transaction not found.",
+        )
+
+    _ensure_transaction_is_mutable(transaction)
+    customer = _get_customer_or_404(session, transaction.customer_id)
+
+    old_delta = get_transaction_balance_delta(
+        amount=transaction.amount,
+        transaction_category=transaction.category,
+        transaction_type=transaction.type,
+        linked_ticket_id=transaction.linked_ticket_id,
+    )
+    update_data = payload.model_dump(exclude_unset=True)
+
+    if "linked_ticket_id" in update_data and update_data["linked_ticket_id"] is not None:
+        _validate_linked_ticket(
+            session=session,
+            customer_id=transaction.customer_id,
+            linked_ticket_id=update_data["linked_ticket_id"],
+        )
+    if "category" in update_data and "type" not in update_data:
+        update_data["type"] = get_expected_transaction_type(update_data["category"])
+
+    for field_name, value in update_data.items():
+        setattr(transaction, field_name, value)
+
+    ensure_datetime_is_active(
+        session=session,
+        value=transaction.occurred_at,
+        detail="Transaction date time is before the app base date time.",
+    )
+
+    new_delta = get_transaction_balance_delta(
+        amount=transaction.amount,
+        transaction_category=transaction.category,
+        transaction_type=transaction.type,
+        linked_ticket_id=transaction.linked_ticket_id,
+    )
+
+    try:
+        customer.balance += new_delta - old_delta
+        session.add(transaction)
+        session.add(customer)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    session.refresh(transaction)
+    session.refresh(customer)
+
+    return RecordPaymentResponse(
+        customer=CustomerRead.model_validate(customer),
+        transaction=TransactionRead.model_validate(transaction),
+        customer_new_balance=customer.balance,
+        balance_state=get_balance_state(customer.balance),
+    )
+
+
+def delete_transaction_for_admin(
+    *,
+    transaction_id: uuid.UUID,
+    session: Session,
+) -> RecordPaymentResponse:
+    """Remove a mutable transaction and reverse its customer balance impact."""
+    transaction = session.get(Transaction, transaction_id)
+    if transaction is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Transaction not found.",
+        )
+
+    _ensure_transaction_is_mutable(transaction)
+    customer = _get_customer_or_404(session, transaction.customer_id)
+    delta = get_transaction_balance_delta(
+        amount=transaction.amount,
+        transaction_category=transaction.category,
+        transaction_type=transaction.type,
+        linked_ticket_id=transaction.linked_ticket_id,
+    )
+    response_transaction = TransactionRead.model_validate(transaction)
+
+    try:
+        customer.balance -= delta
+        session.delete(transaction)
+        session.add(customer)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    session.refresh(customer)
+
+    return RecordPaymentResponse(
+        customer=CustomerRead.model_validate(customer),
+        transaction=response_transaction,
         customer_new_balance=customer.balance,
         balance_state=get_balance_state(customer.balance),
     )
