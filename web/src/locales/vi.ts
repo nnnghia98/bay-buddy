@@ -552,6 +552,8 @@ export default {
       deleteAction: "Xóa",
       archiveAction: "Lưu trữ",
       reactivateAction: "Kích hoạt lại",
+      activateAction: "Kích hoạt",
+      deactivateAction: "Ngừng kích hoạt",
       toggleSubmitting: "Đang cập nhật...",
       types: {
         INDIVIDUAL: "Cá nhân",

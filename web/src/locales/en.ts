@@ -552,6 +552,8 @@ export default {
       deleteAction: "Delete",
       archiveAction: "Archive",
       reactivateAction: "Reactivate",
+      activateAction: "Activate",
+      deactivateAction: "Deactivate",
       toggleSubmitting: "Updating...",
       types: {
         INDIVIDUAL: "Individual",

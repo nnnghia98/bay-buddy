@@ -154,7 +154,6 @@ function EditCustomerDialog({
   const [clientErrors, setClientErrors] = React.useState<CustomerClientErrors>({})
   const [name, setName] = React.useState(customer.name)
   const [type, setType] = React.useState(customer.type)
-  const [isActive, setIsActive] = React.useState(customer.is_active)
   const [email, setEmail] = React.useState(customer.email ?? "")
   const [phone, setPhone] = React.useState(customer.phone ?? "")
   const [address, setAddress] = React.useState(customer.address ?? "")
@@ -176,7 +175,6 @@ function EditCustomerDialog({
     if (open) {
       setName(customer.name)
       setType(customer.type)
-      setIsActive(customer.is_active)
       setEmail(customer.email ?? "")
       setPhone(customer.phone ?? "")
       setAddress(customer.address ?? "")
@@ -253,6 +251,7 @@ function EditCustomerDialog({
 
         <form action={formAction} className="space-y-5" onSubmit={handleSubmit}>
           <input name="customer_id" type="hidden" value={customer.id} />
+          <input name="is_active" type="hidden" value={String(customer.is_active)} />
 
           <div className="grid gap-4">
             <div className="space-y-2">
@@ -273,54 +272,31 @@ function EditCustomerDialog({
               ) : null}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="customer-type">
-                  {t("customers.management.fields.type")}
-                </Label>
-                <select
-                  className={selectClassName}
-                  id="customer-type"
-                  name="type"
-                  onChange={(event) =>
-                    setType(event.target.value as CustomerLedger["customer"]["type"])
-                  }
-                  value={type}
-                >
-                  <option value="INDIVIDUAL">
-                    {t("customers.management.types.INDIVIDUAL")}
-                  </option>
-                  <option value="BUSINESS">
-                    {t("customers.management.types.BUSINESS")}
-                  </option>
-                </select>
-                {getCustomerFieldError("type", clientErrors, state) ? (
-                  <p className="text-sm text-red-600">
-                    {getCustomerFieldError("type", clientErrors, state)}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="customer-status">
-                  {t("customers.management.fields.status")}
-                </Label>
-                <select
-                  className={selectClassName}
-                  id="customer-status"
-                  name="is_active"
-                  onChange={(event) => setIsActive(event.target.value === "true")}
-                  value={String(isActive)}
-                >
-                  <option value="true">{t("customers.management.statuses.active")}</option>
-                  <option value="false">{t("customers.management.statuses.archived")}</option>
-                </select>
-                {getCustomerFieldError("is_active", clientErrors, state) ? (
-                  <p className="text-sm text-red-600">
-                    {getCustomerFieldError("is_active", clientErrors, state)}
-                  </p>
-                ) : null}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="customer-type">
+                {t("customers.management.fields.type")}
+              </Label>
+              <select
+                className={selectClassName}
+                id="customer-type"
+                name="type"
+                onChange={(event) =>
+                  setType(event.target.value as CustomerLedger["customer"]["type"])
+                }
+                value={type}
+              >
+                <option value="INDIVIDUAL">
+                  {t("customers.management.types.INDIVIDUAL")}
+                </option>
+                <option value="BUSINESS">
+                  {t("customers.management.types.BUSINESS")}
+                </option>
+              </select>
+              {getCustomerFieldError("type", clientErrors, state) ? (
+                <p className="text-sm text-red-600">
+                  {getCustomerFieldError("type", clientErrors, state)}
+                </p>
+              ) : null}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -444,8 +420,8 @@ function ToggleCustomerStatusButton({
       <CustomerActionSubmitButton
         idleLabel={
           customer.is_active
-            ? t("customers.management.archiveAction")
-            : t("customers.management.reactivateAction")
+            ? t("customers.management.deactivateAction")
+            : t("customers.management.activateAction")
         }
         pendingLabel={t("customers.management.toggleSubmitting")}
         variant="outline"
