@@ -29,14 +29,20 @@ Each ticket parsed into the system follows a specific lifecycle. Status changes 
 
 ### Ticket Identity & Route Data
 
+- `pnr` (Mã chỗ) may repeat across multiple passengers in the same booking group and must not be treated as a globally unique ticket identity.
 - Every ticket should store the airline `ticket_number` when available.
-- `ticket_number` is not a unique business key. Multiple rows may share the same number for return-trip scenarios.
+- `ticket_number` is not a unique business key. Multiple rows may share the same number for return-trip scenarios or different legs.
+- `flight_date` is the scheduled flight datetime. It can be in the past and must not be blocked by the app base date time.
+- Ticket `created_at` / `updated_at` are audit timestamps for when Bay Buddy recorded or changed the ticket.
+- App base date-time filtering applies to ticket `updated_at`, not to `flight_date`; on untouched records, `updated_at` is the original creation timestamp.
+- Logs, histories, recent activity lists, and audit-style views must show `created_at` / `updated_at`; `flight_date` belongs only in flight-detail context.
 - Route data should be captured explicitly with:
   - `departure_place`
   - `arrival_place`
   - `departure_code`
   - `arrival_code`
-- `itinerary` should remain available for display and compatibility, but it is not the preferred structured source for new data entry.
+- `itinerary` should remain available for display and compatibility, but new writes must treat `departure_code` + `arrival_code` as the structured source for route display.
+- Do not overload city/place fields with airport-specific detail. If airport-level detail is needed later, add dedicated airport fields.
 
 ## 2. Pricing Architecture
 
@@ -67,7 +73,7 @@ The **Customer Balance** is a real-time calculation of all interactions:
 - **Total Paid**: Sum of all `amount` from `PAYMENT` transactions.
 - **Discounts**: `DISCOUNT` transactions reduce debt without representing cash movement.
 - **Additional Fees**: `ADDITIONAL_FEE` transactions increase debt for post-booking charges.
-- **Formula**: `Current Balance = Total Debt - Total Paid`
+- **Formula**: `Current Balance = Total Debt + Additional Fees - Total Paid - Discounts - Confirmed Refund Effects`
 
 ### Balance Indicators
 
@@ -95,6 +101,7 @@ To comply with Vietnamese Accounting Standards (Circular 200/2014/TT-BTC or Circ
 ### Audit Trail Requirement
 
 - Every transaction must store the authenticated internal user in `created_by`.
+- Transaction `occurred_at` is the real-world business event time and may be historical; transaction `created_at` is the Bay Buddy audit timestamp used for logs, histories, and base date-time filtering.
 - Payment receipts or transfer screenshots should be attached via `evidence_url` whenever available.
 - Refund / overpayment returns should use `is_refund_confirmed` to distinguish planned vs. confirmed outbound payouts.
 
@@ -123,10 +130,11 @@ Quotes are pre-sale informational documents and are not part of the receivable l
 - **No Ledger Impact**: Creating, editing, or cancelling a quote must not change `customer.balance` or create ledger rows.
 - **Numbering**: Quote numbers use the monthly format `BQ-YYYYMM-XXXX`.
 - **Snapshot Rule**: Quotes must also store immutable customer and ticket snapshots so later edits do not alter the original commercial offer.
-- **Conversion Rule**: When a quote is accepted, the system should convert it into an invoice through backend logic (`convert_quote_to_invoice`) and only then apply the normal invoicing and ledger-linking rules.
+- **Conversion Rule**: `convert_quote_to_invoice` is the only supported bridge from quote acceptance to invoice creation. Only after conversion may normal invoicing and ledger-linking rules apply.
 
 ## 5. User Roles & Permissions
 
+- **Authentication Requirement**: All write operations to tickets, transactions, invoices, quotes, customers, and related financial records must resolve the authenticated user before mutating data.
 - **STAFF**: Can parse emails, create tickets, and manage their assigned customers. They cannot modify `net_price` once a ticket is confirmed.
 - **ADMIN**: Can modify any field, delete transactions, view global profit reports, and manage staff accounts.
 
@@ -135,7 +143,7 @@ Quotes are pre-sale informational documents and are not part of the receivable l
 When the Agentic AI (Gemini) interacts with data:
 
 1. **Never guess prices**: If an email doesn't show a total price, set `net_price` to `0` and flag for manual entry.
-2. **Date Integrity**: Always use the flight date for accounting periods, not the booking date.
+2. **Date Integrity**: Preserve the extracted `flight_date` as the scheduled departure datetime even when it is in the past. Use `created_at` / `updated_at` for app history, audit logs, and base date-time filtering.
 3. **Currency**: Default currency is `VND`. All calculations must handle integer values (no decimals for VND).
 
 ## 7. Legal & Tax Compliance (Vietnam)

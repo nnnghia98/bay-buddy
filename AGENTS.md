@@ -10,6 +10,7 @@ Infrastructure, Database, and Stage 4 Financial Core are complete. The system no
 - **Financial Core:** Stage 4 backend is complete and ready for UI integration. Invoices, quotes, public invoice payloads, customer/ticket patch APIs, and invoice locking rules are implemented.
 - **Frontend Finance Flow:** The customer ledger follows App Router best practices. Reads happen through React Server Components, and payment recording uses a Server Action with `useActionState`, `useFormStatus`, shared Zod validation, and optimistic ledger insertion.
 - **Ticket Schema:** Tickets now store explicit route metadata with `ticket_number`, `departure_place`, `arrival_place`, `departure_code`, and `arrival_code`. `itinerary` remains available for compatibility and display, but the richer route fields are the source of truth for new writes.
+- **Ticket Time Semantics:** `flight_date` is the scheduled flight datetime and may be in the past. App base date-time filters apply to ticket `updated_at` rather than `flight_date`, and history/log views must show audit timestamps rather than flight datetime.
 - **Authentication Standard:** All write operations to tickets, transactions, invoices, quotes, customers, and related financial records MUST be authenticated.
 - **Next Focus:** Continue the authenticated App Router UI integration on top of the completed backend finance APIs.
 
@@ -20,7 +21,15 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 - `docs/ARCHITECT.md`: System architecture, Database models (SQLModel), and Security flows.
 - `docs/BUSINESS.md`: Core business rules, pricing logic, and debt (công nợ) management.
 - `docs/AGENT_PARSER.md`: Specific instructions for Gemini-powered flight data extraction.
+- `docs/DESIGN.md`: Canonical Bay Buddy design system, page patterns, component recipes, and visual rules.
+- `docs/UX.md`: Flow-level UX requirements for authenticated app surfaces, forms, tables, and state handling.
 - `docs/DICTIONARY.md`: Industry terminology mapping (VI <-> EN) and i18n formatting rules.
+
+### Mandatory DNA Standards
+
+- **Frontend Standard**: `react-best-practices` is part of the DNA. Follow Vercel's latest Next.js App Router recommendations by default.
+- **UI Skill Standard**: For any UI, layout, styling, dashboard, form, table, or design-system task, the agent MUST also use the local `frontend-design` skill in `.agents/skills/frontend-design/SKILL.md` together with the Bay Buddy DNA.
+- **Design/UX Standard**: For UI work, `docs/DESIGN.md` and `docs/UX.md` are mandatory references. If generic frontend guidance conflicts with Bay Buddy DNA, Bay Buddy DNA wins.
 
 ## 🛠 Tech Stack
 
@@ -32,8 +41,6 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 - **i18n**: `next-international` (Default Locale: `vi`, Secondary: `en`).
 - **Auth**: JWT (OAuth2PasswordBearer) with bcrypt password hashing.
 - **Deployment**: Standalone Docker image (Frontend) & Uvicorn (Backend).
-- **Frontend Standard**: `react-best-practices` is now part of the DNA. Follow Vercel's latest Next.js App Router recommendations by default.
-- **UI Skill Standard**: For any UI, layout, styling, dashboard, form, table, or design-system task, the agent MUST also use the local `frontend-design` skill in `.agents/skills/frontend-design/SKILL.md` together with the Bay Buddy DNA.
 
 ## 💻 Coding Standards
 
@@ -68,6 +75,7 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 - **Optimistic UI**: Consider `useOptimistic` for mutation-heavy surfaces such as the customer ledger so newly recorded payments appear instantly before server confirmation.
 - **TanStack Query Usage**: Keep TanStack Query for client-side cache coordination, background refresh, or interactive islands where RSC alone is not sufficient.
 - **Logo Treatment**: In the authenticated shell, the Bay Buddy logo should read as a direct navigation affordance to the homepage, centered in the sidebar, and should avoid decorative card framing unless a future redesign explicitly changes the shell pattern.
+- **History Timestamp Rule**: Any log, history, recent activity, ledger timeline, or audit-style UI must display record `created_at` / `updated_at`. Show `flight_date` only in flight-detail context, not as the record history timestamp.
 
 ### 4. Record Payment Standard (Step 4.3)
 

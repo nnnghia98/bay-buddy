@@ -97,7 +97,7 @@ Return ONLY a valid JSON object with this exact structure:
   "departure_code": "string",
   "arrival_code": "string",
   "itinerary": "string (route format)",
-  "flight_date": "ISO-8601 datetime",
+  "flight_date": "ISO-8601 datetime (scheduled departure; may be in the past)",
   "net_price": number,
   "currency": "VND"
 }

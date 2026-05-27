@@ -178,8 +178,8 @@ def _get_tickets_by_ids(
     for ticket in tickets:
         ensure_datetime_is_active(
             session=session,
-            value=ticket.flight_date,
-            detail="Selected ticket is before the app base date time.",
+            value=ticket.updated_at,
+            detail="Selected ticket was last updated before the app base date time.",
         )
     return tickets
 

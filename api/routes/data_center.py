@@ -157,17 +157,16 @@ def _select_users(scope: DataCenterScope, *, current_user_id: Any | None = None)
 
 
 def _select_tickets(scope: DataCenterScope) -> Any:
-    statement = select(Ticket).order_by(Ticket.flight_date, Ticket.id)
-    return _where_datetime(statement, Ticket.flight_date, scope)
+    statement = select(Ticket).order_by(Ticket.updated_at, Ticket.id)
+    return _where_datetime(statement, Ticket.updated_at, scope)
 
 
 def _select_transactions(scope: DataCenterScope) -> Any:
     statement = select(Transaction).order_by(
-        Transaction.occurred_at,
         Transaction.created_at,
         Transaction.id,
     )
-    return _where_datetime(statement, Transaction.occurred_at, scope)
+    return _where_datetime(statement, Transaction.created_at, scope)
 
 
 def _select_invoices(scope: DataCenterScope) -> Any:
@@ -182,8 +181,8 @@ def _select_quotes(scope: DataCenterScope) -> Any:
 
 TABLE_CONFIGS: dict[str, tuple[str, Optional[str], Callable[[DataCenterScope], Any]]] = {
     "customers": ("customers.csv", None, _select_customers),
-    "tickets": ("tickets.csv", "flight_date", _select_tickets),
-    "transactions": ("transactions.csv", "occurred_at", _select_transactions),
+    "tickets": ("tickets.csv", "updated_at", _select_tickets),
+    "transactions": ("transactions.csv", "created_at", _select_transactions),
     "invoices": ("invoices.csv", "created_at", _select_invoices),
     "quotes": ("quotes.csv", "created_at", _select_quotes),
     "users": ("users.csv", None, _select_users),

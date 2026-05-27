@@ -80,7 +80,7 @@ Return ONLY a valid JSON object with no markdown, no explanation:
   "departure_code": "string",
   "arrival_code": "string",
   "itinerary": "string (e.g. SGN-HAN)",
-  "flight_date": "ISO-8601 datetime string",
+  "flight_date": "ISO-8601 datetime string (scheduled departure; may be in the past)",
   "net_price": number,
   "currency": "VND"
 }

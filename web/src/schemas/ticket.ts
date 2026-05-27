@@ -67,6 +67,7 @@ const TicketBaseSchema = z.object({
   /**
    * Scheduled departure datetime in ISO-8601 format.
    * The API stores UTC; UI displays in DD/MM/YYYY per docs/DICTIONARY.md.
+   * This is the flight event time and can be in the past.
    * Maps to Python: flight_date
    */
   flight_date: z.coerce.date(),
@@ -147,6 +148,12 @@ export const TicketReadSchema = TicketBaseSchema.extend({
    * Maps to Python: service_fee (property)
    */
   service_fee: z.number(),
+
+  /** UTC timestamp of when the ticket record was created. */
+  created_at: z.coerce.date(),
+
+  /** UTC timestamp of when the ticket record was last updated. */
+  updated_at: z.coerce.date(),
 });
 
 export type TicketRead = z.infer<typeof TicketReadSchema>;

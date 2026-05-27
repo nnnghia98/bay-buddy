@@ -1,9 +1,9 @@
 """
 System-wide runtime settings for Bay Buddy.
 
-The base_datetime marks the operational start of the active app window.
-Rows before this datetime remain in the database for backup/history, but normal
-application queries and mutations treat them as disabled legacy data.
+The base_datetime marks the operational start of the active app window by audit
+timestamps (`created_at` / `updated_at`). Flight datetimes can be historical and
+must not be treated as legacy-data boundaries.
 """
 
 from __future__ import annotations

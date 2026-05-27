@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import HTTPException, status
@@ -38,7 +38,6 @@ from models.enums import (
 )
 from models.ticket import Ticket, TicketRead, TicketUpdate
 from models.transaction import Transaction, TransactionRead
-from services.system_settings_service import ensure_datetime_is_active
 
 logger = logging.getLogger(__name__)
 
@@ -349,6 +348,10 @@ def _prepare_ticket_for_lifecycle_change(
     return purchase_transaction
 
 
+def _touch_ticket(ticket: Ticket) -> None:
+    ticket.updated_at = datetime.now(timezone.utc)
+
+
 def _ensure_ticket_has_no_dependent_documents(ticket: Ticket) -> None:
     if ticket.invoice_items:
         raise HTTPException(
@@ -422,13 +425,8 @@ def correct_confirmed_ticket(
         f"on {ticket.flight_date.date()}"
     )
 
-    ensure_datetime_is_active(
-        session=session,
-        value=ticket.flight_date,
-        detail="Ticket flight date is before the app base date time.",
-    )
-
     try:
+        _touch_ticket(ticket)
         customer.balance += ticket.selling_price - old_selling_price
         session.add(ticket)
         session.add(purchase_transaction)
@@ -668,6 +666,7 @@ def void_confirmed_ticket(
             transaction_category=reversal.category,
         )
         ticket.status = TicketStatus.VOID
+        _touch_ticket(ticket)
         session.add(ticket)
         session.add(customer)
         session.commit()
@@ -730,6 +729,7 @@ def refund_confirmed_ticket(
             transaction_category=refund_transaction.category,
         )
         ticket.status = TicketStatus.REFUNDED
+        _touch_ticket(ticket)
         session.add(ticket)
         session.add(customer)
         session.commit()
@@ -816,6 +816,7 @@ def reassign_confirmed_ticket(
             transaction_category=transfer.category,
         )
         ticket.customer_id = new_customer.id
+        _touch_ticket(ticket)
         session.add(ticket)
         session.add(old_customer)
         session.add(new_customer)

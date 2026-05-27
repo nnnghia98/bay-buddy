@@ -3,7 +3,8 @@
 import * as React from "react"
 import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
-import { Loader2, PencilLine, Trash2 } from "lucide-react"
+import Link from "next/link"
+import { ExternalLink, Loader2, PencilLine, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -91,13 +92,15 @@ function formatSignedCurrency(amount: number): string {
 }
 
 function formatDate(value: Date): string {
-  const day = value.getDate().toString().padStart(2, "0")
-  const month = (value.getMonth() + 1).toString().padStart(2, "0")
-  const year = value.getFullYear()
-  const hours = value.getHours().toString().padStart(2, "0")
-  const minutes = value.getMinutes().toString().padStart(2, "0")
-
-  return `${day}/${month}/${year} ${hours}:${minutes}`
+  return new Intl.DateTimeFormat("vi-VN", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(value)
 }
 
 function formatDateTimeLocal(value: Date): string {
@@ -949,11 +952,12 @@ export function CustomerLedgerClient({
     Math.abs(ledger.current_balance),
   )
   const ticketOptions = confirmedLedger.entries
-    .filter((entry) => entry.entry_type === "ticket")
+    .filter((entry) => entry.entry_type === "ticket" && entry.ticket)
     .map((entry) => ({
-      id: entry.id,
+      id: entry.ticket?.id ?? entry.id,
       label: entry.content.trim() || entry.id,
     }))
+  const hasRowActions = currentUserRole === "ADMIN" || ledger.customer.is_active
   const balanceStateLabels = {
     debt: t("customers.ledger.balanceStates.debt"),
     settled: t("customers.ledger.balanceStates.settled"),
@@ -1071,7 +1075,7 @@ export function CustomerLedgerClient({
                 <TableHead className="text-right">
                   {t("customers.ledger.columns.balance")}
                 </TableHead>
-                {currentUserRole === "ADMIN" ? (
+                {hasRowActions ? (
                   <TableHead className="text-right">
                     {t("customers.ledger.columns.actions")}
                   </TableHead>
@@ -1083,7 +1087,7 @@ export function CustomerLedgerClient({
                 <TableRow>
                   <TableCell
                     className="py-12 text-center text-muted-foreground"
-                    colSpan={currentUserRole === "ADMIN" ? 6 : 5}
+                    colSpan={hasRowActions ? 6 : 5}
                   >
                     {t("customers.ledger.empty")}
                   </TableCell>
@@ -1108,9 +1112,22 @@ export function CustomerLedgerClient({
                       </StatusChip>
                     </TableCell>
                     <TableCell className="px-6 py-5">
-                      <p className="font-medium text-foreground">
-                        {entry.content.trim() || t("customers.ledger.fallbackContent")}
-                      </p>
+                      {entry.entry_type === "ticket" && entry.ticket ? (
+                        <Link
+                          className="inline-flex items-center gap-2 font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
+                          href={`/tickets/${entry.ticket.id}`}
+                        >
+                          <span>
+                            {entry.content.trim() ||
+                              t("customers.ledger.fallbackContent")}
+                          </span>
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Link>
+                      ) : (
+                        <p className="font-medium text-foreground">
+                          {entry.content.trim() || t("customers.ledger.fallbackContent")}
+                        </p>
+                      )}
                     </TableCell>
                     <TableCell
                       className={cn(
@@ -1127,16 +1144,31 @@ export function CustomerLedgerClient({
                     <TableCell className="px-6 py-5 text-right font-medium text-foreground">
                       {formatCurrency(entry.running_balance)}
                     </TableCell>
-                    {currentUserRole === "ADMIN" ? (
+                    {hasRowActions ? (
                       <TableCell className="px-6 py-5 text-right">
-                        <div className="flex justify-end gap-1">
-                          <LedgerRecordCorrectionDialog
+                        <div className="flex flex-wrap justify-end gap-1.5">
+                          <PaymentDialog
                             customerId={customerId}
-                            entry={entry}
+                            defaultLinkedTicketId={entry.ticket?.id ?? ""}
+                            disabled={!ledger.customer.is_active}
+                            onOptimisticSubmit={handleOptimisticSubmit}
+                            onSettled={handleActionSettled}
+                            ticketOptions={ticketOptions}
+                            triggerLabel={t("customers.ledger.paymentDialog.rowAction")}
+                            triggerSize="sm"
+                            triggerVariant="outline"
                           />
-                          <DeleteLedgerRecordDialog
-                            entry={entry}
-                          />
+                          {currentUserRole === "ADMIN" ? (
+                            <>
+                              <LedgerRecordCorrectionDialog
+                                customerId={customerId}
+                                entry={entry}
+                              />
+                              <DeleteLedgerRecordDialog
+                                entry={entry}
+                              />
+                            </>
+                          ) : null}
                         </div>
                       </TableCell>
                     ) : null}

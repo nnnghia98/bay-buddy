@@ -73,6 +73,7 @@ Required customer ledger behavior:
 - Keep `Record Payment` close to the balance and ledger table.
 - Preserve running balance visibility in the ledger.
 - Distinguish tickets, payments, refunds, discounts, and additional fees with both text labels and visual treatment.
+- Timeline/history columns must show `created_at` / `updated_at` audit timestamps. Show ticket `flight_date` only as flight detail metadata, never as the history timestamp.
 - Show empty, error, pending, optimistic, and rollback states explicitly.
 
 ### Tickets

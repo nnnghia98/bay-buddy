@@ -272,15 +272,22 @@ function buildRecentActivity(input: {
 
   const ticketActivity: DashboardRecentActivity[] = input.tickets
     .filter((ticket) => ticket.status === "CONFIRMED")
-    .map((ticket) => ({
-      id: ticket.id,
-      type: "ticket",
-      title: `${ticket.pnr} - ${ticket.itinerary}`,
-      amount: ticket.selling_price,
-      createdAt:
-        ticketPurchaseTimestampByTicketId.get(ticket.id) ?? ticket.flight_date,
-      href: `/customers/${ticket.customer_id}`,
-    }))
+    .map((ticket) => {
+      const purchaseTimestamp = ticketPurchaseTimestampByTicketId.get(ticket.id)
+      const activityTimestamp =
+        purchaseTimestamp && purchaseTimestamp > ticket.updated_at
+          ? purchaseTimestamp
+          : ticket.updated_at
+
+      return {
+        id: ticket.id,
+        type: "ticket",
+        title: `${ticket.pnr} - ${ticket.itinerary}`,
+        amount: ticket.selling_price,
+        createdAt: activityTimestamp,
+        href: `/customers/${ticket.customer_id}`,
+      }
+    })
   const transactionActivity: DashboardRecentActivity[] = input.transactions.map(
     (transaction) => ({
       id: transaction.id,

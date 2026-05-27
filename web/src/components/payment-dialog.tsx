@@ -9,6 +9,7 @@ import { toast } from "sonner"
 
 import { recordPaymentAction } from "@/actions/finance"
 import { Button } from "@/components/ui/button"
+import type { ButtonProps } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -47,6 +48,10 @@ type PaymentDialogProps = {
   onOptimisticSubmit: (payload: OptimisticPaymentPayload) => void
   onSettled: (status: "success" | "error") => void
   disabled?: boolean
+  defaultLinkedTicketId?: string
+  triggerLabel?: string
+  triggerSize?: ButtonProps["size"]
+  triggerVariant?: ButtonProps["variant"]
 }
 
 type ClientErrors = Partial<Record<keyof RecordPaymentFormValues, string>>
@@ -85,6 +90,10 @@ export function PaymentDialog({
   onOptimisticSubmit,
   onSettled,
   disabled = false,
+  defaultLinkedTicketId = "",
+  triggerLabel,
+  triggerSize = "lg",
+  triggerVariant = "default",
 }: PaymentDialogProps) {
   const t = useI18n()
   const router = useRouter()
@@ -177,9 +186,9 @@ export function PaymentDialog({
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
-        <Button disabled={disabled} size="lg">
+        <Button disabled={disabled} size={triggerSize} variant={triggerVariant}>
           <Wallet className="h-4 w-4" />
-          {t("customers.ledger.paymentDialog.open")}
+          {triggerLabel ?? t("customers.ledger.paymentDialog.open")}
         </Button>
       </DialogTrigger>
 
@@ -245,7 +254,7 @@ export function PaymentDialog({
               </Label>
               <select
                 className={selectClassName}
-                defaultValue=""
+                defaultValue={defaultLinkedTicketId}
                 id="linked_ticket_id"
                 name="linked_ticket_id"
               >

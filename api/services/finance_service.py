@@ -2,16 +2,16 @@
 services/finance_service.py – Customer ledger and payment recording logic.
 
 Business rules reference: docs/BUSINESS.md
-  - Current Balance = Total Debt - Total Paid
+  - Current Balance = Total Debt + Fees - Payments - Discounts
   - PAYMENT / DISCOUNT reduce customer.balance
   - TICKET_PURCHASE / ADDITIONAL_FEE / REFUND increase customer.balance
-  - Ledger must show tickets and transactions in chronological order
+  - Ledger history uses audit timestamps, not scheduled flight datetime
 """
 
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal, Optional
 
 from fastapi import HTTPException, status
@@ -56,6 +56,12 @@ class CustomerLedgerResponse(BaseModel):
     current_balance: float
     balance_state: Literal["debt", "settled", "credit"]
     entries: list[LedgerEntry]
+
+
+def _normalize_ledger_datetime(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value
+    return value.astimezone(timezone.utc).replace(tzinfo=None)
 
 
 class RecordPaymentPayload(BaseModel):
@@ -127,12 +133,6 @@ def _validate_linked_ticket(
             detail="Linked ticket does not belong to the customer",
         )
 
-    ensure_datetime_is_active(
-        session=session,
-        value=linked_ticket.flight_date,
-        detail="Linked ticket is before the app base date time.",
-    )
-
 
 def _ensure_transaction_is_mutable(transaction: Transaction) -> None:
     if transaction.is_invoiced or transaction.invoice_id is not None:
@@ -175,7 +175,7 @@ def get_customer_ledger(
     ticket_statement = apply_app_base_datetime(
         session=session,
         statement=ticket_statement,
-        column=Ticket.flight_date,
+        column=Ticket.updated_at,
     )
     tickets = session.exec(ticket_statement.order_by(Ticket.id)).all()
 
@@ -185,7 +185,7 @@ def get_customer_ledger(
     transaction_statement = apply_app_base_datetime(
         session=session,
         statement=transaction_statement,
-        column=Transaction.occurred_at,
+        column=Transaction.created_at,
     )
     transactions = session.exec(
         transaction_statement.order_by(Transaction.created_at, Transaction.id)
@@ -216,7 +216,7 @@ def get_customer_ledger(
             LedgerEntry(
                 id=transaction.id,
                 entry_type=entry_type,
-                created_at=transaction.occurred_at,
+                created_at=_normalize_ledger_datetime(transaction.created_at),
                 content=(transaction.note or transaction.method).strip(),
                 amount=amount,
                 running_balance=0,
@@ -226,14 +226,11 @@ def get_customer_ledger(
 
     for ticket in tickets:
         charge_transaction = ticket_charge_by_ticket_id.get(ticket.id)
-        created_at = (
-            charge_transaction.occurred_at if charge_transaction else ticket.flight_date
-        )
         entries.append(
             LedgerEntry(
                 id=ticket.id,
                 entry_type="ticket",
-                created_at=created_at,
+                created_at=_normalize_ledger_datetime(ticket.updated_at),
                 content=ticket.pnr,
                 amount=ticket.selling_price,
                 running_balance=0,
@@ -308,8 +305,8 @@ def record_payment(
     )
     ensure_datetime_is_active(
         session=session,
-        value=payment.occurred_at,
-        detail="Payment date time is before the app base date time.",
+        value=payment.created_at,
+        detail="Payment record was created before the app base date time.",
     )
 
     try:
@@ -374,8 +371,8 @@ def update_transaction_for_admin(
 
     ensure_datetime_is_active(
         session=session,
-        value=transaction.occurred_at,
-        detail="Transaction date time is before the app base date time.",
+        value=transaction.created_at,
+        detail="Transaction record was created before the app base date time.",
     )
 
     new_delta = get_transaction_balance_delta(

@@ -16,6 +16,8 @@ describe("TicketReadSchema", () => {
       passengers: ["NGUYEN VAN A"],
       itinerary: "HAN-SGN",
       flight_date: "2026-04-24T02:00:00.000Z",
+      created_at: "2026-04-24T04:00:00.000Z",
+      updated_at: "2026-04-24T04:00:00.000Z",
       net_price: 1_000_000,
       selling_price: 1_250_000,
       discount: 50_000,

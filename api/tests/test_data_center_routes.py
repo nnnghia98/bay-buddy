@@ -70,6 +70,7 @@ def seed_ticket(
     *,
     customer: Customer,
     flight_date: datetime,
+    created_at: datetime,
     pnr: str,
 ) -> Ticket:
     ticket = Ticket(
@@ -82,6 +83,8 @@ def seed_ticket(
         arrival_code="SGN",
         itinerary="HAN-SGN",
         flight_date=flight_date,
+        created_at=created_at,
+        updated_at=created_at,
         net_price=1_000_000,
         selling_price=1_200_000,
         true_income=200_000,
@@ -113,12 +116,14 @@ def seed_data_center_rows(
         session,
         customer=customer,
         flight_date=datetime(2026, 5, 2, 8, 30),
+        created_at=datetime(2026, 6, 2, 8, 30),
         pnr="ABC123",
     )
     out_of_scope_ticket = seed_ticket(
         session,
         customer=customer,
         flight_date=datetime(2026, 6, 2, 8, 30),
+        created_at=datetime(2026, 5, 2, 8, 30),
         pnr="XYZ789",
     )
     transaction = Transaction(
@@ -127,6 +132,7 @@ def seed_data_center_rows(
         category=TransactionCategory.TICKET_PURCHASE,
         method="Ticket",
         occurred_at=datetime(2026, 5, 2, 8, 31),
+        created_at=datetime(2026, 5, 2, 8, 31),
         customer_id=customer.id,
         linked_ticket_id=in_scope_ticket.id,
         created_by=current_user.id,
@@ -293,6 +299,7 @@ def test_admin_base_date_time_filters_active_app_queries() -> None:
         category=TransactionCategory.TICKET_PURCHASE,
         method="Ticket",
         occurred_at=datetime(2026, 6, 2, 8, 31),
+        created_at=datetime(2026, 6, 2, 8, 31),
         customer_id=customer.id,
         linked_ticket_id=out_of_scope_ticket.id,
         created_by=current_user.id,
@@ -316,13 +323,13 @@ def test_admin_base_date_time_filters_active_app_queries() -> None:
     tickets = tickets_response.json()["data"]
     transactions = transactions_response.json()["data"]
     customers = customers_response.json()["data"]
-    assert [ticket["pnr"] for ticket in tickets] == ["XYZ789"]
+    assert [ticket["pnr"] for ticket in tickets] == ["ABC123"]
     assert len(transactions) == 1
     assert transactions[0]["id"] == str(after_base_transaction.id)
     assert customers[0]["current_balance"] == 900_000
 
 
-def test_base_date_time_blocks_before_base_transaction_writes() -> None:
+def test_base_date_time_allows_historical_transaction_event_dates() -> None:
     client, session, current_user = create_test_client(role=UserRole.ADMIN)
     customer, _in_scope_ticket, _out_of_scope_ticket = seed_data_center_rows(
         session,
@@ -348,5 +355,5 @@ def test_base_date_time_blocks_before_base_transaction_writes() -> None:
 
     clear_overrides()
 
-    assert response.status_code == 422
-    assert response.json()["detail"] == "Transaction date time is before the app base date time."
+    assert response.status_code == 201
+    assert response.json()["success"] is True

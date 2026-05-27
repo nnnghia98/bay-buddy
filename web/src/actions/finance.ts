@@ -254,6 +254,7 @@ export async function recordPaymentAction(
   }
 
   revalidatePath(`/customers/${customer_id}`)
+  revalidatePath("/report")
 
   return {
     status: "success",
@@ -346,6 +347,8 @@ export async function updateTicketLedgerRecordAction(
   }
 
   revalidatePath(`/customers/${customer_id}`)
+  revalidatePath(`/tickets/${ticket_id}`)
+  revalidatePath("/report")
 
   return {
     status: "success",
@@ -422,6 +425,7 @@ export async function updateTransactionLedgerRecordAction(
   }
 
   revalidatePath(`/customers/${customer_id}`)
+  revalidatePath("/report")
 
   return {
     status: "success",
@@ -486,6 +490,8 @@ export async function deleteLedgerRecordAction(
   }
 
   revalidatePath(`/customers/${customer_id}`)
+  revalidatePath(record_type === "ticket" ? `/tickets/${record_id}` : "/report")
+  revalidatePath("/report")
 
   return {
     status: "success",

@@ -75,7 +75,7 @@ const navItems: NavItem[] = [
   { labelKey: "tickets", href: "/tickets/input", icon: Ticket },
   { labelKey: "customers", href: "/customers", icon: Users },
   { labelKey: "invoices", href: "/invoices", icon: FileText, disabled: true },
-  { labelKey: "reports", href: "/reports", icon: FileText, disabled: true },
+  { labelKey: "reports", href: "/report", icon: FileText },
   { labelKey: "settings", href: "/settings", icon: Settings },
   { labelKey: "dataCenter", href: "/data_center", icon: Database, adminOnly: true },
 ]
@@ -100,10 +100,12 @@ function useBreadcrumbs(
     customers: string
     customerDetail: string
     tickets: string
+    ticketDetail: string
     aiTicketInput: string
     invoices: string
     financeDocuments: string
     quotes: string
+    reports: string
     settings: string
     dataCenter: string
     fallback: string
@@ -136,6 +138,13 @@ function useBreadcrumbs(
       ]
     }
 
+    if (pathname.startsWith("/tickets/")) {
+      return [
+        { label: labels.tickets, href: "/tickets/input" },
+        { label: labels.ticketDetail, href: pathname },
+      ]
+    }
+
     if (pathname.startsWith("/invoices")) {
       return [
         { label: labels.invoices, href: "/invoices" },
@@ -148,6 +157,10 @@ function useBreadcrumbs(
         { label: labels.quotes, href: pathname },
         { label: labels.financeDocuments, href: pathname },
       ]
+    }
+
+    if (pathname.startsWith("/report")) {
+      return [{ label: labels.reports, href: "/report" }]
     }
 
     if (pathname.startsWith("/settings")) {
@@ -296,7 +309,9 @@ export function AppShell({ children }: AppShellProps) {
         financeDocuments: t("appShell.breadcrumbs.financeDocuments"),
         invoices: t("appShell.nav.invoices"),
         quotes: t("appShell.breadcrumbs.quotes"),
+        reports: t("appShell.nav.reports"),
         settings: t("appShell.nav.settings"),
+        ticketDetail: t("appShell.breadcrumbs.ticketDetail"),
         tickets: t("appShell.breadcrumbs.tickets"),
       }),
       [t],

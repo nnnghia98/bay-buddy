@@ -50,12 +50,19 @@
 - `true_income`: Float (Actual ticket income: `selling_price + discount - net_price`)
 - `status`: Enum (DRAFT, CONFIRMED, VOID, REFUNDED)
 - `customer_id`: UUID (FK to Customer)
+- `created_at`: DateTime (UTC auto-stamp for when Bay Buddy recorded the ticket)
+- `updated_at`: DateTime (UTC auto-stamp for the latest ticket mutation)
 
 ### Ticket Route Rule
 - New ticket writes should treat `departure_place`, `arrival_place`, `departure_code`, and `arrival_code` as the structured source-of-truth route fields.
 - `itinerary` remains in the schema for backward compatibility and display, and should be derived from the route codes when both are available.
 - `pnr` can repeat across grouped passengers from the same booking and must not be used as a unique-row key.
 - Do not overload place fields with airport-level data. If the product later needs exact airport names/codes, add dedicated airport fields alongside the current place fields.
+
+### Ticket Time Rule
+- `flight_date` is the scheduled departure datetime. It may be earlier than the app base date time.
+- `created_at` and `updated_at` are the audit timestamps used for app history, logs, and recent activity. Ticket active-window filtering uses `updated_at`, which is equal to `created_at` until the ticket is changed.
+- Do not use `flight_date` to decide whether a ticket is active in the current app window.
 
 ### Model: Transaction
 - `id`: UUID (PK)
@@ -73,6 +80,10 @@
 - `created_by`: UUID (FK to User for audit trail ownership)
 - `occurred_at`: DateTime (Real-world event timestamp)
 - `created_at`: DateTime (UTC auto-stamp)
+
+### Transaction Time Rule
+- `occurred_at` is the real-world payment/adjustment event timestamp and may be earlier than the app base date time.
+- `created_at` is the audit timestamp for when Bay Buddy recorded the transaction and is used for active app-window filtering, histories, logs, and recent activity.
 
 ### Model: Invoice
 - `id`: UUID (PK)
@@ -207,11 +218,11 @@ Bay Buddy now follows the `react-best-practices` standard aligned with Vercel's 
 
 ### Customer Ledger Structure
 - Each ledger row contains `id`, `entry_type`, `created_at`, `content`, `amount`, and `running_balance`.
-- In the ledger payload, `created_at` represents the business event timestamp used for chronological display, while `transaction.created_at` remains the audit timestamp stored on the transaction record itself.
+- In the ledger payload, `created_at` represents the audit/history timestamp used for chronological display.
 - `entry_type="ticket"` represents a confirmed ticket and is shown as a positive debt row using `Ticket.selling_price`.
 - `entry_type="payment"` represents cash movement categories. `PAYMENT` is shown as a negative amount because it reduces debt, while outbound `REFUND` increases debt / reduces held credit after money is returned to the customer.
 - `entry_type="adjustment"` represents non-cash debt adjustments such as `DISCOUNT` and `ADDITIONAL_FEE`.
-- Ticket rows use the linked `TICKET_PURCHASE` transaction timestamp as their ledger `created_at` when available; otherwise they fall back to `Ticket.flight_date`.
+- Ticket rows use `Ticket.updated_at` so corrections and reassignments are reflected in history without using `flight_date`.
 - Ledger rows are sorted by `created_at` ascending, with ticket rows ordered before non-ticket rows when timestamps are equal.
 - Running balance is calculated incrementally: `running_balance = previous_running_balance + amount`.
 - This produces the debt-first formula used in the UI: positive balances mean the customer owes money, negative balances mean the customer has credit / deposit (`Tiền dư / Đặt cọc`).

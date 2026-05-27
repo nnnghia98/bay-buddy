@@ -34,12 +34,6 @@ async def create_transaction(
     Create a new transaction and update the customer's balance.
     The signed debt impact is derived from `category`.
     """
-    # Verify customer exists
-    ensure_datetime_is_active(
-        session=session,
-        value=transaction_in.occurred_at,
-        detail="Transaction date time is before the app base date time.",
-    )
     customer = session.get(Customer, transaction_in.customer_id)
     if not customer:
         raise HTTPException(
@@ -58,11 +52,6 @@ async def create_transaction(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Linked ticket does not belong to the customer",
             )
-        ensure_datetime_is_active(
-            session=session,
-            value=linked_ticket.flight_date,
-            detail="Linked ticket is before the app base date time.",
-        )
 
     # Create transaction
     db_transaction = Transaction.model_validate(
@@ -70,6 +59,11 @@ async def create_transaction(
             **transaction_in.model_dump(),
             "created_by": current_user.id,
         }
+    )
+    ensure_datetime_is_active(
+        session=session,
+        value=db_transaction.created_at,
+        detail="Transaction record was created before the app base date time.",
     )
     session.add(db_transaction)
 
@@ -101,8 +95,8 @@ async def list_transactions(
     statement = apply_app_base_datetime(
         session=session,
         statement=select(Transaction),
-        column=Transaction.occurred_at,
-    ).order_by(Transaction.occurred_at, Transaction.created_at, Transaction.id)
+        column=Transaction.created_at,
+    ).order_by(Transaction.created_at, Transaction.id)
     statement = statement.offset(skip).limit(limit)
     transactions = session.exec(statement).all()
     tx_data = [TransactionRead.model_validate(tx).model_dump() for tx in transactions]

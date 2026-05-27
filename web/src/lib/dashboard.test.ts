@@ -10,6 +10,7 @@ const customerA: CustomerDirectoryItem = {
   full_name: "Cong ty Sen Vang",
   phone: "0900000001",
   current_balance: 18_500_000,
+  is_active: true,
 }
 
 const customerB: CustomerDirectoryItem = {
@@ -17,6 +18,7 @@ const customerB: CustomerDirectoryItem = {
   full_name: "Le Thi Mai",
   phone: "0900000002",
   current_balance: -2_000_000,
+  is_active: true,
 }
 
 const customerC: CustomerDirectoryItem = {
@@ -24,6 +26,7 @@ const customerC: CustomerDirectoryItem = {
   full_name: "Tran Van Nam",
   phone: "0900000003",
   current_balance: 1_250_000,
+  is_active: true,
 }
 
 const ticketA: TicketRead = {
@@ -33,6 +36,8 @@ const ticketA: TicketRead = {
   passengers: ["NGUYEN VAN A"],
   itinerary: "HAN-SGN",
   flight_date: new Date("2026-04-24T02:00:00.000Z"),
+  created_at: new Date("2026-04-24T03:00:00.000Z"),
+  updated_at: new Date("2026-04-24T03:00:00.000Z"),
   net_price: 1_000_000,
   selling_price: 1_250_000,
   discount: 50_000,
@@ -49,6 +54,8 @@ const ticketB: TicketRead = {
   passengers: ["TRAN THI B"],
   itinerary: "SGN-DAD",
   flight_date: new Date("2026-04-25T02:00:00.000Z"),
+  created_at: new Date("2026-04-25T03:00:00.000Z"),
+  updated_at: new Date("2026-04-25T03:00:00.000Z"),
   net_price: 800_000,
   selling_price: 950_000,
   discount: 0,
@@ -65,6 +72,8 @@ const ticketC: TicketRead = {
   passengers: ["LE THI C"],
   itinerary: "DAD-SGN",
   flight_date: new Date("2026-04-23T02:00:00.000Z"),
+  created_at: new Date("2026-04-23T03:00:00.000Z"),
+  updated_at: new Date("2026-04-23T03:00:00.000Z"),
   net_price: 700_000,
   selling_price: 900_000,
   discount: 0,
@@ -87,6 +96,7 @@ const transactions: TransactionRead[] = [
     linked_ticket_id: ticketA.id,
     is_refund_confirmed: false,
     created_by: "77777777-7777-4777-8777-777777777777",
+    occurred_at: new Date("2026-04-24T02:00:00.000Z"),
     created_at: new Date("2026-04-24T04:00:00.000Z"),
   },
   {
@@ -101,6 +111,7 @@ const transactions: TransactionRead[] = [
     linked_ticket_id: null,
     is_refund_confirmed: false,
     created_by: "77777777-7777-4777-8777-777777777777",
+    occurred_at: new Date("2026-04-24T02:30:00.000Z"),
     created_at: new Date("2026-04-24T05:00:00.000Z"),
   },
 ]

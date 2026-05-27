@@ -9,7 +9,7 @@ True income per ticket = selling_price + discount - net_price
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import Column
@@ -145,6 +145,16 @@ class Ticket(TicketBase, table=True):
         sa_column=Column(JSON, nullable=False, default=list),
         description="List of passenger full names (UPPERCASE), stored as JSON.",
     )
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        index=True,
+        description="UTC timestamp of when this ticket record was created.",
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        index=True,
+        description="UTC timestamp of when this ticket record was last updated.",
+    )
 
     # Relationship back to Customer.
     customer: Optional["Customer"] = Relationship(back_populates="tickets")
@@ -185,6 +195,8 @@ class TicketRead(TicketBase):
     id: uuid.UUID
     passengers: List[str]
     service_fee: float  # computed, not stored
+    created_at: datetime
+    updated_at: datetime
 
 
 class TicketUpdate(SQLModel):
