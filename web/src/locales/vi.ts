@@ -15,6 +15,7 @@ export default {
     quickSearch: "Tìm nhanh",
     nav: {
       tickets: "Nhập vé",
+      activities: "Hoạt động",
       customers: "Khách hàng",
       invoices: "Hóa đơn",
       reports: "Báo cáo",
@@ -27,6 +28,7 @@ export default {
       fallback: "Bay Buddy",
       financeDocuments: "Tài liệu tài chính",
       quotes: "Báo giá",
+      ticketActivity: "Lịch sử nhập vé",
       ticketDetail: "Chi tiết vé",
       tickets: "Vé máy bay",
     },
@@ -97,6 +99,33 @@ export default {
       reassignSuccess: "Đã chuyển vé sang khách hàng mới.",
       reassignFailure: "Không thể chuyển vé lúc này.",
       noReassignCustomers: "Không có khách hàng khác",
+    },
+    activity: {
+      eyebrow: "Lịch sử nhập vé",
+      title: "Vé và giao dịch từ luồng nhập vé",
+      description:
+        "Theo dõi từng vé đã lưu từ /tickets/input, giao dịch công nợ được tạo kèm theo và khách hàng đang chịu số dư liên quan.",
+      empty: "Chưa có vé nào trong phạm vi thời gian đã chọn.",
+      filters: {
+        from: "Từ ngày giờ",
+        to: "Đến ngày giờ",
+        apply: "Áp dụng",
+      },
+      metrics: {
+        tickets: "Vé đã ghi nhận",
+        customers: "Khách hàng liên quan",
+        value: "Tổng giá bán",
+      },
+      list: {
+        eyebrow: "Danh sách kết quả",
+        reconciled: "Đã liên kết giao dịch",
+        needsReview: "Có dòng cần kiểm tra",
+        unknownCustomer: "Khách hàng không tìm thấy",
+        noBalance: "Chưa có số dư",
+        noTicketNumber: "Chưa có số vé",
+        transactionLinked: "Có giao dịch",
+        transactionMissing: "Thiếu giao dịch",
+      },
     },
   },
   report: {

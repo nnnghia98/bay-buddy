@@ -6,6 +6,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import {
+  Activity,
   ChevronDown,
   Database,
   FileText,
@@ -57,6 +58,7 @@ type CustomerSummary = {
 
 type NavLabelKey =
   | "tickets"
+  | "activities"
   | "customers"
   | "invoices"
   | "reports"
@@ -73,6 +75,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { labelKey: "tickets", href: "/tickets/input", icon: Ticket },
+  { labelKey: "activities", href: "/activites", icon: Activity },
   { labelKey: "customers", href: "/customers", icon: Users },
   { labelKey: "invoices", href: "/invoices", icon: FileText, disabled: true },
   { labelKey: "reports", href: "/report", icon: FileText },
@@ -100,6 +103,7 @@ function useBreadcrumbs(
     customers: string
     customerDetail: string
     tickets: string
+    ticketActivity: string
     ticketDetail: string
     aiTicketInput: string
     invoices: string
@@ -135,6 +139,13 @@ function useBreadcrumbs(
       return [
         { label: labels.tickets, href: "/tickets/input" },
         { label: labels.aiTicketInput, href: pathname },
+      ]
+    }
+
+    if (pathname.startsWith("/activites")) {
+      return [
+        { label: labels.tickets, href: "/tickets/input" },
+        { label: labels.ticketActivity, href: pathname },
       ]
     }
 
@@ -198,7 +209,9 @@ function ShellNavigation({
         const isActive =
           !item.disabled &&
           (pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href)))
+            (item.href === "/tickets/input"
+              ? pathname.startsWith("/tickets/")
+              : item.href !== "/" && pathname.startsWith(item.href)))
 
         const itemClasses = cn(
           "group relative flex min-h-12 w-full items-center gap-3 rounded-[12px] border border-transparent px-3.5 py-2.5 text-sm font-medium tracking-[0.08px] text-[#46556a] transition-all duration-200 ease-out hover:border-primary/15 hover:bg-sidebar-accent hover:text-foreground",
@@ -311,6 +324,7 @@ export function AppShell({ children }: AppShellProps) {
         quotes: t("appShell.breadcrumbs.quotes"),
         reports: t("appShell.nav.reports"),
         settings: t("appShell.nav.settings"),
+        ticketActivity: t("appShell.breadcrumbs.ticketActivity"),
         ticketDetail: t("appShell.breadcrumbs.ticketDetail"),
         tickets: t("appShell.breadcrumbs.tickets"),
       }),

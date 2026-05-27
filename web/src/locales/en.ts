@@ -15,6 +15,7 @@ export default {
     quickSearch: "Quick search",
     nav: {
       tickets: "Tickets",
+      activities: "Activities",
       customers: "Customers",
       invoices: "Invoices",
       reports: "Reports",
@@ -27,6 +28,7 @@ export default {
       fallback: "Bay Buddy",
       financeDocuments: "Financial documents",
       quotes: "Quotes",
+      ticketActivity: "Ticket input history",
       ticketDetail: "Ticket detail",
       tickets: "Flight tickets",
     },
@@ -97,6 +99,33 @@ export default {
       reassignSuccess: "Ticket reassigned to the new customer.",
       reassignFailure: "Unable to reassign this ticket right now.",
       noReassignCustomers: "No other customers",
+    },
+    activity: {
+      eyebrow: "Ticket input history",
+      title: "Tickets and transactions from ticket input",
+      description:
+        "Track every ticket saved from /tickets/input, the debt transaction created with it, and the customer carrying the related balance.",
+      empty: "No tickets were found in the selected date/time range.",
+      filters: {
+        from: "From date and time",
+        to: "To date and time",
+        apply: "Apply",
+      },
+      metrics: {
+        tickets: "Recorded tickets",
+        customers: "Related customers",
+        value: "Total selling price",
+      },
+      list: {
+        eyebrow: "Result list",
+        reconciled: "Transactions linked",
+        needsReview: "Needs review",
+        unknownCustomer: "Customer not found",
+        noBalance: "No balance available",
+        noTicketNumber: "No ticket number",
+        transactionLinked: "Transaction linked",
+        transactionMissing: "Missing transaction",
+      },
     },
   },
   report: {
