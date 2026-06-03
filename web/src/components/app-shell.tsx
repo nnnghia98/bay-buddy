@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Database,
   FileText,
+  FileCheck2,
   Menu,
   Settings,
   Ticket,
@@ -58,6 +59,7 @@ type CustomerSummary = {
 
 type NavLabelKey =
   | "tickets"
+  | "ticketImports"
   | "activities"
   | "customers"
   | "invoices"
@@ -75,6 +77,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { labelKey: "tickets", href: "/tickets/input", icon: Ticket },
+  { labelKey: "ticketImports", href: "/extract-ticket", icon: FileCheck2 },
   { labelKey: "activities", href: "/activites", icon: Activity },
   { labelKey: "customers", href: "/customers", icon: Users },
   { labelKey: "invoices", href: "/invoices", icon: FileText, disabled: true },
@@ -92,10 +95,6 @@ function getInitials(value: string): string {
     .join("")
 }
 
-function formatRoleLabel(role: string): string {
-  return role === "ADMIN" ? "Quản trị viên" : "Nhân viên"
-}
-
 function useBreadcrumbs(
   pathname: string,
   homeLabel: string,
@@ -106,6 +105,7 @@ function useBreadcrumbs(
     ticketActivity: string
     ticketDetail: string
     aiTicketInput: string
+    ticketImports: string
     invoices: string
     financeDocuments: string
     quotes: string
@@ -139,6 +139,13 @@ function useBreadcrumbs(
       return [
         { label: labels.tickets, href: "/tickets/input" },
         { label: labels.aiTicketInput, href: pathname },
+      ]
+    }
+
+    if (pathname.startsWith("/extract-ticket")) {
+      return [
+        { label: labels.tickets, href: "/tickets/input" },
+        { label: labels.ticketImports, href: pathname },
       ]
     }
 
@@ -214,7 +221,7 @@ function ShellNavigation({
               : item.href !== "/" && pathname.startsWith(item.href)))
 
         const itemClasses = cn(
-          "group relative flex min-h-12 w-full items-center gap-3 rounded-[12px] border border-transparent px-3.5 py-2.5 text-sm font-medium tracking-[0.08px] text-[#46556a] transition-all duration-200 ease-out hover:border-primary/15 hover:bg-sidebar-accent hover:text-foreground",
+          "group relative flex min-h-11 w-full items-center gap-3 rounded-[12px] border border-transparent px-3.5 py-2.5 text-sm font-medium tracking-[0.08px] text-muted-foreground transition-colors duration-150 hover:border-primary/15 hover:bg-sidebar-accent hover:text-foreground",
           isActive && "border-primary/15 bg-white text-primary shadow-[var(--shadow-sm)]",
           item.disabled && "cursor-default opacity-55",
         )
@@ -223,7 +230,7 @@ function ShellNavigation({
           <>
             <div
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-[10px] border border-border/70 bg-white text-[#66768d] transition-all duration-200 group-hover:border-primary/20 group-hover:text-primary",
+                "flex h-9 w-9 items-center justify-center rounded-[10px] border border-border/70 bg-white text-muted-foreground transition-colors duration-150 group-hover:border-primary/20 group-hover:text-primary",
                 isActive && "border-primary/20 bg-accent text-primary",
               )}
             >
@@ -231,7 +238,7 @@ function ShellNavigation({
             </div>
             <span className="flex-1 text-left">{label}</span>
             {item.disabled ? (
-              <span className="rounded-full border border-border bg-white px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#75839a]">
+              <span className="rounded-full border border-border bg-white px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 {t("appShell.comingSoon")}
               </span>
             ) : null}
@@ -326,14 +333,18 @@ export function AppShell({ children }: AppShellProps) {
         settings: t("appShell.nav.settings"),
         ticketActivity: t("appShell.breadcrumbs.ticketActivity"),
         ticketDetail: t("appShell.breadcrumbs.ticketDetail"),
+        ticketImports: t("appShell.breadcrumbs.ticketImports"),
         tickets: t("appShell.breadcrumbs.tickets"),
       }),
       [t],
     ),
     customerQuery.data?.name,
   )
-  const userName = userQuery.data?.username ?? "Staff"
-  const userRole = formatRoleLabel(userQuery.data?.role ?? "STAFF")
+  const userName = userQuery.data?.username ?? t("appShell.userFallback")
+  const userRole =
+    userQuery.data?.role === "ADMIN"
+      ? t("appShell.roles.admin")
+      : t("appShell.roles.staff")
 
   if (!showShell) {
     return <>{children}</>
@@ -347,7 +358,7 @@ export function AppShell({ children }: AppShellProps) {
     <div className="min-h-full bg-background text-foreground">
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 hidden border-r border-sidebar-border bg-[#f6f8fb] px-4 py-4 lg:block",
+          "fixed inset-y-0 left-0 z-40 hidden border-r border-sidebar-border bg-sidebar px-4 py-4 lg:block",
           getAuthenticatedSidebarClassName(),
         )}
       >
@@ -355,7 +366,7 @@ export function AppShell({ children }: AppShellProps) {
           <div className="border-b border-border px-2 pb-4">
             <div className="flex justify-center px-2 py-2">
               <Link
-                aria-label="Về trang chủ"
+                aria-label={t("appShell.brandHomeAria")}
                 className="flex justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 href="/"
               >
@@ -400,12 +411,12 @@ export function AppShell({ children }: AppShellProps) {
                   <Menu className="h-5 w-5" strokeWidth={2} />
                 </Button>
               </SheetTrigger>
-              <SheetContent className="bg-background p-0" side="left">
-                <div className="flex h-full flex-col bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(248,250,252,0.98)_100%)]">
+              <SheetContent className="bg-sidebar p-0" side="left">
+                <div className="flex h-full flex-col bg-sidebar">
                   <SheetHeader className="border-b border-border px-5 py-5">
                     <SheetTitle className="flex justify-center px-2 py-2">
                       <Link
-                        aria-label="Về trang chủ"
+                        aria-label={t("appShell.brandHomeAria")}
                         className="flex justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                         href="/"
                         onClick={() => setIsSidebarOpen(false)}
@@ -421,7 +432,7 @@ export function AppShell({ children }: AppShellProps) {
                       </Link>
                     </SheetTitle>
                     <SheetDescription className="px-1 pt-2 text-left">
-                      Điều phối khách hàng, nhận vé và ghi nhận công nợ trong một luồng thống nhất.
+                      {t("appShell.mobileDescription")}
                     </SheetDescription>
                   </SheetHeader>
                   <div className="flex-1 overflow-y-auto px-4 py-5">
@@ -461,7 +472,7 @@ export function AppShell({ children }: AppShellProps) {
             </div>
 
             <details className="group relative">
-              <summary className="flex cursor-pointer list-none items-center gap-3 rounded-[16px] border border-border bg-white px-3 py-2 shadow-[var(--shadow-sm)] transition-all duration-200 hover:border-primary/20">
+              <summary className="flex cursor-pointer list-none items-center gap-3 rounded-xl border border-border bg-white px-3 py-2 shadow-[var(--shadow-sm)] transition-colors duration-150 hover:border-primary/20">
                 <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-accent text-sm font-semibold text-primary">
                   {getInitials(userName)}
                 </div>
@@ -475,7 +486,7 @@ export function AppShell({ children }: AppShellProps) {
                 </div>
                 <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
               </summary>
-              <div className="absolute right-0 mt-3 w-56 rounded-[18px] border border-border bg-white p-2 shadow-[var(--shadow-lg)]">
+              <div className="absolute right-0 mt-3 w-56 rounded-xl border border-border bg-white p-2 shadow-[var(--shadow-lg)]">
                 <button
                   className="flex w-full items-center rounded-[12px] px-3 py-2 text-left text-sm text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground"
                   onClick={() => {
@@ -484,7 +495,7 @@ export function AppShell({ children }: AppShellProps) {
                   }}
                   type="button"
                 >
-                  Đăng xuất
+                  {t("appShell.signOut")}
                 </button>
               </div>
             </details>

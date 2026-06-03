@@ -3,8 +3,8 @@ import { redirect } from "next/navigation"
 import { convertQuoteToInvoiceAction } from "@/actions/quotes"
 import { ConvertQuoteSubmitButton } from "@/app/quotes/[id]/convert-quote-submit-button"
 import {
-  CommandPanel,
-  CommandPanelHeader,
+  Panel,
+  PanelHeaderRow,
   StatusChip,
   TableScrollArea,
 } from "@/components/command-center"
@@ -99,8 +99,8 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
         </div>
       ) : null}
 
-      <CommandPanel>
-        <CommandPanelHeader
+      <Panel>
+        <PanelHeaderRow
           eyebrow={t("financeDocuments.quotes.detail.eyebrow")}
           title={`${t("financeDocuments.quotes.detail.titlePrefix")} ${quote.quote_number}`}
           description={t("financeDocuments.quotes.detail.informationalNotice")}
@@ -175,10 +175,10 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             </p>
           </div>
         </div>
-      </CommandPanel>
+      </Panel>
 
-      <CommandPanel>
-        <CommandPanelHeader
+      <Panel>
+        <PanelHeaderRow
           title={t("financeDocuments.quotes.detail.lineItemsTitle")}
           description={t("financeDocuments.common.snapshotNotice")}
           action={
@@ -230,7 +230,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             </TableBody>
           </Table>
         </TableScrollArea>
-      </CommandPanel>
+      </Panel>
     </div>
   )
 }

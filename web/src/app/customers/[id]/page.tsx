@@ -3,8 +3,8 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 
 import {
-  CommandPanel,
-  CommandPanelHeader,
+  Panel,
+  PanelHeaderRow,
 } from "@/components/command-center"
 import { CustomerLedgerClient } from "@/components/customer-ledger-client"
 import { Button } from "@/components/ui/button"
@@ -89,8 +89,8 @@ export default async function CustomerLedgerPage({ params }: PageProps) {
         initialLedger={ledger}
       />
 
-      <CommandPanel>
-        <CommandPanelHeader
+      <Panel>
+        <PanelHeaderRow
           title={t("customers.ledger.invoices.title")}
           description={t("customers.ledger.invoices.description")}
           action={
@@ -101,7 +101,7 @@ export default async function CustomerLedgerPage({ params }: PageProps) {
             </Button>
           }
         />
-      </CommandPanel>
+      </Panel>
     </div>
   )
 }

@@ -1,8 +1,8 @@
 import Link from "next/link"
 
 import {
-  CommandPanel,
-  CommandPanelHeader,
+  Panel,
+  PanelHeaderRow,
   StatusChip,
   TableScrollArea,
 } from "@/components/command-center"
@@ -63,8 +63,8 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
 
   return (
     <div className="space-y-4 text-foreground">
-      <CommandPanel>
-        <CommandPanelHeader
+      <Panel>
+        <PanelHeaderRow
           eyebrow={t("financeDocuments.invoices.detail.eyebrow")}
           title={`${t("financeDocuments.invoices.detail.titlePrefix")} ${invoice.invoice_number}`}
           description={t("financeDocuments.common.snapshotNotice")}
@@ -169,10 +169,10 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
             </div>
           ) : null}
         </div>
-      </CommandPanel>
+      </Panel>
 
-      <CommandPanel>
-        <CommandPanelHeader
+      <Panel>
+        <PanelHeaderRow
           title={t("financeDocuments.invoices.detail.lineItemsTitle")}
         />
         <TableScrollArea>
@@ -214,7 +214,7 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
             </TableBody>
           </Table>
         </TableScrollArea>
-      </CommandPanel>
+      </Panel>
     </div>
   )
 }

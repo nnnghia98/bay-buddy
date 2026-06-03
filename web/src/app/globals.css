@@ -16,12 +16,8 @@
   --theme-panel-border-strong: #cfd9e4;
   --theme-success: #006400;
   --theme-danger: #d53b3b;
-  --theme-shadow-blue:
-    rgba(0, 0, 0, 0.32) 0px 0px 1px,
-    rgba(0, 0, 0, 0.08) 0px 0px 2px,
-    rgba(45, 127, 249, 0.28) 0px 1px 3px,
-    rgba(0, 0, 0, 0.06) 0px 0px 0px 0.5px inset;
-  --theme-shadow-soft: rgba(15, 48, 106, 0.05) 0px 0px 20px;
+  --theme-shadow-panel: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --theme-shadow-soft: rgba(15, 48, 106, 0.05) 0px 10px 30px -24px;
 
   --background: var(--theme-canvas);
   --foreground: var(--theme-ink);
@@ -67,23 +63,23 @@
 
   --radius: 0.625rem;
 
-  --shadow-2xs: var(--theme-shadow-blue);
-  --shadow-xs: var(--theme-shadow-blue);
+  --shadow-2xs: var(--theme-shadow-panel);
+  --shadow-xs: var(--theme-shadow-panel);
   --shadow-sm:
     0 1px 2px rgba(15, 23, 42, 0.04),
     0 0 0 1px rgba(255, 255, 255, 0.72) inset;
-  --shadow: var(--theme-shadow-blue);
+  --shadow: var(--theme-shadow-panel);
   --shadow-md:
-    var(--theme-shadow-blue),
+    var(--theme-shadow-panel),
     0 10px 30px -24px rgba(15, 48, 106, 0.35);
   --shadow-lg:
-    var(--theme-shadow-blue),
+    var(--theme-shadow-panel),
     0 20px 40px -28px rgba(15, 48, 106, 0.28);
   --shadow-xl:
-    var(--theme-shadow-blue),
+    var(--theme-shadow-panel),
     0 28px 50px -32px rgba(15, 48, 106, 0.24);
   --shadow-2xl:
-    var(--theme-shadow-blue),
+    var(--theme-shadow-panel),
     0 32px 64px -36px rgba(15, 48, 106, 0.28);
 }
 

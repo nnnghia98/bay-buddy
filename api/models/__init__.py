@@ -31,6 +31,8 @@ from .enums import (
     CustomerType,
     InvoiceStatus,
     QuoteStatus,
+    TicketImportSource,
+    TicketImportStatus,
     TransactionCategory,
     TransactionType,
     UserRole,
@@ -38,6 +40,7 @@ from .enums import (
 from .user import User, UserCreate, UserRead, UserUpdate
 from .customer import Customer, CustomerCreate, CustomerRead, CustomerUpdate
 from .ticket import Ticket, TicketCreate, TicketRead, TicketUpdate
+from .ticket_import import TicketImport, TicketImportRead
 from .invoice import (
     Invoice,
     InvoiceCreate,
@@ -71,6 +74,8 @@ __all__ = [
     "Airline",
     "InvoiceStatus",
     "QuoteStatus",
+    "TicketImportSource",
+    "TicketImportStatus",
     "TransactionCategory",
     "TransactionType",
     # User
@@ -88,6 +93,8 @@ __all__ = [
     "TicketCreate",
     "TicketRead",
     "TicketUpdate",
+    "TicketImport",
+    "TicketImportRead",
     # Invoice
     "Invoice",
     "InvoiceCreate",

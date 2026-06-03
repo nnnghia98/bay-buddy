@@ -3,6 +3,10 @@
   "private": true,
   "scripts": {
     "api": "cd api && poetry run uvicorn main:app --reload --port 6768",
+    "design:lint": "designmd lint docs/DESIGN.md",
     "web": "yarn --cwd web dev --port 6769"
+  },
+  "devDependencies": {
+    "@google/design.md": "^0.2.0"
   }
 }

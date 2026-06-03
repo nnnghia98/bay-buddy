@@ -11,7 +11,13 @@ import {
   WalletCards,
 } from "lucide-react"
 
-import { StatusChip, TableScrollArea } from "@/components/command-center"
+import {
+  MetricCard,
+  Panel,
+  SectionHeader,
+  StatusChip,
+  TableScrollArea,
+} from "@/components/command-center"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -73,54 +79,6 @@ function getActivityTone(
   return "neutral"
 }
 
-// ---------------------------------------------------------------------------
-// Section header — compact, no outer card
-// ---------------------------------------------------------------------------
-function SectionHeader({
-  title,
-  id,
-  action,
-}: {
-  title: string
-  id?: string
-  action?: React.ReactNode
-}) {
-  return (
-    <div className="flex items-center justify-between pb-3">
-      <h2
-        id={id}
-        className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary"
-      >
-        {title}
-      </h2>
-      {action}
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Panel: white card with border — replaces CommandPanel
-// ---------------------------------------------------------------------------
-function Panel({
-  children,
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={[
-        "overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      {...props}
-    >
-      {children}
-    </div>
-  )
-}
-
 export function FinancialSummaryDashboard({
   summary,
   initialRevenueVisible = false,
@@ -172,78 +130,48 @@ export function FinancialSummaryDashboard({
       {/* ------------------------------------------------------------------ */}
       <div className="grid gap-4 sm:grid-cols-3">
         {/* Revenue */}
-        <Panel>
-          <div className="p-5">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
-                <WalletCards className="h-4 w-4" aria-hidden="true" />
-              </div>
-              <Button
-                aria-label={
-                  isRevenueVisible
-                    ? t("dashboard.summary.widgets.revenue.hide")
-                    : t("dashboard.summary.widgets.revenue.show")
-                }
-                onClick={() => setIsRevenueVisible((v) => !v)}
-                size="icon"
-                type="button"
-                variant="ghost"
-                className="h-8 w-8 shrink-0 text-muted-foreground"
-              >
-                {isRevenueVisible ? (
-                  <EyeOff aria-hidden="true" className="h-4 w-4" />
-                ) : (
-                  <Eye aria-hidden="true" className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("dashboard.summary.widgets.revenue.label")}
-            </p>
-            <p className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-foreground">
-              {isRevenueVisible ? formatCurrency(summary.totalRevenue) : "••••••"}
-            </p>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              {summary.confirmedTickets} {t("dashboard.summary.widgets.revenue.detail")}
-            </p>
-          </div>
-        </Panel>
+        <MetricCard
+          action={
+            <Button
+              aria-label={
+                isRevenueVisible
+                  ? t("dashboard.summary.widgets.revenue.hide")
+                  : t("dashboard.summary.widgets.revenue.show")
+              }
+              className="h-8 w-8 shrink-0 text-muted-foreground"
+              onClick={() => setIsRevenueVisible((v) => !v)}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              {isRevenueVisible ? (
+                <EyeOff aria-hidden="true" className="h-4 w-4" />
+              ) : (
+                <Eye aria-hidden="true" className="h-4 w-4" />
+              )}
+            </Button>
+          }
+          description={`${summary.confirmedTickets} ${t("dashboard.summary.widgets.revenue.detail")}`}
+          icon={WalletCards}
+          label={t("dashboard.summary.widgets.revenue.label")}
+          value={isRevenueVisible ? formatCurrency(summary.totalRevenue) : "••••••"}
+        />
 
         {/* Net Profit */}
-        <Panel>
-          <div className="p-5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
-              <TrendingUp className="h-4 w-4" aria-hidden="true" />
-            </div>
-            <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("dashboard.summary.widgets.profit.label")}
-            </p>
-            <p className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-foreground">
-              {formatCurrency(summary.totalNetProfit)}
-            </p>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              {formatPercent(summary.averageMarginPercent)}% {t("dashboard.summary.widgets.profit.detail")}
-            </p>
-          </div>
-        </Panel>
+        <MetricCard
+          description={`${formatPercent(summary.averageMarginPercent)}% ${t("dashboard.summary.widgets.profit.detail")}`}
+          icon={TrendingUp}
+          label={t("dashboard.summary.widgets.profit.label")}
+          value={formatCurrency(summary.totalNetProfit)}
+        />
 
         {/* Receivables */}
-        <Panel>
-          <div className="p-5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
-              <Landmark className="h-4 w-4" aria-hidden="true" />
-            </div>
-            <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("dashboard.summary.widgets.receivables.label")}
-            </p>
-            <p className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-foreground">
-              {formatCurrency(summary.totalReceivables)}
-            </p>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              {summary.customersWithDebt} {t("dashboard.summary.widgets.receivables.detail")}
-            </p>
-          </div>
-        </Panel>
+        <MetricCard
+          description={`${summary.customersWithDebt} ${t("dashboard.summary.widgets.receivables.detail")}`}
+          icon={Landmark}
+          label={t("dashboard.summary.widgets.receivables.label")}
+          value={formatCurrency(summary.totalReceivables)}
+        />
       </div>
 
       {/* ------------------------------------------------------------------ */}

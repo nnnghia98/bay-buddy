@@ -54,14 +54,14 @@ export default async function InvoicePublicPage({ params }: PageProps) {
             </div>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-2">
-                <CardTitle className="text-4xl tracking-[-0.03em]">
+                <CardTitle className="text-2xl font-semibold tracking-[-0.02em]">
                   {publicView.brand.company_name}
                 </CardTitle>
                 <CardDescription className="max-w-2xl text-base leading-7">
                   {publicView.brand.slogan}
                 </CardDescription>
               </div>
-              <div className="rounded-2xl border border-border bg-white px-4 py-3 text-sm leading-6 text-muted-foreground">
+              <div className="rounded-xl border border-border bg-white px-4 py-3 text-sm leading-6 text-muted-foreground">
                 <p>{t("financeDocuments.invoices.public.contact")}</p>
                 <p>{publicView.brand.support_email}</p>
                 <p>{publicView.brand.hotline}</p>
@@ -73,7 +73,7 @@ export default async function InvoicePublicPage({ params }: PageProps) {
         <CardContent className="space-y-6 p-6 lg:p-8">
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
             <div className="space-y-4">
-              <h1 className="text-3xl font-medium tracking-[-0.03em] text-foreground">
+              <h1 className="text-2xl font-semibold tracking-[-0.02em] text-foreground">
                 {t("financeDocuments.common.invoice")} {publicView.invoice.invoice_number}
               </h1>
               <div className="flex flex-wrap gap-3">
@@ -89,7 +89,7 @@ export default async function InvoicePublicPage({ params }: PageProps) {
               </div>
             </div>
 
-            <div className="grid gap-3 rounded-3xl border border-border bg-secondary/30 p-4">
+            <div className="grid gap-3 rounded-xl border border-border bg-secondary/30 p-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   {t("financeDocuments.common.customer")}
@@ -119,9 +119,9 @@ export default async function InvoicePublicPage({ params }: PageProps) {
             </div>
           </div>
 
-          <section className="rounded-3xl border border-border bg-white">
+          <section className="overflow-hidden rounded-xl border border-border bg-white">
             <div className="border-b border-border px-5 py-4">
-              <h2 className="text-xl font-medium tracking-[-0.02em] text-foreground">
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
                 {t("financeDocuments.invoices.public.lineItemsTitle")}
               </h2>
             </div>
@@ -154,7 +154,7 @@ export default async function InvoicePublicPage({ params }: PageProps) {
           </section>
 
           <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="rounded-3xl border border-border bg-secondary/30 p-5">
+            <div className="rounded-xl border border-border bg-secondary/30 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 {t("financeDocuments.common.amountInWords")}
               </p>
@@ -163,7 +163,7 @@ export default async function InvoicePublicPage({ params }: PageProps) {
               </p>
             </div>
 
-            <div className="grid gap-3 rounded-3xl border border-border bg-secondary/30 p-5">
+            <div className="grid gap-3 rounded-xl border border-border bg-secondary/30 p-5">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   {t("financeDocuments.common.taxAmount")}

@@ -19,8 +19,8 @@ import {
 } from "@/actions/customer-management"
 import { PaymentDialog } from "@/components/payment-dialog"
 import {
-  CommandPanel,
-  CommandPanelHeader,
+  Panel,
+  PanelHeaderRow,
   StatusChip,
   TableScrollArea,
 } from "@/components/command-center"
@@ -937,13 +937,13 @@ export function CustomerLedgerClient({
 
   if (!initialLedger) {
     return (
-      <CommandPanel>
-        <CommandPanelHeader
+      <Panel>
+        <PanelHeaderRow
           eyebrow={t("customers.ledger.eyebrow")}
           title={t("customers.ledger.unavailableTitle")}
           description={t("customers.ledger.unavailableDescription")}
         />
-      </CommandPanel>
+      </Panel>
     )
   }
 
@@ -983,8 +983,8 @@ export function CustomerLedgerClient({
 
   return (
     <div className="space-y-4 text-foreground">
-      <CommandPanel>
-        <CommandPanelHeader
+      <Panel>
+        <PanelHeaderRow
           eyebrow={t("customers.ledger.eyebrow")}
           title={ledger.customer.name}
           description={`${t("customers.ledger.customerId")}: ${ledger.customer.id}`}
@@ -1055,10 +1055,10 @@ export function CustomerLedgerClient({
             </p>
           </div>
         </div>
-      </CommandPanel>
+      </Panel>
 
-      <CommandPanel>
-        <CommandPanelHeader
+      <Panel>
+        <PanelHeaderRow
           title={t("customers.ledger.tableTitle")}
           description={t("customers.ledger.tableDescription")}
         />
@@ -1178,7 +1178,7 @@ export function CustomerLedgerClient({
             </TableBody>
           </Table>
         </TableScrollArea>
-      </CommandPanel>
+      </Panel>
     </div>
   )
 }

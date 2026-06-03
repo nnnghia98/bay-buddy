@@ -81,7 +81,7 @@
           "AI"
         ],
         "summary": "Parse flight confirmation file",
-        "description": "Extract structured flight data from an uploaded image or PDF using Gemini 2.5 Flash. Accepts multipart/form-data with a single 'file' field. Returns JSON matching the Ticket model schema suitable for database storage.",
+        "description": "Extract structured flight data from an uploaded image or PDF using the configured Gemini model. Accepts multipart/form-data with a single 'file' field. Returns JSON matching the Ticket model schema suitable for database storage.",
         "operationId": "parse_flight_api_v1_ai_parse_post",
         "requestBody": {
           "content": {
@@ -263,6 +263,67 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response List Users Api V1 Users  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{user_id}": {
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update User",
+        "description": "Update a user account. Only ADMIN can edit staff accounts.",
+        "operationId": "update_user_api_v1_users__user_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update User Api V1 Users  User Id  Patch"
                 }
               }
             }
@@ -481,6 +542,55 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response Update Customer Api V1 Customers  Customer Id  Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Delete Customer",
+        "description": "Delete a customer when no related finance/ticket records exist.",
+        "operationId": "delete_customer_api_v1_customers__customer_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Customer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Delete Customer Api V1 Customers  Customer Id  Delete"
                 }
               }
             }
@@ -1050,6 +1160,335 @@
         }
       }
     },
+    "/api/v1/tickets/{ticket_id}/correction": {
+      "patch": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Correct Ticket Route",
+        "description": "Admin-only correction for mutable confirmed ticket ledger rows.",
+        "operationId": "correct_ticket_route_api_v1_tickets__ticket_id__correction_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Correct Ticket Route Api V1 Tickets  Ticket Id  Correction Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Delete Ticket Correction Route",
+        "description": "Admin-only removal for mutable confirmed ticket ledger rows.",
+        "operationId": "delete_ticket_correction_route_api_v1_tickets__ticket_id__correction_delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Delete Ticket Correction Route Api V1 Tickets  Ticket Id  Correction Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ticket-imports/": {
+      "get": {
+        "tags": [
+          "Ticket Imports"
+        ],
+        "summary": "List Imports Route",
+        "description": "Return recent customer-safe ticket imports for staff review.",
+        "operationId": "list_imports_route_api_v1_ticket_imports__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response List Imports Route Api V1 Ticket Imports  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ticket-imports/{import_id}": {
+      "get": {
+        "tags": [
+          "Ticket Imports"
+        ],
+        "summary": "Get Import Route",
+        "description": "Return one customer-safe ticket import for staff review.",
+        "operationId": "get_import_route_api_v1_ticket_imports__import_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "import_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Import Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Import Route Api V1 Ticket Imports  Import Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ticket-imports/uploads": {
+      "post": {
+        "tags": [
+          "Ticket Imports"
+        ],
+        "summary": "Create Upload Import Route",
+        "description": "Create a pending import from an authenticated staff upload.",
+        "operationId": "create_upload_import_route_api_v1_ticket_imports_uploads_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_upload_import_route_api_v1_ticket_imports_uploads_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Upload Import Route Api V1 Ticket Imports Uploads Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ticket-imports/inbound-email": {
+      "post": {
+        "tags": [
+          "Ticket Imports"
+        ],
+        "summary": "Create Inbound Email Import Route",
+        "description": "Receive a forwarded airline itinerary from an inbound email provider.",
+        "operationId": "create_inbound_email_import_route_api_v1_ticket_imports_inbound_email_post",
+        "parameters": [
+          {
+            "name": "x-bay-buddy-inbound-secret",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Bay-Buddy-Inbound-Secret"
+            }
+          },
+          {
+            "name": "x-bay-buddy-webhook-secret",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Bay-Buddy-Webhook-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Create Inbound Email Import Route Api V1 Ticket Imports Inbound Email Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/transactions/": {
       "post": {
         "tags": [
@@ -1141,6 +1580,116 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response List Transactions Api V1 Transactions  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/transactions/{transaction_id}": {
+      "patch": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Update Transaction",
+        "description": "Admin-only correction for a mutable ledger transaction.",
+        "operationId": "update_transaction_api_v1_transactions__transaction_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "transaction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Transaction Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Transaction Api V1 Transactions  Transaction Id  Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Delete Transaction",
+        "description": "Admin-only removal for a mutable ledger transaction.",
+        "operationId": "delete_transaction_api_v1_transactions__transaction_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "transaction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Transaction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Delete Transaction Api V1 Transactions  Transaction Id  Delete"
                 }
               }
             }
@@ -1679,6 +2228,306 @@
         }
       }
     },
+    "/api/v1/data-center/preview": {
+      "get": {
+        "tags": [
+          "Data Center"
+        ],
+        "summary": "Preview Data Center Scope",
+        "operationId": "preview_data_center_scope_api_v1_data_center_preview_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "tables",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tables"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Preview Data Center Scope Api V1 Data Center Preview Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/data-center/backup": {
+      "get": {
+        "tags": [
+          "Data Center"
+        ],
+        "summary": "Backup Data Center Scope",
+        "operationId": "backup_data_center_scope_api_v1_data_center_backup_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "tables",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tables"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/data-center/wipe": {
+      "delete": {
+        "tags": [
+          "Data Center"
+        ],
+        "summary": "Wipe Data Center Scope",
+        "operationId": "wipe_data_center_scope_api_v1_data_center_wipe_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataCenterWipePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Wipe Data Center Scope Api V1 Data Center Wipe Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/settings/base-date-time": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Get Base Date Time Settings",
+        "description": "Return the current app-wide base date time setting.",
+        "operationId": "get_base_date_time_settings_api_v1_settings_base_date_time_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Base Date Time Settings Api V1 Settings Base Date Time Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Update Base Date Time Settings",
+        "description": "Update the app-wide base date time setting. Admin only.",
+        "operationId": "update_base_date_time_settings_api_v1_settings_base_date_time_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemSettingUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Update Base Date Time Settings Api V1 Settings Base Date Time Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -1716,6 +2565,21 @@
         ],
         "title": "Airline",
         "description": "Supported Vietnamese airlines mapped to their IATA-style codes."
+      },
+      "Body_create_upload_import_route_api_v1_ticket_imports_uploads_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File",
+            "description": "Ticket email HTML or .eml file."
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_create_upload_import_route_api_v1_ticket_imports_uploads_post"
       },
       "Body_login_api_v1_auth_login_post": {
         "properties": {
@@ -1862,6 +2726,12 @@
             "title": "Balance",
             "description": "Current debt balance (công nợ). Positive = customer owes; Negative = customer has credit.",
             "default": 0.0
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Soft-archive flag. Inactive customers stay in history but should be treated as archived in the UI.",
+            "default": true
           }
         },
         "type": "object",
@@ -1963,11 +2833,74 @@
               }
             ],
             "title": "Balance"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
           }
         },
         "type": "object",
         "title": "CustomerUpdate",
         "description": "All fields optional for partial PATCH payloads."
+      },
+      "DataCenterWipePayload": {
+        "properties": {
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To"
+          },
+          "tables": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tables"
+          },
+          "confirmation": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Confirmation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "confirmation"
+        ],
+        "title": "DataCenterWipePayload"
       },
       "HTTPValidationError": {
         "properties": {
@@ -2294,6 +3227,25 @@
         "title": "RecordPaymentPayload",
         "description": "Payload accepted by POST /customers/{id}/payments."
       },
+      "SystemSettingUpdate": {
+        "properties": {
+          "base_datetime": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Datetime"
+          }
+        },
+        "type": "object",
+        "title": "SystemSettingUpdate",
+        "description": "Partial settings update payload."
+      },
       "TicketConfirmPayload": {
         "properties": {
           "customer_name": {
@@ -2468,8 +3420,20 @@
             "type": "number",
             "minimum": 0.0,
             "title": "Discount",
-            "description": "Optional discount amount applied to the ticket in VND.",
+            "description": "Airline add-in / discount amount earned by the agency for this ticket in VND.",
             "default": 0.0
+          },
+          "true_income": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "True Income",
+            "description": "Actual ticket income: selling_price + discount - net_price."
           }
         },
         "type": "object",
@@ -2482,7 +3446,7 @@
           "net_price"
         ],
         "title": "TicketConfirmPayload",
-        "description": "Payload sent by the frontend when the user confirms an AI-parsed ticket.\n\nCustomer identification:\n    The user can identify the customer by name (and optionally `customer_type`).\n    The service will look up an existing customer by name (case-insensitive) or\n    create a new one if no match is found.\n\nPricing (docs/BUSINESS.md §2):\n    selling_price = net_price + service_fee\n    If `selling_price` is omitted, the service derives it automatically.\n    If both `service_fee` and `selling_price` are supplied they must be consistent."
+        "description": "Payload sent by the frontend when the user confirms an AI-parsed ticket.\n\nCustomer identification:\n    The user can identify the customer by name (and optionally `customer_type`).\n    The service will look up an existing customer by name (case-insensitive) or\n    create a new one if no match is found.\n\nPricing (docs/BUSINESS.md §2):\n    true_income = selling_price + discount - net_price\n    If `selling_price` is omitted, the service derives it from service_fee.\n    If `true_income` is supplied, it must match the computed income."
       },
       "TicketCreate": {
         "properties": {
@@ -2616,7 +3580,13 @@
             "type": "number",
             "minimum": 0.0,
             "title": "Discount",
-            "description": "Optional discount amount applied to the ticket in VND.",
+            "description": "Airline add-in / discount amount earned by the agency for this ticket in VND.",
+            "default": 0.0
+          },
+          "true_income": {
+            "type": "number",
+            "title": "True Income",
+            "description": "Actual ticket income: selling_price + discount - net_price.",
             "default": 0.0
           },
           "status": {
@@ -2891,6 +3861,17 @@
             ],
             "title": "Discount"
           },
+          "true_income": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "True Income"
+          },
           "status": {
             "anyOf": [
               {
@@ -3067,6 +4048,115 @@
         "title": "TransactionType",
         "description": "Types of financial transactions that affect a Customer's balance (công nợ)."
       },
+      "TransactionUpdate": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TransactionType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TransactionCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "evidence_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Url"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "linked_ticket_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Ticket Id"
+          },
+          "is_refund_confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Refund Confirmed"
+          }
+        },
+        "type": "object",
+        "title": "TransactionUpdate",
+        "description": "All fields optional for partial PATCH payloads (typically only `note` or `method` changes)."
+      },
       "UserCreate": {
         "properties": {
           "username": {
@@ -3089,7 +4179,7 @@
           },
           "password": {
             "type": "string",
-            "minLength": 8,
+            "minLength": 1,
             "title": "Password",
             "description": "Plain-text password (hashed before storage)."
           }
@@ -3144,6 +4234,59 @@
         ],
         "title": "UserRole",
         "description": "Roles available to internal system users."
+      },
+      "UserUpdate": {
+        "properties": {
+          "username": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "title": "UserUpdate",
+        "description": "All fields optional so clients can send partial PATCH payloads."
       },
       "ValidationError": {
         "properties": {

@@ -4,14 +4,15 @@ import { cn } from "@/lib/utils"
 
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, onClick, ...props }, ref) => {
-    const isInteractive = !!onClick || props.role === "button" || props.tabIndex === 0;
+    const isInteractive = !!onClick || props.role === "button" || props.tabIndex === 0
     return (
       <div
         ref={ref}
         onClick={onClick}
         className={cn(
-          "rounded-[24px] border border-border bg-card text-card-foreground shadow-[var(--shadow-sm),var(--theme-shadow-soft)] motion-reduce:transform-none motion-reduce:transition-none",
-          isInteractive && "transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[var(--shadow-md),var(--theme-shadow-soft)] cursor-pointer",
+          "rounded-xl border border-border bg-white text-card-foreground shadow-[0_1px_3px_rgba(0,0,0,0.06)] motion-reduce:transition-none",
+          isInteractive &&
+            "cursor-pointer transition-colors duration-150 hover:border-primary/25 hover:bg-accent/45",
           className,
         )}
         {...props}
@@ -33,11 +34,7 @@ const CardTitle = React.forwardRef<
   HTMLHeadingElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
-  <h3
-    ref={ref}
-    className={cn("text-2xl font-medium leading-none tracking-[-0.02em]", className)}
-    {...props}
-  />
+  <h3 ref={ref} className={cn("text-base font-semibold leading-none", className)} {...props} />
 ))
 CardTitle.displayName = "CardTitle"
 

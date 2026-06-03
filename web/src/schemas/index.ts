@@ -97,6 +97,21 @@ export {
 } from "./ticket";
 export type { TicketCreate, TicketRead, TicketUpdate } from "./ticket";
 
+// Ticket imports
+export {
+  TicketImportListSchema,
+  TicketImportSchema,
+  TicketImportSourceSchema,
+  TicketImportStatusSchema,
+  initialTicketImportActionState,
+} from "./ticket-import"
+export type {
+  TicketImport,
+  TicketImportActionState,
+  TicketImportSource,
+  TicketImportStatus,
+} from "./ticket-import"
+
 // Finance
 export {
   CustomerInvoiceListSchema,

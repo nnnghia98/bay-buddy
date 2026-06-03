@@ -103,6 +103,7 @@ from routes import (
     data_center,
     finance,
     settings,
+    ticket_imports,
     tickets,
     transactions,
     users,
@@ -113,6 +114,7 @@ app.include_router(ai.router, prefix="/api/v1/ai", tags=["AI"])
 app.include_router(users.router,        prefix="/api/v1/users",        tags=["Users"])
 app.include_router(customers.router,    prefix="/api/v1/customers",    tags=["Customers"])
 app.include_router(tickets.router,      prefix="/api/v1/tickets",      tags=["Tickets"])
+app.include_router(ticket_imports.router, prefix="/api/v1/ticket-imports", tags=["Ticket Imports"])
 app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Transactions"])
 app.include_router(finance.router,      prefix="/api/v1/finance",      tags=["Finance"])
 app.include_router(data_center.router,  prefix="/api/v1/data-center",  tags=["Data Center"])

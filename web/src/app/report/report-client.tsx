@@ -534,14 +534,14 @@ export function LedgerReportClient({
         <TableScrollArea>
           <Table className="min-w-[760px] border-collapse">
             <TableHeader>
-              <TableRow className="bg-[#eef4fb] hover:bg-[#eef4fb]">
+              <TableRow className="bg-sidebar-accent hover:bg-sidebar-accent">
                 {selectedColumns.length === 0 ? (
                   <TableHead>{t("report.noColumns")}</TableHead>
                 ) : (
                   selectedColumns.map((column) => (
                     <TableHead
                       className={cn(
-                        "whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-slate-700 last:border-r-0",
+                        "whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-foreground last:border-r-0",
                         column.align === "right" && "text-right",
                       )}
                       key={column.key}

@@ -1,3 +1,192 @@
+---
+version: alpha
+name: Bay Buddy Operations UI
+description: Calm, high-trust operations interface for flight and debt management with Vietnamese-first financial workflows.
+colors:
+  primary: "#1B61C9"
+  primary-strong: "#254FAD"
+  primary-soft: "#EDF5FF"
+  secondary: "#F6F8FB"
+  muted: "#F3F7FC"
+  neutral: "#FFFFFF"
+  canvas: "#F4F7FA"
+  canvas-highlight: "#F7F9FC"
+  foreground: "#181D26"
+  foreground-subtle: "#4A5565"
+  border: "#E0E2E6"
+  border-strong: "#CFD9E4"
+  success: "#006400"
+  danger: "#D53B3B"
+  warning: "#F59E0B"
+  sidebar: "#FBFCFE"
+  sidebar-accent: "#EEF4FB"
+  overlay-ink: "#181D26"
+  chart-1: "#1B61C9"
+  chart-2: "#3275DD"
+  chart-3: "#254FAD"
+  chart-4: "#12397B"
+  chart-5: "#0B264F"
+typography:
+  headline-lg:
+    fontFamily: Inter
+    fontSize: 1.5rem
+    fontWeight: 600
+    lineHeight: 1.2
+    letterSpacing: -0.02em
+  headline-md:
+    fontFamily: Inter
+    fontSize: 1.25rem
+    fontWeight: 500
+    lineHeight: 1.25
+    letterSpacing: -0.02em
+  body-md:
+    fontFamily: Inter
+    fontSize: 1rem
+    fontWeight: 400
+    lineHeight: 1.5
+    letterSpacing: 0.01rem
+  body-sm:
+    fontFamily: Inter
+    fontSize: 0.875rem
+    fontWeight: 400
+    lineHeight: 1.5
+    letterSpacing: 0.01rem
+  label-sm:
+    fontFamily: Inter
+    fontSize: 0.75rem
+    fontWeight: 600
+    lineHeight: 1.2
+    letterSpacing: 0.18em
+  label-xs:
+    fontFamily: Inter
+    fontSize: 0.6875rem
+    fontWeight: 600
+    lineHeight: 1.2
+    letterSpacing: 0.16em
+  mono-sm:
+    fontFamily: JetBrains Mono
+    fontSize: 0.875rem
+    fontWeight: 500
+    lineHeight: 1.4
+    letterSpacing: 0em
+rounded:
+  sm: 0.5rem
+  md: 0.625rem
+  lg: 0.75rem
+  xl: 0.875rem
+  card: 1.5rem
+  full: 9999px
+spacing:
+  xs: 0.25rem
+  sm: 0.5rem
+  md: 0.75rem
+  lg: 1rem
+  xl: 1.25rem
+  2xl: 1.5rem
+  3xl: 2rem
+  4xl: 3rem
+  panel-x: 1.25rem
+  panel-y: 0.875rem
+  page-section-gap: 1.5rem
+  metric-card-padding: 1.25rem
+components:
+  page-background:
+    backgroundColor: "{colors.canvas}"
+  page-highlight:
+    backgroundColor: "{colors.canvas-highlight}"
+  panel:
+    backgroundColor: "{colors.neutral}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.lg}"
+    padding: "{spacing.panel-x}"
+    typography: "{typography.body-sm}"
+  panel-muted:
+    backgroundColor: "{colors.muted}"
+    textColor: "{colors.foreground}"
+  panel-border:
+    backgroundColor: "{colors.border}"
+  panel-border-strong:
+    backgroundColor: "{colors.border-strong}"
+  panel-header:
+    backgroundColor: "{colors.neutral}"
+    textColor: "{colors.primary}"
+    typography: "{typography.label-xs}"
+    padding: "{spacing.panel-y}"
+  section-title:
+    textColor: "{colors.foreground}"
+    typography: "{typography.headline-md}"
+  page-title:
+    textColor: "{colors.foreground}"
+    typography: "{typography.headline-lg}"
+  button-primary:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.neutral}"
+    rounded: "{rounded.md}"
+    typography: "{typography.body-sm}"
+    height: 2.75rem
+  button-primary-hover:
+    backgroundColor: "{colors.chart-2}"
+  button-outline:
+    backgroundColor: "{colors.neutral}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.md}"
+    typography: "{typography.body-sm}"
+  button-outline-active:
+    backgroundColor: "{colors.primary-soft}"
+    textColor: "{colors.primary-strong}"
+  input-default:
+    backgroundColor: "{colors.neutral}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.xl}"
+    typography: "{typography.body-sm}"
+    height: 2.75rem
+  table-header:
+    backgroundColor: "{colors.secondary}"
+    textColor: "{colors.foreground-subtle}"
+    typography: "{typography.label-sm}"
+  reference-number:
+    textColor: "{colors.foreground}"
+    typography: "{typography.mono-sm}"
+  metric-card:
+    backgroundColor: "{colors.neutral}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.lg}"
+    padding: "{spacing.metric-card-padding}"
+  status-success:
+    backgroundColor: "{colors.success}"
+    textColor: "{colors.neutral}"
+    rounded: "{rounded.full}"
+  status-danger:
+    backgroundColor: "{colors.danger}"
+    textColor: "{colors.neutral}"
+    rounded: "{rounded.full}"
+  status-warning:
+    backgroundColor: "{colors.warning}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.full}"
+  sidebar-shell:
+    backgroundColor: "{colors.sidebar}"
+    textColor: "{colors.foreground}"
+  sidebar-active-item:
+    backgroundColor: "{colors.sidebar-accent}"
+    textColor: "{colors.foreground}"
+  dialog:
+    backgroundColor: "{colors.neutral}"
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.card}"
+    padding: "{spacing.2xl}"
+  modal-overlay:
+    backgroundColor: "{colors.overlay-ink}"
+  chart-series-1:
+    backgroundColor: "{colors.chart-1}"
+  chart-series-3:
+    backgroundColor: "{colors.chart-3}"
+  chart-series-4:
+    backgroundColor: "{colors.chart-4}"
+  chart-series-5:
+    backgroundColor: "{colors.chart-5}"
+---
+
 # Bay Buddy Design System
 
 > Inspired by Airtable's "sophisticated simplicity". Last updated to reflect the v2 UI patterns shipped across dashboard, customers, invoices, settings, and ticket capture.

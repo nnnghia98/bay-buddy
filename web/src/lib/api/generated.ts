@@ -30,7 +30,7 @@ export interface paths {
         put?: never;
         /**
          * Parse flight confirmation file
-         * @description Extract structured flight data from an uploaded image or PDF using Gemini 2.5 Flash. Accepts multipart/form-data with a single 'file' field. Returns JSON matching the Ticket model schema suitable for database storage.
+         * @description Extract structured flight data from an uploaded image or PDF using the configured Gemini model. Accepts multipart/form-data with a single 'file' field. Returns JSON matching the Ticket model schema suitable for database storage.
          */
         post: operations["parse_flight_api_v1_ai_parse_post"];
         delete?: never;
@@ -117,7 +117,11 @@ export interface paths {
         get: operations["get_customer_api_v1_customers__customer_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Customer
+         * @description Delete a customer when no related finance/ticket records exist.
+         */
+        delete: operations["delete_customer_api_v1_customers__customer_id__delete"];
         options?: never;
         head?: never;
         /**
@@ -162,6 +166,57 @@ export interface paths {
          */
         post: operations["record_customer_payment_api_v1_customers__customer_id__payments_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-center/backup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Backup Data Center Scope */
+        get: operations["backup_data_center_scope_api_v1_data_center_backup_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-center/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview Data Center Scope */
+        get: operations["preview_data_center_scope_api_v1_data_center_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-center/wipe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Wipe Data Center Scope */
+        delete: operations["wipe_data_center_scope_api_v1_data_center_wipe_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -315,6 +370,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/settings/base-date-time": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Base Date Time Settings
+         * @description Return the current app-wide base date time setting.
+         */
+        get: operations["get_base_date_time_settings_api_v1_settings_base_date_time_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Base Date Time Settings
+         * @description Update the app-wide base date time setting. Admin only.
+         */
+        patch: operations["update_base_date_time_settings_api_v1_settings_base_date_time_patch"];
+        trace?: never;
+    };
+    "/api/v1/ticket-imports/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Imports Route
+         * @description Return recent customer-safe ticket imports for staff review.
+         */
+        get: operations["list_imports_route_api_v1_ticket_imports__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ticket-imports/{import_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Import Route
+         * @description Return one customer-safe ticket import for staff review.
+         */
+        get: operations["get_import_route_api_v1_ticket_imports__import_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ticket-imports/inbound-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Inbound Email Import Route
+         * @description Receive a forwarded airline itinerary from an inbound email provider.
+         */
+        post: operations["create_inbound_email_import_route_api_v1_ticket_imports_inbound_email_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ticket-imports/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Upload Import Route
+         * @description Create a pending import from an authenticated staff upload.
+         */
+        post: operations["create_upload_import_route_api_v1_ticket_imports_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tickets/": {
         parameters: {
             query?: never;
@@ -364,6 +523,30 @@ export interface paths {
          * @description Legacy write path retired in favor of the confirm-only ticket flow.
          */
         patch: operations["update_ticket_api_v1_tickets__ticket_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/tickets/{ticket_id}/correction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Ticket Correction Route
+         * @description Admin-only removal for mutable confirmed ticket ledger rows.
+         */
+        delete: operations["delete_ticket_correction_route_api_v1_tickets__ticket_id__correction_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Correct Ticket Route
+         * @description Admin-only correction for mutable confirmed ticket ledger rows.
+         */
+        patch: operations["correct_ticket_route_api_v1_tickets__ticket_id__correction_patch"];
         trace?: never;
     };
     "/api/v1/tickets/{ticket_id}/reassign": {
@@ -471,6 +654,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/transactions/{transaction_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Transaction
+         * @description Admin-only removal for a mutable ledger transaction.
+         */
+        delete: operations["delete_transaction_api_v1_transactions__transaction_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Transaction
+         * @description Admin-only correction for a mutable ledger transaction.
+         */
+        patch: operations["update_transaction_api_v1_transactions__transaction_id__patch"];
+        trace?: never;
+    };
     "/api/v1/users/": {
         parameters: {
             query?: never;
@@ -493,6 +700,26 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update User
+         * @description Update a user account. Only ADMIN can edit staff accounts.
+         */
+        patch: operations["update_user_api_v1_users__user_id__patch"];
         trace?: never;
     };
     "/api/v1/users/me": {
@@ -545,6 +772,15 @@ export interface components {
          * @enum {string}
          */
         Airline: "VNA" | "VJ" | "QH" | "VU";
+        /** Body_create_upload_import_route_api_v1_ticket_imports_uploads_post */
+        Body_create_upload_import_route_api_v1_ticket_imports_uploads_post: {
+            /**
+             * File
+             * Format: binary
+             * @description Ticket PDF, screenshot, email HTML, or .eml file.
+             */
+            file: string;
+        };
         /** Body_login_api_v1_auth_login_post */
         Body_login_api_v1_auth_login_post: {
             /** Client Id */
@@ -600,6 +836,12 @@ export interface components {
              */
             email?: string | null;
             /**
+             * Is Active
+             * @description Soft-archive flag. Inactive customers stay in history but should be treated as archived in the UI.
+             * @default true
+             */
+            is_active: boolean;
+            /**
              * Name
              * @description Full name of the individual or registered business name.
              */
@@ -637,6 +879,8 @@ export interface components {
             balance?: number | null;
             /** Email */
             email?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
             /** Name */
             name?: string | null;
             /** Phone */
@@ -644,6 +888,17 @@ export interface components {
             /** Tax Code */
             tax_code?: string | null;
             type?: components["schemas"]["CustomerType"] | null;
+        };
+        /** DataCenterWipePayload */
+        DataCenterWipePayload: {
+            /** Confirmation */
+            confirmation: string;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /** Tables */
+            tables?: string[] | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -829,6 +1084,14 @@ export interface components {
             note?: string | null;
         };
         /**
+         * SystemSettingUpdate
+         * @description Partial settings update payload.
+         */
+        SystemSettingUpdate: {
+            /** Base Datetime */
+            base_datetime?: string | null;
+        };
+        /**
          * TicketConfirmPayload
          * @description Payload sent by the frontend when the user confirms an AI-parsed ticket.
          *
@@ -838,9 +1101,9 @@ export interface components {
          *         create a new one if no match is found.
          *
          *     Pricing (docs/BUSINESS.md §2):
-         *         selling_price = net_price + service_fee
-         *         If `selling_price` is omitted, the service derives it automatically.
-         *         If both `service_fee` and `selling_price` are supplied they must be consistent.
+         *         true_income = selling_price + discount - net_price
+         *         If `selling_price` is omitted, the service derives it from service_fee.
+         *         If `true_income` is supplied, it must match the computed income.
          */
         TicketConfirmPayload: {
             /** @description Carrier code: VNA | VJ | QH | VU. */
@@ -877,7 +1140,7 @@ export interface components {
             departure_place?: string | null;
             /**
              * Discount
-             * @description Optional discount amount applied to the ticket in VND.
+             * @description Airline add-in / discount amount earned by the agency for this ticket in VND.
              * @default 0
              */
             discount: number;
@@ -933,6 +1196,11 @@ export interface components {
              * @description Airline ticket number.
              */
             ticket_number?: string | null;
+            /**
+             * True Income
+             * @description Actual ticket income: selling_price + discount - net_price.
+             */
+            true_income?: number | null;
         };
         /**
          * TicketCreate
@@ -968,7 +1236,7 @@ export interface components {
             departure_place?: string | null;
             /**
              * Discount
-             * @description Optional discount amount applied to the ticket in VND.
+             * @description Airline add-in / discount amount earned by the agency for this ticket in VND.
              * @default 0
              */
             discount: number;
@@ -1023,6 +1291,12 @@ export interface components {
              * @description Airline ticket number. May repeat across outbound/return ticket rows.
              */
             ticket_number?: string | null;
+            /**
+             * True Income
+             * @description Actual ticket income: selling_price + discount - net_price.
+             * @default 0
+             */
+            true_income: number;
         };
         /**
          * TicketReassignPayload
@@ -1095,6 +1369,8 @@ export interface components {
             status?: components["schemas"]["TicketStatus"] | null;
             /** Ticket Number */
             ticket_number?: string | null;
+            /** True Income */
+            true_income?: number | null;
         };
         /**
          * TokenResponse
@@ -1188,6 +1464,28 @@ export interface components {
          */
         TransactionType: "PAYMENT" | "CHARGE" | "REFUND";
         /**
+         * TransactionUpdate
+         * @description All fields optional for partial PATCH payloads (typically only `note` or `method` changes).
+         */
+        TransactionUpdate: {
+            /** Amount */
+            amount?: number | null;
+            category?: components["schemas"]["TransactionCategory"] | null;
+            /** Evidence Url */
+            evidence_url?: string | null;
+            /** Is Refund Confirmed */
+            is_refund_confirmed?: boolean | null;
+            /** Linked Ticket Id */
+            linked_ticket_id?: string | null;
+            /** Method */
+            method?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Occurred At */
+            occurred_at?: string | null;
+            type?: components["schemas"]["TransactionType"] | null;
+        };
+        /**
          * UserCreate
          * @description Payload accepted by POST /users. The plain-text password is hashed before storage.
          */
@@ -1247,6 +1545,19 @@ export interface components {
          * @enum {string}
          */
         UserRole: "ADMIN" | "STAFF";
+        /**
+         * UserUpdate
+         * @description All fields optional so clients can send partial PATCH payloads.
+         */
+        UserUpdate: {
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Password */
+            password?: string | null;
+            role?: components["schemas"]["UserRole"] | null;
+            /** Username */
+            username?: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -1475,6 +1786,39 @@ export interface operations {
             };
         };
     };
+    delete_customer_api_v1_customers__customer_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_customer_api_v1_customers__customer_id__patch: {
         parameters: {
             query?: never;
@@ -1562,6 +1906,109 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    backup_data_center_scope_api_v1_data_center_backup_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                tables?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_data_center_scope_api_v1_data_center_preview_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                tables?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    wipe_data_center_scope_api_v1_data_center_wipe_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DataCenterWipePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1894,6 +2341,198 @@ export interface operations {
             };
         };
     };
+    get_base_date_time_settings_api_v1_settings_base_date_time_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    update_base_date_time_settings_api_v1_settings_base_date_time_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SystemSettingUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_imports_route_api_v1_ticket_imports__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_import_route_api_v1_ticket_imports__import_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                import_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_inbound_email_import_route_api_v1_ticket_imports_inbound_email_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-bay-buddy-inbound-secret"?: string | null;
+                "x-bay-buddy-webhook-secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_upload_import_route_api_v1_ticket_imports_uploads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_create_upload_import_route_api_v1_ticket_imports_uploads_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_tickets_api_v1_tickets__get: {
         parameters: {
             query?: {
@@ -1997,6 +2636,76 @@ export interface operations {
         };
     };
     update_ticket_api_v1_tickets__ticket_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticket_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_ticket_correction_route_api_v1_tickets__ticket_id__correction_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticket_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    correct_ticket_route_api_v1_tickets__ticket_id__correction_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -2244,6 +2953,76 @@ export interface operations {
             };
         };
     };
+    delete_transaction_api_v1_transactions__transaction_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_transaction_api_v1_transactions__transaction_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransactionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_users_api_v1_users__get: {
         parameters: {
             query?: {
@@ -2293,6 +3072,43 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_user_api_v1_users__user_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

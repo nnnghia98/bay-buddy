@@ -68,6 +68,21 @@ class QuoteStatus(str, enum.Enum):
     CANCELLED = "CANCELLED"
 
 
+class TicketImportSource(str, enum.Enum):
+    """Where a customer-safe ticket import originated."""
+
+    INBOUND_EMAIL = "INBOUND_EMAIL"
+    UPLOAD = "UPLOAD"
+
+
+class TicketImportStatus(str, enum.Enum):
+    """Lifecycle state for customer-safe ticket imports."""
+
+    READY = "READY"
+    FAILED = "FAILED"
+    CONFIRMED = "CONFIRMED"
+
+
 DEBT_INCREASING_TRANSACTION_CATEGORIES = frozenset(
     {
         TransactionCategory.TICKET_PURCHASE,
