@@ -1,4 +1,4 @@
-import { clearStoredToken, getStoredToken } from "@/lib/auth-storage"
+import { expireStoredSession, getActiveStoredToken } from "@/lib/auth-storage"
 import { buildApiUrl, getClientApiBaseUrl } from "@/lib/api-base"
 
 const API_BASE_URL = getClientApiBaseUrl()
@@ -58,7 +58,7 @@ export async function apiFetch<T>(
   const headers = new Headers(init.headers)
 
   if (!headers.has("Authorization")) {
-    const token = getStoredToken()
+    const token = getActiveStoredToken()
     if (token) {
       headers.set("Authorization", `Bearer ${token}`)
     }
@@ -88,7 +88,7 @@ export async function apiFetch<T>(
     )
 
     if (response.status === 401) {
-      clearStoredToken()
+      expireStoredSession("unauthorized")
     }
 
     throw error

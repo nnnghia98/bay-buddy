@@ -3,7 +3,11 @@ import "server-only"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
+import {
+  AUTH_TOKEN_COOKIE_KEY,
+  LOGIN_PATH,
+  SESSION_EXPIRED_LOGIN_PATH,
+} from "@/lib/auth-token"
 import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
 import {
   CustomerInvoiceListSchema,
@@ -51,7 +55,7 @@ async function fetchAuthenticatedFinancePayload(path: string): Promise<unknown> 
   const token = (await cookies()).get(AUTH_TOKEN_COOKIE_KEY)?.value
 
   if (!token) {
-    redirect("/login")
+    redirect(LOGIN_PATH)
   }
 
   const response = await fetch(buildFinanceUrl(path), {
@@ -62,7 +66,7 @@ async function fetchAuthenticatedFinancePayload(path: string): Promise<unknown> 
   })
 
   if (response.status === 401) {
-    redirect("/login")
+    redirect(SESSION_EXPIRED_LOGIN_PATH)
   }
 
   const rawPayload = (await response.json()) as unknown

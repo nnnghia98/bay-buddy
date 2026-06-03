@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/table"
 import { ApiError, apiFetchData } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
+import { LOGIN_PATH, SESSION_EXPIRED_LOGIN_PATH } from "@/lib/auth-token"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
 import { CustomerDirectoryItemSchema, type CustomerDirectoryItem } from "@/schemas"
@@ -132,16 +133,21 @@ export default function CustomersPage() {
 
   React.useEffect(() => {
     if (isReady && !token) {
-      router.replace("/login")
+      router.replace(LOGIN_PATH)
     }
   }, [isReady, router, token])
 
   React.useEffect(() => {
-    if (customersQuery.error instanceof ApiError && customersQuery.error.status === 401) {
+    if (
+      (customersQuery.error instanceof ApiError &&
+        customersQuery.error.status === 401) ||
+      (currentUserQuery.error instanceof ApiError &&
+        currentUserQuery.error.status === 401)
+    ) {
       logout()
-      router.replace("/login")
+      router.replace(SESSION_EXPIRED_LOGIN_PATH)
     }
-  }, [customersQuery.error, logout, router])
+  }, [currentUserQuery.error, customersQuery.error, logout, router])
 
   const createCustomer = async () => {
     if (!isAdmin) return

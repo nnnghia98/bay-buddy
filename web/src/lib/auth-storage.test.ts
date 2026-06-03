@@ -2,11 +2,23 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   clearStoredToken,
+  getActiveStoredToken,
   getCookieToken,
   getStoredToken,
   hydrateAuthTokenFromStorage,
+  isAuthTokenExpired,
   setStoredToken,
 } from "@/lib/auth-storage"
+
+function createToken(expiresInSeconds: number): string {
+  const payload = Buffer.from(
+    JSON.stringify({
+      exp: Math.floor(Date.now() / 1000) + expiresInSeconds,
+    }),
+  ).toString("base64url")
+
+  return `header.${payload}.signature`
+}
 
 function createStorageMock() {
   const storage = new Map<string, string>()
@@ -29,7 +41,16 @@ describe("auth-storage", () => {
 
     Object.defineProperty(globalThis, "window", {
       configurable: true,
-      value: { localStorage },
+      value: {
+        localStorage,
+        location: {
+          pathname: "/",
+          search: "",
+        },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      },
     })
     Object.defineProperty(globalThis, "document", {
       configurable: true,
@@ -54,13 +75,15 @@ describe("auth-storage", () => {
   })
 
   it("hydrates auth state from the cookie and syncs local storage", () => {
-    document.cookie = "bay-buddy.access-token=cookie-token; Path=/; SameSite=Lax"
+    const activeToken = createToken(60)
+
+    document.cookie = `bay-buddy.access-token=${activeToken}; Path=/; SameSite=Lax`
 
     const token = hydrateAuthTokenFromStorage()
 
-    expect(token).toBe("cookie-token")
-    expect(getCookieToken()).toBe("cookie-token")
-    expect(getStoredToken()).toBe("cookie-token")
+    expect(token).toBe(activeToken)
+    expect(getCookieToken()).toBe(activeToken)
+    expect(getStoredToken()).toBe(activeToken)
   })
 
   it("clears stale local storage when the auth cookie is missing", () => {
@@ -73,10 +96,53 @@ describe("auth-storage", () => {
   })
 
   it("clears both storage locations on logout", () => {
-    setStoredToken("active-token")
+    const activeToken = createToken(60)
+
+    setStoredToken(activeToken)
 
     clearStoredToken()
 
+    expect(getStoredToken()).toBeNull()
+    expect(getCookieToken()).toBeNull()
+  })
+
+  it("clears expired cookie tokens during hydration", () => {
+    const expiredToken = createToken(-60)
+
+    document.cookie = `bay-buddy.access-token=${expiredToken}; Path=/; SameSite=Lax`
+
+    expect(hydrateAuthTokenFromStorage()).toBeNull()
+    expect(getStoredToken()).toBeNull()
+    expect(getCookieToken()).toBeNull()
+  })
+
+  it("notifies listeners when an active stored token has expired", () => {
+    const expiredToken = createToken(-60)
+
+    window.localStorage.setItem("bay-buddy.access-token", expiredToken)
+
+    expect(getActiveStoredToken()).toBeNull()
+    expect(window.dispatchEvent).toHaveBeenCalled()
+    expect(getStoredToken()).toBeNull()
+  })
+
+  it("treats malformed tokens as expired", () => {
+    expect(isAuthTokenExpired("not-a-jwt")).toBe(true)
+  })
+
+  it("clears storage when the login route marks the session expired", () => {
+    const activeToken = createToken(60)
+
+    setStoredToken(activeToken)
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: {
+        pathname: "/login",
+        search: "?session=expired",
+      },
+    })
+
+    expect(hydrateAuthTokenFromStorage()).toBeNull()
     expect(getStoredToken()).toBeNull()
     expect(getCookieToken()).toBeNull()
   })

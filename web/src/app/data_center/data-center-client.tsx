@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/table"
 import { apiFetchData } from "@/lib/api"
 import { buildApiUrl, getClientApiBaseUrl } from "@/lib/api-base"
-import { getStoredToken } from "@/lib/auth-storage"
+import { expireStoredSession, getActiveStoredToken } from "@/lib/auth-storage"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
 import type { UserRead } from "@/schemas"
@@ -349,7 +349,7 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
       return
     }
 
-    const token = getStoredToken()
+    const token = getActiveStoredToken()
     if (!token) {
       toast.error(t("dataCenter.actions.missingAuth"))
       return
@@ -373,6 +373,11 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
           },
         },
       )
+
+      if (response.status === 401) {
+        expireStoredSession("unauthorized")
+        return
+      }
 
       if (!response.ok) {
         throw new Error(t("dataCenter.actions.backupFailure"))

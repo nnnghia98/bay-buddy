@@ -51,6 +51,11 @@ export default {
       "Receive forwarded airline emails or upload HTML/.eml files, keep the airline email layout, hide the total price, and export the result as an image.",
     forwardingHint:
       "On mobile, forward the original email to the inbound mailbox so Bay Buddy can preserve the airline template.",
+    backendUnavailable: {
+      title: "Customer-safe ticket service is not connected yet",
+      description:
+        "Bay Buddy can still open this screen, but the queue and upload flow will work after the ticket-import API is redeployed.",
+    },
     metrics: {
       ready: "Ready",
       forwarded: "Forwarded email",

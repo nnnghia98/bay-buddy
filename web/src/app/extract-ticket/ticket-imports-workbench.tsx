@@ -5,6 +5,7 @@ import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
 import { useRouter } from "next/navigation"
 import {
+  AlertTriangle,
   CheckCircle2,
   Clipboard,
   Download,
@@ -41,6 +42,7 @@ import {
 
 type TicketImportsWorkbenchProps = {
   initialImports: TicketImport[]
+  isBackendUnavailable?: boolean
 }
 
 function formatDate(value: string): string {
@@ -435,6 +437,7 @@ function StatusChip({ status }: { status: TicketImportStatus }) {
 
 export function TicketImportsWorkbench({
   initialImports,
+  isBackendUnavailable = false,
 }: TicketImportsWorkbenchProps) {
   const t = useI18n()
   const router = useRouter()
@@ -724,6 +727,23 @@ export function TicketImportsWorkbench({
           </p>
         </div>
       </div>
+
+      {isBackendUnavailable ? (
+        <div
+          className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900"
+          role="alert"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">
+              {t("ticketImports.backendUnavailable.title")}
+            </p>
+            <p className="mt-1 text-sm leading-6">
+              {t("ticketImports.backendUnavailable.description")}
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid min-w-0 gap-4 sm:grid-cols-3">
         {[

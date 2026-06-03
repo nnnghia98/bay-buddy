@@ -51,6 +51,11 @@ export default {
       "Nhận email hãng bay được chuyển tiếp hoặc tải lên HTML/.eml, giữ đúng bố cục email, ẩn tổng tiền và xuất thành ảnh để gửi khách.",
     forwardingHint:
       "Khi dùng điện thoại, hãy forward email gốc vào mailbox inbound để Bay Buddy giữ đúng giao diện hãng bay.",
+    backendUnavailable: {
+      title: "Chưa kết nối được dịch vụ vé gửi khách",
+      description:
+        "Bay Buddy vẫn mở được màn hình này, nhưng hàng chờ và tải lên sẽ hoạt động sau khi API ticket-import được triển khai lại.",
+    },
     metrics: {
       ready: "Sẵn sàng",
       forwarded: "Email forward",

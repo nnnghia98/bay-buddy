@@ -3,7 +3,11 @@ import { redirect } from "next/navigation"
 import { z } from "zod"
 
 import { FinancialSummaryDashboard } from "@/components/financial-summary-dashboard"
-import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
+import {
+  AUTH_TOKEN_COOKIE_KEY,
+  LOGIN_PATH,
+  SESSION_EXPIRED_LOGIN_PATH,
+} from "@/lib/auth-token"
 import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
 import { buildFinancialSummarySnapshot } from "@/lib/dashboard"
 import { CustomerDirectoryItemSchema } from "@/schemas/customer"
@@ -20,6 +24,13 @@ type ApiEnvelope<T> = {
   success: boolean
   data: T
   error: string | null
+}
+
+class DashboardUnauthorizedError extends Error {
+  constructor() {
+    super("Dashboard request was unauthorized.")
+    this.name = "DashboardUnauthorizedError"
+  }
 }
 
 function buildUrl(path: string): string {
@@ -39,7 +50,7 @@ async function fetchCollection<TSchema extends z.ZodTypeAny>(
   })
 
   if (response.status === 401) {
-    redirect("/login")
+    throw new DashboardUnauthorizedError()
   }
 
   if (!response.ok) {
@@ -62,53 +73,63 @@ async function loadFinancialSummarySnapshot() {
   const token = (await cookies()).get(AUTH_TOKEN_COOKIE_KEY)?.value
 
   if (!token) {
-    redirect("/login")
+    redirect(LOGIN_PATH)
   }
 
-  try {
-    const [customersResult, ticketsResult, transactionsResult] =
-      await Promise.allSettled([
-        fetchCollection("/customers?limit=500", token, customerDirectorySchema),
-        fetchCollection("/tickets?limit=500", token, ticketListSchema),
-        fetchCollection("/transactions?limit=1000", token, transactionListSchema),
-      ])
+  const [customersResult, ticketsResult, transactionsResult] =
+    await Promise.allSettled([
+      fetchCollection("/customers?limit=500", token, customerDirectorySchema),
+      fetchCollection("/tickets?limit=500", token, ticketListSchema),
+      fetchCollection("/transactions?limit=1000", token, transactionListSchema),
+    ])
 
-    const customers =
-      customersResult.status === "fulfilled" ? customersResult.value : []
-    const tickets = ticketsResult.status === "fulfilled" ? ticketsResult.value : []
-    const transactions =
-      transactionsResult.status === "fulfilled" ? transactionsResult.value : []
+  if (
+    [customersResult, ticketsResult, transactionsResult].some(
+      (result) =>
+        result.status === "rejected" &&
+        result.reason instanceof DashboardUnauthorizedError,
+    )
+  ) {
+    redirect(SESSION_EXPIRED_LOGIN_PATH)
+  }
 
-    if (customersResult.status === "rejected") {
-      console.error("[dashboard] customers collection failed", customersResult.reason)
-    }
-    if (ticketsResult.status === "rejected") {
-      console.error("[dashboard] tickets collection failed", ticketsResult.reason)
-    }
-    if (transactionsResult.status === "rejected") {
-      console.error(
-        "[dashboard] transactions collection failed",
-        transactionsResult.reason,
-      )
-    }
+  const customers =
+    customersResult.status === "fulfilled" ? customersResult.value : []
+  const tickets = ticketsResult.status === "fulfilled" ? ticketsResult.value : []
+  const transactions =
+    transactionsResult.status === "fulfilled" ? transactionsResult.value : []
 
-    if (
-      customersResult.status === "rejected" &&
-      ticketsResult.status === "rejected" &&
-      transactionsResult.status === "rejected"
-    ) {
-      throw new Error("All dashboard collections failed")
-    }
+  if (customersResult.status === "rejected") {
+    console.error("[dashboard] customers collection failed", customersResult.reason)
+  }
+  if (ticketsResult.status === "rejected") {
+    console.error("[dashboard] tickets collection failed", ticketsResult.reason)
+  }
+  if (transactionsResult.status === "rejected") {
+    console.error(
+      "[dashboard] transactions collection failed",
+      transactionsResult.reason,
+    )
+  }
 
-    return buildFinancialSummarySnapshot({
-      customers,
-      tickets,
-      transactions,
+  if (
+    customersResult.status === "rejected" &&
+    ticketsResult.status === "rejected" &&
+    transactionsResult.status === "rejected"
+  ) {
+    console.error("[dashboard] Failed to load financial summary snapshot", {
+      customers: customersResult.reason,
+      tickets: ticketsResult.reason,
+      transactions: transactionsResult.reason,
     })
-  } catch (error) {
-    console.error("[dashboard] Failed to load financial summary snapshot", error)
     return null
   }
+
+  return buildFinancialSummarySnapshot({
+    customers,
+    tickets,
+    transactions,
+  })
 }
 
 export default async function Home() {

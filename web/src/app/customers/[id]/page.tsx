@@ -8,7 +8,11 @@ import {
 } from "@/components/command-center"
 import { CustomerLedgerClient } from "@/components/customer-ledger-client"
 import { Button } from "@/components/ui/button"
-import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
+import {
+  AUTH_TOKEN_COOKIE_KEY,
+  LOGIN_PATH,
+  SESSION_EXPIRED_LOGIN_PATH,
+} from "@/lib/auth-token"
 import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
 import { fetchCurrentUser } from "@/lib/server-users"
 import { getI18n } from "@/locales/server"
@@ -34,7 +38,7 @@ async function fetchCustomerLedger(customerId: string): Promise<CustomerLedger |
   const token = (await cookies()).get(AUTH_TOKEN_COOKIE_KEY)?.value
 
   if (!token) {
-    redirect("/login")
+    redirect(LOGIN_PATH)
   }
 
   const response = await fetch(buildUrl(`/customers/${customerId}/ledger`), {
@@ -45,7 +49,7 @@ async function fetchCustomerLedger(customerId: string): Promise<CustomerLedger |
   })
 
   if (response.status === 401) {
-    redirect("/login")
+    redirect(SESSION_EXPIRED_LOGIN_PATH)
   }
 
   if (!response.ok) {

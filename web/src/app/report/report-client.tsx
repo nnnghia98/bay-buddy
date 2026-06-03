@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Download, Loader2 } from "lucide-react"
 
 import { StatusChip, TableScrollArea } from "@/components/command-center"
@@ -14,6 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { expireStoredSession } from "@/lib/auth-storage"
+import { SESSION_EXPIRED_LOGIN_PATH } from "@/lib/auth-token"
 import type { LedgerReportRow } from "@/lib/server-report"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
@@ -336,6 +339,7 @@ export function LedgerReportClient({
   rows,
 }: LedgerReportClientProps) {
   const t = useI18n()
+  const router = useRouter()
   const [reportRows, setReportRows] = React.useState(rows)
   const [fromValue, setFromValue] = React.useState(initialFrom)
   const [toValue, setToValue] = React.useState(initialTo)
@@ -403,6 +407,12 @@ export function LedgerReportClient({
       const response = await fetch(`/report/data${query ? `?${query}` : ""}`, {
         cache: "no-store",
       })
+
+      if (response.status === 401) {
+        expireStoredSession("unauthorized")
+        router.replace(SESSION_EXPIRED_LOGIN_PATH)
+        return
+      }
 
       if (!response.ok) {
         throw new Error("Unable to refresh report rows.")

@@ -49,6 +49,8 @@ import {
   applyOptimisticPaymentToLedger,
   cloneLedgerState,
 } from "@/lib/finance-core"
+import { expireStoredSession } from "@/lib/auth-storage"
+import { SESSION_EXPIRED_LOGIN_PATH } from "@/lib/auth-token"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
 import {
@@ -797,6 +799,12 @@ function DeleteLedgerRecordDialog({
       const payload = (await response.json().catch(() => null)) as
         | { error?: string; detail?: string }
         | null
+
+      if (response.status === 401) {
+        expireStoredSession("unauthorized")
+        router.replace(SESSION_EXPIRED_LOGIN_PATH)
+        return
+      }
 
       if (!response.ok) {
         const nextError =

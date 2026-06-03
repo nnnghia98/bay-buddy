@@ -41,7 +41,12 @@ export async function DELETE(request: Request) {
 
   const token = (await cookies()).get(AUTH_TOKEN_COOKIE_KEY)?.value
   if (!token) {
-    return NextResponse.json({ error: "Missing authentication." }, { status: 401 })
+    const nextResponse = NextResponse.json(
+      { error: "Missing authentication." },
+      { status: 401 },
+    )
+    nextResponse.cookies.delete(AUTH_TOKEN_COOKIE_KEY)
+    return nextResponse
   }
 
   const { record_id, record_type } = parsedInput.data
@@ -59,5 +64,10 @@ export async function DELETE(request: Request) {
   })
   const payload = await parseApiPayload(response)
 
-  return NextResponse.json(payload, { status: response.status })
+  const nextResponse = NextResponse.json(payload, { status: response.status })
+  if (response.status === 401) {
+    nextResponse.cookies.delete(AUTH_TOKEN_COOKIE_KEY)
+  }
+
+  return nextResponse
 }

@@ -23,7 +23,8 @@ jobs:
       RAILWAY_PROJECT_ID: cb572f2b-bd81-45b9-8867-9977e9a285e6
       RAILWAY_SERVICE: api
       RAILWAY_ENVIRONMENT: production
-      API_HEALTH_URL: https://api-production-0ab4.up.railway.app/health
+      API_HEALTH_URL: https://api-production-6f0e.up.railway.app/health
+      API_TICKET_IMPORTS_URL: https://api-production-6f0e.up.railway.app/api/v1/ticket-imports?limit=1
 
     steps:
       - name: Checkout repository
@@ -46,3 +47,12 @@ jobs:
 
       - name: Verify API health
         run: curl -fsSL "$API_HEALTH_URL"
+
+      - name: Verify ticket imports contract
+        run: |
+          status="$(curl -sS -o /tmp/ticket-imports-response.txt -w "%{http_code}" -L "$API_TICKET_IMPORTS_URL")"
+          if [ "$status" != "401" ]; then
+            echo "Expected ticket imports endpoint to exist and require auth, got HTTP $status"
+            cat /tmp/ticket-imports-response.txt
+            exit 1
+          fi

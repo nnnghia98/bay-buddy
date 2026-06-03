@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { LOGIN_PATH, SESSION_EXPIRED_LOGIN_PATH } from "@/lib/auth-token";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -200,7 +201,7 @@ export default function CaptureTicketPage() {
 
   React.useEffect(() => {
     if (isReady && !token) {
-      router.replace("/login");
+      router.replace(LOGIN_PATH);
     }
   }, [isReady, router, token]);
 
@@ -424,6 +425,11 @@ export default function CaptureTicketPage() {
       toast.success("Đã trích xuất dữ liệu thành công. Vui lòng kiểm tra lại.");
     },
     onError: (error) => {
+      if (error instanceof ApiError && error.status === 401) {
+        logout();
+        router.replace(SESSION_EXPIRED_LOGIN_PATH);
+        return;
+      }
       toast.error(error.message || "Lỗi khi trích xuất dữ liệu");
     }
   });
@@ -444,7 +450,7 @@ export default function CaptureTicketPage() {
     onError: (error) => {
       if (error instanceof ApiError && error.status === 401) {
         logout();
-        router.replace("/login");
+        router.replace(SESSION_EXPIRED_LOGIN_PATH);
         return;
       }
       toast.error(error.message);

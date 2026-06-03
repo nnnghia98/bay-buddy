@@ -4,7 +4,7 @@ import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Activity,
   ChevronDown,
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/sheet"
 import { apiFetchData } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
+import { LOGIN_PATH, SESSION_EXPIRED_LOGIN_PATH } from "@/lib/auth-token"
 import {
   getAuthenticatedContentOffsetClassName,
   getAuthenticatedMainClassName,
@@ -267,6 +268,7 @@ export function AppShell({ children }: AppShellProps) {
   const t = useI18n()
   const pathname = usePathname()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { token, isReady, logout } = useAuth()
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
 
@@ -299,9 +301,10 @@ export function AppShell({ children }: AppShellProps) {
 
   React.useEffect(() => {
     if (isReady && !token && showShell) {
-      router.replace("/login")
+      queryClient.clear()
+      router.replace(LOGIN_PATH)
     }
-  }, [isReady, router, showShell, token])
+  }, [isReady, queryClient, router, showShell, token])
 
   React.useEffect(() => {
     if (
@@ -313,8 +316,9 @@ export function AppShell({ children }: AppShellProps) {
     }
 
     logout()
-    router.replace("/login")
-  }, [customerQuery.error, logout, router, showShell, userQuery.error])
+    queryClient.clear()
+    router.replace(SESSION_EXPIRED_LOGIN_PATH)
+  }, [customerQuery.error, logout, queryClient, router, showShell, userQuery.error])
 
   const breadcrumbs = useBreadcrumbs(
     pathname,
@@ -491,7 +495,7 @@ export function AppShell({ children }: AppShellProps) {
                   className="flex w-full items-center rounded-[12px] px-3 py-2 text-left text-sm text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground"
                   onClick={() => {
                     logout()
-                    router.replace("/login")
+                    router.replace(LOGIN_PATH)
                   }}
                   type="button"
                 >

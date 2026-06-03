@@ -114,6 +114,16 @@ function filterRowsByRange(
   })
 }
 
+function isNextRedirectError(error: unknown): boolean {
+  return (
+    error !== null &&
+    typeof error === "object" &&
+    "digest" in error &&
+    typeof (error as { digest?: unknown }).digest === "string" &&
+    (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
+  )
+}
+
 export async function fetchLedgerReportRows(
   range: LedgerReportRange = {},
 ): Promise<LedgerReportRow[]> {
@@ -121,6 +131,14 @@ export async function fetchLedgerReportRows(
   const settledLedgers = await Promise.allSettled(
     customers.map((customer) => fetchCustomerLedger(customer.id)),
   )
+  const redirectResult = settledLedgers.find(
+    (result) =>
+      result.status === "rejected" && isNextRedirectError(result.reason),
+  )
+
+  if (redirectResult?.status === "rejected") {
+    throw redirectResult.reason
+  }
 
   const rows = settledLedgers
     .flatMap((result) =>
