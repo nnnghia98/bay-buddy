@@ -469,11 +469,11 @@ export default function CaptureTicketPage() {
 
   return (
     <div className="space-y-4 pb-12">
-      <div className="grid grid-cols-1 gap-8 p-4 lg:grid-cols-[400px_1fr] xl:grid-cols-[450px_1fr] lg:items-start">
+      <div className="grid min-w-0 grid-cols-1 gap-8 p-4 xl:grid-cols-[400px_minmax(0,1fr)] xl:items-start 2xl:grid-cols-[450px_minmax(0,1fr)]">
           {/* ---------------------------------------------------------------- */}
           {/* Left column – File upload / Preview (Sticky)                     */}
           {/* ---------------------------------------------------------------- */}
-          <div className="flex flex-col gap-4 lg:sticky lg:top-6">
+          <div className="flex flex-col gap-4 xl:sticky xl:top-6">
             <Card className="border-border shadow-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Chứng từ đặt chỗ</CardTitle>
@@ -618,7 +618,7 @@ export default function CaptureTicketPage() {
           <form
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onSubmit={form.handleSubmit(onSubmit as any)}
-            className="flex flex-col gap-6"
+            className="flex min-w-0 flex-col gap-6"
           >
             {/* Customer & Price Card */}
             <Card className="border-border shadow-sm">
@@ -644,7 +644,7 @@ export default function CaptureTicketPage() {
 
                 <div className="rounded-xl border border-border/70 bg-secondary/30 p-4">
                   <div className="space-y-3">
-                    <div className="grid gap-2 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                    <div className="grid gap-2">
                       <Label htmlFor="totalPrice" className="text-sm font-semibold text-foreground">Giá gốc <span className="text-red-500">*</span></Label>
                       <div className="space-y-1">
                         <div className="relative">
@@ -669,7 +669,7 @@ export default function CaptureTicketPage() {
                       </div>
                     </div>
 
-                    <div className="grid gap-2 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                    <div className="grid gap-2">
                       <Label htmlFor="sellingPrice" className="text-sm font-semibold text-foreground">Giá bán <span className="text-red-500">*</span></Label>
                       <div className="space-y-1">
                         <div className="relative">
@@ -694,7 +694,7 @@ export default function CaptureTicketPage() {
                       </div>
                     </div>
 
-                    <div className="grid gap-2 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                    <div className="grid gap-2">
                       <Label htmlFor="discount" className="text-sm font-semibold text-foreground">Chiết khấu hãng</Label>
                       <div className="space-y-1">
                         <div className="relative">
@@ -721,7 +721,7 @@ export default function CaptureTicketPage() {
                   </div>
 
                   <div className="mt-3 rounded-lg border border-border/70 bg-background px-3 py-2.5">
-                    <div className="grid gap-3 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                    <div className="grid gap-3">
                       <Label htmlFor="trueIncome" className="text-sm font-semibold text-foreground">Lợi nhuận</Label>
                       <div className="relative space-y-1">
                         <Input
@@ -775,7 +775,7 @@ export default function CaptureTicketPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* PNR + Airline row */}
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4 2xl:grid-cols-3">
                   <div className="space-y-2">
                     <Label htmlFor="pnr">Mã đặt chỗ (PNR)</Label>
                     <Input
@@ -820,7 +820,7 @@ export default function CaptureTicketPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 2xl:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="departurePlace">Nơi đi</Label>
                     <Input
@@ -852,7 +852,7 @@ export default function CaptureTicketPage() {
                 </div>
 
                 {/* Route & Date */}
-                <div className="grid gap-4 sm:grid-cols-3 bg-secondary/30 p-4 rounded-xl border border-border/50">
+                <div className="grid gap-4 rounded-xl border border-border/50 bg-secondary/30 p-4 2xl:grid-cols-3">
                   <div className="space-y-2">
                     <Label htmlFor="departureCode">Mã nơi đi</Label>
                     <Input
@@ -898,7 +898,7 @@ export default function CaptureTicketPage() {
                   </div>
                 </div>
                 
-                <div className="space-y-2 sm:max-w-[300px]">
+                <div className="space-y-2">
                   <Label htmlFor="flightDate">Ngày giờ bay</Label>
                   <Input
                     id="flightDate"
@@ -972,7 +972,7 @@ export default function CaptureTicketPage() {
             </Card>
 
             {/* Submit Action */}
-            <div className="flex items-center justify-between rounded-xl bg-primary/5 border border-primary/10 p-4">
+            <div className="flex flex-col gap-3 rounded-xl border border-primary/10 bg-primary/5 p-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
               <div>
                 <p className="text-sm font-medium text-foreground">Xác nhận tạo công nợ</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Vé sau khi lưu sẽ được tính vào công nợ của khách hàng.</p>

@@ -134,7 +134,7 @@ def seed_data_center_rows(
         occurred_at=datetime(2026, 5, 2, 8, 31),
         created_at=datetime(2026, 5, 2, 8, 31),
         customer_id=customer.id,
-        linked_ticket_id=in_scope_ticket.id,
+        linked_ticket_id=out_of_scope_ticket.id,
         created_by=current_user.id,
     )
     session.add(transaction)
@@ -217,8 +217,8 @@ def test_admin_backup_returns_csv_zip_for_selected_range() -> None:
     with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
         tickets_csv = archive.read("tickets.csv").decode()
         customers_csv = archive.read("customers.csv").decode()
-    assert "ABC123" in tickets_csv
-    assert "XYZ789" not in tickets_csv
+    assert "XYZ789" in tickets_csv
+    assert "ABC123" not in tickets_csv
     assert customers_csv == ""
 
 
@@ -250,8 +250,8 @@ def test_admin_can_wipe_selected_date_range() -> None:
     payload = response.json()
     assert payload["data"]["deleted"]["tickets"] == 1
     assert payload["data"]["deleted"]["transactions"] == 1
-    assert in_scope_ticket.id not in remaining_ticket_ids
-    assert out_of_scope_ticket.id in remaining_ticket_ids
+    assert out_of_scope_ticket.id not in remaining_ticket_ids
+    assert in_scope_ticket.id in remaining_ticket_ids
     assert customer.balance == 0
 
 
@@ -281,10 +281,10 @@ def test_admin_can_wipe_selected_tables_only() -> None:
     payload = response.json()
     assert payload["data"]["deleted"]["tickets"] == 1
     assert payload["data"]["deleted"]["transactions"] == 0
-    assert {ticket.id for ticket in remaining_tickets} == {out_of_scope_ticket.id}
+    assert {ticket.id for ticket in remaining_tickets} == {in_scope_ticket.id}
     assert len(remaining_transactions) == 1
     assert remaining_transactions[0].linked_ticket_id is None
-    assert in_scope_ticket.id not in {ticket.id for ticket in remaining_tickets}
+    assert out_of_scope_ticket.id not in {ticket.id for ticket in remaining_tickets}
 
 
 def test_admin_base_date_time_filters_active_app_queries() -> None:

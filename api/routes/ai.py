@@ -14,6 +14,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 
 from services.ai_agent import (
+    AIExtractionValidationError,
     AIServiceTemporarilyUnavailable,
     GEMINI_MODEL_NAME,
     parse_flight_content,
@@ -115,6 +116,11 @@ async def parse_flight(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Gemini đang quá tải tạm thời. Vui lòng thử lại sau ít phút.",
+        )
+    except AIExtractionValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
         )
     except ValueError as e:
         raise HTTPException(

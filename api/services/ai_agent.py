@@ -30,6 +30,10 @@ class AIServiceTemporarilyUnavailable(RuntimeError):
     """Raised when Gemini is temporarily overloaded after retry attempts."""
 
 
+class AIExtractionValidationError(ValueError):
+    """Raised when Gemini returns JSON that is incomplete for ticket import."""
+
+
 def _get_genai_client() -> genai.Client:
     """
     Initialize the Gemini API client with credentials from environment.
@@ -207,12 +211,16 @@ async def parse_flight_content(file_bytes: bytes, mime_type: str) -> Dict[str, A
         "flight_date",
         "net_price",
     ]
-    missing_fields = [field for field in required_fields if field not in data]
+    missing_fields = [
+        field
+        for field in required_fields
+        if field not in data or _is_missing_required_value(data[field])
+    ]
 
     if missing_fields:
-        raise ValueError(
+        raise AIExtractionValidationError(
             f"AI response missing required fields: {missing_fields}. "
-            f"Response: {response_text[:200]}"
+            "The uploaded document may not show those fields clearly enough."
         )
 
     # Ensure currency is set
@@ -224,6 +232,17 @@ async def parse_flight_content(file_bytes: bytes, mime_type: str) -> Dict[str, A
     data["itinerary"] = f"{data['departure_code']}-{data['arrival_code']}"
 
     return data
+
+
+def _is_missing_required_value(value: Any) -> bool:
+    """Return True when a required Gemini field is absent, blank, or empty."""
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    if isinstance(value, list):
+        return len(value) == 0
+    return False
 
 
 def _is_retryable_gemini_error(error: APIError) -> bool:

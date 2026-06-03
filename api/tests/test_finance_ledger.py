@@ -20,7 +20,7 @@ from models.user import User
 from services.finance_service import get_customer_ledger
 
 
-def test_customer_ledger_uses_transaction_occurred_at_for_sorting() -> None:
+def test_customer_ledger_uses_audit_timestamps_for_sorting() -> None:
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
@@ -46,6 +46,8 @@ def test_customer_ledger_uses_transaction_occurred_at_for_sorting() -> None:
             passengers=["NGUYEN VAN A"],
             itinerary="HAN-SGN",
             flight_date=datetime(2026, 4, 5, 10, 0, tzinfo=timezone.utc),
+            created_at=datetime(2026, 4, 2, 8, 45, tzinfo=timezone.utc),
+            updated_at=datetime(2026, 4, 2, 8, 45, tzinfo=timezone.utc),
             net_price=1_000_000,
             selling_price=1_200_000,
             status=TicketStatus.CONFIRMED,
@@ -63,6 +65,7 @@ def test_customer_ledger_uses_transaction_occurred_at_for_sorting() -> None:
             customer_id=customer.id,
             created_by=user.id,
             occurred_at=datetime(2026, 4, 1, 9, 30, tzinfo=timezone.utc),
+            created_at=datetime(2026, 4, 1, 9, 30, tzinfo=timezone.utc),
         )
         ticket_charge = Transaction(
             amount=1_200_000,
@@ -74,6 +77,7 @@ def test_customer_ledger_uses_transaction_occurred_at_for_sorting() -> None:
             linked_ticket_id=ticket.id,
             created_by=user.id,
             occurred_at=datetime(2026, 4, 2, 8, 45, tzinfo=timezone.utc),
+            created_at=datetime(2026, 4, 2, 8, 45, tzinfo=timezone.utc),
         )
         session.add(payment)
         session.add(ticket_charge)
