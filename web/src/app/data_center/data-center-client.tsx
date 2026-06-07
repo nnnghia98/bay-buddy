@@ -64,6 +64,7 @@ const tableKeys: TableKey[] = [
   "quotes",
   "users",
 ]
+const defaultSelectedTableKeys: TableKey[] = ["tickets", "transactions", "quotes"]
 const wipeConfirmation = "WIPE DATABASE"
 const API_BASE_URL = getClientApiBaseUrl()
 
@@ -209,7 +210,7 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
   const [toDateTime, setToDateTime] = React.useState("")
   const [baseDateTime, setBaseDateTime] = React.useState("")
   const [selectedTableKeys, setSelectedTableKeys] =
-    React.useState<TableKey[]>(tableKeys)
+    React.useState<TableKey[]>(defaultSelectedTableKeys)
   const [previewTables, setPreviewTables] = React.useState<DataCenterPreviewTable[] | null>(null)
   const [isLoadingBaseDateTime, setIsLoadingBaseDateTime] = React.useState(false)
   const [isSavingBaseDateTime, setIsSavingBaseDateTime] = React.useState(false)
