@@ -272,7 +272,7 @@ type ReportRowsResponse = {
 type ReportSummary = {
   totalSellingPrice: number
   totalPaid: number
-  totalDiscount: number
+  totalIncome: number
   totalDebt: number
 }
 
@@ -306,7 +306,7 @@ function getReportSummary(rows: LedgerReportRow[]): ReportSummary {
           : sum,
       0,
     ),
-    totalDiscount: rows.reduce((sum, row) => sum + row.ticket_discount, 0),
+    totalIncome: rows.reduce((sum, row) => sum + row.ticket_true_income, 0),
     totalDebt: Array.from(latestBalanceByCustomer.values()).reduce(
       (sum, item) => sum + item.balance,
       0,
@@ -440,9 +440,6 @@ export function LedgerReportClient({
             <h1 className="mt-1 text-lg font-semibold text-foreground">
               {t("report.previewTitle")}
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t("report.previewDescription")}
-            </p>
           </div>
 
           <form
@@ -531,8 +528,8 @@ export function LedgerReportClient({
               value={formatCurrency(summary.totalPaid)}
             />
             <SummaryMetric
-              label={t("report.metrics.totalDiscount")}
-              value={formatCurrency(summary.totalDiscount)}
+              label={t("report.metrics.totalIncome")}
+              value={formatCurrency(summary.totalIncome)}
             />
             <SummaryMetric
               label={t("report.metrics.totalDebt")}

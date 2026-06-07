@@ -21,7 +21,6 @@ import { Button } from "@/components/ui/button"
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -63,7 +62,6 @@ type NavLabelKey =
   | "ticketImports"
   | "activities"
   | "customers"
-  | "invoices"
   | "reports"
   | "settings"
   | "dataCenter"
@@ -78,10 +76,9 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { labelKey: "tickets", href: "/tickets/input", icon: Ticket },
-  { labelKey: "ticketImports", href: "/extract-ticket", icon: FileCheck2 },
   { labelKey: "activities", href: "/activites", icon: Activity },
   { labelKey: "customers", href: "/customers", icon: Users },
-  { labelKey: "invoices", href: "/invoices", icon: FileText, disabled: true },
+  { labelKey: "ticketImports", href: "/extract-ticket", icon: FileCheck2 },
   { labelKey: "reports", href: "/report", icon: FileText },
   { labelKey: "settings", href: "/settings", icon: Settings },
   { labelKey: "dataCenter", href: "/data_center", icon: Database, adminOnly: true },
@@ -392,12 +389,6 @@ export function AppShell({ children }: AppShellProps) {
               pathname={pathname}
             />
           </div>
-          <div className="border-t border-border px-2 pt-4">
-            <p className="text-sm font-medium text-foreground">{userName}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-              {userRole}
-            </p>
-          </div>
         </div>
       </aside>
 
@@ -435,9 +426,6 @@ export function AppShell({ children }: AppShellProps) {
                         />
                       </Link>
                     </SheetTitle>
-                    <SheetDescription className="px-1 pt-2 text-left">
-                      {t("appShell.mobileDescription")}
-                    </SheetDescription>
                   </SheetHeader>
                   <div className="flex-1 overflow-y-auto px-4 py-5">
                     <ShellNavigation
@@ -447,10 +435,6 @@ export function AppShell({ children }: AppShellProps) {
                     />
                   </div>
 
-                  <div className="border-t border-border px-6 py-5">
-                    <p className="text-sm font-medium text-foreground">{userName}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{userRole}</p>
-                  </div>
                 </div>
               </SheetContent>
             </Sheet>

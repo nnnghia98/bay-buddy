@@ -206,7 +206,7 @@ export default {
       metrics: {
         tickets: "Vé đã ghi nhận",
         customers: "Khách hàng liên quan",
-        value: "Tổng giá bán",
+        value: "Tổng thu nhập",
       },
       list: {
         eyebrow: "Danh sách kết quả",
@@ -252,7 +252,7 @@ export default {
       scopeFiltered: "Theo thời gian đã chọn",
       totalSellingPrice: "Tổng giá bán",
       totalPaid: "Tổng đã thanh toán",
-      totalDiscount: "Tổng chiết khấu",
+      totalIncome: "Tổng thu nhập",
       totalDebt: "Tổng nợ",
     },
     entryTypes: {

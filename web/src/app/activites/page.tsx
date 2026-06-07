@@ -87,7 +87,7 @@ export default async function TicketActivityPage({ searchParams }: PageProps) {
     getI18n(),
     fetchTicketInputActivityRows({ from, to }),
   ])
-  const totalValue = rows.reduce((sum, row) => sum + row.ticket.selling_price, 0)
+  const totalIncome = rows.reduce((sum, row) => sum + row.ticket.true_income, 0)
   const missingTransactions = rows.filter((row) => !row.transaction).length
   const uniqueCustomerCount = new Set(
     rows.map((row) => row.customer?.id ?? row.ticket.customer_id),
@@ -100,12 +100,6 @@ export default async function TicketActivityPage({ searchParams }: PageProps) {
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
               {t("tickets.activity.eyebrow")}
-            </p>
-            <h1 className="mt-1 text-lg font-semibold text-foreground">
-              {t("tickets.activity.title")}
-            </h1>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
-              {t("tickets.activity.description")}
             </p>
           </div>
 
@@ -166,7 +160,7 @@ export default async function TicketActivityPage({ searchParams }: PageProps) {
         <MetricCard
           icon={CircleDollarSign}
           label={t("tickets.activity.metrics.value")}
-          value={formatCurrency(totalValue)}
+          value={formatCurrency(totalIncome)}
         />
       </div>
 

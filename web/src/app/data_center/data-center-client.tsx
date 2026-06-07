@@ -46,7 +46,7 @@ type MetricCardProps = {
   value: string
 }
 
-type OperationKey = "backup" | "add" | "remove" | "wipe"
+type OperationKey = "backup" | "add" | "remove"
 type TableKey =
   | "customers"
   | "tickets"
@@ -55,7 +55,7 @@ type TableKey =
   | "quotes"
   | "users"
 
-const operationKeys: OperationKey[] = ["backup", "add", "remove", "wipe"]
+const operationKeys: OperationKey[] = ["backup", "add", "remove"]
 const tableKeys: TableKey[] = [
   "customers",
   "tickets",
@@ -146,7 +146,7 @@ function OperationIcon({ operation }: { operation: OperationKey }) {
     return <Trash2 className={iconClassName} aria-hidden="true" />
   }
 
-  return <ShieldAlert className={iconClassName} aria-hidden="true" />
+  return null
 }
 
 function buildDataCenterScopeParams(
@@ -752,9 +752,9 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-4">
+      <div className="grid gap-4 lg:grid-cols-3">
         {operationKeys.map((operation) => {
-          const isDestructive = operation === "remove" || operation === "wipe"
+          const isDestructive = operation === "remove"
 
           return (
             <div
@@ -789,16 +789,12 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
                   operation === "add" ||
                   operation === "remove" ||
                   !hasSelectedTables ||
-                  (operation === "wipe" && !isWipeConfirmed) ||
                   isBackingUp ||
                   isWiping
                 }
                 onClick={() => {
                   if (operation === "backup") {
                     void backupSelectedData()
-                  }
-                  if (operation === "wipe" && isWipeConfirmed) {
-                    void wipeSelectedData()
                   }
                 }}
                 size="sm"
@@ -809,11 +805,7 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
                   ? isBackingUp
                     ? t("dataCenter.actions.backupPending")
                     : t("dataCenter.actions.backupAction")
-                  : operation === "wipe"
-                    ? isWiping
-                      ? t("dataCenter.actions.wipePending")
-                      : t("dataCenter.actions.wipeAction")
-                    : t("dataCenter.connectLater")}
+                  : t("dataCenter.connectLater")}
               </Button>
             </div>
           )

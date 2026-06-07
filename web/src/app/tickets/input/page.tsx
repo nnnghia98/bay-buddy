@@ -4,7 +4,7 @@
 import * as React from "react";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -27,10 +27,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ApiError, apiFetch } from "@/lib/api";
+import { ApiError, apiFetch, apiFetchData } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { LOGIN_PATH, SESSION_EXPIRED_LOGIN_PATH } from "@/lib/auth-token";
 import { cn } from "@/lib/utils";
+import {
+  CustomerDirectoryItemSchema,
+  type CustomerDirectoryItem,
+} from "@/schemas";
 
 // ---------------------------------------------------------------------------
 // Zod Schema
@@ -147,6 +151,11 @@ async function parseFileWithAI(file: File): Promise<ParsedFlightData> {
   });
 }
 
+async function fetchCustomers(): Promise<CustomerDirectoryItem[]> {
+  const payload = await apiFetchData<unknown>("/customers?limit=500");
+  return z.array(CustomerDirectoryItemSchema).parse(payload);
+}
+
 async function saveTicket(data: TicketFormValues) {
   const firstPassengerName = data.passengers
     .map((passenger) => passenger.name.trim())
@@ -255,6 +264,20 @@ export default function CaptureTicketPage() {
     control: form.control,
     name: "trueIncome",
   });
+  const customersQuery = useQuery({
+    queryKey: ["ticket-input-customers"],
+    queryFn: fetchCustomers,
+    enabled: isReady && Boolean(token),
+  });
+  const customerNameOptions = React.useMemo(() => {
+    const names = customersQuery.data
+      ?.map((customer) => customer.full_name.trim())
+      .filter(Boolean) ?? [];
+
+    return Array.from(new Set(names)).sort((a, b) =>
+      a.localeCompare(b, "vi", { sensitivity: "base" }),
+    );
+  }, [customersQuery.data]);
 
   React.useEffect(() => {
     const normalizedDepartureCode = departureCode?.trim().toUpperCase();
@@ -637,10 +660,16 @@ export default function CaptureTicketPage() {
                   <Label htmlFor="customerName" className="text-sm font-semibold text-foreground">Tên khách hàng</Label>
                   <Input
                     id="customerName"
+                    list="customerNameOptions"
                     placeholder="Ví dụ: Nguyen Van A"
                     className={cn("h-11", hasExtractedData && "border-primary/20 bg-primary/5")}
                     {...form.register("customerName")}
                   />
+                  <datalist id="customerNameOptions">
+                    {customerNameOptions.map((name) => (
+                      <option key={name} value={name} />
+                    ))}
+                  </datalist>
                   {form.formState.errors.customerName && (
                     <p className="text-xs text-red-500 font-medium">
                       {form.formState.errors.customerName.message}

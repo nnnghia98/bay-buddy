@@ -206,7 +206,7 @@ export default {
       metrics: {
         tickets: "Recorded tickets",
         customers: "Related customers",
-        value: "Total selling price",
+        value: "Total income",
       },
       list: {
         eyebrow: "Result list",
@@ -252,7 +252,7 @@ export default {
       scopeFiltered: "Selected time",
       totalSellingPrice: "Total selling price",
       totalPaid: "Total paid",
-      totalDiscount: "Total discount",
+      totalIncome: "Total income",
       totalDebt: "Total debt",
     },
     entryTypes: {
