@@ -20,6 +20,7 @@ from models import (
     Quote,
     QuoteItem,
     Ticket,
+    TicketImport,
     Transaction,
     User,
 )
@@ -258,6 +259,7 @@ def _recalculate_customer_balances(session: SessionDep) -> None:
 
 def _empty_deleted_counts() -> dict[str, int]:
     return {
+        "ticket_imports": 0,
         "quote_items": 0,
         "invoice_items": 0,
         "transactions": 0,
@@ -306,6 +308,59 @@ def _detach_transactions_from_invoices(
         session.add(transaction)
 
 
+def _detach_ticket_imports_from_tickets(
+    session: SessionDep,
+    *,
+    ticket_ids: set[Any],
+) -> None:
+    if not ticket_ids:
+        return
+
+    ticket_imports = session.exec(
+        select(TicketImport).where(TicketImport.linked_ticket_id.in_(ticket_ids))
+    ).all()
+    for ticket_import in ticket_imports:
+        ticket_import.linked_ticket_id = None
+        session.add(ticket_import)
+
+
+def _detach_ticket_imports_from_users(
+    session: SessionDep,
+    *,
+    user_ids: set[Any],
+) -> None:
+    if not user_ids:
+        return
+
+    ticket_imports = session.exec(
+        select(TicketImport).where(TicketImport.created_by.in_(user_ids))
+    ).all()
+    for ticket_import in ticket_imports:
+        ticket_import.created_by = None
+        session.add(ticket_import)
+
+
+def _filter_users_without_transaction_audit_refs(
+    session: SessionDep,
+    *,
+    users: list[User],
+) -> list[User]:
+    user_ids = {user.id for user in users}
+    if not user_ids:
+        return users
+
+    referenced_user_ids = {
+        transaction.created_by
+        for transaction in session.exec(
+            select(Transaction).where(Transaction.created_by.in_(user_ids))
+        ).all()
+    }
+    if not referenced_user_ids:
+        return users
+
+    return [user for user in users if user.id not in referenced_user_ids]
+
+
 def _wipe_selected(
     session: SessionDep,
     *,
@@ -335,6 +390,7 @@ def _wipe_selected(
     invoice_ids = {invoice.id for invoice in invoices}
     quote_ids = {quote.id for quote in quotes}
     customer_ids = {customer.id for customer in customers}
+    user_ids = {user.id for user in users}
 
     if customer_ids:
         customer_tickets = session.exec(
@@ -402,6 +458,24 @@ def _wipe_selected(
             ).all()
         )
 
+    ticket_imports = []
+    if ticket_ids:
+        ticket_imports.extend(
+            session.exec(
+                select(TicketImport).where(TicketImport.linked_ticket_id.in_(ticket_ids))
+            ).all()
+        )
+    if user_ids and scope.is_all:
+        ticket_imports.extend(
+            session.exec(
+                select(TicketImport).where(TicketImport.created_by.in_(user_ids))
+            ).all()
+        )
+
+    deleted["ticket_imports"] = _delete_rows(
+        session,
+        _dedupe_by_id(ticket_imports),
+    )
     deleted["quote_items"] = _delete_rows(session, _dedupe_by_id(quote_items))
     deleted["invoice_items"] = _delete_rows(session, _dedupe_by_id(invoice_items))
 
@@ -411,6 +485,10 @@ def _wipe_selected(
     if "transactions" not in selected_tables:
         _detach_transactions_from_tickets(session, ticket_ids=ticket_ids)
         _detach_transactions_from_invoices(session, invoice_ids=invoice_ids)
+        users = _filter_users_without_transaction_audit_refs(
+            session,
+            users=users,
+        )
     else:
         remaining_invoice_transaction_ids = invoice_ids and session.exec(
             select(Transaction).where(Transaction.invoice_id.in_(invoice_ids))
@@ -420,6 +498,10 @@ def _wipe_selected(
                 transaction.invoice_id = None
                 transaction.is_invoiced = False
                 session.add(transaction)
+
+    if not scope.is_all:
+        _detach_ticket_imports_from_tickets(session, ticket_ids=ticket_ids)
+        _detach_ticket_imports_from_users(session, user_ids=user_ids)
 
     deleted["quotes"] = _delete_rows(session, quotes)
     deleted["invoices"] = _delete_rows(session, invoices)

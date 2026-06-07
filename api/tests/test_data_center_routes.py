@@ -5,6 +5,7 @@ import zipfile
 from datetime import datetime
 
 from fastapi.testclient import TestClient
+from sqlalchemy import event
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine, select
 
@@ -18,9 +19,11 @@ from models.enums import (
     TicketStatus,
     TransactionCategory,
     TransactionType,
+    TicketImportSource,
     UserRole,
 )
 from models.ticket import Ticket
+from models.ticket_import import TicketImport
 from models.transaction import Transaction
 from models.user import User
 
@@ -34,6 +37,11 @@ def create_test_client(
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+
+    @event.listens_for(engine, "connect")
+    def enable_sqlite_foreign_keys(dbapi_connection, _connection_record) -> None:
+        dbapi_connection.execute("PRAGMA foreign_keys=ON")
+
     SQLModel.metadata.create_all(engine)
     session = Session(engine)
     current_user = User(
@@ -137,7 +145,20 @@ def seed_data_center_rows(
         linked_ticket_id=out_of_scope_ticket.id,
         created_by=current_user.id,
     )
+    ticket_import = TicketImport(
+        source=TicketImportSource.UPLOAD,
+        created_by=current_user.id,
+        linked_ticket_id=out_of_scope_ticket.id,
+        original_filename="ticket.html",
+        original_mime_type="text/html",
+        redaction_summary={"strategy": "test"},
+        original_content="<p>ticket</p>",
+        redacted_content="<p>ticket</p>",
+        created_at=datetime(2026, 5, 2, 8, 32),
+        updated_at=datetime(2026, 5, 2, 8, 32),
+    )
     session.add(transaction)
+    session.add(ticket_import)
     session.commit()
     return customer, in_scope_ticket, out_of_scope_ticket
 
@@ -249,6 +270,7 @@ def test_admin_can_wipe_selected_date_range() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["data"]["deleted"]["tickets"] == 1
+    assert payload["data"]["deleted"]["ticket_imports"] == 1
     assert payload["data"]["deleted"]["transactions"] == 1
     assert out_of_scope_ticket.id not in remaining_ticket_ids
     assert in_scope_ticket.id in remaining_ticket_ids
@@ -280,11 +302,58 @@ def test_admin_can_wipe_selected_tables_only() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["data"]["deleted"]["tickets"] == 1
+    assert payload["data"]["deleted"]["ticket_imports"] == 1
     assert payload["data"]["deleted"]["transactions"] == 0
     assert {ticket.id for ticket in remaining_tickets} == {in_scope_ticket.id}
     assert len(remaining_transactions) == 1
     assert remaining_transactions[0].linked_ticket_id is None
     assert out_of_scope_ticket.id not in {ticket.id for ticket in remaining_tickets}
+    assert session.exec(select(TicketImport)).all() == []
+
+
+def test_admin_user_only_wipe_preserves_transaction_audit_user() -> None:
+    client, session, current_user = create_test_client(role=UserRole.ADMIN)
+    seed_data_center_rows(session, current_user=current_user)
+    audit_user = User(
+        username="audit-user",
+        hashed_password="not-used-in-tests",
+        role=UserRole.STAFF,
+        is_active=True,
+    )
+    session.add(audit_user)
+    session.commit()
+    session.refresh(audit_user)
+    customer = session.exec(select(Customer)).one()
+    transaction = Transaction(
+        amount=50_000,
+        type=TransactionType.PAYMENT,
+        category=TransactionCategory.PAYMENT,
+        method="Bank transfer",
+        note="Audit user payment",
+        occurred_at=datetime(2026, 5, 3, 8, 31),
+        created_at=datetime(2026, 5, 3, 8, 31),
+        customer_id=customer.id,
+        created_by=audit_user.id,
+    )
+    session.add(transaction)
+    session.commit()
+
+    response = client.request(
+        "DELETE",
+        "/api/v1/data-center/wipe",
+        json={
+            "confirmation": "WIPE DATABASE",
+            "tables": ["users"],
+        },
+    )
+    remaining_user_ids = {user.id for user in session.exec(select(User)).all()}
+
+    clear_overrides()
+
+    assert response.status_code == 200
+    assert audit_user.id in remaining_user_ids
+    assert current_user.id in remaining_user_ids
+    assert response.json()["data"]["deleted"]["users"] == 0
 
 
 def test_admin_base_date_time_filters_active_app_queries() -> None:
