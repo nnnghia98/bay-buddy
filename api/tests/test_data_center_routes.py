@@ -356,6 +356,64 @@ def test_admin_user_only_wipe_preserves_transaction_audit_user() -> None:
     assert response.json()["data"]["deleted"]["users"] == 0
 
 
+def test_admin_can_wipe_all_tables_all_time() -> None:
+    client, session, current_user = create_test_client(role=UserRole.ADMIN)
+    _customer, _in_scope_ticket, _out_of_scope_ticket = seed_data_center_rows(
+        session,
+        current_user=current_user,
+    )
+    staff_user = User(
+        username="staff-user",
+        hashed_password="not-used-in-tests",
+        role=UserRole.STAFF,
+        is_active=True,
+    )
+    session.add(staff_user)
+    session.commit()
+    session.refresh(staff_user)
+    unlinked_import = TicketImport(
+        source=TicketImportSource.UPLOAD,
+        created_by=staff_user.id,
+        original_filename="unlinked.html",
+        original_mime_type="text/html",
+        redaction_summary={"strategy": "test"},
+        original_content="<p>unlinked</p>",
+        redacted_content="<p>unlinked</p>",
+        created_at=datetime(2026, 5, 2, 8, 33),
+        updated_at=datetime(2026, 5, 2, 8, 33),
+    )
+    session.add(unlinked_import)
+    session.commit()
+
+    response = client.request(
+        "DELETE",
+        "/api/v1/data-center/wipe",
+        json={
+            "confirmation": "WIPE DATABASE",
+            "date_from": None,
+            "date_to": None,
+            "tables": [
+                "customers",
+                "tickets",
+                "transactions",
+                "invoices",
+                "quotes",
+                "users",
+            ],
+        },
+    )
+
+    clear_overrides()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data"]["deleted"]["customers"] == 1
+    assert payload["data"]["deleted"]["tickets"] == 2
+    assert payload["data"]["deleted"]["transactions"] == 1
+    assert payload["data"]["deleted"]["ticket_imports"] == 2
+    assert payload["data"]["deleted"]["users"] == 1
+
+
 def test_admin_base_date_time_filters_active_app_queries() -> None:
     client, session, current_user = create_test_client(role=UserRole.ADMIN)
     customer, _in_scope_ticket, out_of_scope_ticket = seed_data_center_rows(

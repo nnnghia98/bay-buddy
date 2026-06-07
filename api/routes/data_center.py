@@ -8,6 +8,7 @@ from typing import Any, Callable, Iterable, Optional
 
 from fastapi import APIRouter, Body, HTTPException, Query, Response, status
 from pydantic import BaseModel, Field
+from sqlalchemy import delete, func
 from sqlmodel import SQLModel, select
 
 from core.auth import CurrentUserDep, require_user_roles
@@ -239,6 +240,57 @@ def _delete_rows(session: SessionDep, rows: Iterable[SQLModel]) -> int:
     return count
 
 
+def _count_rows(
+    session: SessionDep,
+    model: type[SQLModel],
+    statement: Any | None = None,
+) -> int:
+    count_statement = select(func.count()).select_from(model)
+    if statement is not None:
+        count_statement = statement
+    return session.exec(count_statement).one()
+
+
+def _bulk_delete_all_time(
+    session: SessionDep,
+    *,
+    current_user: User,
+) -> dict[str, int]:
+    deleted = _empty_deleted_counts()
+    current_user_id = current_user.id
+
+    delete_plan: list[tuple[str, type[SQLModel], Any]] = [
+        ("ticket_imports", TicketImport, delete(TicketImport)),
+        ("quote_items", QuoteItem, delete(QuoteItem)),
+        ("invoice_items", InvoiceItem, delete(InvoiceItem)),
+        ("transactions", Transaction, delete(Transaction)),
+        ("quotes", Quote, delete(Quote)),
+        ("invoices", Invoice, delete(Invoice)),
+        ("tickets", Ticket, delete(Ticket)),
+        ("customers", Customer, delete(Customer)),
+        (
+            "users",
+            User,
+            delete(User).where(User.id != current_user_id),
+        ),
+    ]
+
+    for key, model, delete_statement in delete_plan:
+        if key == "users":
+            deleted[key] = _count_rows(
+                session,
+                model,
+                select(func.count())
+                .select_from(User)
+                .where(User.id != current_user_id),
+            )
+        else:
+            deleted[key] = _count_rows(session, model)
+        session.exec(delete_statement)
+
+    return deleted
+
+
 def _recalculate_customer_balances(session: SessionDep) -> None:
     customers = session.exec(select(Customer)).all()
     for customer in customers:
@@ -370,6 +422,9 @@ def _wipe_selected(
 ) -> dict[str, int]:
     selected_tables = set(table_keys)
     deleted = _empty_deleted_counts()
+
+    if scope.is_all and selected_tables == set(VISIBLE_TABLE_KEYS):
+        return _bulk_delete_all_time(session, current_user=current_user)
 
     customers = session.exec(_select_customers(scope)).all() if "customers" in selected_tables else []
     tickets = session.exec(_select_tickets(scope)).all() if "tickets" in selected_tables else []
