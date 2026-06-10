@@ -16,6 +16,7 @@ export default {
     brandHomeAria: "Go to home",
     mobileDescription:
       "Coordinate customers, ticket intake, and debt records in one focused workflow.",
+    mobileMenuAria: "Open navigation",
     signOut: "Sign out",
     userFallback: "Staff",
     roles: {
@@ -560,6 +561,30 @@ export default {
         title: "Today command center",
         description:
           "Track receivables, tickets, payments, and the next work that needs attention.",
+        updatedAt: "Updated",
+        needsAction: "Needs action",
+        openQueue: "Open queue",
+        queues: {
+          receivables: "Customers with receivables",
+          heldCredit: "Credit / deposit held",
+          draftTickets: "Draft tickets to review",
+        },
+        queueDescriptions: {
+          receivables: "Prioritize customers with outstanding balances for payment follow-up or reconciliation.",
+          heldCredit: "Track overpayments, deposits, or balances that may need refunding or offsetting.",
+          draftTickets: "Review draft tickets before confirming them and recording ledger debt.",
+        },
+        shortcuts: {
+          title: "Work shortcuts",
+          customers: "Open customers",
+          customersDescription: "Review customer ledgers and record payments.",
+          ticket: "Record ticket",
+          ticketDescription: "Create a ticket and debt entry from confirmed data.",
+          import: "Customer ticket image",
+          importDescription: "Create a price-hidden ticket image to send to customers.",
+          report: "Receivables report",
+          reportDescription: "Preview the Excel-style ledger and export reconciliation data.",
+        },
         recent: {
           eyebrow: "Latest",
           title: "Recent activity",

@@ -219,7 +219,7 @@ function ShellNavigation({
               : item.href !== "/" && pathname.startsWith(item.href)))
 
         const itemClasses = cn(
-          "group relative flex min-h-11 w-full items-center gap-3 rounded-[12px] border border-transparent px-3.5 py-2.5 text-sm font-medium tracking-[0.08px] text-muted-foreground transition-colors duration-150 hover:border-primary/15 hover:bg-sidebar-accent hover:text-foreground",
+          "group relative flex min-h-11 w-full items-center gap-3 rounded-[12px] border border-transparent px-3.5 py-2.5 text-sm font-semibold tracking-[0.08px] text-muted-foreground transition-[background-color,border-color,color,box-shadow,transform] duration-200 hover:translate-x-0.5 hover:border-primary/15 hover:bg-sidebar-accent hover:text-foreground active:translate-x-0",
           isActive && "border-primary/15 bg-white text-primary shadow-[var(--shadow-sm)]",
           item.disabled && "cursor-default opacity-55",
         )
@@ -228,7 +228,7 @@ function ShellNavigation({
           <>
             <div
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-[10px] border border-border/70 bg-white text-muted-foreground transition-colors duration-150 group-hover:border-primary/20 group-hover:text-primary",
+                "flex h-9 w-9 items-center justify-center rounded-[10px] border border-border/70 bg-white text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors duration-200 group-hover:border-primary/20 group-hover:text-primary",
                 isActive && "border-primary/20 bg-accent text-primary",
               )}
             >
@@ -359,12 +359,12 @@ export function AppShell({ children }: AppShellProps) {
     <div className="min-h-full bg-background text-foreground">
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 hidden border-r border-sidebar-border bg-sidebar px-4 py-4 lg:block",
+          "fixed inset-y-0 left-0 z-40 hidden border-r border-sidebar-border bg-sidebar/96 px-4 py-4 shadow-[12px_0_36px_-34px_rgba(15,48,106,0.48)] lg:block",
           getAuthenticatedSidebarClassName(),
         )}
       >
         <div className="flex h-full flex-col">
-          <div className="border-b border-border px-2 pb-4">
+          <div className="border-b border-border/80 px-2 pb-4">
             <div className="flex justify-center px-2 py-2">
               <Link
                 aria-label={t("appShell.brandHomeAria")}
@@ -398,6 +398,7 @@ export function AppShell({ children }: AppShellProps) {
             <Sheet onOpenChange={setIsSidebarOpen} open={isSidebarOpen}>
               <SheetTrigger asChild>
                 <Button
+                  aria-label={t("appShell.mobileMenuAria")}
                   className="lg:hidden"
                   size="icon"
                   type="button"
@@ -460,7 +461,7 @@ export function AppShell({ children }: AppShellProps) {
             </div>
 
             <details className="group relative">
-              <summary className="flex cursor-pointer list-none items-center gap-3 rounded-xl border border-border bg-white px-3 py-2 shadow-[var(--shadow-sm)] transition-colors duration-150 hover:border-primary/20">
+              <summary className="flex cursor-pointer list-none items-center gap-3 rounded-xl border border-border bg-white px-3 py-2 shadow-[var(--shadow-sm)] transition-[background-color,border-color,box-shadow] duration-200 hover:border-primary/20 hover:shadow-[var(--shadow-md)]">
                 <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-accent text-sm font-semibold text-primary">
                   {getInitials(userName)}
                 </div>

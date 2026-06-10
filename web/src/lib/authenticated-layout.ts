@@ -6,13 +6,13 @@ const AUTHENTICATED_MAIN_CLASS_NAME =
   "mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 lg:px-7"
 
 const WORK_SURFACE_CLASS_NAME =
-  "rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
+  "rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]"
 
 const PAGE_HEADER_CLASS_NAME =
-  "min-h-14 border-b border-border/90 bg-white/92 backdrop-blur-md"
+  "min-h-14 border-b border-border/80 bg-white/88 shadow-[0_8px_24px_-28px_rgba(15,48,106,0.4)] backdrop-blur-md"
 
 const TABLE_SECTION_CLASS_NAME =
-  "overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
+  "overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]"
 
 export function getAuthenticatedMainClassName(): string {
   return AUTHENTICATED_MAIN_CLASS_NAME

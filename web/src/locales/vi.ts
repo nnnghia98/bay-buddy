@@ -16,6 +16,7 @@ export default {
     brandHomeAria: "Về trang chủ",
     mobileDescription:
       "Điều phối khách hàng, nhận vé và ghi nhận công nợ trong một luồng thống nhất.",
+    mobileMenuAria: "Mở điều hướng",
     signOut: "Đăng xuất",
     userFallback: "Nhân viên",
     roles: {
@@ -560,6 +561,30 @@ export default {
         title: "Trung tâm vận hành hôm nay",
         description:
           "Theo dõi công nợ, vé, thanh toán và các việc cần xử lý tiếp theo.",
+        updatedAt: "Cập nhật",
+        needsAction: "Cần xử lý",
+        openQueue: "Mở hàng chờ",
+        queues: {
+          receivables: "Khách còn công nợ",
+          heldCredit: "Tiền dư / Đặt cọc",
+          draftTickets: "Vé nháp cần kiểm tra",
+        },
+        queueDescriptions: {
+          receivables: "Ưu tiên khách còn số dư phải thu để nhắc thanh toán hoặc đối soát.",
+          heldCredit: "Theo dõi khoản khách đã trả dư, đặt cọc hoặc cần hoàn/khấu trừ.",
+          draftTickets: "Kiểm tra vé nháp trước khi xác nhận và ghi nhận công nợ.",
+        },
+        shortcuts: {
+          title: "Lối tắt công việc",
+          customers: "Mở khách hàng",
+          customersDescription: "Tra cứu sổ công nợ và ghi nhận thanh toán.",
+          ticket: "Nhập vé",
+          ticketDescription: "Tạo vé và phát sinh công nợ từ dữ liệu đã xác nhận.",
+          import: "Vé gửi khách",
+          importDescription: "Tạo ảnh vé đã ẩn giá để gửi lại khách.",
+          report: "Báo cáo công nợ",
+          reportDescription: "Xem preview sổ dạng Excel và xuất đối soát.",
+        },
         recent: {
           eyebrow: "Mới nhất",
           title: "Hoạt động gần đây",

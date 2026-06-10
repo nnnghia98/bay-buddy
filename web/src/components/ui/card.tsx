@@ -10,9 +10,9 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
         ref={ref}
         onClick={onClick}
         className={cn(
-          "rounded-xl border border-border bg-white text-card-foreground shadow-[0_1px_3px_rgba(0,0,0,0.06)] motion-reduce:transition-none",
+          "rounded-xl border border-border bg-white text-card-foreground shadow-[var(--shadow-sm)] motion-reduce:transition-none",
           isInteractive &&
-            "cursor-pointer transition-colors duration-150 hover:border-primary/25 hover:bg-accent/45",
+            "cursor-pointer transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-accent/45 hover:shadow-[var(--shadow-md)] active:translate-y-px",
           className,
         )}
         {...props}

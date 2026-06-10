@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
 
 const panelClassName =
-  "overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
+  "overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]"
 
 type PanelHeaderRowProps = {
   eyebrow?: string
@@ -109,7 +109,7 @@ export function MetricCard({
   className?: string
 }) {
   return (
-    <Panel className={cn("p-5", className)}>
+    <Panel className={cn("p-5 transition-shadow duration-200", className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
           <Icon className="h-4 w-4" aria-hidden="true" />
@@ -119,7 +119,7 @@ export function MetricCard({
       <p className="mt-3.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
         {label}
       </p>
-      <p className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-foreground">
+      <p className="mt-1 text-2xl font-semibold tracking-normal text-foreground">
         {value}
       </p>
       {description ? (
@@ -191,7 +191,7 @@ export function CommandActionLink({
   return (
     <Link
       className={cn(
-        "group flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-3.5 transition-all duration-150 hover:border-primary/25 hover:bg-accent/45 hover:shadow-[0_1px_3px_rgba(0,0,0,0.06)]",
+        "group flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-3.5 transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-accent/45 hover:shadow-[var(--shadow-sm)] active:translate-y-px",
         className,
       )}
       href={href}

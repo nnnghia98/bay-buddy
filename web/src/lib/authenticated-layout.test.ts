@@ -29,7 +29,7 @@ describe("authenticated-layout", () => {
     expect(getWorkSurfaceClassName()).toContain("border")
     expect(getWorkSurfaceClassName()).toContain("border-border")
     expect(getWorkSurfaceClassName()).toContain("bg-white")
-    expect(getWorkSurfaceClassName()).toContain("shadow-[0_1px_3px_rgba(0,0,0,0.06)]")
+    expect(getWorkSurfaceClassName()).toContain("shadow-[var(--shadow-sm)]")
   })
 
   it("returns compact page header and table wrapper classes", () => {
@@ -38,7 +38,7 @@ describe("authenticated-layout", () => {
     expect(getTableSectionClassName()).toContain("overflow-hidden")
     expect(getTableSectionClassName()).toContain("rounded-xl")
     expect(getTableSectionClassName()).toContain("border-border")
-    expect(getTableSectionClassName()).toContain("shadow-[0_1px_3px_rgba(0,0,0,0.06)]")
+    expect(getTableSectionClassName()).toContain("shadow-[var(--shadow-sm)]")
     expect(getTableSectionClassName()).not.toContain("overflow-x-auto")
     expect(getTableSectionClassName()).toContain("bg-white")
     expect(getTableSectionClassName()).not.toContain("bg-card")

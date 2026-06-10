@@ -3,15 +3,22 @@
 import Link from "next/link"
 import * as React from "react"
 import {
+  AlertTriangle,
   ArrowRight,
+  CreditCard,
   Eye,
   EyeOff,
   Landmark,
+  PlaneTakeoff,
+  ReceiptText,
   TrendingUp,
+  UploadCloud,
+  Users,
   WalletCards,
 } from "lucide-react"
 
 import {
+  CommandActionLink,
   MetricCard,
   Panel,
   SectionHeader,
@@ -79,6 +86,14 @@ function getActivityTone(
   return "neutral"
 }
 
+function getQueueTone(
+  severity: FinancialSummarySnapshot["actionQueues"][number]["severity"],
+): "neutral" | "warning" | "danger" {
+  if (severity === "high") return "danger"
+  if (severity === "medium") return "warning"
+  return "neutral"
+}
+
 export function FinancialSummaryDashboard({
   summary,
   initialRevenueVisible = false,
@@ -122,8 +137,45 @@ export function FinancialSummaryDashboard({
     return t("dashboard.summary.commandCenter.recent.fallbacks.ticketPurchase")
   }
 
+  const getQueueLabel = (
+    key: FinancialSummarySnapshot["actionQueues"][number]["key"],
+  ): string => {
+    if (key === "heldCredit") return t("dashboard.summary.commandCenter.queues.heldCredit")
+    if (key === "draftTickets") return t("dashboard.summary.commandCenter.queues.draftTickets")
+    return t("dashboard.summary.commandCenter.queues.receivables")
+  }
+
+  const getQueueDescription = (
+    key: FinancialSummarySnapshot["actionQueues"][number]["key"],
+  ): string => {
+    if (key === "heldCredit") return t("dashboard.summary.commandCenter.queueDescriptions.heldCredit")
+    if (key === "draftTickets") return t("dashboard.summary.commandCenter.queueDescriptions.draftTickets")
+    return t("dashboard.summary.commandCenter.queueDescriptions.receivables")
+  }
+
   return (
     <div className="space-y-6 pb-12 text-foreground">
+      <div className="flex flex-col gap-4 rounded-xl border border-border bg-white/82 px-5 py-4 shadow-[var(--shadow-sm)] backdrop-blur sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+            {t("dashboard.summary.eyebrow")}
+          </p>
+          <h1 className="mt-1 max-w-3xl text-2xl font-semibold tracking-normal text-foreground">
+            {t("dashboard.summary.commandCenter.title")}
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+            {t("dashboard.summary.commandCenter.description")}
+          </p>
+        </div>
+        <div className="text-left sm:text-right">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            {t("dashboard.summary.commandCenter.updatedAt")}
+          </p>
+          <p className="mt-1 text-sm font-semibold text-foreground">
+            {formatDateTime(summary.updatedAt)}
+          </p>
+        </div>
+      </div>
 
       {/* ------------------------------------------------------------------ */}
       {/* Metric strip                                                        */}
@@ -177,10 +229,59 @@ export function FinancialSummaryDashboard({
       {/* ------------------------------------------------------------------ */}
       {/* Main two-column layout                                              */}
       {/* ------------------------------------------------------------------ */}
-      <div className="grid gap-6">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
 
         {/* Top Debtors */}
         <div className="space-y-6">
+          <div>
+            <SectionHeader
+              title={t("dashboard.summary.commandCenter.needsAction")}
+              id="dashboard-action-queues-title"
+            />
+            <Panel aria-labelledby="dashboard-action-queues-title">
+              <div className="divide-y divide-border">
+                {summary.actionQueues.map((queue) => (
+                  <Link
+                    className="group grid gap-3 px-5 py-4 transition-colors hover:bg-accent/38 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                    href={queue.href}
+                    key={queue.key}
+                  >
+                    <span className="flex min-w-0 items-start gap-3">
+                      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-secondary text-primary transition-colors group-hover:border-primary/25 group-hover:bg-white">
+                        <AlertTriangle aria-hidden="true" className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold text-foreground">
+                            {getQueueLabel(queue.key)}
+                          </span>
+                          <StatusChip tone={getQueueTone(queue.severity)}>
+                            {queue.count}
+                          </StatusChip>
+                        </span>
+                        <span className="mt-1 block text-sm leading-5 text-muted-foreground">
+                          {getQueueDescription(queue.key)}
+                        </span>
+                      </span>
+                    </span>
+                    <span className="text-left sm:text-right">
+                      <span className="block text-sm font-semibold text-foreground">
+                        {formatCurrency(queue.amount)}
+                      </span>
+                      <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                        {t("dashboard.summary.commandCenter.openQueue")}
+                        <ArrowRight
+                          aria-hidden="true"
+                          className="h-3 w-3 transition-transform group-hover:translate-x-0.5"
+                        />
+                      </span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </Panel>
+          </div>
+
           <div>
             <SectionHeader
               title={t("dashboard.summary.analytics.topDebtors.title")}
@@ -188,9 +289,9 @@ export function FinancialSummaryDashboard({
               action={
                 <Link
                   href="/customers"
-                  className="flex items-center gap-1 text-xs text-primary transition-opacity hover:opacity-75"
+                  className="flex items-center gap-1 text-xs font-semibold text-primary transition-opacity hover:opacity-75"
                 >
-                  {t("customers.directory.title")}
+                  {t("appShell.nav.customers")}
                   <ArrowRight className="h-3 w-3" aria-hidden="true" />
                 </Link>
               }
@@ -206,7 +307,7 @@ export function FinancialSummaryDashboard({
                     <Link
                       key={debtor.id}
                       href={`/customers/${debtor.id}`}
-                      className="grid gap-3 px-5 py-3.5 transition-colors hover:bg-accent/45 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                      className="grid gap-3 px-5 py-3.5 transition-colors hover:bg-accent/38 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
                     >
                       <span className="min-w-0">
                         <span className="flex items-center gap-2.5 text-sm font-medium text-foreground">
@@ -238,6 +339,60 @@ export function FinancialSummaryDashboard({
             </Panel>
           </div>
         </div>
+
+        <aside className="space-y-6">
+          <div>
+            <SectionHeader
+              title={t("dashboard.summary.commandCenter.shortcuts.title")}
+              id="dashboard-shortcuts-title"
+            />
+            <div aria-labelledby="dashboard-shortcuts-title" className="grid gap-3">
+              <CommandActionLink
+                description={t("dashboard.summary.commandCenter.shortcuts.customersDescription")}
+                href="/customers"
+                icon={Users}
+                label={t("dashboard.summary.commandCenter.shortcuts.customers")}
+              />
+              <CommandActionLink
+                description={t("dashboard.summary.commandCenter.shortcuts.ticketDescription")}
+                href="/tickets/input"
+                icon={PlaneTakeoff}
+                label={t("dashboard.summary.commandCenter.shortcuts.ticket")}
+              />
+              <CommandActionLink
+                description={t("dashboard.summary.commandCenter.shortcuts.importDescription")}
+                href="/extract-ticket"
+                icon={UploadCloud}
+                label={t("dashboard.summary.commandCenter.shortcuts.import")}
+              />
+              <CommandActionLink
+                description={t("dashboard.summary.commandCenter.shortcuts.reportDescription")}
+                href="/report"
+                icon={ReceiptText}
+                label={t("dashboard.summary.commandCenter.shortcuts.report")}
+              />
+            </div>
+          </div>
+
+          <Panel className="p-5">
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-secondary text-primary">
+                <CreditCard aria-hidden="true" className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                  {t("dashboard.summary.metrics.credit.label")}
+                </p>
+                <p className="mt-1 text-xl font-semibold text-foreground">
+                  {formatCurrency(summary.totalHeldCredit)}
+                </p>
+                <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                  {summary.customersWithCredit} {t("dashboard.summary.metrics.credit.detail")}
+                </p>
+              </div>
+            </div>
+          </Panel>
+        </aside>
       </div>
 
       {/* ------------------------------------------------------------------ */}

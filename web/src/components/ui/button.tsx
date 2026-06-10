@@ -5,18 +5,18 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[12px] text-sm font-medium tracking-[0.08px] transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[12px] text-sm font-semibold tracking-[0.08px] transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-out active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:active:translate-y-0 motion-reduce:transition-none motion-reduce:active:translate-y-0 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:bg-chart-2",
+          "bg-primary text-primary-foreground shadow-[var(--shadow-sm)] hover:bg-chart-2 hover:shadow-[var(--shadow-md)]",
         destructive:
-          "bg-destructive text-primary-foreground shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:bg-red-700",
+          "bg-destructive text-primary-foreground shadow-[var(--shadow-sm)] hover:bg-red-700 hover:shadow-[var(--shadow-md)]",
         outline:
-          "border border-border bg-white text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:border-primary/35 hover:bg-accent/50 hover:text-accent-foreground",
+          "border border-border bg-white text-foreground shadow-[var(--shadow-sm)] hover:border-primary/35 hover:bg-accent/50 hover:text-accent-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:bg-muted",
+          "bg-secondary text-secondary-foreground shadow-[var(--shadow-sm)] hover:bg-muted",
         ghost:
           "hover:bg-accent/55 hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
