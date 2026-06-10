@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 class TicketBase(SQLModel):
     """Fields shared between create/read schemas and the DB table."""
 
-    # Mã đặt chỗ – unique 6-character alphanumeric booking reference.
+    # Mã đặt chỗ – 6-character booking reference shared by grouped passengers.
     pnr: str = Field(
         index=True,
         min_length=6,

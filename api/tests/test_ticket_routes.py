@@ -145,14 +145,52 @@ def _seed_ticket_purchase_transaction(
 
 def test_confirm_ticket_surfaces_service_errors_as_non_2xx(test_client, monkeypatch):
     def boom(*args, **kwargs):
-        raise HTTPException(status_code=400, detail="duplicate PNR")
+        raise HTTPException(status_code=400, detail="service error")
 
     monkeypatch.setattr(ticket_routes, "create_ticket_with_transaction", boom)
 
     response = test_client.post("/api/v1/tickets/confirm", json=_confirm_payload())
 
     assert response.status_code == 400
-    assert response.json() == {"detail": "duplicate PNR"}
+    assert response.json() == {"detail": "service error"}
+
+
+def test_confirm_ticket_allows_shared_pnr_for_group_passengers(
+    test_client,
+    test_engine,
+):
+    first_response = test_client.post("/api/v1/tickets/confirm", json=_confirm_payload())
+
+    second_payload = _confirm_payload() | {
+        "ticket_number": "7382319992102",
+        "passengers": ["TRAN THI B"],
+        "seat_code": "12B",
+    }
+    second_response = test_client.post("/api/v1/tickets/confirm", json=second_payload)
+
+    assert first_response.status_code == 201
+    assert second_response.status_code == 201
+
+    with Session(test_engine) as session:
+        tickets = session.exec(select(Ticket).where(Ticket.pnr == "ABC123")).all()
+        transactions = session.exec(
+            select(Transaction).where(
+                Transaction.linked_ticket_id.in_([ticket.id for ticket in tickets])
+            )
+        ).all()
+        customer = session.exec(select(Customer).where(Customer.name == "Nguyen Van A")).one()
+
+        assert len(tickets) == 2
+        assert {ticket.ticket_number for ticket in tickets} == {
+            "7382319992101",
+            "7382319992102",
+        }
+        assert {tuple(ticket.passengers) for ticket in tickets} == {
+            ("NGUYEN VAN A",),
+            ("TRAN THI B",),
+        }
+        assert len(transactions) == 2
+        assert customer.balance == pytest.approx(2400000)
 
 
 def test_confirm_ticket_allows_shared_ticket_numbers_for_return_flights(

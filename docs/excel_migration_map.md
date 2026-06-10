@@ -10,7 +10,7 @@ These rows represent flight bookings and translate directly into the **`Ticket`*
 | :--- | :--- | :--- | :--- |
 | **Ngày** | `occurred_at` / `flight_date` | `Ticket` | The real-world booking or scheduled flight timestamp from the source sheet. This is not the Bay Buddy audit timestamp. |
 | **Nội dung** | `passengers` | `Ticket` | The name of the passenger(s). Stored as a JSON array in the database. |
-| **Mã chỗ** | `pnr` | `Ticket` | The 6-character Unique Booking Reference (e.g., `FKWODX`). |
+| **Mã chỗ** | `pnr` | `Ticket` | The 6-character booking reference (e.g., `FKWODX`). It may be shared by passengers in the same group booking. |
 | **Hãng** | `airline` | `Ticket` | Mapped to the `Airline` Enum (e.g., `VN`, `VJ`). |
 | **Số Vé** | `ticket_number` | `Ticket` | The airline ticket number stored directly on the ticket row. It is indexed but not unique because return-trip legs may share the same number. |
 | **Loại Vé** | `fare_class` | `Ticket` | Raw fare class / fare family value from the sheet (e.g., `B`, `Eco1`, `Flexible`). |

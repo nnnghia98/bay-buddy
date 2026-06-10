@@ -11,6 +11,7 @@ Flow of create_ticket_with_transaction:
   1. Look up customer by name (case-insensitive). Create if not found.
   2. Validate and compute pricing fields.
   3. Persist Ticket with status = CONFIRMED inside a DB transaction.
+     Multiple tickets may share the same PNR in group bookings.
   4. Create a CHARGE Transaction linked to the customer AND the ticket.
   5. Increment customer.balance by selling_price.
   All three mutations are committed atomically; any failure triggers a full rollback.
@@ -525,12 +526,11 @@ def create_ticket_with_transaction(
     Steps
     -----
     1. Resolve customer – look up by name (case-insensitive) or create a new record.
-    2. Guard – reject duplicate PNRs to prevent double-booking.
-    3. Persist the Ticket with status = CONFIRMED.
-    4. Flush so ticket.id is populated, then persist a CHARGE Transaction linked to
+    2. Persist the Ticket with status = CONFIRMED. PNRs may repeat for grouped passengers.
+    3. Flush so ticket.id is populated, then persist a CHARGE Transaction linked to
        both the customer and the ticket.
-    5. Increment customer.balance by selling_price.
-    6. Single atomic commit; refresh and return a structured response.
+    4. Increment customer.balance by selling_price.
+    5. Single atomic commit; refresh and return a structured response.
     """
 
     customer_name_normalised = payload.customer_name.strip()
@@ -553,16 +553,6 @@ def create_ticket_with_transaction(
         logger.info("Customer created with id=%s", customer.id)
     else:
         logger.info("Found existing customer '%s' id=%s", customer.name, customer.id)
-
-    existing_ticket = session.exec(
-        select(Ticket).where(Ticket.pnr == payload.pnr)
-    ).first()
-
-    if existing_ticket:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"A ticket with PNR '{payload.pnr}' already exists in the system.",
-        )
 
     selling_price = payload.selling_price
     true_income = payload.true_income
