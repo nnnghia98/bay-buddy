@@ -67,6 +67,7 @@ def _confirm_payload() -> dict:
         "arrival_code": "SGN",
         "itinerary": "HAN-SGN",
         "flight_date": datetime(2026, 4, 22, 10, 30, tzinfo=timezone.utc).isoformat(),
+        "booked_at": datetime(2026, 4, 20, 8, 15, tzinfo=timezone.utc).isoformat(),
         "net_price": 1000000,
         "service_fee": 200000,
         "selling_price": 1200000,
@@ -107,6 +108,7 @@ def _seed_confirmed_ticket(
         arrival_code="SGN",
         itinerary="HAN-SGN",
         flight_date=datetime(2026, 4, 22, 10, 30, tzinfo=timezone.utc),
+        booked_at=datetime(2026, 4, 20, 8, 15, tzinfo=timezone.utc),
         net_price=1000000,
         selling_price=selling_price,
         status=TicketStatus.CONFIRMED,
@@ -238,6 +240,7 @@ def test_confirm_ticket_persists_pricing_fields_and_records_customer_debt(
     assert payload["ticket"]["true_income"] == pytest.approx(210000)
     assert payload["ticket"]["fare_class"] == "B"
     assert payload["ticket"]["seat_code"] == "12A"
+    assert payload["ticket"]["booked_at"].startswith("2026-04-20T08:15:00")
 
     with Session(test_engine) as session:
         ticket = session.exec(select(Ticket).where(Ticket.pnr == "ABC123")).one()
@@ -252,6 +255,7 @@ def test_confirm_ticket_persists_pricing_fields_and_records_customer_debt(
         assert ticket.true_income == pytest.approx(210000)
         assert ticket.fare_class == "B"
         assert ticket.seat_code == "12A"
+        assert ticket.booked_at == datetime(2026, 4, 20, 8, 15)
         assert transaction.amount == pytest.approx(1200000)
         assert customer is not None
         assert customer.balance == pytest.approx(1200000)

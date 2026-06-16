@@ -93,6 +93,11 @@ class TicketBase(SQLModel):
     flight_date: datetime = Field(
         description="Scheduled departure datetime stored in ISO-8601 / UTC.",
     )
+    booked_at: Optional[datetime] = Field(
+        default=None,
+        index=True,
+        description="Real-world datetime when the ticket was booked manually by staff.",
+    )
     # Giá gốc – cost paid to the airline / supplier.
     net_price: float = Field(
         ge=0,
@@ -236,6 +241,7 @@ class TicketUpdate(SQLModel):
     arrival_code: Optional[str] = Field(default=None, max_length=10)
     itinerary: Optional[str] = Field(default=None, max_length=100)
     flight_date: Optional[datetime] = None
+    booked_at: Optional[datetime] = None
     net_price: Optional[float] = Field(default=None, ge=0)
     ev_price: Optional[float] = Field(default=None, ge=0)
     ast_price: Optional[float] = Field(default=None, ge=0)

@@ -203,10 +203,12 @@ function useBreadcrumbs(
 }
 
 function ShellNavigation({
+  compact = false,
   currentUserRole,
   pathname,
   onNavigate,
 }: {
+  compact?: boolean
   currentUserRole?: string
   pathname: string
   onNavigate?: () => void
@@ -214,7 +216,7 @@ function ShellNavigation({
   const t = useI18n()
 
   return (
-    <nav className="space-y-2">
+    <nav className={cn(compact ? "flex flex-col items-center gap-2" : "space-y-2")}>
       {navItems.map((item) => {
         if (item.adminOnly && currentUserRole !== "ADMIN") {
           return null
@@ -232,23 +234,43 @@ function ShellNavigation({
               : item.href !== "/" && pathname.startsWith(item.href)))
 
         const itemClasses = cn(
-          "group relative flex min-h-11 w-full items-center gap-3 rounded-[12px] border border-transparent px-3.5 py-2.5 text-sm font-semibold tracking-[0.08px] text-muted-foreground transition-[background-color,border-color,color,box-shadow,transform] duration-200 hover:translate-x-0.5 hover:border-primary/15 hover:bg-sidebar-accent hover:text-foreground active:translate-x-0",
-          isActive && "border-primary/15 bg-white text-primary shadow-[var(--shadow-sm)]",
+          "group relative flex min-h-11 items-center rounded-[12px] border border-transparent text-sm font-semibold tracking-[0.08px] text-muted-foreground transition-[background-color,border-color,color,box-shadow,transform] duration-200 hover:border-primary/15 hover:bg-sidebar-accent hover:text-foreground active:translate-x-0",
+          compact
+            ? "w-12 justify-center px-1 py-1"
+            : "gap-3 px-3.5 py-2.5 hover:translate-x-0.5",
+          isActive &&
+            (compact
+              ? "border-primary/10 bg-white text-primary shadow-[0_10px_24px_-18px_rgba(27,97,201,0.7)]"
+              : "border-primary/15 bg-white text-primary shadow-[var(--shadow-sm)]"),
           item.disabled && "cursor-default opacity-55",
         )
 
         const content = (
           <>
+            {compact && isActive ? (
+              <span className="absolute left-[-0.55rem] h-7 w-1 rounded-r-full bg-primary" />
+            ) : null}
             <div
               className={cn(
                 "flex h-9 w-9 items-center justify-center rounded-[10px] border border-border/70 bg-white text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors duration-200 group-hover:border-primary/20 group-hover:text-primary",
-                isActive && "border-primary/20 bg-accent text-primary",
+                compact && "border-transparent bg-transparent shadow-none group-hover:bg-white group-hover:shadow-[var(--shadow-sm)]",
+                isActive && (compact ? "bg-accent text-primary" : "border-primary/20 bg-accent text-primary"),
               )}
             >
               <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
             </div>
-            <span className="flex-1 text-left">{label}</span>
-            {item.disabled ? (
+            <span className={cn("flex-1 text-left", compact && "sr-only")}>
+              {label}
+            </span>
+            {compact ? (
+              <span
+                className="pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 hidden -translate-y-1/2 whitespace-nowrap rounded-lg border border-border bg-white px-3 py-2 text-xs font-semibold text-foreground opacity-0 shadow-[var(--shadow-md)] transition-opacity duration-150 group-hover:block group-hover:opacity-100 group-focus-within:block group-focus-within:opacity-100"
+                role="tooltip"
+              >
+                {label}
+              </span>
+            ) : null}
+            {item.disabled && !compact ? (
               <span className="rounded-full border border-border bg-white px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 {t("appShell.comingSoon")}
               </span>
@@ -265,7 +287,13 @@ function ShellNavigation({
         }
 
         return (
-          <Link className={itemClasses} href={item.href} key={item.href} onClick={onNavigate}>
+          <Link
+            aria-label={compact ? label : undefined}
+            className={itemClasses}
+            href={item.href}
+            key={item.href}
+            onClick={onNavigate}
+          >
             {content}
           </Link>
         )
@@ -299,24 +327,23 @@ function AuthenticatedShellLoading({
     >
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 hidden border-r border-sidebar-border bg-sidebar/96 px-4 py-4 shadow-[12px_0_36px_-34px_rgba(15,48,106,0.48)] lg:block",
+          "fixed inset-y-0 left-0 z-40 hidden border-r border-sidebar-border bg-sidebar/96 px-2 py-4 shadow-[12px_0_36px_-34px_rgba(15,48,106,0.48)] lg:block",
           getAuthenticatedSidebarClassName(),
         )}
       >
         <div className="flex h-full flex-col">
-          <div className="border-b border-border/80 px-2 pb-4">
-            <div className="flex justify-center px-2 py-2">
-              <SkeletonBlock className="h-24 w-32" />
+          <div className="border-b border-border/80 pb-4">
+            <div className="flex justify-center py-2">
+              <SkeletonBlock className="h-10 w-10" />
             </div>
           </div>
           <div className="space-y-3 py-4">
             {Array.from({ length: 6 }).map((_, index) => (
               <div
-                className="flex min-h-11 items-center gap-3 rounded-[12px] px-3.5 py-2.5"
+                className="flex min-h-11 items-center justify-center rounded-[12px] px-2 py-2"
                 key={index}
               >
                 <SkeletonBlock className="h-9 w-9" />
-                <SkeletonBlock className="h-4 flex-1" />
               </div>
             ))}
           </div>
@@ -494,13 +521,13 @@ export function AppShell({ children }: AppShellProps) {
     <div className="min-h-full bg-background text-foreground">
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 hidden border-r border-sidebar-border bg-sidebar/96 px-4 py-4 shadow-[12px_0_36px_-34px_rgba(15,48,106,0.48)] lg:block",
+          "fixed inset-y-0 left-0 z-40 hidden border-r border-sidebar-border bg-sidebar/96 px-2 py-4 shadow-[12px_0_36px_-34px_rgba(15,48,106,0.48)] lg:block",
           getAuthenticatedSidebarClassName(),
         )}
       >
         <div className="flex h-full flex-col">
-          <div className="border-b border-border/80 px-2 pb-4">
-            <div className="flex justify-center px-2 py-2">
+          <div className="border-b border-border/80 pb-4">
+            <div className="flex justify-center py-2">
               <Link
                 aria-label={t("appShell.brandHomeAria")}
                 className="flex justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -508,7 +535,7 @@ export function AppShell({ children }: AppShellProps) {
               >
                 <Image
                   alt="Bay Buddy"
-                  className="h-24 w-auto object-contain"
+                  className="h-10 w-auto object-contain"
                   height={820}
                   priority
                   src="/branding/logo-bay-buddy-v1-crop.png"
@@ -517,8 +544,9 @@ export function AppShell({ children }: AppShellProps) {
               </Link>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto py-4">
+          <div className="flex-1 py-4">
             <ShellNavigation
+              compact
               currentUserRole={userQuery.data?.role}
               onNavigate={() => setIsSidebarOpen(false)}
               pathname={pathname}

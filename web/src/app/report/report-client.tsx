@@ -34,6 +34,7 @@ type ColumnKey =
   | "customer_phone"
   | "entry_type"
   | "issued_at"
+  | "booked_at"
   | "created_at"
   | "description"
   | "content"
@@ -76,6 +77,7 @@ const columns: ColumnDefinition[] = [
   { key: "customer_phone", getValue: (row) => row.customer_phone ?? "" },
   { key: "entry_type", getValue: (row) => row.entry_type },
   { key: "issued_at", getValue: (row) => row.issued_at },
+  { key: "booked_at", getValue: (row) => row.booked_at ?? "" },
   { key: "created_at", getValue: (row) => row.created_at },
   { key: "description", getValue: (row) => row.customer_name },
   { key: "content", getValue: (row) => row.content },
@@ -163,6 +165,7 @@ const defaultColumnKeys: ColumnKey[] = [
   "order",
   "customer_code",
   "issued_at",
+  "booked_at",
   "pnr",
   "description",
   "selling_price",
@@ -211,6 +214,10 @@ function formatCellValue(
 ): string {
   if (key === "issued_at") {
     return formatDateTime(row.issued_at)
+  }
+
+  if (key === "booked_at") {
+    return row.booked_at ? formatDateTime(row.booked_at) : ""
   }
 
   if (key === "created_at") {

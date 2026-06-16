@@ -1,6 +1,6 @@
-const AUTHENTICATED_SIDEBAR_CLASS_NAME = "w-[248px]"
+const AUTHENTICATED_SIDEBAR_CLASS_NAME = "w-[72px]"
 
-const AUTHENTICATED_CONTENT_OFFSET_CLASS_NAME = "lg:pl-[248px]"
+const AUTHENTICATED_CONTENT_OFFSET_CLASS_NAME = "lg:pl-[72px]"
 
 const AUTHENTICATED_MAIN_CLASS_NAME =
   "mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 lg:px-7"

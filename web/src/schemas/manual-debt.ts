@@ -8,6 +8,7 @@ const defaultManualDebtValidationMessages: ManualDebtValidationMessages = {
   ticketNumberRequired: "Ticket number is required.",
   passengerRequired: "At least one passenger is required.",
   flightDateRequired: "Flight date is required.",
+  bookedAtRequired: "Ticket issue date is required.",
   routeRequired: "Route is required.",
   netPriceMin: "Net price must be at least 0.",
   evPriceMin: "EV net price must be at least 0.",
@@ -27,6 +28,7 @@ export type ManualDebtValidationMessages = {
   ticketNumberRequired: string
   passengerRequired: string
   flightDateRequired: string
+  bookedAtRequired: string
   routeRequired: string
   netPriceMin: string
   evPriceMin: string
@@ -46,6 +48,7 @@ type ManualDebtValidationKey =
   | "manualDebts.validation.ticketNumberRequired"
   | "manualDebts.validation.passengerRequired"
   | "manualDebts.validation.flightDateRequired"
+  | "manualDebts.validation.bookedAtRequired"
   | "manualDebts.validation.routeRequired"
   | "manualDebts.validation.netPriceMin"
   | "manualDebts.validation.evPriceMin"
@@ -108,6 +111,7 @@ export function getManualDebtValidationMessages(
     ticketNumberRequired: t("manualDebts.validation.ticketNumberRequired"),
     passengerRequired: t("manualDebts.validation.passengerRequired"),
     flightDateRequired: t("manualDebts.validation.flightDateRequired"),
+    bookedAtRequired: t("manualDebts.validation.bookedAtRequired"),
     routeRequired: t("manualDebts.validation.routeRequired"),
     netPriceMin: t("manualDebts.validation.netPriceMin"),
     evPriceMin: t("manualDebts.validation.evPriceMin"),
@@ -164,6 +168,9 @@ export function createManualDebtFormSchema(
       ),
       flight_date: z.coerce.date({
         message: messages.flightDateRequired,
+      }),
+      booked_at: z.coerce.date({
+        message: messages.bookedAtRequired,
       }),
       net_price: z.preprocess(
         normalizeAmount,

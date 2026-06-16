@@ -11,9 +11,9 @@ import {
 
 describe("authenticated-layout", () => {
   it("returns static authenticated shell sizing classes", () => {
-    expect(getAuthenticatedSidebarClassName()).toBe("w-[248px]")
-    expect(getAuthenticatedContentOffsetClassName()).toBe("lg:pl-[248px]")
-    expect(getAuthenticatedContentOffsetClassName()).not.toContain("w-[248px]")
+    expect(getAuthenticatedSidebarClassName()).toBe("w-[72px]")
+    expect(getAuthenticatedContentOffsetClassName()).toBe("lg:pl-[72px]")
+    expect(getAuthenticatedContentOffsetClassName()).not.toContain("w-[72px]")
   })
 
   it("returns the wider authenticated main content contract", () => {

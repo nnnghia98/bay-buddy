@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  Clock3,
   CreditCard,
   Eye,
   EyeOff,
@@ -160,25 +161,40 @@ export function FinancialSummaryDashboard({
 
   return (
     <div className="space-y-6 pb-12 text-foreground">
-      <div className="flex flex-col gap-4 rounded-xl border border-border bg-white/82 px-5 py-4 shadow-[var(--shadow-sm)] backdrop-blur sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-            {t("dashboard.summary.eyebrow")}
-          </p>
-          <h1 className="mt-1 max-w-3xl text-2xl font-semibold tracking-normal text-foreground">
-            {t("dashboard.summary.commandCenter.title")}
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-            {t("dashboard.summary.commandCenter.description")}
-          </p>
-        </div>
-        <div className="text-left sm:text-right">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            {t("dashboard.summary.commandCenter.updatedAt")}
-          </p>
-          <p className="mt-1 text-sm font-semibold text-foreground">
-            {formatDateTime(summary.updatedAt)}
-          </p>
+      <div className="relative overflow-hidden rounded-xl border border-border/90 bg-white px-5 py-5 shadow-[var(--shadow-md)] sm:px-6">
+        <div
+          className="pointer-events-none absolute inset-y-0 left-0 w-1.5 bg-primary"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute right-0 top-0 h-24 w-72 rounded-bl-full bg-accent/65"
+          aria-hidden="true"
+        />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+              {t("dashboard.summary.eyebrow")}
+            </p>
+            <h1 className="mt-2 max-w-3xl text-2xl font-semibold leading-tight tracking-normal text-foreground sm:text-[1.7rem]">
+              {t("dashboard.summary.commandCenter.title")}
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              {t("dashboard.summary.commandCenter.description")}
+            </p>
+          </div>
+          <div className="grid shrink-0 grid-cols-[auto_1fr] items-center gap-3 rounded-lg border border-border bg-secondary/70 px-3.5 py-3 text-left shadow-[var(--shadow-sm)] sm:min-w-56">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/15 bg-white text-primary">
+              <Clock3 aria-hidden="true" className="h-4 w-4" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                {t("dashboard.summary.commandCenter.updatedAt")}
+              </span>
+              <span className="mt-0.5 block text-sm font-semibold text-foreground tabular-nums">
+                {formatDateTime(summary.updatedAt)}
+              </span>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -268,7 +284,7 @@ export function FinancialSummaryDashboard({
 
                   return (
                     <Link
-                      className="group grid gap-3 px-5 py-4 transition-colors hover:bg-accent/30 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                      className="group grid gap-3 px-5 py-4 transition-colors hover:bg-accent/35 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
                       href={queue.href}
                       key={queue.key}
                     >
@@ -364,14 +380,16 @@ export function FinancialSummaryDashboard({
                     <Link
                       key={debtor.id}
                       href={`/customers/${debtor.id}`}
-                      className="grid gap-3 px-5 py-3.5 transition-colors hover:bg-accent/38 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                      className="group grid gap-3 px-5 py-3.5 transition-colors hover:bg-accent/35 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
                     >
                       <span className="min-w-0">
                         <span className="flex items-center gap-2.5 text-sm font-medium text-foreground">
                           <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-secondary text-[10px] font-semibold text-muted-foreground">
                             {index + 1}
                           </span>
-                          <span className="truncate">{debtor.name}</span>
+                          <span className="truncate transition-colors group-hover:text-primary">
+                            {debtor.name}
+                          </span>
                         </span>
                         <span className="mt-2 block">
                           <StatusChip tone={debtor.status === "high" ? "danger" : "warning"}>

@@ -9,6 +9,7 @@
  *   departure_place / arrival_place → Nơi đi / nơi đến
  *   departure_code / arrival_code   → Mã nơi đi / mã nơi đến
  *   itinerary     → Hành trình  (e.g. "HAN-SGN")
+ *   booked_at     → Ngày xuất vé
  *   net_price     → Giá gốc     (cost paid to airline/supplier)
  *   selling_price → Giá bán     (price invoiced to customer)
  *   discount      → Chiết khấu hãng (airline add-in earned by agency)
@@ -75,6 +76,13 @@ const TicketBaseSchema = z.object({
    * Maps to Python: flight_date
    */
   flight_date: z.coerce.date(),
+
+  /**
+   * Real-world datetime when staff booked the ticket.
+   * This is separate from flight_date and system created_at.
+   * Maps to Python: booked_at
+   */
+  booked_at: z.coerce.date().nullable().optional(),
 
   /**
    * Net cost from airline/supplier – giá gốc.
@@ -196,6 +204,7 @@ export const TicketUpdateSchema = z.object({
   arrival_code: z.string().min(1).max(10).toUpperCase().optional(),
   itinerary: z.string().min(1).max(100).optional(),
   flight_date: z.coerce.date().optional(),
+  booked_at: z.coerce.date().nullable().optional(),
   net_price: z.number().min(0).optional(),
   ev_price: z.number().min(0).optional(),
   ast_price: z.number().min(0).optional(),

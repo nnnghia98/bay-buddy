@@ -11,6 +11,7 @@ export type LedgerReportRow = {
   entry_type: CustomerLedger["entries"][number]["entry_type"]
   issued_at: string
   created_at: string
+  booked_at: string | null
   content: string
   amount: number
   running_balance: number
@@ -67,6 +68,7 @@ function mapLedgerToReportRows(ledger: CustomerLedger): LedgerReportRow[] {
         transaction?.created_at.toISOString() ??
         entry.created_at.toISOString(),
       created_at: entry.created_at.toISOString(),
+      booked_at: ticket?.booked_at?.toISOString() ?? null,
       content: entry.content,
       amount: entry.amount,
       running_balance: entry.running_balance,

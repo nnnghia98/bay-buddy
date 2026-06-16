@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
 
 const panelClassName =
-  "overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]"
+  "overflow-hidden rounded-xl border border-border/90 bg-white shadow-[var(--shadow-sm)]"
 
 type PanelHeaderRowProps = {
   eyebrow?: string
@@ -109,9 +109,14 @@ export function MetricCard({
   className?: string
 }) {
   return (
-    <Panel className={cn("p-5 transition-shadow duration-200", className)}>
+    <Panel
+      className={cn(
+        "group p-5 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[var(--shadow-md)]",
+        className,
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-secondary text-primary transition-colors group-hover:border-primary/20 group-hover:bg-accent/60">
           <Icon className="h-4 w-4" aria-hidden="true" />
         </div>
         {action}
@@ -119,7 +124,7 @@ export function MetricCard({
       <p className="mt-3.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
         {label}
       </p>
-      <p className="mt-1 text-2xl font-semibold tracking-normal text-foreground">
+      <p className="mt-1 text-2xl font-semibold tracking-normal text-foreground tabular-nums">
         {value}
       </p>
       {description ? (

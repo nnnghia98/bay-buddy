@@ -76,11 +76,29 @@ function formatDateTime(value: string): string {
   }).format(new Date(value))
 }
 
+function formatOptionalDateTime(value: string | null | undefined): string {
+  return value ? formatDateTime(value) : ""
+}
+
 function getDateTimeLocalNow(): string {
   const now = new Date()
   const offsetMs = now.getTimezoneOffset() * 60_000
 
   return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16)
+}
+
+function formatDateTimeLocal(value: string | null | undefined): string {
+  if (!value) {
+    return ""
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return ""
+  }
+
+  const offsetMs = date.getTimezoneOffset() * 60_000
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16)
 }
 
 function getFieldError(
@@ -341,6 +359,44 @@ function EditableMoneyCell({
   )
 }
 
+function EditableDateTimeCell({
+  editing,
+  formId,
+  name,
+  onBlur,
+  onKeyDown,
+  value,
+}: {
+  editing: boolean
+  formId: string
+  name: string
+  onBlur: React.FocusEventHandler<HTMLInputElement>
+  onKeyDown: React.KeyboardEventHandler<HTMLInputElement>
+  value: string | null
+}) {
+  const t = useI18n()
+
+  if (!editing) {
+    return (
+      <span className="block text-sm text-foreground">
+        {formatOptionalDateTime(value) || t("manualDebts.emptyValue")}
+      </span>
+    )
+  }
+
+  return (
+    <Input
+      className="h-9 min-w-52"
+      defaultValue={formatDateTimeLocal(value)}
+      form={formId}
+      name={name}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
+      type="datetime-local"
+    />
+  )
+}
+
 function ManualDebtTableRow({
   row,
 }: {
@@ -361,6 +417,7 @@ function ManualDebtTableRow({
     }
 
     const formData = new FormData(form)
+    const nextBookedAt = String(formData.get("booked_at") ?? "")
     const initialValues = {
       selling_price: row.ticket_selling_price,
       discount: row.ticket_discount,
@@ -373,7 +430,7 @@ function ManualDebtTableRow({
       const nextValue = Number(formData.get(key) ?? 0)
 
       return nextValue !== value
-    })
+    }) || nextBookedAt !== formatDateTimeLocal(row.booked_at)
 
     if (hasChanged) {
       form.requestSubmit()
@@ -404,7 +461,17 @@ function ManualDebtTableRow({
 
   return (
     <TableRow className="hover:bg-accent/35" ref={rowRef}>
-      <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-sm">
+      <TableCell className="min-w-40 whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-sm">
+        <EditableDateTimeCell
+          editing={isEditing}
+          formId={updateFormId}
+          name="booked_at"
+          onBlur={handleInputBlur}
+          onKeyDown={handleInputKeyDown}
+          value={row.booked_at}
+        />
+      </TableCell>
+      <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-sm text-muted-foreground">
         {formatDateTime(row.created_at)}
       </TableCell>
       <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-sm font-medium">
@@ -478,7 +545,7 @@ function ManualDebtTableRow({
       <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-right text-sm font-semibold">
         {formatCurrency(row.ticket_true_income)}
       </TableCell>
-      <TableCell className="whitespace-nowrap bg-white px-5 py-3.5 text-right">
+      <TableCell className="sticky right-0 z-10 min-w-48 whitespace-nowrap bg-white px-5 py-3.5 text-right shadow-[-8px_0_14px_rgba(24,29,38,0.04)]">
         {row.ticket_id ? (
           <div className="flex justify-end gap-2">
             <form action={updateManualDebtRowAction} id={updateFormId} ref={updateFormRef}>
@@ -486,6 +553,7 @@ function ManualDebtTableRow({
               <input name="ticket_id" type="hidden" value={row.ticket_id} />
               {!isEditing ? (
                 <>
+                  <input name="booked_at" type="hidden" value={formatDateTimeLocal(row.booked_at)} />
                   <input name="selling_price" type="hidden" value={row.ticket_selling_price} />
                   <input name="discount" type="hidden" value={row.ticket_discount} />
                   <input name="ev_price" type="hidden" value={row.ticket_ev_price} />
@@ -646,14 +714,14 @@ export function ManualDebtInputClient({
 
   return (
     <div className="space-y-6 pb-12 text-foreground">
-      <div className="grid gap-6 xl:grid-cols-[minmax(360px,420px)_1fr]">
-        <Panel className="xl:sticky xl:top-[calc(3.5rem+1.25rem)] xl:flex xl:max-h-[calc(100vh-5rem)] xl:flex-col">
+      <div className="grid gap-6">
+        <Panel>
           <PanelHeaderRow
             eyebrow={t("manualDebts.form.eyebrow")}
             title={t("manualDebts.form.title")}
           />
           <form
-            className="space-y-5 p-5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto"
+            className="space-y-5 p-5"
             key={formResetKey}
             onSubmit={handleManualDebtSubmit}
             ref={formRef}
@@ -744,6 +812,19 @@ export function ManualDebtInputClient({
                   />
                 </FormField>
               </div>
+
+              <FormField
+                error={getFieldError(fieldErrors, "booked_at")}
+                htmlFor="manual-debt-booked-at"
+                label={t("manualDebts.form.fields.bookedAt")}
+              >
+                <Input
+                  defaultValue={getDateTimeLocalNow()}
+                  id="manual-debt-booked-at"
+                  name="booked_at"
+                  type="datetime-local"
+                />
+              </FormField>
 
               <FormField
                 error={getFieldError(fieldErrors, "passengers")}
@@ -937,10 +1018,10 @@ export function ManualDebtInputClient({
           </form>
         </Panel>
 
-        <Panel>
-          <div className="flex justify-end border-b border-border bg-white px-5 py-3.5">
+        <Panel className="min-w-0">
+          <div className="shrink-0 border-b border-border bg-secondary/40 p-4">
             <form
-              className="grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] xl:max-w-3xl"
+              className="grid w-full gap-3 rounded-xl border border-border bg-white p-3 shadow-[var(--shadow-sm)] sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
               onSubmit={handleApplyFilters}
             >
               <div className="space-y-1.5">
@@ -982,9 +1063,12 @@ export function ManualDebtInputClient({
             </p>
           ) : null}
           <TableScrollArea>
-            <Table className="min-w-[1200px] border-collapse">
-              <TableHeader>
+            <Table className="min-w-[1440px] border-collapse">
+              <TableHeader className="sticky top-0 z-20">
                 <TableRow className="bg-sidebar-accent hover:bg-sidebar-accent">
+                  <TableHead className="min-w-40 whitespace-nowrap border-r border-border bg-sidebar-accent px-5 py-3.5 font-semibold text-foreground">
+                    {t("manualDebts.table.columns.bookedAt")}
+                  </TableHead>
                   <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-foreground">
                     {t("manualDebts.table.columns.date")}
                   </TableHead>
@@ -1012,7 +1096,7 @@ export function ManualDebtInputClient({
                   <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
                     {t("manualDebts.table.columns.income")}
                   </TableHead>
-                  <TableHead className="whitespace-nowrap px-5 py-3.5 text-right font-semibold text-foreground">
+                  <TableHead className="sticky right-0 z-30 min-w-48 whitespace-nowrap bg-sidebar-accent px-5 py-3.5 text-right font-semibold text-foreground shadow-[-8px_0_14px_rgba(24,29,38,0.04)]">
                     {t("manualDebts.table.columns.actions")}
                   </TableHead>
                 </TableRow>
@@ -1020,7 +1104,7 @@ export function ManualDebtInputClient({
               <TableBody>
                 {filteredRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10}>
+                    <TableCell colSpan={11}>
                       <EmptyState
                         icon={ReceiptText}
                         message={t("manualDebts.table.empty")}

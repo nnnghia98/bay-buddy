@@ -16,6 +16,7 @@ describe("TicketReadSchema", () => {
       passengers: ["NGUYEN VAN A"],
       itinerary: "HAN-SGN",
       flight_date: "2026-04-24T02:00:00.000Z",
+      booked_at: "2026-04-23T08:30:00.000Z",
       created_at: "2026-04-24T04:00:00.000Z",
       updated_at: "2026-04-24T04:00:00.000Z",
       net_price: 1_000_000,
@@ -32,5 +33,6 @@ describe("TicketReadSchema", () => {
     expect(parsed.arrival_place).toBeNull()
     expect(parsed.departure_code).toBeNull()
     expect(parsed.arrival_code).toBeNull()
+    expect(parsed.booked_at).toEqual(new Date("2026-04-23T08:30:00.000Z"))
   })
 })

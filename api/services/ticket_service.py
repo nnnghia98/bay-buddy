@@ -125,6 +125,10 @@ class TicketConfirmPayload(BaseModel):
         description='Flight route string, e.g. "HAN-SGN". Derived from codes when omitted.',
     )
     flight_date: datetime = Field(description="Scheduled departure datetime (ISO-8601 / UTC).")
+    booked_at: Optional[datetime] = Field(
+        default=None,
+        description="Real-world datetime when the ticket was booked manually by staff.",
+    )
 
     # ── Pricing fields ───────────────────────────────────────────────────────
     net_price: float = Field(ge=0, description="Net cost from airline/supplier (giá gốc). ≥ 0.")
@@ -617,6 +621,7 @@ def create_ticket_with_transaction(
         arrival_code=payload.arrival_code,
         itinerary=payload.itinerary,
         flight_date=payload.flight_date,
+        booked_at=payload.booked_at,
         net_price=payload.net_price,
         ev_price=payload.ev_price,
         ast_price=payload.ast_price,

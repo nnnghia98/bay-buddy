@@ -18,6 +18,7 @@ const API_BASE_URL = getServerApiBaseUrl()
 const manualDebtRowUpdateSchema = z.object({
   customer_id: z.string().uuid(),
   ticket_id: z.string().uuid(),
+  booked_at: z.coerce.date().nullable(),
   selling_price: z.coerce.number().min(0),
   discount: z.coerce.number().min(0),
   ev_price: z.coerce.number().min(0),
@@ -47,6 +48,7 @@ export async function updateManualDebtRowAction(formData: FormData): Promise<voi
   const parsedInput = manualDebtRowUpdateSchema.safeParse({
     customer_id: formData.get("customer_id"),
     ticket_id: formData.get("ticket_id"),
+    booked_at: formData.get("booked_at") || null,
     selling_price: formData.get("selling_price"),
     discount: formData.get("discount"),
     ev_price: formData.get("ev_price"),
@@ -73,6 +75,7 @@ export async function updateManualDebtRowAction(formData: FormData): Promise<voi
     },
     body: JSON.stringify({
       ...values,
+      booked_at: values.booked_at ? values.booked_at.toISOString() : null,
       true_income: computeTrueIncome(
         values.selling_price,
         values.discount,
