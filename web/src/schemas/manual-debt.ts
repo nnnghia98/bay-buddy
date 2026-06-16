@@ -13,6 +13,7 @@ const defaultManualDebtValidationMessages: ManualDebtValidationMessages = {
   evPriceMin: "EV net price must be at least 0.",
   astPriceMin: "AST net price must be at least 0.",
   thfPriceMin: "THF price must be at least 0.",
+  webPriceMin: "WEB price must be at least 0.",
   sellingPriceMin: "Selling price must be at least 0.",
   discountMin: "Discount must be at least 0.",
   sellingPriceFormula: "Selling price must be greater than or equal to net price.",
@@ -31,6 +32,7 @@ export type ManualDebtValidationMessages = {
   evPriceMin: string
   astPriceMin: string
   thfPriceMin: string
+  webPriceMin: string
   sellingPriceMin: string
   discountMin: string
   sellingPriceFormula: string
@@ -49,6 +51,7 @@ type ManualDebtValidationKey =
   | "manualDebts.validation.evPriceMin"
   | "manualDebts.validation.astPriceMin"
   | "manualDebts.validation.thfPriceMin"
+  | "manualDebts.validation.webPriceMin"
   | "manualDebts.validation.sellingPriceMin"
   | "manualDebts.validation.discountMin"
   | "manualDebts.validation.sellingPriceFormula"
@@ -110,6 +113,7 @@ export function getManualDebtValidationMessages(
     evPriceMin: t("manualDebts.validation.evPriceMin"),
     astPriceMin: t("manualDebts.validation.astPriceMin"),
     thfPriceMin: t("manualDebts.validation.thfPriceMin"),
+    webPriceMin: t("manualDebts.validation.webPriceMin"),
     sellingPriceMin: t("manualDebts.validation.sellingPriceMin"),
     discountMin: t("manualDebts.validation.discountMin"),
     sellingPriceFormula: t("manualDebts.validation.sellingPriceFormula"),
@@ -176,6 +180,10 @@ export function createManualDebtFormSchema(
       thf_price: z.preprocess(
         normalizeAmount,
         z.number().min(0, messages.thfPriceMin),
+      ),
+      web_price: z.preprocess(
+        normalizeAmount,
+        z.number().min(0, messages.webPriceMin),
       ),
       selling_price: z.preprocess(
         normalizeAmount,

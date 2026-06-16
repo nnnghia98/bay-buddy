@@ -367,6 +367,7 @@ function ManualDebtTableRow({
       ev_price: row.ticket_ev_price,
       ast_price: row.ticket_ast_price,
       thf_price: row.ticket_thf_price,
+      web_price: row.ticket_web_price,
     }
     const hasChanged = Object.entries(initialValues).some(([key, value]) => {
       const nextValue = Number(formData.get(key) ?? 0)
@@ -464,6 +465,16 @@ function ManualDebtTableRow({
           value={row.ticket_thf_price}
         />
       </TableCell>
+      <TableCell className="whitespace-nowrap border-r border-border bg-white px-3 py-2 text-right">
+        <EditableMoneyCell
+          editing={isEditing}
+          formId={updateFormId}
+          name="web_price"
+          onBlur={handleInputBlur}
+          onKeyDown={handleInputKeyDown}
+          value={row.ticket_web_price}
+        />
+      </TableCell>
       <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-right text-sm font-semibold">
         {formatCurrency(row.ticket_true_income)}
       </TableCell>
@@ -480,6 +491,7 @@ function ManualDebtTableRow({
                   <input name="ev_price" type="hidden" value={row.ticket_ev_price} />
                   <input name="ast_price" type="hidden" value={row.ticket_ast_price} />
                   <input name="thf_price" type="hidden" value={row.ticket_thf_price} />
+                  <input name="web_price" type="hidden" value={row.ticket_web_price} />
                 </>
               ) : null}
             </form>
@@ -543,6 +555,7 @@ export function ManualDebtInputClient({
   const [evPrice, setEvPrice] = React.useState(0)
   const [astPrice, setAstPrice] = React.useState(0)
   const [thfPrice, setThfPrice] = React.useState(0)
+  const [webPrice, setWebPrice] = React.useState(0)
   const [formResetKey, setFormResetKey] = React.useState(0)
 
   React.useEffect(() => {
@@ -555,6 +568,7 @@ export function ManualDebtInputClient({
     setEvPrice(0)
     setAstPrice(0)
     setThfPrice(0)
+    setWebPrice(0)
     setFormResetKey((current) => current + 1)
     router.refresh()
   }, [actionState.status, actionState.submittedAt, router])
@@ -578,7 +592,7 @@ export function ManualDebtInputClient({
     })
   }, [appliedFrom, appliedTo, rows])
 
-  const trueIncome = sellingPrice + discount - (evPrice + astPrice + thfPrice)
+  const trueIncome = sellingPrice + discount - (evPrice + astPrice + thfPrice + webPrice)
   const fieldErrors = actionState.fieldErrors
 
   const handleApplyFilters = (event: React.FormEvent<HTMLFormElement>) => {
@@ -808,7 +822,7 @@ export function ManualDebtInputClient({
                 {t("manualDebts.form.pricingGroup")}
               </p>
               <div className="mt-4 grid gap-4">
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
                   <FormField
                     error={getFieldError(fieldErrors, "net_price")}
                     htmlFor="manual-debt-net-price"
@@ -857,6 +871,19 @@ export function ManualDebtInputClient({
                       min={0}
                       name="thf_price"
                       onChange={(event) => setThfPrice(Number(event.target.value) || 0)}
+                      type="number"
+                    />
+                  </FormField>
+                  <FormField
+                    error={getFieldError(fieldErrors, "web_price")}
+                    htmlFor="manual-debt-web-price"
+                    label={t("manualDebts.form.fields.webPrice")}
+                  >
+                    <Input
+                      id="manual-debt-web-price"
+                      min={0}
+                      name="web_price"
+                      onChange={(event) => setWebPrice(Number(event.target.value) || 0)}
                       type="number"
                     />
                   </FormField>
@@ -955,7 +982,7 @@ export function ManualDebtInputClient({
             </p>
           ) : null}
           <TableScrollArea>
-            <Table className="min-w-[1080px] border-collapse">
+            <Table className="min-w-[1200px] border-collapse">
               <TableHeader>
                 <TableRow className="bg-sidebar-accent hover:bg-sidebar-accent">
                   <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-foreground">
@@ -980,6 +1007,9 @@ export function ManualDebtInputClient({
                     {t("manualDebts.table.columns.thfPrice")}
                   </TableHead>
                   <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                    {t("manualDebts.table.columns.webPrice")}
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
                     {t("manualDebts.table.columns.income")}
                   </TableHead>
                   <TableHead className="whitespace-nowrap px-5 py-3.5 text-right font-semibold text-foreground">
@@ -990,7 +1020,7 @@ export function ManualDebtInputClient({
               <TableBody>
                 {filteredRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9}>
+                    <TableCell colSpan={10}>
                       <EmptyState
                         icon={ReceiptText}
                         message={t("manualDebts.table.empty")}

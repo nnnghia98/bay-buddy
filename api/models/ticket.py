@@ -2,10 +2,10 @@
 Ticket model – represents a booked flight ticket.
 
 Schema reference: docs/ARCHITECT.md § Model: Ticket
-Dictionary:       docs/DICTIONARY.md  (pnr, net_price, ev_price, ast_price, thf_price, selling_price, discount, true_income, itinerary)
+Dictionary:       docs/DICTIONARY.md  (pnr, net_price, ev_price, ast_price, thf_price, web_price, selling_price, discount, true_income, itinerary)
 Agent output:     docs/AGENT_PARSER.md (fields produced by the AI extraction step)
 
-True income per ticket = selling_price + discount - (ev_price + ast_price + thf_price)
+True income per ticket = selling_price + discount - (ev_price + ast_price + thf_price + web_price)
 """
 
 import uuid
@@ -113,6 +113,11 @@ class TicketBase(SQLModel):
         ge=0,
         description="Host net price from Thanh Hoang / THF (giá Thành Hoàng). Empty values count as 0.",
     )
+    web_price: float = Field(
+        default=0.0,
+        ge=0,
+        description="Host net price from WEB (giá WEB). Empty values count as 0.",
+    )
     # Giá bán – price invoiced to the customer.
     selling_price: float = Field(
         ge=0,
@@ -125,7 +130,7 @@ class TicketBase(SQLModel):
     )
     true_income: float = Field(
         default=0.0,
-        description="Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price).",
+        description="Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price).",
     )
 
     status: TicketStatus = Field(
@@ -188,7 +193,7 @@ class Ticket(TicketBase, table=True):
     def computed_true_income(self) -> float:
         """Thu nhập thực – selling price plus discount minus host net prices."""
         return self.selling_price + self.discount - (
-            self.ev_price + self.ast_price + self.thf_price
+            self.ev_price + self.ast_price + self.thf_price + self.web_price
         )
 
 
@@ -235,6 +240,7 @@ class TicketUpdate(SQLModel):
     ev_price: Optional[float] = Field(default=None, ge=0)
     ast_price: Optional[float] = Field(default=None, ge=0)
     thf_price: Optional[float] = Field(default=None, ge=0)
+    web_price: Optional[float] = Field(default=None, ge=0)
     service_fee: Optional[float] = Field(
         default=None,
         ge=0,

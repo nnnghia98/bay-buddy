@@ -645,7 +645,7 @@ function LedgerRecordCorrectionDialog({
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
                 <div className="space-y-2">
                   <Label htmlFor={`net-price-${entry.id}`}>{t("customers.ledger.corrections.fields.netPrice")}</Label>
                   <Input
@@ -684,6 +684,16 @@ function LedgerRecordCorrectionDialog({
                     type="number"
                     min="0"
                     defaultValue={ticket.thf_price}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`web-price-${entry.id}`}>{t("customers.ledger.corrections.fields.webPrice")}</Label>
+                  <Input
+                    id={`web-price-${entry.id}`}
+                    name="web_price"
+                    type="number"
+                    min="0"
+                    defaultValue={ticket.web_price}
                   />
                 </div>
                 <div className="space-y-2">

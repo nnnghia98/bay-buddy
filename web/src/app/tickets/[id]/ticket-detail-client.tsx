@@ -335,6 +335,18 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="ticket-detail-web-price">
+              {t("customers.ledger.corrections.fields.webPrice")}
+            </Label>
+            <Input
+              id="ticket-detail-web-price"
+              name="web_price"
+              type="number"
+              min="0"
+              defaultValue={ticket.web_price}
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="ticket-detail-selling-price">
               {t("customers.ledger.corrections.fields.sellingPrice")}
             </Label>
@@ -484,6 +496,7 @@ export function TicketDetailClient({
             <DetailItem label={t("tickets.detail.fields.evPrice")} value={formatCurrency(ticket.ev_price)} />
             <DetailItem label={t("tickets.detail.fields.astPrice")} value={formatCurrency(ticket.ast_price)} />
             <DetailItem label={t("tickets.detail.fields.thfPrice")} value={formatCurrency(ticket.thf_price)} />
+            <DetailItem label={t("tickets.detail.fields.webPrice")} value={formatCurrency(ticket.web_price)} />
             <DetailItem label={t("tickets.detail.fields.discount")} value={formatCurrency(ticket.discount)} />
             <DetailItem label={t("tickets.detail.fields.serviceFee")} value={formatCurrency(ticket.service_fee)} />
             <DetailItem label={t("tickets.detail.fields.updatedAt")} value={formatDateTime(ticket.updated_at)} />

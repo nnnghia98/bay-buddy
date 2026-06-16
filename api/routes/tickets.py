@@ -59,7 +59,7 @@ router = APIRouter()
         "Automatically resolves or creates the customer record by name, "
         "saves the ticket as CONFIRMED, creates a CHARGE transaction for the debt, "
         "and updates the customer balance. All changes are committed atomically. "
-        "Business rule: true_income = selling_price + discount - (ev_price + ast_price + thf_price) "
+        "Business rule: true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price) "
         "(BUSINESS.md §2)."
     ),
 )
@@ -73,7 +73,7 @@ async def confirm_ticket(
     Full ticket-confirmation flow (docs/BUSINESS.md §1, §2, §3):
 
     1. Resolve customer by name (case-insensitive) — create if new.
-    2. Compute income from selling price, discount, and EV/AST/THF host net prices.
+    2. Compute income from selling price, discount, and EV/AST/THF/WEB host net prices.
     3. Persist Ticket with status = CONFIRMED.
     4. Persist CHARGE Transaction (auto-debt) linked to the customer.
     5. Increment customer.balance by selling_price.

@@ -9,6 +9,7 @@
 | Giá net EV | EV Net Price | `ev_price` |
 | Giá AST | AST Price | `ast_price` |
 | Giá Thành Hoàng / Giá THF | Thành Hoàng / THF Price | `thf_price` |
+| Giá WEB | WEB Price | `web_price` |
 | Giá bán | Selling Price | `selling_price` |
 | Chiết khấu hãng | Airline Discount | `discount` |
 | Thu nhập thực / Doanh thu | True Income / Revenue | `true_income` |

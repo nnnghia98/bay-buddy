@@ -52,12 +52,13 @@ The system distinguishes between what the airline charges and what the customer 
 - **EV Price**: Host net price passed down from the EV upstream agency.
 - **AST Price**: Host net price passed down from the AST upstream agency.
 - **THF Price / Thành Hoàng**: Host net price passed down from Thành Hoàng (THF).
+- **WEB Price**: Host net price passed down from the WEB upstream channel.
 - **Service Fee**: The profit margin added by the agent.
 - **Selling Price**: The final price charged to the customer.
 - **Discount**: The airline add-in / discount amount earned by the agency for each ticket.
 - **True Income / Doanh thu**: The actual ticket income after customer collection, airline discount, and host net prices.
 - **Formula**: `selling_price = net_price + service_fee`
-- **True Income Formula**: `true_income = selling_price + discount - (ev_price + ast_price + thf_price)`. Empty EV/AST/THF values count as `0`.
+- **True Income Formula**: `true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price)`. Empty EV/AST/THF/WEB values count as `0`.
 
 > **Note**: Taxes and airport fees are usually included in the `net_price` during AI parsing unless specified otherwise.
 

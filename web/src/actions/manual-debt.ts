@@ -23,6 +23,7 @@ const manualDebtRowUpdateSchema = z.object({
   ev_price: z.coerce.number().min(0),
   ast_price: z.coerce.number().min(0),
   thf_price: z.coerce.number().min(0),
+  web_price: z.coerce.number().min(0),
 })
 
 const manualDebtRowDeleteSchema = z.object({
@@ -51,6 +52,7 @@ export async function updateManualDebtRowAction(formData: FormData): Promise<voi
     ev_price: formData.get("ev_price"),
     ast_price: formData.get("ast_price"),
     thf_price: formData.get("thf_price"),
+    web_price: formData.get("web_price"),
   })
 
   if (!parsedInput.success) {
@@ -77,6 +79,7 @@ export async function updateManualDebtRowAction(formData: FormData): Promise<voi
         values.ev_price,
         values.ast_price,
         values.thf_price,
+        values.web_price,
       ),
     }),
     cache: "no-store",
