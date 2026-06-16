@@ -647,13 +647,13 @@ export function ManualDebtInputClient({
   return (
     <div className="space-y-6 pb-12 text-foreground">
       <div className="grid gap-6 xl:grid-cols-[minmax(360px,420px)_1fr]">
-        <Panel>
+        <Panel className="xl:sticky xl:top-[calc(3.5rem+1.25rem)] xl:flex xl:max-h-[calc(100vh-5rem)] xl:flex-col">
           <PanelHeaderRow
             eyebrow={t("manualDebts.form.eyebrow")}
             title={t("manualDebts.form.title")}
           />
           <form
-            className="space-y-5 p-5"
+            className="space-y-5 p-5 xl:min-h-0 xl:flex-1 xl:overflow-y-auto"
             key={formResetKey}
             onSubmit={handleManualDebtSubmit}
             ref={formRef}
@@ -822,7 +822,7 @@ export function ManualDebtInputClient({
                 {t("manualDebts.form.pricingGroup")}
               </p>
               <div className="mt-4 grid gap-4">
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
+                <div className="grid gap-4">
                   <FormField
                     error={getFieldError(fieldErrors, "net_price")}
                     htmlFor="manual-debt-net-price"
