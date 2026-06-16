@@ -46,6 +46,10 @@ type ColumnKey =
   | "ticket_number"
   | "selling_price"
   | "discount"
+  | "ev_price"
+  | "ast_price"
+  | "thf_price"
+  | "true_income"
   | "airline"
   | "route"
   | "flight_date"
@@ -114,6 +118,26 @@ const columns: ColumnDefinition[] = [
     align: "right",
     getValue: (row) => row.ticket_discount.toString(),
   },
+  {
+    key: "ev_price",
+    align: "right",
+    getValue: (row) => row.ticket_ev_price.toString(),
+  },
+  {
+    key: "ast_price",
+    align: "right",
+    getValue: (row) => row.ticket_ast_price.toString(),
+  },
+  {
+    key: "thf_price",
+    align: "right",
+    getValue: (row) => row.ticket_thf_price.toString(),
+  },
+  {
+    key: "true_income",
+    align: "right",
+    getValue: (row) => row.ticket_true_income.toString(),
+  },
   { key: "airline", getValue: (row) => row.airline ?? "" },
   { key: "route", getValue: (row) => row.route ?? "" },
   { key: "flight_date", getValue: (row) => row.flight_date ?? "" },
@@ -137,6 +161,10 @@ const defaultColumnKeys: ColumnKey[] = [
   "description",
   "selling_price",
   "discount",
+  "ev_price",
+  "ast_price",
+  "thf_price",
+  "true_income",
   "debt",
 ]
 
@@ -214,6 +242,22 @@ function formatCellValue(
     return row.ticket_discount > 0
       ? formatCurrency(row.ticket_discount)
       : formatCurrency(0)
+  }
+
+  if (key === "ev_price") {
+    return formatCurrency(row.ticket_ev_price)
+  }
+
+  if (key === "ast_price") {
+    return formatCurrency(row.ticket_ast_price)
+  }
+
+  if (key === "thf_price") {
+    return formatCurrency(row.ticket_thf_price)
+  }
+
+  if (key === "true_income") {
+    return formatCurrency(row.ticket_true_income)
   }
 
   if (key === "running_balance") {

@@ -12,6 +12,7 @@ import {
   FileText,
   FileCheck2,
   Menu,
+  ReceiptText,
   Settings,
   Ticket,
   Users,
@@ -59,6 +60,7 @@ type CustomerSummary = {
 
 type NavLabelKey =
   | "tickets"
+  | "manualDebts"
   | "ticketImports"
   | "activities"
   | "customers"
@@ -76,7 +78,8 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { labelKey: "tickets", href: "/tickets/input", icon: Ticket },
-  { labelKey: "activities", href: "/activites", icon: Activity },
+  { labelKey: "manualDebts", href: "/debts/input", icon: ReceiptText },
+  { labelKey: "activities", href: "/activities", icon: Activity },
   { labelKey: "customers", href: "/customers", icon: Users },
   { labelKey: "ticketImports", href: "/extract-ticket", icon: FileCheck2 },
   { labelKey: "reports", href: "/report", icon: FileText },
@@ -103,6 +106,7 @@ function useBreadcrumbs(
     ticketActivity: string
     ticketDetail: string
     aiTicketInput: string
+    manualDebts: string
     ticketImports: string
     invoices: string
     financeDocuments: string
@@ -140,6 +144,13 @@ function useBreadcrumbs(
       ]
     }
 
+    if (pathname.startsWith("/debts/input")) {
+      return [
+        { label: labels.tickets, href: "/tickets/input" },
+        { label: labels.manualDebts, href: pathname },
+      ]
+    }
+
     if (pathname.startsWith("/extract-ticket")) {
       return [
         { label: labels.tickets, href: "/tickets/input" },
@@ -147,7 +158,7 @@ function useBreadcrumbs(
       ]
     }
 
-    if (pathname.startsWith("/activites")) {
+    if (pathname.startsWith("/activities") || pathname.startsWith("/activites")) {
       return [
         { label: labels.tickets, href: "/tickets/input" },
         { label: labels.ticketActivity, href: pathname },
@@ -216,6 +227,8 @@ function ShellNavigation({
           (pathname === item.href ||
             (item.href === "/tickets/input"
               ? pathname.startsWith("/tickets/")
+              : item.href === "/debts/input"
+                ? pathname.startsWith("/debts/")
               : item.href !== "/" && pathname.startsWith(item.href)))
 
         const itemClasses = cn(
@@ -258,6 +271,118 @@ function ShellNavigation({
         )
       })}
     </nav>
+  )
+}
+
+function SkeletonBlock({ className }: { className: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cn("animate-pulse rounded-lg bg-muted", className)}
+    />
+  )
+}
+
+function AuthenticatedShellLoading({
+  loadingLabel,
+  homeLabel,
+}: {
+  loadingLabel: string
+  homeLabel: string
+}) {
+  return (
+    <div
+      aria-busy="true"
+      aria-label={loadingLabel}
+      className="min-h-full bg-background text-foreground"
+      role="status"
+    >
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 hidden border-r border-sidebar-border bg-sidebar/96 px-4 py-4 shadow-[12px_0_36px_-34px_rgba(15,48,106,0.48)] lg:block",
+          getAuthenticatedSidebarClassName(),
+        )}
+      >
+        <div className="flex h-full flex-col">
+          <div className="border-b border-border/80 px-2 pb-4">
+            <div className="flex justify-center px-2 py-2">
+              <SkeletonBlock className="h-24 w-32" />
+            </div>
+          </div>
+          <div className="space-y-3 py-4">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                className="flex min-h-11 items-center gap-3 rounded-[12px] px-3.5 py-2.5"
+                key={index}
+              >
+                <SkeletonBlock className="h-9 w-9" />
+                <SkeletonBlock className="h-4 flex-1" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </aside>
+
+      <div className={getAuthenticatedContentOffsetClassName()}>
+        <header className={cn("sticky top-0 z-30", getPageHeaderClassName())}>
+          <div className="flex min-h-14 items-center gap-3 px-4 py-3 sm:px-6 lg:px-7">
+            <SkeletonBlock className="h-11 w-11 lg:hidden" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground">{homeLabel}</p>
+            </div>
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-white px-3 py-2 shadow-[var(--shadow-sm)]">
+              <SkeletonBlock className="h-10 w-10 rounded-[12px]" />
+              <div className="hidden min-w-24 space-y-2 sm:block">
+                <SkeletonBlock className="h-3 w-24" />
+                <SkeletonBlock className="h-2.5 w-16" />
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="min-h-[calc(100vh-3.5rem)]">
+          <div className={getAuthenticatedMainClassName()}>
+            <div className="space-y-6 pb-12">
+              <section className="rounded-xl border border-border bg-white px-5 py-4 shadow-[var(--shadow-sm)]">
+                <SkeletonBlock className="h-3 w-40" />
+                <SkeletonBlock className="mt-3 h-7 max-w-lg" />
+                <SkeletonBlock className="mt-3 h-4 max-w-2xl" />
+              </section>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <section
+                    className="rounded-xl border border-border bg-white p-5 shadow-[var(--shadow-sm)]"
+                    key={index}
+                  >
+                    <SkeletonBlock className="h-8 w-8" />
+                    <SkeletonBlock className="mt-4 h-3 w-28" />
+                    <SkeletonBlock className="mt-3 h-7 w-32" />
+                    <SkeletonBlock className="mt-3 h-3 w-44 max-w-full" />
+                  </section>
+                ))}
+              </div>
+              <section className="rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div
+                    className="grid gap-3 border-b border-border px-5 py-4 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto]"
+                    key={index}
+                  >
+                    <div className="flex items-start gap-3">
+                      <SkeletonBlock className="h-9 w-9" />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <SkeletonBlock className="h-4 max-w-xs" />
+                        <SkeletonBlock className="h-3 max-w-lg" />
+                      </div>
+                    </div>
+                    <SkeletonBlock className="h-5 w-24" />
+                  </div>
+                ))}
+              </section>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
   )
 }
 
@@ -329,6 +454,7 @@ export function AppShell({ children }: AppShellProps) {
         fallback: t("appShell.breadcrumbs.fallback"),
         financeDocuments: t("appShell.breadcrumbs.financeDocuments"),
         invoices: t("appShell.nav.invoices"),
+        manualDebts: t("appShell.breadcrumbs.manualDebts"),
         quotes: t("appShell.breadcrumbs.quotes"),
         reports: t("appShell.nav.reports"),
         settings: t("appShell.nav.settings"),
@@ -349,6 +475,15 @@ export function AppShell({ children }: AppShellProps) {
 
   if (!showShell) {
     return <>{children}</>
+  }
+
+  if (!isReady) {
+    return (
+      <AuthenticatedShellLoading
+        homeLabel={t("appShell.home")}
+        loadingLabel={t("appShell.loading")}
+      />
+    )
   }
 
   if (!shouldRenderShell) {

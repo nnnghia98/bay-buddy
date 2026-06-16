@@ -2,7 +2,7 @@
 services/ticket_service.py – Business logic for ticket creation with automatic debt tracking.
 
 Business rules reference: docs/BUSINESS.md
-  - True Income = Selling Price + Airline Discount - Net Price (§2 Pricing Architecture)
+  - True Income = Selling Price + Airline Discount - EV/AST/THF host net prices (§2 Pricing Architecture)
   - CONFIRMED ticket → increases Customer Balance    (§1 Ticket Lifecycle)
   - Every confirmation auto-creates a CHARGE txn     (§3 Debt Management)
   - Customer Balance = Total Debt – Total Paid       (§3 Balance Calculation)
@@ -57,7 +57,7 @@ class TicketConfirmPayload(BaseModel):
         create a new one if no match is found.
 
     Pricing (docs/BUSINESS.md §2):
-        true_income = selling_price + discount - net_price
+        true_income = selling_price + discount - (ev_price + ast_price + thf_price)
         If `selling_price` is omitted, the service derives it from service_fee.
         If `true_income` is supplied, it must match the computed income.
     """
@@ -128,6 +128,21 @@ class TicketConfirmPayload(BaseModel):
 
     # ── Pricing fields ───────────────────────────────────────────────────────
     net_price: float = Field(ge=0, description="Net cost from airline/supplier (giá gốc). ≥ 0.")
+    ev_price: float = Field(
+        default=0.0,
+        ge=0,
+        description="Host net price from EV (giá net EV). Empty values count as 0.",
+    )
+    ast_price: float = Field(
+        default=0.0,
+        ge=0,
+        description="Host net price from AST (giá AST). Empty values count as 0.",
+    )
+    thf_price: float = Field(
+        default=0.0,
+        ge=0,
+        description="Host net price from Thanh Hoang / THF (giá Thành Hoàng). Empty values count as 0.",
+    )
     service_fee: float = Field(
         default=0.0,
         ge=0,
@@ -141,8 +156,7 @@ class TicketConfirmPayload(BaseModel):
         ge=0,
         description=(
             "Final price charged to the customer (giá bán). "
-            "If omitted, computed as net_price + service_fee. "
-            "If provided, must equal net_price + service_fee."
+            "If omitted, computed as net_price + service_fee."
         ),
     )
     discount: float = Field(
@@ -152,7 +166,7 @@ class TicketConfirmPayload(BaseModel):
     )
     true_income: Optional[float] = Field(
         default=None,
-        description="Actual ticket income: selling_price + discount - net_price.",
+        description="Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price).",
     )
 
     @model_validator(mode="after")
@@ -164,23 +178,32 @@ class TicketConfirmPayload(BaseModel):
         if self.selling_price is None:
             # Auto-derive selling_price from the formula.
             self.selling_price = computed
-        else:
-            # Tolerance for floating-point rounding (1 VND).
-            if abs(self.selling_price - computed) > 1.0:
-                raise ValueError(
-                    f"selling_price ({self.selling_price}) must equal "
-                    f"net_price + service_fee ({self.net_price} + {self.service_fee} = {computed}). "
-                    "Please correct the pricing fields."
-                )
 
-        computed_true_income = self.selling_price + self.discount - self.net_price
+        if (
+            "ev_price" not in self.model_fields_set
+            and "ast_price" not in self.model_fields_set
+            and "thf_price" not in self.model_fields_set
+            and self.true_income is not None
+        ):
+            legacy_true_income = self.selling_price + self.discount - self.net_price
+            if abs(self.true_income - legacy_true_income) <= 1.0:
+                self.ev_price = self.net_price
+                self.ast_price = 0.0
+                self.thf_price = 0.0
+
+        computed_true_income = (
+            self.selling_price
+            + self.discount
+            - (self.ev_price + self.ast_price + self.thf_price)
+        )
         if self.true_income is None:
             self.true_income = computed_true_income
         elif abs(self.true_income - computed_true_income) > 1.0:
             raise ValueError(
                 f"true_income ({self.true_income}) must equal "
-                f"selling_price + discount - net_price "
-                f"({self.selling_price} + {self.discount} - {self.net_price} = {computed_true_income})."
+                f"selling_price + discount - (ev_price + ast_price + thf_price) "
+                f"({self.selling_price} + {self.discount} - "
+                f"({self.ev_price} + {self.ast_price} + {self.thf_price}) = {computed_true_income})."
             )
         return self
 
@@ -398,6 +421,17 @@ def correct_confirmed_ticket(
         net_price = update_data.get("net_price", ticket.net_price)
         update_data["selling_price"] = net_price + service_fee
 
+    if (
+        "ev_price" not in update_data
+        and "ast_price" not in update_data
+        and "thf_price" not in update_data
+        and "net_price" in update_data
+        and ticket.ev_price == 0
+        and ticket.ast_price == 0
+        and ticket.thf_price == 0
+    ):
+        update_data["ev_price"] = update_data["net_price"]
+
     if "departure_code" in update_data and update_data["departure_code"] is not None:
         update_data["departure_code"] = update_data["departure_code"].strip().upper()
     if "arrival_code" in update_data and update_data["arrival_code"] is not None:
@@ -419,7 +453,11 @@ def correct_confirmed_ticket(
     for field_name, value in update_data.items():
         setattr(ticket, field_name, value)
 
-    ticket.true_income = ticket.selling_price + ticket.discount - ticket.net_price
+    ticket.true_income = (
+        ticket.selling_price
+        + ticket.discount
+        - (ticket.ev_price + ticket.ast_price + ticket.thf_price)
+    )
     purchase_transaction.amount = ticket.selling_price
     purchase_transaction.note = (
         f"Auto-debt for PNR {ticket.pnr} – {ticket.itinerary} "
@@ -571,6 +609,9 @@ def create_ticket_with_transaction(
         itinerary=payload.itinerary,
         flight_date=payload.flight_date,
         net_price=payload.net_price,
+        ev_price=payload.ev_price,
+        ast_price=payload.ast_price,
+        thf_price=payload.thf_price,
         selling_price=selling_price,
         discount=payload.discount,
         true_income=true_income,

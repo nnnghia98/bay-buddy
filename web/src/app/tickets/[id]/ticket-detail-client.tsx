@@ -285,7 +285,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <div className="space-y-2">
             <Label htmlFor="ticket-detail-net-price">
               {t("customers.ledger.corrections.fields.netPrice")}
@@ -296,6 +296,42 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               type="number"
               min="0"
               defaultValue={ticket.net_price}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ticket-detail-ev-price">
+              {t("customers.ledger.corrections.fields.evPrice")}
+            </Label>
+            <Input
+              id="ticket-detail-ev-price"
+              name="ev_price"
+              type="number"
+              min="0"
+              defaultValue={ticket.ev_price}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ticket-detail-ast-price">
+              {t("customers.ledger.corrections.fields.astPrice")}
+            </Label>
+            <Input
+              id="ticket-detail-ast-price"
+              name="ast_price"
+              type="number"
+              min="0"
+              defaultValue={ticket.ast_price}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ticket-detail-thf-price">
+              {t("customers.ledger.corrections.fields.thfPrice")}
+            </Label>
+            <Input
+              id="ticket-detail-thf-price"
+              name="thf_price"
+              type="number"
+              min="0"
+              defaultValue={ticket.thf_price}
             />
           </div>
           <div className="space-y-2">
@@ -445,6 +481,9 @@ export function TicketDetailClient({
             <DetailItem label={t("tickets.detail.fields.departure")} value={`${ticket.departure_place ?? t("tickets.detail.emptyValue")} (${ticket.departure_code ?? "-"})`} />
             <DetailItem label={t("tickets.detail.fields.arrival")} value={`${ticket.arrival_place ?? t("tickets.detail.emptyValue")} (${ticket.arrival_code ?? "-"})`} />
             <DetailItem label={t("tickets.detail.fields.netPrice")} value={formatCurrency(ticket.net_price)} />
+            <DetailItem label={t("tickets.detail.fields.evPrice")} value={formatCurrency(ticket.ev_price)} />
+            <DetailItem label={t("tickets.detail.fields.astPrice")} value={formatCurrency(ticket.ast_price)} />
+            <DetailItem label={t("tickets.detail.fields.thfPrice")} value={formatCurrency(ticket.thf_price)} />
             <DetailItem label={t("tickets.detail.fields.discount")} value={formatCurrency(ticket.discount)} />
             <DetailItem label={t("tickets.detail.fields.serviceFee")} value={formatCurrency(ticket.service_fee)} />
             <DetailItem label={t("tickets.detail.fields.updatedAt")} value={formatDateTime(ticket.updated_at)} />

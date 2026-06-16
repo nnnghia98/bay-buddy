@@ -49,12 +49,15 @@ Each ticket parsed into the system follows a specific lifecycle. Status changes 
 The system distinguishes between what the airline charges and what the customer pays.
 
 - **Net Price**: The actual cost from the airline/supplier (VNA, Vietjet, etc.).
+- **EV Price**: Host net price passed down from the EV upstream agency.
+- **AST Price**: Host net price passed down from the AST upstream agency.
+- **THF Price / Thành Hoàng**: Host net price passed down from Thành Hoàng (THF).
 - **Service Fee**: The profit margin added by the agent.
 - **Selling Price**: The final price charged to the customer.
 - **Discount**: The airline add-in / discount amount earned by the agency for each ticket.
-- **True Income**: The actual ticket income after airline discount.
+- **True Income / Doanh thu**: The actual ticket income after customer collection, airline discount, and host net prices.
 - **Formula**: `selling_price = net_price + service_fee`
-- **True Income Formula**: `true_income = selling_price + discount - net_price`
+- **True Income Formula**: `true_income = selling_price + discount - (ev_price + ast_price + thf_price)`. Empty EV/AST/THF values count as `0`.
 
 > **Note**: Taxes and airport fees are usually included in the `net_price` during AI parsing unless specified otherwise.
 

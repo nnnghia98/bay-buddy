@@ -645,7 +645,7 @@ function LedgerRecordCorrectionDialog({
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
                 <div className="space-y-2">
                   <Label htmlFor={`net-price-${entry.id}`}>{t("customers.ledger.corrections.fields.netPrice")}</Label>
                   <Input
@@ -654,6 +654,36 @@ function LedgerRecordCorrectionDialog({
                     type="number"
                     min="0"
                     defaultValue={ticket.net_price}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`ev-price-${entry.id}`}>{t("customers.ledger.corrections.fields.evPrice")}</Label>
+                  <Input
+                    id={`ev-price-${entry.id}`}
+                    name="ev_price"
+                    type="number"
+                    min="0"
+                    defaultValue={ticket.ev_price}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`ast-price-${entry.id}`}>{t("customers.ledger.corrections.fields.astPrice")}</Label>
+                  <Input
+                    id={`ast-price-${entry.id}`}
+                    name="ast_price"
+                    type="number"
+                    min="0"
+                    defaultValue={ticket.ast_price}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`thf-price-${entry.id}`}>{t("customers.ledger.corrections.fields.thfPrice")}</Label>
+                  <Input
+                    id={`thf-price-${entry.id}`}
+                    name="thf_price"
+                    type="number"
+                    min="0"
+                    defaultValue={ticket.thf_price}
                   />
                 </div>
                 <div className="space-y-2">

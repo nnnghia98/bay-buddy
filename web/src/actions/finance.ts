@@ -72,6 +72,9 @@ const ticketCorrectionSchema = z.object({
   arrival_code: optionalText.transform((value) => value?.toUpperCase()),
   flight_date: z.coerce.date(),
   net_price: moneyInput,
+  ev_price: moneyInput,
+  ast_price: moneyInput,
+  thf_price: moneyInput,
   selling_price: moneyInput,
   discount: moneyInput,
 })
@@ -284,6 +287,9 @@ export async function updateTicketLedgerRecordAction(
     arrival_code: formData.get("arrival_code"),
     flight_date: formData.get("flight_date"),
     net_price: formData.get("net_price"),
+    ev_price: formData.get("ev_price"),
+    ast_price: formData.get("ast_price"),
+    thf_price: formData.get("thf_price"),
     selling_price: formData.get("selling_price"),
     discount: formData.get("discount"),
   })
@@ -320,9 +326,11 @@ export async function updateTicketLedgerRecordAction(
         ? `${values.departure_code}-${values.arrival_code}`
         : undefined,
     true_income: computeTrueIncome(
-      values.net_price,
       values.selling_price,
       values.discount,
+      values.ev_price,
+      values.ast_price,
+      values.thf_price,
     ),
   }
 

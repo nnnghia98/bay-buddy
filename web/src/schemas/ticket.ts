@@ -12,7 +12,10 @@
  *   net_price     → Giá gốc     (cost paid to airline/supplier)
  *   selling_price → Giá bán     (price invoiced to customer)
  *   discount      → Chiết khấu hãng (airline add-in earned by agency)
- *   true_income   → Thu nhập thực (selling_price + discount - net_price)
+ *   ev_price      → Giá net EV (host net price from EV)
+ *   ast_price     → Giá AST (host net price from AST)
+ *   thf_price     → Giá Thành Hoàng / THF (host net price from Thành Hoàng)
+ *   true_income   → Thu nhập thực (selling_price + discount - (ev_price + ast_price + thf_price))
  *   service_fee   → Phí dịch vụ (computed: selling_price - net_price)
  *
  * Agent parser output (docs/AGENT_PARSER.md) feeds directly into TicketCreateSchema.
@@ -80,6 +83,21 @@ const TicketBaseSchema = z.object({
     .number({ message: "Net price (giá gốc) is required." })
     .min(0, "Net price (giá gốc) must be ≥ 0."),
 
+  ev_price: z
+    .number({ message: "EV net price (giá net EV) is required." })
+    .min(0, "EV net price (giá net EV) must be ≥ 0.")
+    .default(0),
+
+  ast_price: z
+    .number({ message: "AST net price (giá AST) is required." })
+    .min(0, "AST net price (giá AST) must be ≥ 0.")
+    .default(0),
+
+  thf_price: z
+    .number({ message: "THF price (giá Thành Hoàng) is required." })
+    .min(0, "THF price (giá Thành Hoàng) must be ≥ 0.")
+    .default(0),
+
   selling_price: z
     .number({ message: "Selling price (giá bán) is required." })
     .min(0, "Selling price (giá bán) must be ≥ 0."),
@@ -115,17 +133,16 @@ export const TicketCreateSchema = TicketBaseSchema.extend({
     .array(z.string().min(1).toUpperCase())
     .min(1, "At least one passenger is required."),
 }).refine(
-  (data) => data.selling_price >= data.net_price,
+  (data) =>
+    Math.abs(
+      data.true_income -
+        (data.selling_price +
+          data.discount -
+          (data.ev_price + data.ast_price + data.thf_price)),
+    ) <= 1,
   {
     message:
-      "Selling price (giá bán) should be ≥ net price (giá gốc). Verify before saving.",
-    path: ["selling_price"],
-  }
-).refine(
-  (data) => Math.abs(data.true_income - (data.selling_price + data.discount - data.net_price)) <= 1,
-  {
-    message:
-      "True income (thu nhập thực) must equal selling price + airline discount - net price.",
+      "True income (thu nhập thực) must equal selling price + airline discount - EV/AST/THF net prices.",
     path: ["true_income"],
   }
 );
@@ -174,6 +191,9 @@ export const TicketUpdateSchema = z.object({
   itinerary: z.string().min(1).max(100).optional(),
   flight_date: z.coerce.date().optional(),
   net_price: z.number().min(0).optional(),
+  ev_price: z.number().min(0).optional(),
+  ast_price: z.number().min(0).optional(),
+  thf_price: z.number().min(0).optional(),
   selling_price: z.number().min(0).optional(),
   discount: z.number().min(0).optional(),
   true_income: z.number().optional(),
@@ -194,7 +214,9 @@ export const computeServiceFee = (
 ): number => calculateServiceFee(net_price, selling_price);
 
 export const computeTrueIncome = (
-  net_price: number,
   selling_price: number,
-  discount: number
-): number => selling_price + discount - net_price;
+  discount: number,
+  ev_price = 0,
+  ast_price = 0,
+  thf_price = 0
+): number => selling_price + discount - (ev_price + ast_price + thf_price);

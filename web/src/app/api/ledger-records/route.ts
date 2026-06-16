@@ -4,6 +4,8 @@ import { z } from "zod"
 
 import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
 import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
+import { createManualDebtFromFormData } from "@/lib/server-manual-debt"
+import vi from "@/locales/vi"
 
 const API_BASE_URL = getServerApiBaseUrl()
 
@@ -11,6 +13,20 @@ const deleteLedgerRecordSchema = z.object({
   record_id: z.string().uuid(),
   record_type: z.enum(["ticket", "transaction"]),
 })
+
+function translateVi(key: string): string {
+  const value = key
+    .split(".")
+    .reduce<unknown>(
+      (current, segment) =>
+        current && typeof current === "object"
+          ? (current as Record<string, unknown>)[segment]
+          : undefined,
+      vi,
+    )
+
+  return typeof value === "string" ? value : key
+}
 
 function buildUrl(path: string): string {
   return buildApiUrl(path, API_BASE_URL)
@@ -70,4 +86,25 @@ export async function DELETE(request: Request) {
   }
 
   return nextResponse
+}
+
+export async function POST(request: Request) {
+  let formData: FormData
+
+  try {
+    formData = await request.formData()
+  } catch {
+    formData = new FormData()
+  }
+
+  if (formData.get("intent") !== "manual-debt") {
+    return NextResponse.json(
+      { error: "Unsupported ledger record action." },
+      { status: 400 },
+    )
+  }
+
+  const state = await createManualDebtFromFormData(formData, translateVi)
+
+  return NextResponse.json(state)
 }

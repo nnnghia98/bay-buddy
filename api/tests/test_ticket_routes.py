@@ -257,6 +257,40 @@ def test_confirm_ticket_persists_pricing_fields_and_records_customer_debt(
         assert customer.balance == pytest.approx(1200000)
 
 
+def test_confirm_ticket_persists_thf_price_and_computes_income(
+    test_client,
+    test_engine,
+):
+    payload = _confirm_payload() | {
+        "pnr": "THF123",
+        "ticket_number": "7382319992103",
+        "net_price": 2000000,
+        "ev_price": 1200000,
+        "ast_price": 300000,
+        "thf_price": 150000,
+        "selling_price": 1900000,
+        "discount": 50000,
+        "true_income": 300000,
+    }
+
+    response = test_client.post("/api/v1/tickets/confirm", json=payload)
+
+    assert response.status_code == 201
+    data = response.json()["data"]
+    assert data["ticket"]["ev_price"] == pytest.approx(1200000)
+    assert data["ticket"]["ast_price"] == pytest.approx(300000)
+    assert data["ticket"]["thf_price"] == pytest.approx(150000)
+    assert data["ticket"]["true_income"] == pytest.approx(300000)
+
+    with Session(test_engine) as session:
+        ticket = session.exec(select(Ticket).where(Ticket.pnr == "THF123")).one()
+
+        assert ticket.ev_price == pytest.approx(1200000)
+        assert ticket.ast_price == pytest.approx(300000)
+        assert ticket.thf_price == pytest.approx(150000)
+        assert ticket.true_income == pytest.approx(300000)
+
+
 def test_legacy_ticket_create_endpoint_is_retired(
     test_client,
     test_engine,

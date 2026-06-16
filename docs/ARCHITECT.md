@@ -45,9 +45,12 @@
 - `itinerary`: String (Compatibility/display field, e.g., "HAN-SGN")
 - `flight_date`: DateTime
 - `net_price`: Float (Supplier/Airline cost)
+- `ev_price`: Float (Host net price from EV; empty values count as 0)
+- `ast_price`: Float (Host net price from AST; empty values count as 0)
+- `thf_price`: Float (Host net price from Thành Hoàng / THF; empty values count as 0)
 - `selling_price`: Float (Price sold to Customer)
 - `discount`: Float (Airline add-in / discount amount earned by the agency)
-- `true_income`: Float (Actual ticket income: `selling_price + discount - net_price`)
+- `true_income`: Float (Actual ticket income / doanh thu: `selling_price + discount - (ev_price + ast_price + thf_price)`)
 - `status`: Enum (DRAFT, CONFIRMED, VOID, REFUNDED)
 - `customer_id`: UUID (FK to Customer)
 - `created_at`: DateTime (UTC auto-stamp for when Bay Buddy recorded the ticket)

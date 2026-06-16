@@ -59,4 +59,10 @@ describe("FinancialSummaryDashboard revenue privacy", () => {
     expect(html).toContain("2.500.000")
     expect(html).not.toContain("••••••")
   })
+
+  it("shows a calm all-clear state when action queues are empty", () => {
+    const html = renderDashboard(false)
+
+    expect(html).toContain("dashboard.summary.commandCenter.allClear.title")
+  })
 })

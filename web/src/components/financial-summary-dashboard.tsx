@@ -5,6 +5,7 @@ import * as React from "react"
 import {
   AlertTriangle,
   ArrowRight,
+  CheckCircle2,
   CreditCard,
   Eye,
   EyeOff,
@@ -152,6 +153,10 @@ export function FinancialSummaryDashboard({
     if (key === "draftTickets") return t("dashboard.summary.commandCenter.queueDescriptions.draftTickets")
     return t("dashboard.summary.commandCenter.queueDescriptions.receivables")
   }
+  const hasOpenActionQueue = (
+    queue: FinancialSummarySnapshot["actionQueues"][number],
+  ): boolean => queue.count > 0 || queue.amount !== 0
+  const hasAnyOpenQueue = summary.actionQueues.some(hasOpenActionQueue)
 
   return (
     <div className="space-y-6 pb-12 text-foreground">
@@ -239,45 +244,97 @@ export function FinancialSummaryDashboard({
               id="dashboard-action-queues-title"
             />
             <Panel aria-labelledby="dashboard-action-queues-title">
+              {!hasAnyOpenQueue ? (
+                <div className="border-b border-border bg-secondary/55 px-5 py-4">
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-emerald-200 bg-emerald-50 text-emerald-700">
+                      <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground">
+                        {t("dashboard.summary.commandCenter.allClear.title")}
+                      </p>
+                      <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                        {t("dashboard.summary.commandCenter.allClear.description")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
               <div className="divide-y divide-border">
-                {summary.actionQueues.map((queue) => (
-                  <Link
-                    className="group grid gap-3 px-5 py-4 transition-colors hover:bg-accent/38 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                    href={queue.href}
-                    key={queue.key}
-                  >
-                    <span className="flex min-w-0 items-start gap-3">
-                      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-secondary text-primary transition-colors group-hover:border-primary/25 group-hover:bg-white">
-                        <AlertTriangle aria-hidden="true" className="h-4 w-4" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-semibold text-foreground">
-                            {getQueueLabel(queue.key)}
+                {summary.actionQueues.map((queue) => {
+                  const hasOpenItems = hasOpenActionQueue(queue)
+                  const QueueIcon = hasOpenItems ? AlertTriangle : CheckCircle2
+
+                  return (
+                    <Link
+                      className="group grid gap-3 px-5 py-4 transition-colors hover:bg-accent/30 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                      href={queue.href}
+                      key={queue.key}
+                    >
+                      <span className="flex min-w-0 items-start gap-3">
+                        <span
+                          className={
+                            hasOpenItems
+                              ? "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-secondary text-primary transition-colors group-hover:border-primary/25 group-hover:bg-white"
+                              : "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-white text-muted-foreground transition-colors group-hover:border-primary/15"
+                          }
+                        >
+                          <QueueIcon aria-hidden="true" className="h-4 w-4" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={
+                                hasOpenItems
+                                  ? "text-sm font-semibold text-foreground"
+                                  : "text-sm font-medium text-foreground"
+                              }
+                            >
+                              {getQueueLabel(queue.key)}
+                            </span>
+                            <StatusChip
+                              tone={hasOpenItems ? getQueueTone(queue.severity) : "neutral"}
+                            >
+                              {queue.count}
+                            </StatusChip>
                           </span>
-                          <StatusChip tone={getQueueTone(queue.severity)}>
-                            {queue.count}
-                          </StatusChip>
-                        </span>
-                        <span className="mt-1 block text-sm leading-5 text-muted-foreground">
-                          {getQueueDescription(queue.key)}
+                          <span className="mt-1 block text-sm leading-5 text-muted-foreground">
+                            {getQueueDescription(queue.key)}
+                          </span>
                         </span>
                       </span>
-                    </span>
-                    <span className="text-left sm:text-right">
-                      <span className="block text-sm font-semibold text-foreground">
-                        {formatCurrency(queue.amount)}
+                      <span className="text-left sm:text-right">
+                        <span
+                          className={
+                            hasOpenItems
+                              ? "block text-sm font-semibold text-foreground"
+                              : "block text-sm font-medium text-muted-foreground"
+                          }
+                        >
+                          {formatCurrency(queue.amount)}
+                        </span>
+                        <span
+                          className={
+                            hasOpenItems
+                              ? "mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-primary"
+                              : "mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground"
+                          }
+                        >
+                          {hasOpenItems
+                            ? t("dashboard.summary.commandCenter.openQueue")
+                            : t("dashboard.summary.commandCenter.noQueue")}
+                          {hasOpenItems ? (
+                            <ArrowRight
+                              aria-hidden="true"
+                              className="h-3 w-3 transition-transform group-hover:translate-x-0.5"
+                            />
+                          ) : null}
+                        </span>
                       </span>
-                      <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                        {t("dashboard.summary.commandCenter.openQueue")}
-                        <ArrowRight
-                          aria-hidden="true"
-                          className="h-3 w-3 transition-transform group-hover:translate-x-0.5"
-                        />
-                      </span>
-                    </span>
-                  </Link>
-                ))}
+                    </Link>
+                  )
+                })}
               </div>
             </Panel>
           </div>

@@ -104,7 +104,7 @@ export default async function TicketActivityPage({ searchParams }: PageProps) {
           </div>
 
           <form
-            action="/activites"
+            action="/activities"
             className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
             method="get"
           >

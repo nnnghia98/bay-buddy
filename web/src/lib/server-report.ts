@@ -19,6 +19,9 @@ export type LedgerReportRow = {
   ticket_number: string | null
   ticket_selling_price: number
   ticket_discount: number
+  ticket_ev_price: number
+  ticket_ast_price: number
+  ticket_thf_price: number
   ticket_true_income: number
   airline: string | null
   route: string | null
@@ -71,6 +74,9 @@ function mapLedgerToReportRows(ledger: CustomerLedger): LedgerReportRow[] {
       ticket_number: ticket?.ticket_number ?? null,
       ticket_selling_price: ticket?.selling_price ?? 0,
       ticket_discount: ticket?.discount ?? 0,
+      ticket_ev_price: ticket?.ev_price ?? 0,
+      ticket_ast_price: ticket?.ast_price ?? 0,
+      ticket_thf_price: ticket?.thf_price ?? 0,
       ticket_true_income: ticket?.true_income ?? 0,
       airline: ticket?.airline ?? null,
       route: getTicketRoute(ticket),
