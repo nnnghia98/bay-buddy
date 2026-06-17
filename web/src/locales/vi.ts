@@ -408,7 +408,7 @@ export default {
       passengerRequired: "Vui lòng nhập ít nhất một hành khách.",
       flightDateRequired: "Vui lòng chọn ngày giờ bay.",
       bookedAtRequired: "Vui lòng chọn ngày xuất vé.",
-      routeRequired: "Vui lòng nhập hành trình hoặc đủ mã nơi đi/nơi đến.",
+      routeRequired: "Vui lòng nhập mã nơi đi và mã nơi đến.",
       netPriceMin: "Giá gốc phải lớn hơn hoặc bằng 0.",
       evPriceMin: "Giá net EV phải lớn hơn hoặc bằng 0.",
       astPriceMin: "Giá AST phải lớn hơn hoặc bằng 0.",

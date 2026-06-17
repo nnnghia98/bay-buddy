@@ -408,7 +408,7 @@ export default {
       passengerRequired: "Please enter at least one passenger.",
       flightDateRequired: "Please choose the flight date and time.",
       bookedAtRequired: "Please choose the ticket issue date.",
-      routeRequired: "Enter a route or both departure and arrival codes.",
+      routeRequired: "Enter both departure and arrival codes.",
       netPriceMin: "Net price must be at least 0.",
       evPriceMin: "EV net price must be at least 0.",
       astPriceMin: "AST price must be at least 0.",

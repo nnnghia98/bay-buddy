@@ -36,7 +36,7 @@
 - `ticket_number`: String Nullable - Airline ticket number (not unique; may repeat across outbound/return legs)
 - `seat_code`: String Nullable - Optional seat assignment code (e.g. `12A`)
 - `fare_class`: String Nullable - Raw fare class / fare family label from source data (e.g. `B`, `L`, `Eco1`, `Flexible`)
-- `airline`: Enum (VNA, VJ, QH, VU)
+- `airline`: Enum Nullable (VNA, VJ, QH, VU)
 - `passengers`: List[String] (JSON type in DB)
 - `departure_place`: String Nullable (Human-readable origin place, e.g. "Đà Nẵng")
 - `arrival_place`: String Nullable (Human-readable destination place, e.g. "Hồ Chí Minh")

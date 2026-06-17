@@ -843,56 +843,27 @@ export function ManualDebtInputClient({
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
                 {t("manualDebts.form.routeGroup")}
               </p>
-              <div className="mt-4 grid gap-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    error={getFieldError(fieldErrors, "departure_code")}
-                    htmlFor="manual-debt-departure-code"
-                    label={t("manualDebts.form.fields.departureCode")}
-                  >
-                    <Input
-                      autoCapitalize="characters"
-                      id="manual-debt-departure-code"
-                      name="departure_code"
-                    />
-                  </FormField>
-                  <FormField
-                    error={getFieldError(fieldErrors, "arrival_code")}
-                    htmlFor="manual-debt-arrival-code"
-                    label={t("manualDebts.form.fields.arrivalCode")}
-                  >
-                    <Input
-                      autoCapitalize="characters"
-                      id="manual-debt-arrival-code"
-                      name="arrival_code"
-                    />
-                  </FormField>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    error={getFieldError(fieldErrors, "departure_place")}
-                    htmlFor="manual-debt-departure-place"
-                    label={t("manualDebts.form.fields.departurePlace")}
-                  >
-                    <Input id="manual-debt-departure-place" name="departure_place" />
-                  </FormField>
-                  <FormField
-                    error={getFieldError(fieldErrors, "arrival_place")}
-                    htmlFor="manual-debt-arrival-place"
-                    label={t("manualDebts.form.fields.arrivalPlace")}
-                  >
-                    <Input id="manual-debt-arrival-place" name="arrival_place" />
-                  </FormField>
-                </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <FormField
-                  error={getFieldError(fieldErrors, "route")}
-                  htmlFor="manual-debt-route"
-                  label={t("manualDebts.form.fields.route")}
+                  error={getFieldError(fieldErrors, "departure_code")}
+                  htmlFor="manual-debt-departure-code"
+                  label={t("manualDebts.form.fields.departureCode")}
                 >
                   <Input
                     autoCapitalize="characters"
-                    id="manual-debt-route"
-                    name="route"
+                    id="manual-debt-departure-code"
+                    name="departure_code"
+                  />
+                </FormField>
+                <FormField
+                  error={getFieldError(fieldErrors, "arrival_code")}
+                  htmlFor="manual-debt-arrival-code"
+                  label={t("manualDebts.form.fields.arrivalCode")}
+                >
+                  <Input
+                    autoCapitalize="characters"
+                    id="manual-debt-arrival-code"
+                    name="arrival_code"
                   />
                 </FormField>
               </div>

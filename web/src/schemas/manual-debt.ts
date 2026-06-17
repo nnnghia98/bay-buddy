@@ -9,7 +9,7 @@ const defaultManualDebtValidationMessages: ManualDebtValidationMessages = {
   passengerRequired: "At least one passenger is required.",
   flightDateRequired: "Flight date is required.",
   bookedAtRequired: "Ticket issue date is required.",
-  routeRequired: "Route is required.",
+  routeRequired: "Departure and arrival codes are required.",
   netPriceMin: "Net price must be at least 0.",
   evPriceMin: "EV net price must be at least 0.",
   astPriceMin: "AST net price must be at least 0.",
@@ -139,32 +139,24 @@ export function createManualDebtFormSchema(
     .object({
       customer_name: requiredString(messages.customerNameRequired, 255),
       pnr: z.preprocess(
-        (value) => normalizeRequiredString(value).toUpperCase(),
-        z
-          .string()
-          .min(1, messages.pnrRequired)
-          .length(6, messages.pnrLength),
+        normalizeUppercaseOptionalString,
+        z.string().length(6, messages.pnrLength).optional(),
       ),
-      airline: z.enum(["VNA", "VJ", "QH", "VU"], {
-        message: messages.airlineRequired,
-      }),
+      airline: z.preprocess(
+        normalizeUppercaseOptionalString,
+        z.enum(["VNA", "VJ", "QH", "VU"]).optional(),
+      ),
       ticket_number: requiredString(messages.ticketNumberRequired, 50),
       passengers: z
         .preprocess(normalizePassengers, z.array(z.string().min(1)))
         .refine((value) => value.length > 0, messages.passengerRequired),
-      departure_place: z.preprocess(normalizeOptionalString, z.string().max(255).optional()),
-      arrival_place: z.preprocess(normalizeOptionalString, z.string().max(255).optional()),
       departure_code: z.preprocess(
         normalizeUppercaseOptionalString,
-        z.string().max(10).optional(),
+        z.string().min(1, messages.routeRequired).max(10),
       ),
       arrival_code: z.preprocess(
         normalizeUppercaseOptionalString,
-        z.string().max(10).optional(),
-      ),
-      route: z.preprocess(
-        (value) => normalizeUppercaseOptionalString(value),
-        z.string().max(100).optional(),
+        z.string().min(1, messages.routeRequired).max(10),
       ),
       flight_date: z.coerce.date({
         message: messages.flightDateRequired,
@@ -201,15 +193,6 @@ export function createManualDebtFormSchema(
         z.number().min(0, messages.discountMin),
       ),
     })
-    .refine(
-      (data) =>
-        Boolean(data.route) ||
-        Boolean(data.departure_code && data.arrival_code),
-      {
-        message: messages.routeRequired,
-        path: ["route"],
-      },
-    )
 }
 
 export const manualDebtFormSchema = createManualDebtFormSchema(

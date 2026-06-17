@@ -42,7 +42,7 @@ const TicketBaseSchema = z.object({
     .toUpperCase(),
 
   /** Airline carrier code. Maps to Python: airline */
-  airline: AirlineSchema,
+  airline: AirlineSchema.nullable().optional(),
 
   /** Airline ticket number. Maps to Python: ticket_number */
   ticket_number: z.string().min(1).max(50).nullable().optional(),

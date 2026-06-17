@@ -208,8 +208,9 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               className={selectClassName}
               id="ticket-detail-airline"
               name="airline"
-              defaultValue={ticket.airline}
+              defaultValue={ticket.airline ?? ""}
             >
+              <option value="">{t("manualDebts.form.chooseAirline")}</option>
               {["VNA", "VJ", "QH", "VU"].map((airline) => (
                 <option key={airline} value={airline}>
                   {airline}
@@ -489,7 +490,7 @@ export function TicketDetailClient({
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <DetailItem label={t("tickets.detail.fields.ticketNumber")} value={ticket.ticket_number ?? t("tickets.detail.emptyValue")} />
-            <DetailItem label={t("tickets.detail.fields.airline")} value={ticket.airline} />
+            <DetailItem label={t("tickets.detail.fields.airline")} value={ticket.airline ?? t("tickets.detail.emptyValue")} />
             <DetailItem label={t("tickets.detail.fields.departure")} value={`${ticket.departure_place ?? t("tickets.detail.emptyValue")} (${ticket.departure_code ?? "-"})`} />
             <DetailItem label={t("tickets.detail.fields.arrival")} value={`${ticket.arrival_place ?? t("tickets.detail.emptyValue")} (${ticket.arrival_code ?? "-"})`} />
             <DetailItem label={t("tickets.detail.fields.netPrice")} value={formatCurrency(ticket.net_price)} />

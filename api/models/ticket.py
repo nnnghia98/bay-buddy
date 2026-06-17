@@ -46,7 +46,8 @@ class TicketBase(SQLModel):
             "May repeat across passenger rows in group bookings."
         ),
     )
-    airline: Airline = Field(
+    airline: Optional[Airline] = Field(
+        default=None,
         description="Carrier code: VNA (Vietnam Airlines), VJ (Vietjet), QH (Bamboo), VU (Vietravel).",
     )
     ticket_number: Optional[str] = Field(

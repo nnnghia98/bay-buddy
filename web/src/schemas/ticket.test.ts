@@ -35,4 +35,32 @@ describe("TicketReadSchema", () => {
     expect(parsed.arrival_code).toBeNull()
     expect(parsed.booked_at).toEqual(new Date("2026-04-23T08:30:00.000Z"))
   })
+
+  it("accepts a nullable airline from manual ticket entries", () => {
+    const parsed = TicketReadSchema.parse({
+      id: "44444444-4444-4444-8444-444444444444",
+      pnr: "MANUAL",
+      airline: null,
+      ticket_number: "7381234567890",
+      departure_place: null,
+      arrival_place: null,
+      departure_code: null,
+      arrival_code: null,
+      passengers: ["NGUYEN VAN A"],
+      itinerary: "HAN-SGN",
+      flight_date: "2026-04-24T02:00:00.000Z",
+      booked_at: "2026-04-23T08:30:00.000Z",
+      created_at: "2026-04-24T04:00:00.000Z",
+      updated_at: "2026-04-24T04:00:00.000Z",
+      net_price: 1_000_000,
+      selling_price: 1_250_000,
+      discount: 50_000,
+      true_income: 300_000,
+      service_fee: 250_000,
+      status: "CONFIRMED",
+      customer_id: "11111111-1111-4111-8111-111111111111",
+    })
+
+    expect(parsed.airline).toBeNull()
+  })
 })

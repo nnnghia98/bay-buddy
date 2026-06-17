@@ -582,8 +582,9 @@ function LedgerRecordCorrectionDialog({
                     className={selectClassName}
                     id={`airline-${entry.id}`}
                     name="airline"
-                    defaultValue={ticket.airline}
+                    defaultValue={ticket.airline ?? ""}
                   >
+                    <option value="">{t("manualDebts.form.chooseAirline")}</option>
                     {["VNA", "VJ", "QH", "VU"].map((airline) => (
                       <option key={airline} value={airline}>{airline}</option>
                     ))}

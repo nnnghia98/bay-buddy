@@ -83,11 +83,8 @@ export async function createManualDebtFromFormData(
     airline: formData.get("airline"),
     ticket_number: formData.get("ticket_number"),
     passengers: formData.get("passengers"),
-    departure_place: formData.get("departure_place"),
-    arrival_place: formData.get("arrival_place"),
     departure_code: formData.get("departure_code"),
     arrival_code: formData.get("arrival_code"),
-    route: formData.get("route"),
     flight_date: formData.get("flight_date"),
     booked_at: formData.get("booked_at"),
     net_price: formData.get("net_price"),
@@ -125,10 +122,8 @@ export async function createManualDebtFromFormData(
   }
 
   const values = parsedInput.data
-  const route =
-    values.departure_code && values.arrival_code
-      ? `${values.departure_code}-${values.arrival_code}`
-      : values.route
+  const route = `${values.departure_code}-${values.arrival_code}`
+  const pnr = values.pnr ?? "MANUAL"
   const response = await fetch(buildUrl("/tickets/confirm"), {
     method: "POST",
     headers: {
@@ -137,12 +132,12 @@ export async function createManualDebtFromFormData(
     },
     body: JSON.stringify({
       customer_name: values.customer_name,
-      pnr: values.pnr,
-      airline: values.airline,
+      pnr,
+      airline: values.airline ?? null,
       ticket_number: values.ticket_number,
       passengers: values.passengers,
-      departure_place: values.departure_place ?? null,
-      arrival_place: values.arrival_place ?? null,
+      departure_place: null,
+      arrival_place: null,
       departure_code: values.departure_code ?? null,
       arrival_code: values.arrival_code ?? null,
       itinerary: route,

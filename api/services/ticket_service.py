@@ -79,7 +79,10 @@ class TicketConfirmPayload(BaseModel):
         max_length=6,
         description="6-character PNR booking reference code.",
     )
-    airline: Airline = Field(description="Carrier code: VNA | VJ | QH | VU.")
+    airline: Optional[Airline] = Field(
+        default=None,
+        description="Carrier code: VNA | VJ | QH | VU.",
+    )
     ticket_number: Optional[str] = Field(
         default=None,
         max_length=50,
