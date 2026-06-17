@@ -122,7 +122,11 @@ export async function createManualDebtFromFormData(
   }
 
   const values = parsedInput.data
-  const route = `${values.departure_code}-${values.arrival_code}`
+  const now = new Date()
+  const route =
+    values.departure_code && values.arrival_code
+      ? `${values.departure_code}-${values.arrival_code}`
+      : null
   const pnr = values.pnr ?? "MANUAL"
   const response = await fetch(buildUrl("/tickets/confirm"), {
     method: "POST",
@@ -134,15 +138,15 @@ export async function createManualDebtFromFormData(
       customer_name: values.customer_name,
       pnr,
       airline: values.airline ?? null,
-      ticket_number: values.ticket_number,
+      ticket_number: values.ticket_number ?? null,
       passengers: values.passengers,
       departure_place: null,
       arrival_place: null,
       departure_code: values.departure_code ?? null,
       arrival_code: values.arrival_code ?? null,
       itinerary: route,
-      flight_date: values.flight_date.toISOString(),
-      booked_at: values.booked_at.toISOString(),
+      flight_date: (values.flight_date ?? now).toISOString(),
+      booked_at: values.booked_at?.toISOString() ?? null,
       net_price: values.net_price,
       service_fee: values.selling_price - values.net_price,
       ev_price: values.ev_price,

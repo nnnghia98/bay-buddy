@@ -282,7 +282,7 @@ function buildRecentActivity(input: {
       return {
         id: ticket.id,
         type: "ticket",
-        title: `${ticket.pnr} - ${ticket.itinerary}`,
+        title: ticket.itinerary ? `${ticket.pnr} - ${ticket.itinerary}` : ticket.pnr,
         amount: ticket.selling_price,
         createdAt: activityTimestamp,
         href: `/customers/${ticket.customer_id}`,

@@ -63,4 +63,33 @@ describe("TicketReadSchema", () => {
 
     expect(parsed.airline).toBeNull()
   })
+
+  it("accepts a nullable itinerary from customer-only manual entries", () => {
+    const parsed = TicketReadSchema.parse({
+      id: "44444444-4444-4444-8444-444444444444",
+      pnr: "MANUAL",
+      airline: null,
+      ticket_number: null,
+      departure_place: null,
+      arrival_place: null,
+      departure_code: null,
+      arrival_code: null,
+      passengers: [],
+      itinerary: null,
+      flight_date: "2026-04-24T02:00:00.000Z",
+      booked_at: null,
+      created_at: "2026-04-24T04:00:00.000Z",
+      updated_at: "2026-04-24T04:00:00.000Z",
+      net_price: 0,
+      selling_price: 0,
+      discount: 0,
+      true_income: 0,
+      service_fee: 0,
+      status: "CONFIRMED",
+      customer_id: "11111111-1111-4111-8111-111111111111",
+    })
+
+    expect(parsed.itinerary).toBeNull()
+    expect(parsed.passengers).toEqual([])
+  })
 })

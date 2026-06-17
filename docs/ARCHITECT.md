@@ -42,7 +42,7 @@
 - `arrival_place`: String Nullable (Human-readable destination place, e.g. "Hồ Chí Minh")
 - `departure_code`: String Nullable (Origin city/place code, e.g. "DAD")
 - `arrival_code`: String Nullable (Destination city/place code, e.g. "SGN")
-- `itinerary`: String (Compatibility/display field, e.g., "HAN-SGN")
+- `itinerary`: String Nullable (Compatibility/display field, e.g., "HAN-SGN")
 - `flight_date`: DateTime
 - `net_price`: Float (Supplier/Airline cost)
 - `ev_price`: Float (Host net price from EV; empty values count as 0)

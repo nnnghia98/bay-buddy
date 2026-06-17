@@ -55,12 +55,33 @@ describe("manualDebtFormSchema", () => {
     expect(parsed.airline).toBeUndefined()
   })
 
-  it("requires route codes because itinerary is generated from them", () => {
-    const result = manualDebtFormSchema.safeParse({
+  it("allows customer-only manual debt entry", () => {
+    const parsed = manualDebtFormSchema.parse({
       ...validManualDebtInput,
+      pnr: "",
+      airline: "",
+      ticket_number: "",
+      passengers: "",
       departure_code: "",
+      arrival_code: "",
+      flight_date: "",
+      booked_at: "",
+      net_price: "",
+      ev_price: "",
+      ast_price: "",
+      thf_price: "",
+      web_price: "",
+      selling_price: "",
+      discount: "",
     })
 
-    expect(result.success).toBe(false)
+    expect(parsed.customer_name).toBe("Nguyen Van A")
+    expect(parsed.ticket_number).toBeUndefined()
+    expect(parsed.passengers).toEqual([])
+    expect(parsed.departure_code).toBeUndefined()
+    expect(parsed.arrival_code).toBeUndefined()
+    expect(parsed.flight_date).toBeUndefined()
+    expect(parsed.booked_at).toBeUndefined()
+    expect(parsed.selling_price).toBe(0)
   })
 })

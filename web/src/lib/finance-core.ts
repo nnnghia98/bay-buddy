@@ -33,7 +33,7 @@ export type InvoiceSnapshotCustomerInput = {
 export type InvoiceSnapshotTicketInput = {
   id: string
   pnr: string
-  itinerary: string
+  itinerary: string | null
   passengers: string[]
   selling_price: number
 }
@@ -94,7 +94,8 @@ function compareLedgerEntries(
 }
 
 function buildTicketDescription(ticket: InvoiceSnapshotTicketInput): string {
-  return `Flight PNR: ${ticket.pnr} - ${ticket.itinerary.replace(/-/g, "/")}`
+  const route = ticket.itinerary ? ticket.itinerary.replace(/-/g, "/") : "No route"
+  return `Flight PNR: ${ticket.pnr} - ${route}`
 }
 
 function buildPassengerSnapshot(ticket: InvoiceSnapshotTicketInput): string {

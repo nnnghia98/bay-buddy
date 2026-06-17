@@ -81,12 +81,33 @@ function normalizeAmount(value: unknown): number {
     return value
   }
 
+  if (value == null) {
+    return 0
+  }
+
   if (typeof value !== "string") {
     return Number.NaN
   }
 
+  if (value.trim().length === 0) {
+    return 0
+  }
+
   const digitsOnly = value.replace(/[^\d]/g, "")
   return Number(digitsOnly)
+}
+
+function normalizeOptionalDate(value: unknown): unknown {
+  if (value instanceof Date) {
+    return value
+  }
+
+  if (typeof value !== "string") {
+    return undefined
+  }
+
+  const trimmedValue = value.trim()
+  return trimmedValue.length > 0 ? trimmedValue : undefined
 }
 
 function normalizePassengers(value: unknown): string[] {
@@ -146,24 +167,24 @@ export function createManualDebtFormSchema(
         normalizeUppercaseOptionalString,
         z.enum(["VNA", "VJ", "QH", "VU"]).optional(),
       ),
-      ticket_number: requiredString(messages.ticketNumberRequired, 50),
-      passengers: z
-        .preprocess(normalizePassengers, z.array(z.string().min(1)))
-        .refine((value) => value.length > 0, messages.passengerRequired),
+      ticket_number: z.preprocess(
+        normalizeOptionalString,
+        z.string().max(50).optional(),
+      ),
+      passengers: z.preprocess(
+        normalizePassengers,
+        z.array(z.string().min(1)),
+      ),
       departure_code: z.preprocess(
         normalizeUppercaseOptionalString,
-        z.string().min(1, messages.routeRequired).max(10),
+        z.string().max(10).optional(),
       ),
       arrival_code: z.preprocess(
         normalizeUppercaseOptionalString,
-        z.string().min(1, messages.routeRequired).max(10),
+        z.string().max(10).optional(),
       ),
-      flight_date: z.coerce.date({
-        message: messages.flightDateRequired,
-      }),
-      booked_at: z.coerce.date({
-        message: messages.bookedAtRequired,
-      }),
+      flight_date: z.preprocess(normalizeOptionalDate, z.coerce.date().optional()),
+      booked_at: z.preprocess(normalizeOptionalDate, z.coerce.date().optional()),
       net_price: z.preprocess(
         normalizeAmount,
         z.number().min(0, messages.netPriceMin),

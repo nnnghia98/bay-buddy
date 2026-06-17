@@ -46,13 +46,13 @@ function getInitials(value: string): string {
 function getRouteLabel(ticket: {
   departure_code?: string | null
   arrival_code?: string | null
-  itinerary: string
+  itinerary?: string | null
 }): string {
   if (ticket.departure_code && ticket.arrival_code) {
     return `${ticket.departure_code}-${ticket.arrival_code}`
   }
 
-  return ticket.itinerary
+  return ticket.itinerary ?? "-"
 }
 
 function MetricCard({

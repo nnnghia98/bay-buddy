@@ -49,7 +49,7 @@ function getTicketRoute(ticket: CustomerLedger["entries"][number]["ticket"]): st
     return `${ticket.departure_code}-${ticket.arrival_code}`
   }
 
-  return ticket.itinerary
+  return ticket.itinerary ?? null
 }
 
 function mapLedgerToReportRows(ledger: CustomerLedger): LedgerReportRow[] {

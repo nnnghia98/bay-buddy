@@ -99,8 +99,8 @@ class TicketConfirmPayload(BaseModel):
         description="Optional fare class / fare family label from the source ticket.",
     )
     passengers: List[str] = Field(
-        min_length=1,
-        description="List of passenger full names (UPPERCASE). At least one required.",
+        default_factory=list,
+        description="List of passenger full names (UPPERCASE).",
     )
     departure_place: Optional[str] = Field(
         default=None,
@@ -233,9 +233,6 @@ class TicketConfirmPayload(BaseModel):
         arrival_code = (self.arrival_code or "").strip().upper() or None
         itinerary = (self.itinerary or "").strip().upper() or None
 
-        if (departure_code is None) != (arrival_code is None):
-            raise ValueError("departure_code and arrival_code must be provided together.")
-
         if departure_code and arrival_code:
             computed_itinerary = f"{departure_code}-{arrival_code}"
             if itinerary and itinerary != computed_itinerary:
@@ -245,13 +242,12 @@ class TicketConfirmPayload(BaseModel):
                 )
             itinerary = computed_itinerary
 
-        if itinerary is None:
-            raise ValueError(
-                "Either itinerary or both departure_code and arrival_code are required."
-            )
-
         if departure_code is None or arrival_code is None:
-            route_parts = [part.strip().upper() for part in itinerary.split("-") if part.strip()]
+            route_parts = [
+                part.strip().upper()
+                for part in (itinerary or "").split("-")
+                if part.strip()
+            ]
             if len(route_parts) >= 2:
                 departure_code = route_parts[0]
                 arrival_code = route_parts[-1]

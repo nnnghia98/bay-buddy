@@ -70,7 +70,7 @@ function getTicketRoute(ticket: TicketRead): string {
     return `${ticket.departure_code}-${ticket.arrival_code}`
   }
 
-  return ticket.itinerary
+  return ticket.itinerary ?? "-"
 }
 
 function getStatusTone(status: TicketRead["status"]): "neutral" | "info" | "warning" | "success" | "danger" {

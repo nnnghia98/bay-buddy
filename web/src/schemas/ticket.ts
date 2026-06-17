@@ -64,10 +64,7 @@ const TicketBaseSchema = z.object({
    * Maps to Python: itinerary
    * Example: "HAN-SGN" or "SGN-DAD-HAN"
    */
-  itinerary: z
-    .string()
-    .min(1, "Itinerary (hành trình) is required.")
-    .max(100),
+  itinerary: z.string().min(1).max(100).nullable().optional(),
 
   /**
    * Scheduled departure datetime in ISO-8601 format.

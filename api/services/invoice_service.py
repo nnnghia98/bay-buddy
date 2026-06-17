@@ -194,7 +194,8 @@ def _get_ticket_purchase_transaction(*, session: Session, ticket_id: uuid.UUID) 
 
 
 def _build_ticket_description(ticket: Ticket) -> str:
-    return f"Flight PNR: {ticket.pnr} - {ticket.itinerary.replace('-', '/')}"
+    route = ticket.itinerary.replace("-", "/") if ticket.itinerary else "No route"
+    return f"Flight PNR: {ticket.pnr} - {route}"
 
 
 def _build_passenger_snapshot(ticket: Ticket) -> str:

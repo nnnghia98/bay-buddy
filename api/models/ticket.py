@@ -87,7 +87,8 @@ class TicketBase(SQLModel):
         description="Compact arrival place code, e.g. SGN.",
     )
     # Hành trình – e.g. "HAN-SGN"
-    itinerary: str = Field(
+    itinerary: Optional[str] = Field(
+        default=None,
         max_length=100,
         description='Flight route string (hành trình), e.g. "HAN-SGN" or "SGN-DAD-HAN".',
     )
