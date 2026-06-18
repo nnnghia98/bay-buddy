@@ -17,6 +17,7 @@ const validManualDebtInput = {
   ast_price: "0",
   thf_price: "0",
   web_price: "0",
+  insurance_price: "0",
   selling_price: "1200000",
   discount: "0",
 }
@@ -71,6 +72,7 @@ describe("manualDebtFormSchema", () => {
       ast_price: "",
       thf_price: "",
       web_price: "",
+      insurance_price: "",
       selling_price: "",
       discount: "",
     })

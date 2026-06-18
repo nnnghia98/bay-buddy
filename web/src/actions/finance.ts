@@ -78,6 +78,7 @@ const ticketCorrectionSchema = z.object({
   ast_price: moneyInput,
   thf_price: moneyInput,
   web_price: moneyInput,
+  insurance_price: moneyInput,
   selling_price: moneyInput,
   discount: moneyInput,
 })
@@ -294,6 +295,7 @@ export async function updateTicketLedgerRecordAction(
     ast_price: formData.get("ast_price"),
     thf_price: formData.get("thf_price"),
     web_price: formData.get("web_price"),
+    insurance_price: formData.get("insurance_price"),
     selling_price: formData.get("selling_price"),
     discount: formData.get("discount"),
   })
@@ -337,6 +339,7 @@ export async function updateTicketLedgerRecordAction(
       values.ast_price,
       values.thf_price,
       values.web_price,
+      values.insurance_price,
     ),
   }
 

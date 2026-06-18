@@ -273,9 +273,10 @@ def test_confirm_ticket_persists_host_prices_and_computes_income(
         "ast_price": 300000,
         "thf_price": 150000,
         "web_price": 50000,
+        "insurance_price": 20000,
         "selling_price": 1900000,
         "discount": 50000,
-        "true_income": 250000,
+        "true_income": 230000,
     }
 
     response = test_client.post("/api/v1/tickets/confirm", json=payload)
@@ -286,7 +287,8 @@ def test_confirm_ticket_persists_host_prices_and_computes_income(
     assert data["ticket"]["ast_price"] == pytest.approx(300000)
     assert data["ticket"]["thf_price"] == pytest.approx(150000)
     assert data["ticket"]["web_price"] == pytest.approx(50000)
-    assert data["ticket"]["true_income"] == pytest.approx(250000)
+    assert data["ticket"]["insurance_price"] == pytest.approx(20000)
+    assert data["ticket"]["true_income"] == pytest.approx(230000)
 
     with Session(test_engine) as session:
         ticket = session.exec(select(Ticket).where(Ticket.pnr == "THF123")).one()
@@ -295,7 +297,8 @@ def test_confirm_ticket_persists_host_prices_and_computes_income(
         assert ticket.ast_price == pytest.approx(300000)
         assert ticket.thf_price == pytest.approx(150000)
         assert ticket.web_price == pytest.approx(50000)
-        assert ticket.true_income == pytest.approx(250000)
+        assert ticket.insurance_price == pytest.approx(20000)
+        assert ticket.true_income == pytest.approx(230000)
 
 
 def test_legacy_ticket_create_endpoint_is_retired(

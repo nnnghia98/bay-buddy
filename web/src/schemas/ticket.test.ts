@@ -34,6 +34,7 @@ describe("TicketReadSchema", () => {
     expect(parsed.departure_code).toBeNull()
     expect(parsed.arrival_code).toBeNull()
     expect(parsed.booked_at).toEqual(new Date("2026-04-23T08:30:00.000Z"))
+    expect(parsed.insurance_price).toBe(0)
   })
 
   it("accepts a nullable airline from manual ticket entries", () => {

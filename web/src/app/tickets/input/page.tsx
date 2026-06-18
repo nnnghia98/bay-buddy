@@ -186,6 +186,7 @@ async function saveTicket(data: TicketFormValues) {
     ast_price: 0,
     thf_price: 0,
     web_price: 0,
+    insurance_price: 0,
     service_fee: data.sellingPrice - data.totalPrice,
     selling_price: data.sellingPrice,
     discount: data.discount,

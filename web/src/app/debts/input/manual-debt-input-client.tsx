@@ -425,6 +425,7 @@ function ManualDebtTableRow({
       ast_price: row.ticket_ast_price,
       thf_price: row.ticket_thf_price,
       web_price: row.ticket_web_price,
+      insurance_price: row.ticket_insurance_price,
     }
     const hasChanged = Object.entries(initialValues).some(([key, value]) => {
       const nextValue = parseCurrencyInput(String(formData.get(key) ?? ""))
@@ -537,6 +538,16 @@ function ManualDebtTableRow({
           value={row.ticket_web_price}
         />
       </TableCell>
+      <TableCell className="whitespace-nowrap border-r border-border bg-white px-3 py-2 text-right">
+        <EditableMoneyCell
+          editing={isEditing}
+          formId={updateFormId}
+          name="insurance_price"
+          onBlur={handleInputBlur}
+          onKeyDown={handleInputKeyDown}
+          value={row.ticket_insurance_price}
+        />
+      </TableCell>
       <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-right text-sm font-semibold">
         {formatCurrency(row.ticket_true_income)}
       </TableCell>
@@ -555,6 +566,7 @@ function ManualDebtTableRow({
                   <input name="ast_price" type="hidden" value={row.ticket_ast_price} />
                   <input name="thf_price" type="hidden" value={row.ticket_thf_price} />
                   <input name="web_price" type="hidden" value={row.ticket_web_price} />
+                  <input name="insurance_price" type="hidden" value={row.ticket_insurance_price} />
                 </>
               ) : null}
             </form>
@@ -613,13 +625,13 @@ export function ManualDebtInputClient({
   const [appliedFrom, setAppliedFrom] = React.useState("")
   const [appliedTo, setAppliedTo] = React.useState("")
   const [filterError, setFilterError] = React.useState<string | null>(null)
-  const [netPrice, setNetPrice] = React.useState(0)
   const [sellingPrice, setSellingPrice] = React.useState(0)
   const [discount, setDiscount] = React.useState(0)
   const [evPrice, setEvPrice] = React.useState(0)
   const [astPrice, setAstPrice] = React.useState(0)
   const [thfPrice, setThfPrice] = React.useState(0)
   const [webPrice, setWebPrice] = React.useState(0)
+  const [insurancePrice, setInsurancePrice] = React.useState(0)
   const [formResetKey, setFormResetKey] = React.useState(0)
 
   React.useEffect(() => {
@@ -629,11 +641,11 @@ export function ManualDebtInputClient({
 
     setSellingPrice(0)
     setDiscount(0)
-    setNetPrice(0)
     setEvPrice(0)
     setAstPrice(0)
     setThfPrice(0)
     setWebPrice(0)
+    setInsurancePrice(0)
     setFormResetKey((current) => current + 1)
     router.refresh()
   }, [actionState.status, actionState.submittedAt, router])
@@ -657,7 +669,8 @@ export function ManualDebtInputClient({
     })
   }, [appliedFrom, appliedTo, rows])
 
-  const trueIncome = sellingPrice + discount - (evPrice + astPrice + thfPrice + webPrice)
+  const trueIncome =
+    sellingPrice + discount - (evPrice + astPrice + thfPrice + webPrice + insurancePrice)
   const fieldErrors = actionState.fieldErrors
 
   const handleApplyFilters = (event: React.FormEvent<HTMLFormElement>) => {
@@ -871,22 +884,8 @@ export function ManualDebtInputClient({
                 {t("manualDebts.form.pricingGroup")}
               </p>
               <div className="mt-4 grid gap-4">
+                <input name="net_price" type="hidden" value="0" />
                 <div className="grid gap-4">
-                  <FormField
-                    error={getFieldError(fieldErrors, "net_price")}
-                    htmlFor="manual-debt-net-price"
-                    label={t("manualDebts.form.fields.netPrice")}
-                  >
-                    <Input
-                      id="manual-debt-net-price"
-                      inputMode="numeric"
-                      min={0}
-                      name="net_price"
-                      onChange={(event) => setNetPrice(parseCurrencyInput(event.target.value))}
-                      type="text"
-                      value={netPrice > 0 ? formatCurrencyInput(netPrice) : ""}
-                    />
-                  </FormField>
                   <FormField
                     error={getFieldError(fieldErrors, "ev_price")}
                     htmlFor="manual-debt-ev-price"
@@ -945,6 +944,21 @@ export function ManualDebtInputClient({
                       onChange={(event) => setWebPrice(parseCurrencyInput(event.target.value))}
                       type="text"
                       value={webPrice > 0 ? formatCurrencyInput(webPrice) : ""}
+                    />
+                  </FormField>
+                  <FormField
+                    error={getFieldError(fieldErrors, "insurance_price")}
+                    htmlFor="manual-debt-insurance-price"
+                    label={t("manualDebts.form.fields.insurancePrice")}
+                  >
+                    <Input
+                      id="manual-debt-insurance-price"
+                      inputMode="numeric"
+                      min={0}
+                      name="insurance_price"
+                      onChange={(event) => setInsurancePrice(parseCurrencyInput(event.target.value))}
+                      type="text"
+                      value={insurancePrice > 0 ? formatCurrencyInput(insurancePrice) : ""}
                     />
                   </FormField>
                   <FormField
@@ -1046,7 +1060,7 @@ export function ManualDebtInputClient({
             </p>
           ) : null}
           <TableScrollArea>
-            <Table className="min-w-[1440px] border-collapse">
+            <Table className="min-w-[1560px] border-collapse">
               <TableHeader className="sticky top-0 z-20">
                 <TableRow className="bg-sidebar-accent hover:bg-sidebar-accent">
                   <TableHead className="min-w-40 whitespace-nowrap border-r border-border bg-sidebar-accent px-5 py-3.5 font-semibold text-foreground">
@@ -1077,6 +1091,9 @@ export function ManualDebtInputClient({
                     {t("manualDebts.table.columns.webPrice")}
                   </TableHead>
                   <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                    {t("manualDebts.table.columns.insurancePrice")}
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
                     {t("manualDebts.table.columns.income")}
                   </TableHead>
                   <TableHead className="sticky right-0 z-30 min-w-48 whitespace-nowrap bg-sidebar-accent px-5 py-3.5 text-right font-semibold text-foreground shadow-[-8px_0_14px_rgba(24,29,38,0.04)]">
@@ -1087,7 +1104,7 @@ export function ManualDebtInputClient({
               <TableBody>
                 {filteredRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11}>
+                    <TableCell colSpan={12}>
                       <EmptyState
                         icon={ReceiptText}
                         message={t("manualDebts.table.empty")}

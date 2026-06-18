@@ -682,6 +682,16 @@ function LedgerRecordCorrectionDialog({
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor={`insurance-price-${entry.id}`}>{t("customers.ledger.corrections.fields.insurancePrice")}</Label>
+                  <Input
+                    id={`insurance-price-${entry.id}`}
+                    name="insurance_price"
+                    type="number"
+                    min="0"
+                    defaultValue={ticket.insurance_price}
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor={`selling-price-${entry.id}`}>{t("customers.ledger.corrections.fields.sellingPrice")}</Label>
                   <Input
                     id={`selling-price-${entry.id}`}

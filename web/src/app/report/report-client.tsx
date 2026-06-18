@@ -52,6 +52,7 @@ type ColumnKey =
   | "ast_price"
   | "thf_price"
   | "web_price"
+  | "insurance_price"
   | "true_income"
   | "airline"
   | "route"
@@ -143,6 +144,11 @@ const columns: ColumnDefinition[] = [
     getValue: (row) => row.ticket_web_price.toString(),
   },
   {
+    key: "insurance_price",
+    align: "right",
+    getValue: (row) => row.ticket_insurance_price.toString(),
+  },
+  {
     key: "true_income",
     align: "right",
     getValue: (row) => row.ticket_true_income.toString(),
@@ -175,6 +181,7 @@ const defaultColumnKeys: ColumnKey[] = [
   "ast_price",
   "thf_price",
   "web_price",
+  "insurance_price",
   "true_income",
   "debt",
 ]
@@ -265,6 +272,10 @@ function formatCellValue(
 
   if (key === "web_price") {
     return formatCurrency(row.ticket_web_price)
+  }
+
+  if (key === "insurance_price") {
+    return formatCurrency(row.ticket_insurance_price)
   }
 
   if (key === "true_income") {

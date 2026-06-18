@@ -2,7 +2,7 @@
 services/ticket_service.py – Business logic for ticket creation with automatic debt tracking.
 
 Business rules reference: docs/BUSINESS.md
-  - True Income = Selling Price + Airline Discount - EV/AST/THF/WEB host net prices (§2 Pricing Architecture)
+  - True Income = Selling Price + Airline Discount - EV/AST/THF/WEB host net prices - Insurance (§2 Pricing Architecture)
   - CONFIRMED ticket → increases Customer Balance    (§1 Ticket Lifecycle)
   - Every confirmation auto-creates a CHARGE txn     (§3 Debt Management)
   - Customer Balance = Total Debt – Total Paid       (§3 Balance Calculation)
@@ -57,7 +57,7 @@ class TicketConfirmPayload(BaseModel):
         create a new one if no match is found.
 
     Pricing (docs/BUSINESS.md §2):
-        true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price)
+        true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price)
         If `selling_price` is omitted, the service derives it from service_fee.
         If `true_income` is supplied, it must match the computed income.
     """
@@ -155,6 +155,11 @@ class TicketConfirmPayload(BaseModel):
         ge=0,
         description="Host net price from WEB (giá WEB). Empty values count as 0.",
     )
+    insurance_price: float = Field(
+        default=0.0,
+        ge=0,
+        description="Insurance price (giá bảo hiểm). Empty values count as 0.",
+    )
     service_fee: float = Field(
         default=0.0,
         ge=0,
@@ -178,7 +183,7 @@ class TicketConfirmPayload(BaseModel):
     )
     true_income: Optional[float] = Field(
         default=None,
-        description="Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price).",
+        description="Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price).",
     )
 
     @model_validator(mode="after")
@@ -196,6 +201,7 @@ class TicketConfirmPayload(BaseModel):
             and "ast_price" not in self.model_fields_set
             and "thf_price" not in self.model_fields_set
             and "web_price" not in self.model_fields_set
+            and "insurance_price" not in self.model_fields_set
             and self.true_income is not None
         ):
             legacy_true_income = self.selling_price + self.discount - self.net_price
@@ -204,20 +210,27 @@ class TicketConfirmPayload(BaseModel):
                 self.ast_price = 0.0
                 self.thf_price = 0.0
                 self.web_price = 0.0
+                self.insurance_price = 0.0
 
         computed_true_income = (
             self.selling_price
             + self.discount
-            - (self.ev_price + self.ast_price + self.thf_price + self.web_price)
+            - (
+                self.ev_price
+                + self.ast_price
+                + self.thf_price
+                + self.web_price
+                + self.insurance_price
+            )
         )
         if self.true_income is None:
             self.true_income = computed_true_income
         elif abs(self.true_income - computed_true_income) > 1.0:
             raise ValueError(
                 f"true_income ({self.true_income}) must equal "
-                f"selling_price + discount - (ev_price + ast_price + thf_price + web_price) "
+                f"selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price) "
                 f"({self.selling_price} + {self.discount} - "
-                f"({self.ev_price} + {self.ast_price} + {self.thf_price} + {self.web_price}) = {computed_true_income})."
+                f"({self.ev_price} + {self.ast_price} + {self.thf_price} + {self.web_price} + {self.insurance_price}) = {computed_true_income})."
             )
         return self
 
@@ -436,11 +449,13 @@ def correct_confirmed_ticket(
         and "ast_price" not in update_data
         and "thf_price" not in update_data
         and "web_price" not in update_data
+        and "insurance_price" not in update_data
         and "net_price" in update_data
         and ticket.ev_price == 0
         and ticket.ast_price == 0
         and ticket.thf_price == 0
         and ticket.web_price == 0
+        and ticket.insurance_price == 0
     ):
         update_data["ev_price"] = update_data["net_price"]
 
@@ -468,7 +483,13 @@ def correct_confirmed_ticket(
     ticket.true_income = (
         ticket.selling_price
         + ticket.discount
-        - (ticket.ev_price + ticket.ast_price + ticket.thf_price + ticket.web_price)
+        - (
+            ticket.ev_price
+            + ticket.ast_price
+            + ticket.thf_price
+            + ticket.web_price
+            + ticket.insurance_price
+        )
     )
     purchase_transaction.amount = ticket.selling_price
     purchase_transaction.note = (
@@ -626,6 +647,7 @@ def create_ticket_with_transaction(
         ast_price=payload.ast_price,
         thf_price=payload.thf_price,
         web_price=payload.web_price,
+        insurance_price=payload.insurance_price,
         selling_price=selling_price,
         discount=payload.discount,
         true_income=true_income,

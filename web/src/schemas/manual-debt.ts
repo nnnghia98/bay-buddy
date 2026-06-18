@@ -11,10 +11,11 @@ const defaultManualDebtValidationMessages: ManualDebtValidationMessages = {
   bookedAtRequired: "Ticket issue date is required.",
   routeRequired: "Departure and arrival codes are required.",
   netPriceMin: "Net price must be at least 0.",
-  evPriceMin: "EV net price must be at least 0.",
+  evPriceMin: "EV price must be at least 0.",
   astPriceMin: "AST net price must be at least 0.",
   thfPriceMin: "THF price must be at least 0.",
   webPriceMin: "WEB price must be at least 0.",
+  insurancePriceMin: "Insurance price must be at least 0.",
   sellingPriceMin: "Selling price must be at least 0.",
   discountMin: "Discount must be at least 0.",
   sellingPriceFormula: "Selling price must be greater than or equal to net price.",
@@ -35,6 +36,7 @@ export type ManualDebtValidationMessages = {
   astPriceMin: string
   thfPriceMin: string
   webPriceMin: string
+  insurancePriceMin: string
   sellingPriceMin: string
   discountMin: string
   sellingPriceFormula: string
@@ -55,6 +57,7 @@ type ManualDebtValidationKey =
   | "manualDebts.validation.astPriceMin"
   | "manualDebts.validation.thfPriceMin"
   | "manualDebts.validation.webPriceMin"
+  | "manualDebts.validation.insurancePriceMin"
   | "manualDebts.validation.sellingPriceMin"
   | "manualDebts.validation.discountMin"
   | "manualDebts.validation.sellingPriceFormula"
@@ -139,6 +142,7 @@ export function getManualDebtValidationMessages(
     astPriceMin: t("manualDebts.validation.astPriceMin"),
     thfPriceMin: t("manualDebts.validation.thfPriceMin"),
     webPriceMin: t("manualDebts.validation.webPriceMin"),
+    insurancePriceMin: t("manualDebts.validation.insurancePriceMin"),
     sellingPriceMin: t("manualDebts.validation.sellingPriceMin"),
     discountMin: t("manualDebts.validation.discountMin"),
     sellingPriceFormula: t("manualDebts.validation.sellingPriceFormula"),
@@ -204,6 +208,10 @@ export function createManualDebtFormSchema(
       web_price: z.preprocess(
         normalizeAmount,
         z.number().min(0, messages.webPriceMin),
+      ),
+      insurance_price: z.preprocess(
+        normalizeAmount,
+        z.number().min(0, messages.insurancePriceMin),
       ),
       selling_price: z.preprocess(
         normalizeAmount,
