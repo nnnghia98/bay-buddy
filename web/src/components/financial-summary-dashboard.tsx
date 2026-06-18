@@ -37,19 +37,12 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import type { FinancialSummarySnapshot } from "@/lib/dashboard"
+import { formatCurrency, formatSignedCurrency } from "@/lib/formatters"
 import { useI18n } from "@/locales/client"
 
 type FinancialSummaryDashboardProps = {
   summary: FinancialSummarySnapshot | null
   initialRevenueVisible?: boolean
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(amount)
 }
 
 function formatPercent(value: number): string {
@@ -69,14 +62,6 @@ function formatDateTime(value: string | Date): string {
     minute: "2-digit",
     hour12: false,
   }).format(new Date(value))
-}
-
-function formatSignedCurrency(amount: number): string {
-  if (amount === 0) {
-    return formatCurrency(amount)
-  }
-  const sign = amount > 0 ? "+" : "-"
-  return `${sign}${formatCurrency(Math.abs(amount))}`
 }
 
 function getActivityTone(

@@ -4,6 +4,7 @@ import { CalendarClock, CircleDollarSign, FileWarning, Plane, Users } from "luci
 
 import { StatusChip } from "@/components/command-center"
 import { Button } from "@/components/ui/button"
+import { formatCurrency } from "@/lib/formatters"
 import { fetchTicketInputActivityRows } from "@/lib/server-ticket-activity"
 import { getI18n } from "@/locales/server"
 
@@ -12,14 +13,6 @@ type PageProps = {
     from?: string
     to?: string
   }>
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(amount)
 }
 
 function formatDateTime(value: string | Date): string {

@@ -20,6 +20,7 @@ import { StatusChip } from "@/components/command-center"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { formatCurrency } from "@/lib/formatters"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
 import type { CustomerDirectoryItem, TicketRead } from "@/schemas"
@@ -33,14 +34,6 @@ type TicketDetailClientProps = {
 const initialLedgerCorrectionActionState: LedgerCorrectionActionState = {
   status: "idle",
   fieldErrors: {},
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(amount)
 }
 
 function formatDateTime(value: Date): string {

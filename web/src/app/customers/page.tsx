@@ -31,6 +31,7 @@ import {
 import { ApiError, apiFetchData } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
 import { LOGIN_PATH, SESSION_EXPIRED_LOGIN_PATH } from "@/lib/auth-token"
+import { formatCurrency } from "@/lib/formatters"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
 import { CustomerDirectoryItemSchema, type CustomerDirectoryItem } from "@/schemas"
@@ -42,14 +43,6 @@ const currentUserSchema = z.object({
   role: z.enum(["ADMIN", "STAFF"]),
   is_active: z.boolean(),
 })
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 function getInitials(fullName: string): string {
   return fullName

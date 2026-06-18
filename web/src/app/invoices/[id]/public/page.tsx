@@ -1,19 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { getI18n } from "@/locales/server"
+import { formatCurrency } from "@/lib/formatters"
 import { fetchInvoicePublicView } from "@/lib/server-finance"
+import { getI18n } from "@/locales/server"
 import type { InvoicePublicView } from "@/schemas"
 
 type PageProps = {
   params: Promise<{ id: string }>
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(amount)
 }
 
 function formatDateTime(value: Date): string {

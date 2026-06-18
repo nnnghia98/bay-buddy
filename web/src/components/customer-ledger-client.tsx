@@ -51,6 +51,7 @@ import {
 } from "@/lib/finance-core"
 import { expireStoredSession } from "@/lib/auth-storage"
 import { SESSION_EXPIRED_LOGIN_PATH } from "@/lib/auth-token"
+import { formatCurrency, formatSignedCurrency } from "@/lib/formatters"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
 import {
@@ -74,23 +75,6 @@ type LedgerEntry = CustomerLedger["entries"][number]
 const initialLedgerCorrectionActionState: LedgerCorrectionActionState = {
   status: "idle",
   fieldErrors: {},
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
-
-function formatSignedCurrency(amount: number): string {
-  if (amount === 0) {
-    return formatCurrency(amount)
-  }
-
-  const sign = amount > 0 ? "+" : "-"
-  return `${sign}${formatCurrency(Math.abs(amount))}`
 }
 
 function formatDate(value: Date): string {

@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   ChevronsUpDown,
@@ -35,6 +34,11 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  formatCurrency,
+  formatCurrencyInput,
+  parseCurrencyInput,
+} from "@/lib/formatters"
 import type { LedgerReportRow } from "@/lib/server-report"
 import { cn } from "@/lib/utils"
 import {
@@ -55,14 +59,6 @@ type ManualDebtInputClientProps = {
 type ManualDebtField = keyof ManualDebtFormValues
 
 const airlineOptions = Object.entries(AIRLINE_LABELS) as [Airline, string][]
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 function formatDateTime(value: string): string {
   return new Intl.DateTimeFormat("vi-VN", {
@@ -348,13 +344,17 @@ function EditableMoneyCell({
   return (
     <Input
       className="ml-auto h-9 w-32 text-right font-semibold"
-      defaultValue={value}
+      defaultValue={formatCurrencyInput(value)}
       form={formId}
+      inputMode="numeric"
       min={0}
       name={name}
       onBlur={onBlur}
+      onChange={(event) => {
+        event.target.value = formatCurrencyInput(event.target.value)
+      }}
       onKeyDown={onKeyDown}
-      type="number"
+      type="text"
     />
   )
 }
@@ -427,7 +427,7 @@ function ManualDebtTableRow({
       web_price: row.ticket_web_price,
     }
     const hasChanged = Object.entries(initialValues).some(([key, value]) => {
-      const nextValue = Number(formData.get(key) ?? 0)
+      const nextValue = parseCurrencyInput(String(formData.get(key) ?? ""))
 
       return nextValue !== value
     }) || nextBookedAt !== formatDateTimeLocal(row.booked_at)
@@ -475,12 +475,7 @@ function ManualDebtTableRow({
         {formatDateTime(row.created_at)}
       </TableCell>
       <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-sm font-medium">
-        <Link
-          className="text-primary hover:underline"
-          href={`/customers/${row.customer_id}`}
-        >
-          {row.customer_name}
-        </Link>
+        {row.passenger_names}
       </TableCell>
       <TableCell className="whitespace-nowrap border-r border-border bg-white px-3 py-2 text-right">
         <EditableMoneyCell
@@ -618,6 +613,7 @@ export function ManualDebtInputClient({
   const [appliedFrom, setAppliedFrom] = React.useState("")
   const [appliedTo, setAppliedTo] = React.useState("")
   const [filterError, setFilterError] = React.useState<string | null>(null)
+  const [netPrice, setNetPrice] = React.useState(0)
   const [sellingPrice, setSellingPrice] = React.useState(0)
   const [discount, setDiscount] = React.useState(0)
   const [evPrice, setEvPrice] = React.useState(0)
@@ -633,6 +629,7 @@ export function ManualDebtInputClient({
 
     setSellingPrice(0)
     setDiscount(0)
+    setNetPrice(0)
     setEvPrice(0)
     setAstPrice(0)
     setThfPrice(0)
@@ -882,9 +879,12 @@ export function ManualDebtInputClient({
                   >
                     <Input
                       id="manual-debt-net-price"
+                      inputMode="numeric"
                       min={0}
                       name="net_price"
-                      type="number"
+                      onChange={(event) => setNetPrice(parseCurrencyInput(event.target.value))}
+                      type="text"
+                      value={netPrice > 0 ? formatCurrencyInput(netPrice) : ""}
                     />
                   </FormField>
                   <FormField
@@ -894,10 +894,12 @@ export function ManualDebtInputClient({
                   >
                     <Input
                       id="manual-debt-ev-price"
+                      inputMode="numeric"
                       min={0}
                       name="ev_price"
-                      onChange={(event) => setEvPrice(Number(event.target.value) || 0)}
-                      type="number"
+                      onChange={(event) => setEvPrice(parseCurrencyInput(event.target.value))}
+                      type="text"
+                      value={evPrice > 0 ? formatCurrencyInput(evPrice) : ""}
                     />
                   </FormField>
                   <FormField
@@ -907,10 +909,12 @@ export function ManualDebtInputClient({
                   >
                     <Input
                       id="manual-debt-ast-price"
+                      inputMode="numeric"
                       min={0}
                       name="ast_price"
-                      onChange={(event) => setAstPrice(Number(event.target.value) || 0)}
-                      type="number"
+                      onChange={(event) => setAstPrice(parseCurrencyInput(event.target.value))}
+                      type="text"
+                      value={astPrice > 0 ? formatCurrencyInput(astPrice) : ""}
                     />
                   </FormField>
                   <FormField
@@ -920,10 +924,12 @@ export function ManualDebtInputClient({
                   >
                     <Input
                       id="manual-debt-thf-price"
+                      inputMode="numeric"
                       min={0}
                       name="thf_price"
-                      onChange={(event) => setThfPrice(Number(event.target.value) || 0)}
-                      type="number"
+                      onChange={(event) => setThfPrice(parseCurrencyInput(event.target.value))}
+                      type="text"
+                      value={thfPrice > 0 ? formatCurrencyInput(thfPrice) : ""}
                     />
                   </FormField>
                   <FormField
@@ -933,10 +939,12 @@ export function ManualDebtInputClient({
                   >
                     <Input
                       id="manual-debt-web-price"
+                      inputMode="numeric"
                       min={0}
                       name="web_price"
-                      onChange={(event) => setWebPrice(Number(event.target.value) || 0)}
-                      type="number"
+                      onChange={(event) => setWebPrice(parseCurrencyInput(event.target.value))}
+                      type="text"
+                      value={webPrice > 0 ? formatCurrencyInput(webPrice) : ""}
                     />
                   </FormField>
                   <FormField
@@ -946,10 +954,12 @@ export function ManualDebtInputClient({
                   >
                     <Input
                       id="manual-debt-selling-price"
+                      inputMode="numeric"
                       min={0}
                       name="selling_price"
-                      onChange={(event) => setSellingPrice(Number(event.target.value) || 0)}
-                      type="number"
+                      onChange={(event) => setSellingPrice(parseCurrencyInput(event.target.value))}
+                      type="text"
+                      value={sellingPrice > 0 ? formatCurrencyInput(sellingPrice) : ""}
                     />
                   </FormField>
                   <FormField
@@ -959,10 +969,12 @@ export function ManualDebtInputClient({
                   >
                     <Input
                       id="manual-debt-discount"
+                      inputMode="numeric"
                       min={0}
                       name="discount"
-                      onChange={(event) => setDiscount(Number(event.target.value) || 0)}
-                      type="number"
+                      onChange={(event) => setDiscount(parseCurrencyInput(event.target.value))}
+                      type="text"
+                      value={discount > 0 ? formatCurrencyInput(discount) : ""}
                     />
                   </FormField>
                 </div>

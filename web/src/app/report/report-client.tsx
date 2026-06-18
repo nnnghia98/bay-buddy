@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table"
 import { expireStoredSession } from "@/lib/auth-storage"
 import { SESSION_EXPIRED_LOGIN_PATH } from "@/lib/auth-token"
+import { formatCurrency } from "@/lib/formatters"
 import type { LedgerReportRow } from "@/lib/server-report"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
@@ -177,14 +178,6 @@ const defaultColumnKeys: ColumnKey[] = [
   "true_income",
   "debt",
 ]
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 function formatDateTime(value: string): string {
   return new Intl.DateTimeFormat("vi-VN", {

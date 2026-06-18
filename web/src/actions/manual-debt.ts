@@ -6,6 +6,7 @@ import { z } from "zod"
 
 import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
 import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
+import { parseCurrencyInput } from "@/lib/formatters"
 import { createManualDebtFromFormData } from "@/lib/server-manual-debt"
 import { computeTrueIncome } from "@/schemas/ticket"
 import {
@@ -15,16 +16,21 @@ import {
 
 const API_BASE_URL = getServerApiBaseUrl()
 
+const amountFromForm = z.preprocess(
+  (value) => parseCurrencyInput(String(value ?? "")),
+  z.number().min(0),
+)
+
 const manualDebtRowUpdateSchema = z.object({
   customer_id: z.string().uuid(),
   ticket_id: z.string().uuid(),
   booked_at: z.coerce.date().nullable(),
-  selling_price: z.coerce.number().min(0),
-  discount: z.coerce.number().min(0),
-  ev_price: z.coerce.number().min(0),
-  ast_price: z.coerce.number().min(0),
-  thf_price: z.coerce.number().min(0),
-  web_price: z.coerce.number().min(0),
+  selling_price: amountFromForm,
+  discount: amountFromForm,
+  ev_price: amountFromForm,
+  ast_price: amountFromForm,
+  thf_price: amountFromForm,
+  web_price: amountFromForm,
 })
 
 const manualDebtRowDeleteSchema = z.object({

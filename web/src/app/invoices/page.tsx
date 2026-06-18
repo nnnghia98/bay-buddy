@@ -4,16 +4,13 @@ import { ArrowLeft, FileText } from "lucide-react"
 import { StatusChip, TableScrollArea } from "@/components/command-center"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { getI18n } from "@/locales/server"
+import { formatCurrency } from "@/lib/formatters"
 import { fetchCustomerInvoices } from "@/lib/server-finance"
+import { getI18n } from "@/locales/server"
 import type { InvoiceListItem } from "@/schemas"
 
 type PageProps = {
   searchParams?: Promise<{ customer_id?: string | string[] }>
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(amount)
 }
 
 function formatDate(value: Date): string {
