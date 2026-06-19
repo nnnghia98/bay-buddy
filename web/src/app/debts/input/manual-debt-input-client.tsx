@@ -60,30 +60,37 @@ type ManualDebtField = keyof ManualDebtFormValues
 
 const airlineOptions = Object.entries(AIRLINE_LABELS) as [Airline, string][]
 
-function formatDateTime(value: string): string {
+function formatDate(value: string): string {
   return new Intl.DateTimeFormat("vi-VN", {
     timeZone: "Asia/Ho_Chi_Minh",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
   }).format(new Date(value))
 }
 
-function formatOptionalDateTime(value: string | null | undefined): string {
-  return value ? formatDateTime(value) : ""
+function formatOptionalDate(value: string | null | undefined): string {
+  return value ? formatDate(value) : ""
 }
 
-function getDateTimeLocalNow(): string {
-  const now = new Date()
-  const offsetMs = now.getTimezoneOffset() * 60_000
-
-  return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16)
+function getLocalDateToday(): string {
+  return formatDateInputValue(new Date())
 }
 
-function formatDateTimeLocal(value: string | null | undefined): string {
+function formatDateInputValue(date: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date)
+  const getPart = (type: "year" | "month" | "day") =>
+    parts.find((part) => part.type === type)?.value ?? ""
+
+  return `${getPart("year")}-${getPart("month")}-${getPart("day")}`
+}
+
+function formatDateLocal(value: string | null | undefined): string {
   if (!value) {
     return ""
   }
@@ -93,8 +100,23 @@ function formatDateTimeLocal(value: string | null | undefined): string {
     return ""
   }
 
-  const offsetMs = date.getTimezoneOffset() * 60_000
-  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16)
+  return formatDateInputValue(date)
+}
+
+function parseDateFilter(value: string, boundary: "start" | "end"): Date | null {
+  if (!value) {
+    return null
+  }
+
+  const [year, month, day] = value.split("-").map(Number)
+
+  if (!year || !month || !day) {
+    return null
+  }
+
+  return boundary === "start"
+    ? new Date(Date.UTC(year, month - 1, day, -7, 0, 0, 0))
+    : new Date(Date.UTC(year, month - 1, day, 16, 59, 59, 999))
 }
 
 function getFieldError(
@@ -296,6 +318,198 @@ function CustomerAutocomplete({
   )
 }
 
+function AirlineAutocomplete({
+  id,
+  name,
+  noResultsLabel,
+  placeholder,
+}: {
+  id: string
+  name: string
+  noResultsLabel: string
+  placeholder: string
+}) {
+  const listboxId = React.useId()
+  const [value, setValue] = React.useState("")
+  const [selectedCode, setSelectedCode] = React.useState("")
+  const [isOpen, setIsOpen] = React.useState(false)
+  const [activeIndex, setActiveIndex] = React.useState(0)
+
+  const matchingAirlines = React.useMemo(() => {
+    const normalizedValue = normalizeSearch(value)
+    const source = normalizedValue
+      ? airlineOptions.filter(([code, label]) => {
+          const normalizedCode = normalizeSearch(code)
+          const normalizedLabel = normalizeSearch(label)
+
+          return (
+            normalizedCode.includes(normalizedValue) ||
+            normalizedLabel.includes(normalizedValue)
+          )
+        })
+      : airlineOptions
+
+    return source
+  }, [value])
+
+  const hasMatches = matchingAirlines.length > 0
+
+  const getExactAirline = React.useCallback((nextValue: string) => {
+    const normalizedValue = normalizeSearch(nextValue)
+
+    if (!normalizedValue) {
+      return undefined
+    }
+
+    return airlineOptions.find(([code, label]) => {
+      const normalizedCode = normalizeSearch(code)
+      const normalizedLabel = normalizeSearch(label)
+      const normalizedDisplay = normalizeSearch(`${code} - ${label}`)
+
+      return (
+        normalizedValue === normalizedCode ||
+        normalizedValue === normalizedLabel ||
+        normalizedValue === normalizedDisplay
+      )
+    })
+  }, [])
+
+  const selectAirline = React.useCallback((code: Airline, label: string) => {
+    setValue(`${code} - ${label}`)
+    setSelectedCode(code)
+    setIsOpen(false)
+    setActiveIndex(0)
+  }, [])
+
+  const reconcileTypedValue = React.useCallback(() => {
+    if (!normalizeSearch(value)) {
+      setSelectedCode("")
+      setValue("")
+      return
+    }
+
+    const exactMatch = getExactAirline(value)
+
+    if (exactMatch) {
+      selectAirline(exactMatch[0], exactMatch[1])
+    } else {
+      setSelectedCode("")
+    }
+  }, [getExactAirline, selectAirline, value])
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isOpen && ["ArrowDown", "ArrowUp"].includes(event.key)) {
+      setIsOpen(true)
+      return
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault()
+      setIsOpen(false)
+      return
+    }
+
+    if (!isOpen || !hasMatches) {
+      return
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault()
+      setActiveIndex((current) => (current + 1) % matchingAirlines.length)
+      return
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault()
+      setActiveIndex(
+        (current) =>
+          (current - 1 + matchingAirlines.length) % matchingAirlines.length,
+      )
+      return
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault()
+      const [code, label] = matchingAirlines[activeIndex]
+      selectAirline(code, label)
+    }
+  }
+
+  return (
+    <div className="relative">
+      <input name={name} readOnly type="hidden" value={selectedCode} />
+      <Input
+        aria-autocomplete="list"
+        aria-controls={listboxId}
+        aria-expanded={isOpen}
+        autoComplete="off"
+        id={id}
+        onBlur={() => {
+          window.setTimeout(() => {
+            reconcileTypedValue()
+            setIsOpen(false)
+          }, 0)
+        }}
+        onChange={(event) => {
+          const nextValue = event.target.value
+          const exactMatch = getExactAirline(nextValue)
+
+          setValue(nextValue)
+          setSelectedCode(exactMatch?.[0] ?? "")
+          setIsOpen(true)
+          setActiveIndex(0)
+        }}
+        onFocus={() => setIsOpen(true)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        role="combobox"
+        value={value}
+      />
+      <ChevronsUpDown
+        aria-hidden="true"
+        className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+      />
+      {isOpen ? (
+        <div
+          className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 overflow-hidden rounded-lg border border-border bg-white shadow-[var(--shadow-md)]"
+          id={listboxId}
+          role="listbox"
+        >
+          {hasMatches ? (
+            matchingAirlines.map(([code, label], index) => (
+              <button
+                aria-selected={index === activeIndex}
+                className={cn(
+                  "flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm transition-colors",
+                  index === activeIndex
+                    ? "bg-accent text-foreground"
+                    : "text-foreground hover:bg-accent/65",
+                )}
+                key={code}
+                onMouseDown={(event) => {
+                  event.preventDefault()
+                  selectAirline(code, label)
+                }}
+                role="option"
+                type="button"
+              >
+                <span className="font-medium text-foreground">{label}</span>
+                <span className="shrink-0 font-mono text-xs font-semibold text-muted-foreground">
+                  {code}
+                </span>
+              </button>
+            ))
+          ) : (
+            <div className="px-3.5 py-3 text-sm text-muted-foreground">
+              {noResultsLabel}
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function SubmitButton({
   onSubmit,
   pending,
@@ -359,7 +573,7 @@ function EditableMoneyCell({
   )
 }
 
-function EditableDateTimeCell({
+function EditableDateCell({
   editing,
   formId,
   name,
@@ -379,7 +593,7 @@ function EditableDateTimeCell({
   if (!editing) {
     return (
       <span className="block text-sm text-foreground">
-        {formatOptionalDateTime(value) || t("manualDebts.emptyValue")}
+        {formatOptionalDate(value) || t("manualDebts.emptyValue")}
       </span>
     )
   }
@@ -387,12 +601,12 @@ function EditableDateTimeCell({
   return (
     <Input
       className="h-9 min-w-52"
-      defaultValue={formatDateTimeLocal(value)}
+      defaultValue={formatDateLocal(value)}
       form={formId}
       name={name}
       onBlur={onBlur}
       onKeyDown={onKeyDown}
-      type="datetime-local"
+      type="date"
     />
   )
 }
@@ -431,7 +645,7 @@ function ManualDebtTableRow({
       const nextValue = parseCurrencyInput(String(formData.get(key) ?? ""))
 
       return nextValue !== value
-    }) || nextBookedAt !== formatDateTimeLocal(row.booked_at)
+    }) || nextBookedAt !== formatDateLocal(row.booked_at)
 
     if (hasChanged) {
       form.requestSubmit()
@@ -463,7 +677,7 @@ function ManualDebtTableRow({
   return (
     <TableRow className="hover:bg-accent/35" ref={rowRef}>
       <TableCell className="min-w-40 whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-sm">
-        <EditableDateTimeCell
+        <EditableDateCell
           editing={isEditing}
           formId={updateFormId}
           name="booked_at"
@@ -473,7 +687,7 @@ function ManualDebtTableRow({
         />
       </TableCell>
       <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-sm text-muted-foreground">
-        {formatDateTime(row.created_at)}
+        {formatDate(row.created_at)}
       </TableCell>
       <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-sm font-medium">
         {row.passenger_names}
@@ -559,7 +773,7 @@ function ManualDebtTableRow({
               <input name="ticket_id" type="hidden" value={row.ticket_id} />
               {!isEditing ? (
                 <>
-                  <input name="booked_at" type="hidden" value={formatDateTimeLocal(row.booked_at)} />
+                  <input name="booked_at" type="hidden" value={formatDateLocal(row.booked_at)} />
                   <input name="selling_price" type="hidden" value={row.ticket_selling_price} />
                   <input name="discount" type="hidden" value={row.ticket_discount} />
                   <input name="ev_price" type="hidden" value={row.ticket_ev_price} />
@@ -651,8 +865,8 @@ export function ManualDebtInputClient({
   }, [actionState.status, actionState.submittedAt, router])
 
   const filteredRows = React.useMemo(() => {
-    const fromDate = appliedFrom ? new Date(appliedFrom) : null
-    const toDate = appliedTo ? new Date(appliedTo) : null
+    const fromDate = parseDateFilter(appliedFrom, "start")
+    const toDate = parseDateFilter(appliedTo, "end")
 
     return rows.filter((row) => {
       const rowDate = new Date(row.created_at)
@@ -677,7 +891,10 @@ export function ManualDebtInputClient({
     event.preventDefault()
     setFilterError(null)
 
-    if (fromValue && toValue && new Date(fromValue) > new Date(toValue)) {
+    const fromDate = parseDateFilter(fromValue, "start")
+    const toDate = parseDateFilter(toValue, "start")
+
+    if (fromDate && toDate && fromDate > toDate) {
       setFilterError(t("manualDebts.filters.invalidRange"))
       return
     }
@@ -796,18 +1013,12 @@ export function ManualDebtInputClient({
                   htmlFor="manual-debt-airline"
                   label={t("manualDebts.form.fields.airline")}
                 >
-                  <select
-                    className="h-10 w-full rounded-lg border border-input bg-white px-3 text-sm text-foreground shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                  <AirlineAutocomplete
                     id="manual-debt-airline"
                     name="airline"
-                  >
-                    <option value="">{t("manualDebts.form.chooseAirline")}</option>
-                    {airlineOptions.map(([code, label]) => (
-                      <option key={code} value={code}>
-                        {code} - {label}
-                      </option>
-                    ))}
-                  </select>
+                    noResultsLabel={t("manualDebts.form.airlineNoResults")}
+                    placeholder={t("manualDebts.form.chooseAirline")}
+                  />
                 </FormField>
                 <FormField
                   error={getFieldError(fieldErrors, "flight_date")}
@@ -815,10 +1026,10 @@ export function ManualDebtInputClient({
                   label={t("manualDebts.form.fields.flightDate")}
                 >
                   <Input
-                    defaultValue={getDateTimeLocalNow()}
+                    defaultValue={getLocalDateToday()}
                     id="manual-debt-flight-date"
                     name="flight_date"
-                    type="datetime-local"
+                    type="date"
                   />
                 </FormField>
               </div>
@@ -829,10 +1040,10 @@ export function ManualDebtInputClient({
                 label={t("manualDebts.form.fields.bookedAt")}
               >
                 <Input
-                  defaultValue={getDateTimeLocalNow()}
+                  defaultValue={getLocalDateToday()}
                   id="manual-debt-booked-at"
                   name="booked_at"
-                  type="datetime-local"
+                  type="date"
                 />
               </FormField>
 
@@ -853,6 +1064,15 @@ export function ManualDebtInputClient({
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
                 {t("manualDebts.form.routeGroup")}
               </p>
+              <div className="mt-4">
+                <FormField
+                  error={getFieldError(fieldErrors, "itinerary")}
+                  htmlFor="manual-debt-itinerary"
+                  label={t("manualDebts.form.fields.route")}
+                >
+                  <Input id="manual-debt-itinerary" name="itinerary" />
+                </FormField>
+              </div>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <FormField
                   error={getFieldError(fieldErrors, "departure_code")}
@@ -1031,7 +1251,7 @@ export function ManualDebtInputClient({
                 <Input
                   id="manual-debt-from"
                   onChange={(event) => setFromValue(event.target.value)}
-                  type="datetime-local"
+                  type="date"
                   value={fromValue}
                 />
               </div>
@@ -1045,7 +1265,7 @@ export function ManualDebtInputClient({
                 <Input
                   id="manual-debt-to"
                   onChange={(event) => setToValue(event.target.value)}
-                  type="datetime-local"
+                  type="date"
                   value={toValue}
                 />
               </div>

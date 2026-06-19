@@ -179,6 +179,10 @@ export function createManualDebtFormSchema(
         normalizePassengers,
         z.array(z.string().min(1)),
       ),
+      itinerary: z.preprocess(
+        normalizeOptionalString,
+        z.string().max(100).optional(),
+      ),
       departure_code: z.preprocess(
         normalizeUppercaseOptionalString,
         z.string().max(10).optional(),

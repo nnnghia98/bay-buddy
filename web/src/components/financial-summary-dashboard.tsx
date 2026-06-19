@@ -3,24 +3,17 @@
 import Link from "next/link"
 import * as React from "react"
 import {
-  AlertTriangle,
   ArrowRight,
-  CheckCircle2,
   Clock3,
   CreditCard,
   Eye,
   EyeOff,
   Landmark,
-  PlaneTakeoff,
-  ReceiptText,
   TrendingUp,
-  UploadCloud,
-  Users,
   WalletCards,
 } from "lucide-react"
 
 import {
-  CommandActionLink,
   MetricCard,
   Panel,
   SectionHeader,
@@ -73,14 +66,6 @@ function getActivityTone(
   return "neutral"
 }
 
-function getQueueTone(
-  severity: FinancialSummarySnapshot["actionQueues"][number]["severity"],
-): "neutral" | "warning" | "danger" {
-  if (severity === "high") return "danger"
-  if (severity === "medium") return "warning"
-  return "neutral"
-}
-
 export function FinancialSummaryDashboard({
   summary,
   initialRevenueVisible = false,
@@ -123,26 +108,6 @@ export function FinancialSummaryDashboard({
     if (activity.category === "REFUND") return t("dashboard.summary.commandCenter.recent.fallbacks.refund")
     return t("dashboard.summary.commandCenter.recent.fallbacks.ticketPurchase")
   }
-
-  const getQueueLabel = (
-    key: FinancialSummarySnapshot["actionQueues"][number]["key"],
-  ): string => {
-    if (key === "heldCredit") return t("dashboard.summary.commandCenter.queues.heldCredit")
-    if (key === "draftTickets") return t("dashboard.summary.commandCenter.queues.draftTickets")
-    return t("dashboard.summary.commandCenter.queues.receivables")
-  }
-
-  const getQueueDescription = (
-    key: FinancialSummarySnapshot["actionQueues"][number]["key"],
-  ): string => {
-    if (key === "heldCredit") return t("dashboard.summary.commandCenter.queueDescriptions.heldCredit")
-    if (key === "draftTickets") return t("dashboard.summary.commandCenter.queueDescriptions.draftTickets")
-    return t("dashboard.summary.commandCenter.queueDescriptions.receivables")
-  }
-  const hasOpenActionQueue = (
-    queue: FinancialSummarySnapshot["actionQueues"][number],
-  ): boolean => queue.count > 0 || queue.amount !== 0
-  const hasAnyOpenQueue = summary.actionQueues.some(hasOpenActionQueue)
 
   return (
     <div className="space-y-6 pb-12 text-foreground">
@@ -241,107 +206,6 @@ export function FinancialSummaryDashboard({
         <div className="space-y-6">
           <div>
             <SectionHeader
-              title={t("dashboard.summary.commandCenter.needsAction")}
-              id="dashboard-action-queues-title"
-            />
-            <Panel aria-labelledby="dashboard-action-queues-title">
-              {!hasAnyOpenQueue ? (
-                <div className="border-b border-border bg-secondary/55 px-5 py-4">
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-emerald-200 bg-emerald-50 text-emerald-700">
-                      <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground">
-                        {t("dashboard.summary.commandCenter.allClear.title")}
-                      </p>
-                      <p className="mt-1 text-sm leading-5 text-muted-foreground">
-                        {t("dashboard.summary.commandCenter.allClear.description")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-              <div className="divide-y divide-border">
-                {summary.actionQueues.map((queue) => {
-                  const hasOpenItems = hasOpenActionQueue(queue)
-                  const QueueIcon = hasOpenItems ? AlertTriangle : CheckCircle2
-
-                  return (
-                    <Link
-                      className="group grid gap-3 px-5 py-4 transition-colors hover:bg-accent/35 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                      href={queue.href}
-                      key={queue.key}
-                    >
-                      <span className="flex min-w-0 items-start gap-3">
-                        <span
-                          className={
-                            hasOpenItems
-                              ? "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-secondary text-primary transition-colors group-hover:border-primary/25 group-hover:bg-white"
-                              : "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-white text-muted-foreground transition-colors group-hover:border-primary/15"
-                          }
-                        >
-                          <QueueIcon aria-hidden="true" className="h-4 w-4" />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="flex flex-wrap items-center gap-2">
-                            <span
-                              className={
-                                hasOpenItems
-                                  ? "text-sm font-semibold text-foreground"
-                                  : "text-sm font-medium text-foreground"
-                              }
-                            >
-                              {getQueueLabel(queue.key)}
-                            </span>
-                            <StatusChip
-                              tone={hasOpenItems ? getQueueTone(queue.severity) : "neutral"}
-                            >
-                              {queue.count}
-                            </StatusChip>
-                          </span>
-                          <span className="mt-1 block text-sm leading-5 text-muted-foreground">
-                            {getQueueDescription(queue.key)}
-                          </span>
-                        </span>
-                      </span>
-                      <span className="text-left sm:text-right">
-                        <span
-                          className={
-                            hasOpenItems
-                              ? "block text-sm font-semibold text-foreground"
-                              : "block text-sm font-medium text-muted-foreground"
-                          }
-                        >
-                          {formatCurrency(queue.amount)}
-                        </span>
-                        <span
-                          className={
-                            hasOpenItems
-                              ? "mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-primary"
-                              : "mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground"
-                          }
-                        >
-                          {hasOpenItems
-                            ? t("dashboard.summary.commandCenter.openQueue")
-                            : t("dashboard.summary.commandCenter.noQueue")}
-                          {hasOpenItems ? (
-                            <ArrowRight
-                              aria-hidden="true"
-                              className="h-3 w-3 transition-transform group-hover:translate-x-0.5"
-                            />
-                          ) : null}
-                        </span>
-                      </span>
-                    </Link>
-                  )
-                })}
-              </div>
-            </Panel>
-          </div>
-
-          <div>
-            <SectionHeader
               title={t("dashboard.summary.analytics.topDebtors.title")}
               id="dashboard-top-debtors-title"
               action={
@@ -401,39 +265,6 @@ export function FinancialSummaryDashboard({
         </div>
 
         <aside className="space-y-6">
-          <div>
-            <SectionHeader
-              title={t("dashboard.summary.commandCenter.shortcuts.title")}
-              id="dashboard-shortcuts-title"
-            />
-            <div aria-labelledby="dashboard-shortcuts-title" className="grid gap-3">
-              <CommandActionLink
-                description={t("dashboard.summary.commandCenter.shortcuts.customersDescription")}
-                href="/customers"
-                icon={Users}
-                label={t("dashboard.summary.commandCenter.shortcuts.customers")}
-              />
-              <CommandActionLink
-                description={t("dashboard.summary.commandCenter.shortcuts.ticketDescription")}
-                href="/tickets/input"
-                icon={PlaneTakeoff}
-                label={t("dashboard.summary.commandCenter.shortcuts.ticket")}
-              />
-              <CommandActionLink
-                description={t("dashboard.summary.commandCenter.shortcuts.importDescription")}
-                href="/extract-ticket"
-                icon={UploadCloud}
-                label={t("dashboard.summary.commandCenter.shortcuts.import")}
-              />
-              <CommandActionLink
-                description={t("dashboard.summary.commandCenter.shortcuts.reportDescription")}
-                href="/report"
-                icon={ReceiptText}
-                label={t("dashboard.summary.commandCenter.shortcuts.report")}
-              />
-            </div>
-          </div>
-
           <Panel className="p-5">
             <div className="flex items-start gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-secondary text-primary">

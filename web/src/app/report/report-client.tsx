@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Download, Loader2 } from "lucide-react"
 
@@ -74,14 +73,14 @@ const columns: ColumnDefinition[] = [
     align: "right",
     getValue: (_row, index) => (index + 1).toString(),
   },
+  { key: "booked_at", getValue: (row) => row.booked_at ?? "" },
   { key: "customer_code", getValue: (row) => `#${row.customer_id.slice(0, 8)}` },
   { key: "customer_name", getValue: (row) => row.customer_name },
   { key: "customer_phone", getValue: (row) => row.customer_phone ?? "" },
   { key: "entry_type", getValue: (row) => row.entry_type },
   { key: "issued_at", getValue: (row) => row.issued_at },
-  { key: "booked_at", getValue: (row) => row.booked_at ?? "" },
   { key: "created_at", getValue: (row) => row.created_at },
-  { key: "description", getValue: (row) => row.customer_name },
+  { key: "description", getValue: (row) => row.passenger_names },
   { key: "content", getValue: (row) => row.content },
   {
     key: "amount",
@@ -170,11 +169,10 @@ const columns: ColumnDefinition[] = [
 
 const defaultColumnKeys: ColumnKey[] = [
   "order",
-  "customer_code",
-  "issued_at",
   "booked_at",
-  "pnr",
+  "customer_name",
   "description",
+  "debt",
   "selling_price",
   "discount",
   "ev_price",
@@ -183,19 +181,31 @@ const defaultColumnKeys: ColumnKey[] = [
   "web_price",
   "insurance_price",
   "true_income",
-  "debt",
 ]
 
-function formatDateTime(value: string): string {
+function formatDate(value: string): string {
   return new Intl.DateTimeFormat("vi-VN", {
     timeZone: "Asia/Ho_Chi_Minh",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
   }).format(new Date(value))
+}
+
+function parseDateFilter(value: string, boundary: "start" | "end"): Date | null {
+  if (!value) {
+    return null
+  }
+
+  const [year, month, day] = value.split("-").map(Number)
+
+  if (!year || !month || !day) {
+    return null
+  }
+
+  return boundary === "start"
+    ? new Date(Date.UTC(year, month - 1, day, -7, 0, 0, 0))
+    : new Date(Date.UTC(year, month - 1, day, 16, 59, 59, 999))
 }
 
 function escapeHtml(value: string): string {
@@ -213,19 +223,19 @@ function formatCellValue(
   index: number,
 ): string {
   if (key === "issued_at") {
-    return formatDateTime(row.issued_at)
+    return formatDate(row.issued_at)
   }
 
   if (key === "booked_at") {
-    return row.booked_at ? formatDateTime(row.booked_at) : ""
+    return row.booked_at ? formatDate(row.booked_at) : ""
   }
 
   if (key === "created_at") {
-    return formatDateTime(row.created_at)
+    return formatDate(row.created_at)
   }
 
   if (key === "flight_date" && row.flight_date) {
-    return formatDateTime(row.flight_date)
+    return formatDate(row.flight_date)
   }
 
   if (key === "amount") {
@@ -461,6 +471,14 @@ export function LedgerReportClient({
     setFilterError(null)
 
     try {
+      const fromDate = parseDateFilter(fromValue, "start")
+      const toDate = parseDateFilter(toValue, "start")
+
+      if (fromDate && toDate && fromDate > toDate) {
+        setFilterError(t("report.filters.invalidRange"))
+        return
+      }
+
       const params = new URLSearchParams()
       if (fromValue) {
         params.set("from", fromValue)
@@ -524,7 +542,7 @@ export function LedgerReportClient({
                 id="report-from"
                 name="from"
                 onChange={(event) => setFromValue(event.target.value)}
-                type="datetime-local"
+                type="date"
                 value={fromValue}
               />
             </div>
@@ -540,7 +558,7 @@ export function LedgerReportClient({
                 id="report-to"
                 name="to"
                 onChange={(event) => setToValue(event.target.value)}
-                type="datetime-local"
+                type="date"
                 value={toValue}
               />
             </div>
@@ -615,7 +633,6 @@ export function LedgerReportClient({
                     <TableHead
                       className={cn(
                         "whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-foreground last:border-r-0",
-                        column.align === "right" && "text-right",
                       )}
                       key={column.key}
                     >
@@ -646,8 +663,6 @@ export function LedgerReportClient({
                   <TableRow className="hover:bg-accent/35" key={row.id}>
                     {selectedColumns.map((column) => {
                       const value = formatCellValue(row, column.key, rowIndex)
-                      const isTicketLink =
-                        column.key === "pnr" && row.ticket_id && value
 
                       return (
                         <TableCell
@@ -661,13 +676,6 @@ export function LedgerReportClient({
                             <StatusChip tone={getEntryTone(row.entry_type)}>
                               {t(`report.entryTypes.${row.entry_type}`)}
                             </StatusChip>
-                          ) : isTicketLink ? (
-                            <Link
-                              className="font-semibold text-primary hover:underline"
-                              href={`/tickets/${row.ticket_id}`}
-                            >
-                              {value}
-                            </Link>
                           ) : (
                             value
                           )}

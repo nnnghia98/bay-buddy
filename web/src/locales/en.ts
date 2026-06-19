@@ -251,6 +251,7 @@ export default {
       apply: "Apply",
       applying: "Applying...",
       failure: "Unable to reload report data.",
+      invalidRange: "The start date must be before the end date.",
     },
     metrics: {
       summary: "Summary",
@@ -321,6 +322,7 @@ export default {
       description:
         "This flow skips AI, but still saves a confirmed ticket and creates the debt row automatically.",
       chooseAirline: "Choose airline",
+      airlineNoResults: "No matching airline found.",
       customerPlaceholder: "Search by name or phone",
       customerNoResults: "No matching customer found.",
       routeGroup: "Route",

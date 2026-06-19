@@ -251,6 +251,7 @@ export default {
       apply: "Áp dụng",
       applying: "Đang áp dụng...",
       failure: "Không thể tải lại dữ liệu báo cáo.",
+      invalidRange: "Mốc bắt đầu phải trước mốc kết thúc.",
     },
     metrics: {
       summary: "Tổng hợp",
@@ -321,6 +322,7 @@ export default {
       description:
         "Luồng này bỏ phần AI, nhưng vẫn lưu vé đã xác nhận và tạo công nợ tự động.",
       chooseAirline: "Chọn hãng bay",
+      airlineNoResults: "Không tìm thấy hãng bay phù hợp.",
       customerPlaceholder: "Tìm theo tên hoặc số điện thoại",
       customerNoResults: "Không tìm thấy khách hàng phù hợp.",
       routeGroup: "Hành trình",

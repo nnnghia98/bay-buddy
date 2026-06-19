@@ -108,7 +108,7 @@ class TicketBase(SQLModel):
     ev_price: float = Field(
         default=0.0,
         ge=0,
-        description="Host net price from EV (giá net EV). Empty values count as 0.",
+        description="Host price from EV (giá EV). Empty values count as 0.",
     )
     ast_price: float = Field(
         default=0.0,

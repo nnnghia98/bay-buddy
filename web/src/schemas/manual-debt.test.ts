@@ -8,6 +8,7 @@ const validManualDebtInput = {
   airline: "VNA",
   ticket_number: "7381234567890",
   passengers: "NGUYEN VAN A",
+  itinerary: "HAN-SGN",
   departure_code: "han",
   arrival_code: "sgn",
   flight_date: "2026-06-17T09:56:00.000Z",
@@ -63,6 +64,7 @@ describe("manualDebtFormSchema", () => {
       airline: "",
       ticket_number: "",
       passengers: "",
+      itinerary: "",
       departure_code: "",
       arrival_code: "",
       flight_date: "",
@@ -80,6 +82,7 @@ describe("manualDebtFormSchema", () => {
     expect(parsed.customer_name).toBe("Nguyen Van A")
     expect(parsed.ticket_number).toBeUndefined()
     expect(parsed.passengers).toEqual([])
+    expect(parsed.itinerary).toBeUndefined()
     expect(parsed.departure_code).toBeUndefined()
     expect(parsed.arrival_code).toBeUndefined()
     expect(parsed.flight_date).toBeUndefined()

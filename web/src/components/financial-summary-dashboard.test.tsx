@@ -60,9 +60,16 @@ describe("FinancialSummaryDashboard revenue privacy", () => {
     expect(html).not.toContain("••••••")
   })
 
-  it("shows a calm all-clear state when action queues are empty", () => {
+  it("omits the action queue panel", () => {
     const html = renderDashboard(false)
 
-    expect(html).toContain("dashboard.summary.commandCenter.allClear.title")
+    expect(html).not.toContain("dashboard.summary.commandCenter.needsAction")
+    expect(html).not.toContain("dashboard.summary.commandCenter.allClear.title")
+  })
+
+  it("omits the work shortcut panel", () => {
+    const html = renderDashboard(false)
+
+    expect(html).not.toContain("dashboard.summary.commandCenter.shortcuts.title")
   })
 })

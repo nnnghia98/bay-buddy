@@ -108,12 +108,36 @@ function parseRangeDate(value: string | undefined): Date | null {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
+function parseDateOnlyRange(
+  value: string | undefined,
+  boundary: "start" | "end",
+): Date | null {
+  if (!value) {
+    return null
+  }
+
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+
+  if (!dateOnlyMatch) {
+    return parseRangeDate(value)
+  }
+
+  const [, yearValue, monthValue, dayValue] = dateOnlyMatch
+  const year = Number(yearValue)
+  const month = Number(monthValue)
+  const day = Number(dayValue)
+
+  return boundary === "start"
+    ? new Date(Date.UTC(year, month - 1, day, -7, 0, 0, 0))
+    : new Date(Date.UTC(year, month - 1, day, 16, 59, 59, 999))
+}
+
 function filterRowsByRange(
   rows: LedgerReportRow[],
   range: LedgerReportRange,
 ): LedgerReportRow[] {
-  const fromDate = parseRangeDate(range.from)
-  const toDate = parseRangeDate(range.to)
+  const fromDate = parseDateOnlyRange(range.from, "start")
+  const toDate = parseDateOnlyRange(range.to, "end")
 
   return rows.filter((row) => {
     const rowDate = new Date(row.issued_at)

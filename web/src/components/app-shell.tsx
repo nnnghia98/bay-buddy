@@ -77,12 +77,12 @@ type NavItem = {
 }
 
 const navItems: NavItem[] = [
-  { labelKey: "tickets", href: "/tickets/input", icon: Ticket },
   { labelKey: "manualDebts", href: "/debts/input", icon: ReceiptText },
+  { labelKey: "reports", href: "/report", icon: FileText },
+  { labelKey: "tickets", href: "/tickets/input", icon: Ticket },
   { labelKey: "activities", href: "/activities", icon: Activity },
   { labelKey: "customers", href: "/customers", icon: Users },
   { labelKey: "ticketImports", href: "/extract-ticket", icon: FileCheck2 },
-  { labelKey: "reports", href: "/report", icon: FileText },
   { labelKey: "settings", href: "/settings", icon: Settings },
   { labelKey: "dataCenter", href: "/data_center", icon: Database, adminOnly: true },
 ]

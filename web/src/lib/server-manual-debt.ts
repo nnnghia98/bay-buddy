@@ -83,6 +83,7 @@ export async function createManualDebtFromFormData(
     airline: formData.get("airline"),
     ticket_number: formData.get("ticket_number"),
     passengers: formData.get("passengers"),
+    itinerary: formData.get("itinerary"),
     departure_code: formData.get("departure_code"),
     arrival_code: formData.get("arrival_code"),
     flight_date: formData.get("flight_date"),
@@ -124,10 +125,11 @@ export async function createManualDebtFromFormData(
 
   const values = parsedInput.data
   const now = new Date()
-  const route =
+  const derivedRoute =
     values.departure_code && values.arrival_code
       ? `${values.departure_code}-${values.arrival_code}`
       : null
+  const route = values.itinerary ?? derivedRoute
   const pnr = values.pnr ?? "MANUAL"
   const response = await fetch(buildUrl("/tickets/confirm"), {
     method: "POST",
