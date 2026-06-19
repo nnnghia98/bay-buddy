@@ -45,7 +45,7 @@
 - `itinerary`: String Nullable (Compatibility/display field, e.g., "HAN-SGN")
 - `flight_date`: DateTime
 - `net_price`: Float (Supplier/Airline cost)
-- `ev_price`: Float (Host net price from EV; empty values count as 0)
+- `ev_price`: Float (Host price from EV; empty values count as 0)
 - `ast_price`: Float (Host net price from AST; empty values count as 0)
 - `thf_price`: Float (Host net price from Thành Hoàng / THF; empty values count as 0)
 - `web_price`: Float (Host net price from WEB; empty values count as 0)

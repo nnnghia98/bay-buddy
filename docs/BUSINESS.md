@@ -49,7 +49,7 @@ Each ticket parsed into the system follows a specific lifecycle. Status changes 
 The system distinguishes between what the airline charges and what the customer pays.
 
 - **Net Price**: The actual cost from the airline/supplier (VNA, Vietjet, etc.).
-- **EV Price**: Host net price passed down from the EV upstream agency.
+- **EV Price**: Host price passed down from the EV upstream agency.
 - **AST Price**: Host net price passed down from the AST upstream agency.
 - **THF Price / Thành Hoàng**: Host net price passed down from Thành Hoàng (THF).
 - **WEB Price**: Host net price passed down from the WEB upstream channel.
