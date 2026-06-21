@@ -18,6 +18,8 @@ Bay Buddy is an internal operating system for a Vietnamese travel finance team. 
 
 The UI must prioritize repeat work over presentation. It should feel calm, dense enough for operations, and visually easy to scan.
 
+The `/debts/input` page is the reference pattern for function-first operations UI: one focused form, one adjacent table, the primary action attached to the form, minimal framing, and no redundant title/header cards.
+
 ## 2. Product Personality
 
 Bay Buddy should feel:
@@ -47,6 +49,7 @@ Add these UX-specific visual rules:
 - Make primary actions visually persistent near the data they affect.
 - Prefer tables for financial records on desktop and mobile-safe stacked rows or horizontal scroll on narrow screens.
 - Keep typography proportional to context: dashboard panels and cards use compact headings, not landing-page scale.
+- Remove presentation-only UI. If a header, description, metric card, or helper sentence does not help the current decision or action, omit it.
 
 ## 4. Information Architecture
 
@@ -126,6 +129,7 @@ Required quote behavior:
 - Use one visually dominant primary action per work area.
 - Use outline or secondary actions for navigation and printing.
 - Avoid burying finance actions inside unrelated card groups.
+- On long workbench forms, keep the primary submit action pinned above the form's internal scroll area so staff can act without returning to the bottom of the page.
 
 ### Status Communication
 
@@ -153,6 +157,8 @@ Table requirements:
 - Keep running balance visible where relevant.
 - Use sticky or repeated context where long tables would separate rows from the current customer/document.
 - On mobile, use horizontal scroll or stacked row cards. Tables must not break the viewport.
+- Use icon-only row actions for high-frequency repeated operations when the icon is familiar. Keep accessible names with `aria-label` and `title`.
+- Size action columns to their controls, not to old text labels.
 
 ### Forms
 
@@ -165,6 +171,8 @@ Forms must follow the App Router standard from the DNA:
 - Attach labels to all inputs.
 - Do not rely on placeholder text as labels.
 - Keep validation errors close to the field and accessible.
+- On desktop workbench pages, long forms should scroll inside their panel instead of pushing the whole page. Keep the adjacent table available for context.
+- Order fields by operational priority, not database schema order.
 
 ## 6. Page-Level UX Rules
 
@@ -177,6 +185,17 @@ Forms must follow the App Router standard from the DNA:
 - Breadcrumbs should clarify location without becoming the main navigation.
 - Quick search can be introduced later only when it is fully implemented and interactive. Do not show placeholder shell utilities that look clickable.
 - Mobile navigation must preserve access to the same major work areas.
+
+### Authenticated Workbench Pages
+
+Use this page model when staff need to enter or edit records while watching a table, ledger, or queue.
+
+- Use a two-column desktop layout: left form, right table or ledger.
+- Do not create a redundant page title card, intro card, or summary strip when the breadcrumb and controls already establish context.
+- Keep form sections compact and directly named by labels such as `Khách hàng`, `Ngày xuất vé`, `Giá và thu nhập`, and `Hành trình`.
+- Keep the form panel full-height on desktop and scroll only the fields, not the whole page.
+- Keep table filters and the table itself in the right panel.
+- Prefer dense, function-first controls over explanatory copy. Add helper copy only for risk, validation, irreversible action, or domain ambiguity.
 
 ### Empty States
 

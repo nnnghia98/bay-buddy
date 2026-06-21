@@ -327,8 +327,6 @@ export default {
       customerNoResults: "Không tìm thấy khách hàng phù hợp.",
       routeGroup: "Hành trình",
       pricingGroup: "Giá và thu nhập",
-      saveHint:
-        "Khi lưu, hệ thống sẽ tạo vé CONFIRMED và tăng công nợ khách hàng theo giá bán.",
       fields: {
         customer: "Khách hàng",
         pnr: "Mã chỗ",

@@ -588,7 +588,7 @@ function LedgerRecordCorrectionDialog({
               <div className="space-y-2">
                 <Label htmlFor={`passengers-${entry.id}`}>{t("customers.ledger.corrections.fields.passengers")}</Label>
                 <textarea
-                  className="min-h-24 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                  className="min-h-24 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm font-medium placeholder:font-normal shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
                   id={`passengers-${entry.id}`}
                   name="passengers"
                   defaultValue={ticket.passengers.join("\n")}
@@ -763,7 +763,7 @@ function LedgerRecordCorrectionDialog({
               <div className="space-y-2">
                 <Label htmlFor={`note-${entry.id}`}>{t("customers.ledger.corrections.fields.note")}</Label>
                 <textarea
-                  className="min-h-24 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                  className="min-h-24 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm font-medium placeholder:font-normal shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
                   id={`note-${entry.id}`}
                   name="note"
                   defaultValue={transaction.note ?? ""}

@@ -59,10 +59,24 @@ _allowed_origins: list[str] = [
     for origin in os.getenv("FRONTEND_URL", _default_frontend_origins).split(",")
     if origin.strip()
 ]
+_default_frontend_origin_regex = (
+    r"^http://("
+    r"localhost|127\.0\.0\.1|"
+    r"10\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
+    r"192\.168\.\d{1,3}\.\d{1,3}|"
+    r"172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|"
+    r"100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}"
+    r"):(3000|6769)$"
+)
+_allowed_origin_regex = os.getenv(
+    "FRONTEND_URL_REGEX",
+    _default_frontend_origin_regex,
+)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
+    allow_origin_regex=_allowed_origin_regex,
     allow_credentials=True,   # Required for HttpOnly cookie auth
     allow_methods=["*"],
     allow_headers=["*"],

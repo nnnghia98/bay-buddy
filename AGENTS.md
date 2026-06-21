@@ -30,6 +30,7 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 - **Frontend Standard**: `react-best-practices` is part of the DNA. Follow Vercel's latest Next.js App Router recommendations by default.
 - **UI Skill Standard**: For any UI, layout, styling, dashboard, form, table, or design-system task, the agent MUST also use the local `frontend-design` skill in `.agents/skills/frontend-design/SKILL.md` together with the Bay Buddy DNA.
 - **Design/UX Standard**: For UI work, `docs/DESIGN.md` and `docs/UX.md` are mandatory references. If generic frontend guidance conflicts with Bay Buddy DNA, Bay Buddy DNA wins.
+- **Operational Workbench Standard**: Authenticated work pages should follow the `/debts/input` pattern when staff are entering data beside a record table: simple two-column workbench, primary action close to the form it submits, scroll-contained long forms, dense tables, and no redundant title/header/summary cards unless they add immediate operational value.
 
 ## 🛠 Tech Stack
 
@@ -64,6 +65,7 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 
 - **Components**: Use Functional Components and Server Components by default.
 - **UI**: Shadcn UI is the primary component library. Maintain a minimalist and clean aesthetic.
+- **Authenticated Workbench UI**: Prefer function-first layouts over presentation layers. Do not add redundant intro cards, decorative metric strips, or panel headers that merely repeat breadcrumbs/page context. Let form labels, section labels, table headers, and the primary action carry the screen.
 - **App Shell Navigation**: Treat `/` as the real homepage. Do not duplicate it as a separate left-sidebar destination when the logo already serves as the home entry point. The homepage breadcrumb label must be locale-aware (`Trang chủ` in `vi`, `Home` in `en`).
 - **App Shell Utilities**: Do not show placeholder shell utilities such as quick search unless the feature is fully implemented and interactive. The authenticated header should stay focused on breadcrumbs and the user menu.
 - **Data Fetching**: Prefer React Server Components (RSC) for read operations and initial data loading in App Router.

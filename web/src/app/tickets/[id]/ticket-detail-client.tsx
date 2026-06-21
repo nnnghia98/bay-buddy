@@ -229,7 +229,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
             {t("customers.ledger.corrections.fields.passengers")}
           </Label>
           <textarea
-            className="min-h-24 w-full rounded-lg border border-input bg-white px-3.5 py-2 text-sm shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+            className="min-h-24 w-full rounded-lg border border-input bg-white px-3.5 py-2 text-sm font-medium placeholder:font-normal shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
             id="ticket-detail-passengers"
             name="passengers"
             defaultValue={ticket.passengers.join("\n")}

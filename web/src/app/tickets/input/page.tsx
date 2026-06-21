@@ -979,7 +979,7 @@ export default function CaptureTicketPage() {
                   <div key={field.id} className="flex items-start gap-3">
                     <div className="flex-1 space-y-1">
                       <div className="relative">
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground text-sm font-medium">
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground text-sm font-semibold">
                           {index + 1}.
                         </div>
                         <Input

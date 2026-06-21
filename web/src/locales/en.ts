@@ -327,8 +327,6 @@ export default {
       customerNoResults: "No matching customer found.",
       routeGroup: "Route",
       pricingGroup: "Price and income",
-      saveHint:
-        "Saving creates a CONFIRMED ticket and increases customer debt by the selling price.",
       fields: {
         customer: "Customer",
         pnr: "PNR",

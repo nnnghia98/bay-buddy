@@ -189,13 +189,15 @@ components:
 
 # Bay Buddy Design System
 
-> Inspired by Airtable's "sophisticated simplicity". Last updated to reflect the v2 UI patterns shipped across dashboard, customers, invoices, settings, and ticket capture.
+> Inspired by Airtable's "sophisticated simplicity". Last updated to reflect the v2 UI patterns shipped across dashboard, customers, invoices, settings, ticket capture, and the `/debts/input` operational workbench.
 
 ---
 
 ## 1. Visual Theme & Atmosphere
 
 Bay Buddy is an **internal command center** for a Vietnamese travel finance team. The visual direction is **"Command Center, Calm Edition"**: white canvas, deep navy text, Airtable Blue accents, restrained shadows, and dense-but-not-cramped layouts.
+
+The strongest Bay Buddy screens should feel like `/debts/input`: simple, direct, and focused on the task. Avoid presentation layers that do not change what staff can do next. Breadcrumbs, field labels, section labels, and table headers are enough context for many authenticated work pages.
 
 **Key Characteristics**
 
@@ -276,6 +278,44 @@ Positive letter-spacing (`tracking-[0.08em]`–`tracking-[0.28em]`) is required 
 
 These are the **canonical patterns** for authenticated app screens. Do not use `CommandPanel` or `CommandPanelHeader` for new screens.
 
+### 5.0 Operational Workbench
+
+Use this pattern for data-entry pages paired with a table or ledger, such as `/debts/input`.
+
+```tsx
+<div className="space-y-6 pb-12 text-foreground">
+  <div className="grid gap-4 lg:grid-cols-[7fr_13fr] lg:items-start">
+    <div className="space-y-4 lg:sticky lg:top-6 lg:h-[calc(100dvh-8rem)]">
+      <Panel className="lg:h-full">
+        <form className="flex flex-col lg:h-full">
+          <div className="flex justify-end border-b border-border bg-white p-4">
+            <Button>{primaryActionLabel}</Button>
+          </div>
+          <div className="space-y-4 p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+            {formFields}
+          </div>
+        </form>
+      </Panel>
+    </div>
+
+    <Panel className="min-w-0">
+      {filters}
+      <TableScrollArea>{table}</TableScrollArea>
+    </Panel>
+  </div>
+</div>
+```
+
+Rules:
+
+- Do not add an intro card or redundant page title inside the workbench when the breadcrumb already names the page.
+- Do not add metric cards unless the metrics directly change the immediate task or table interpretation.
+- Keep the primary submit action visible near the form it affects; on long forms, pin it above the internal scroll area.
+- Long form panels should use internal scroll on desktop instead of forcing the whole page to scroll.
+- Use compact logical field groups with section labels and icons only when they improve scanning.
+- Pair the workbench with a dense table. Keep table action columns sized to their controls, especially icon-only buttons.
+- Prefer icon-only row actions for repeated table operations, with `aria-label` and `title`.
+
 ### 5.1 Panel
 
 A white rounded card that wraps a section of content.
@@ -288,7 +328,7 @@ A white rounded card that wraps a section of content.
 
 ### 5.2 Panel Header Row
 
-Sits at the top of every Panel. Contains a section eyebrow label on the left and optional meta (count, action) on the right.
+Sits at the top of a Panel when the section needs a name that is not already obvious from breadcrumb context, table headers, form labels, or surrounding layout. Contains a section eyebrow label on the left and optional meta (count, action) on the right.
 
 ```tsx
 <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
@@ -314,7 +354,7 @@ Used for page sections that have a label + optional quick-link action floating a
 
 ### 5.4 Metric Card
 
-Used in a 3-column `sm:grid-cols-3` strip at the top of directory and settings pages.
+Used in a 3-column `sm:grid-cols-3` strip when summary values help staff decide what to do next. Do not add metric cards as decoration or to restate table contents already visible on the page.
 
 ```tsx
 <div className="overflow-hidden rounded-xl border border-border bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
@@ -491,9 +531,12 @@ Sits above the metric strip. Contains search (left) and primary action button (r
 
 ### Do
 
-- Use `Panel` + `Panel Header Row` for all data sections.
+- Use `Panel` for data sections; add `Panel Header Row` only when the section needs extra context beyond breadcrumbs, labels, or table headers.
 - Use `SectionHeader` (above panel) for named sections with optional quick-link.
 - Use `MetricCard` with icon badge for summary stats.
+- Use the `/debts/input` operational workbench for dense data-entry + table pages.
+- Keep primary actions close to the form or data they mutate.
+- Use internal scroll regions for long sticky workbench forms on desktop.
 - Use `font-mono` for invoice/PNR/reference numbers.
 - Use `font-semibold` for financial amounts.
 - Use `text-[11px] font-semibold uppercase tracking-[0.16em] text-primary` for all eyebrow/section labels.
@@ -509,4 +552,6 @@ Sits above the metric strip. Contains search (left) and primary action button (r
 - Don't use color-only status signals — always pair with text.
 - Don't add hover transforms to static container panels.
 - Don't put a large hero header section at the top of authenticated work pages.
+- Don't add redundant intro cards, title panels, or explanatory headers when labels and breadcrumbs already provide context.
+- Don't add metric strips unless the numbers are necessary for the current workflow.
 - Don't use `py-5` for table row cells — use `py-3.5`.

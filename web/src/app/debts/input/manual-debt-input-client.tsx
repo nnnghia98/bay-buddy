@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation"
 import {
   ChevronsUpDown,
   CheckCircle2,
+  CircleDollarSign,
+  Filter,
   Pencil,
   Loader2,
   Plus,
   ReceiptText,
+  Route,
   Trash2,
 } from "lucide-react"
 
@@ -19,7 +22,6 @@ import {
 import {
   EmptyState,
   Panel,
-  PanelHeaderRow,
   TableScrollArea,
 } from "@/components/command-center"
 import { Button } from "@/components/ui/button"
@@ -532,6 +534,30 @@ function SubmitButton({
   )
 }
 
+function FormSection({
+  children,
+  icon: Icon,
+  title,
+}: {
+  children: React.ReactNode
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  title: string
+}) {
+  return (
+    <div className="rounded-xl border border-border/80 bg-secondary/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-border bg-white text-primary shadow-[var(--shadow-sm)]">
+          <Icon aria-hidden="true" className="h-4 w-4" />
+        </span>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+          {title}
+        </p>
+      </div>
+      <div className="mt-4">{children}</div>
+    </div>
+  )
+}
+
 function EditableMoneyCell({
   editing,
   formId,
@@ -765,10 +791,15 @@ function ManualDebtTableRow({
       <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-right text-sm font-semibold">
         {formatCurrency(row.ticket_true_income)}
       </TableCell>
-      <TableCell className="sticky right-0 z-10 min-w-48 whitespace-nowrap bg-white px-5 py-3.5 text-right shadow-[-8px_0_14px_rgba(24,29,38,0.04)]">
+      <TableCell className="sticky right-0 z-10 w-[104px] min-w-[104px] whitespace-nowrap bg-white px-3 py-3.5 text-right shadow-[-8px_0_14px_rgba(24,29,38,0.04)]">
         {row.ticket_id ? (
           <div className="flex justify-end gap-2">
-            <form action={updateManualDebtRowAction} id={updateFormId} ref={updateFormRef}>
+            <form
+              action={updateManualDebtRowAction}
+              className="hidden"
+              id={updateFormId}
+              ref={updateFormRef}
+            >
               <input name="customer_id" type="hidden" value={row.customer_id} />
               <input name="ticket_id" type="hidden" value={row.ticket_id} />
               {!isEditing ? (
@@ -786,6 +817,7 @@ function ManualDebtTableRow({
             </form>
             <form
               action={deleteManualDebtRowAction}
+              className="hidden"
               id={deleteFormId}
               onSubmit={(event) => {
                 if (!window.confirm(t("manualDebts.table.actions.deleteConfirm"))) {
@@ -797,22 +829,25 @@ function ManualDebtTableRow({
               <input name="ticket_id" type="hidden" value={row.ticket_id} />
             </form>
             <Button
+              aria-label={t("manualDebts.table.actions.edit")}
+              className="h-9 w-9 px-0"
               onClick={() => setIsEditing(true)}
               size="sm"
+              title={t("manualDebts.table.actions.edit")}
               type="button"
               variant="outline"
             >
               <Pencil className="h-3.5 w-3.5" />
-              {t("manualDebts.table.actions.edit")}
             </Button>
             <Button
-              className="bg-red-600 text-white hover:bg-red-700"
+              aria-label={t("manualDebts.table.actions.delete")}
+              className="h-9 w-9 bg-red-600 px-0 text-white hover:bg-red-700"
               form={deleteFormId}
               size="sm"
+              title={t("manualDebts.table.actions.delete")}
               type="submit"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              {t("manualDebts.table.actions.delete")}
             </Button>
           </div>
         ) : (
@@ -941,405 +976,407 @@ export function ManualDebtInputClient({
 
   return (
     <div className="space-y-6 pb-12 text-foreground">
-      <div className="grid gap-6">
-        <Panel>
-          <PanelHeaderRow
-            eyebrow={t("manualDebts.form.eyebrow")}
-            title={t("manualDebts.form.title")}
-          />
-          <form
-            className="space-y-5 p-5"
-            key={formResetKey}
-            onSubmit={handleManualDebtSubmit}
-            ref={formRef}
-          >
-            {actionState.message ? (
-              <div
-                className={cn(
-                  "flex items-start gap-2 rounded-lg border px-3 py-2 text-sm",
-                  actionState.status === "success"
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border-red-200 bg-red-50 text-red-700",
-                )}
-                role={actionState.status === "error" ? "alert" : "status"}
-              >
-                {actionState.status === "success" ? (
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+      <div className="grid gap-4 lg:grid-cols-[7fr_13fr] lg:items-start">
+        <div className="space-y-4 lg:sticky lg:top-6 lg:h-[calc(100dvh-8rem)]">
+          <Panel className="lg:h-full">
+            <form
+              className="flex flex-col lg:h-full"
+              key={formResetKey}
+              onSubmit={handleManualDebtSubmit}
+              ref={formRef}
+            >
+              <div className="flex justify-end border-b border-border bg-white p-4">
+                <SubmitButton
+                  onSubmit={dispatchManualDebtAction}
+                  pending={isSubmitPending}
+                />
+              </div>
+
+              <div className="space-y-4 p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+                {actionState.message ? (
+                  <div
+                    className={cn(
+                      "flex items-start gap-2 rounded-lg border px-3 py-2 text-sm",
+                      actionState.status === "success"
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-red-200 bg-red-50 text-red-700",
+                    )}
+                    role={actionState.status === "error" ? "alert" : "status"}
+                  >
+                    {actionState.status === "success" ? (
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                    ) : null}
+                    <span>{actionState.message}</span>
+                  </div>
                 ) : null}
-                <span>{actionState.message}</span>
-              </div>
-            ) : null}
 
-            <div className="grid gap-4">
-              <FormField
-                error={getFieldError(fieldErrors, "customer_name")}
-                htmlFor="manual-debt-customer"
-                label={t("manualDebts.form.fields.customer")}
-              >
-                <CustomerAutocomplete
-                  customers={customers}
-                  id="manual-debt-customer"
-                  name="customer_name"
-                  noResultsLabel={t("manualDebts.form.customerNoResults")}
-                  placeholder={t("manualDebts.form.customerPlaceholder")}
-                />
-              </FormField>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  error={getFieldError(fieldErrors, "pnr")}
-                  htmlFor="manual-debt-pnr"
-                  label={t("manualDebts.form.fields.pnr")}
-                >
-                  <Input
-                    autoCapitalize="characters"
-                    id="manual-debt-pnr"
-                    maxLength={6}
-                    name="pnr"
-                  />
-                </FormField>
-                <FormField
-                  error={getFieldError(fieldErrors, "ticket_number")}
-                  htmlFor="manual-debt-ticket-number"
-                  label={t("manualDebts.form.fields.ticketNumber")}
-                >
-                  <Input id="manual-debt-ticket-number" name="ticket_number" />
-                </FormField>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  error={getFieldError(fieldErrors, "airline")}
-                  htmlFor="manual-debt-airline"
-                  label={t("manualDebts.form.fields.airline")}
-                >
-                  <AirlineAutocomplete
-                    id="manual-debt-airline"
-                    name="airline"
-                    noResultsLabel={t("manualDebts.form.airlineNoResults")}
-                    placeholder={t("manualDebts.form.chooseAirline")}
-                  />
-                </FormField>
-                <FormField
-                  error={getFieldError(fieldErrors, "flight_date")}
-                  htmlFor="manual-debt-flight-date"
-                  label={t("manualDebts.form.fields.flightDate")}
-                >
-                  <Input
-                    defaultValue={getLocalDateToday()}
-                    id="manual-debt-flight-date"
-                    name="flight_date"
-                    type="date"
-                  />
-                </FormField>
-              </div>
-
-              <FormField
-                error={getFieldError(fieldErrors, "booked_at")}
-                htmlFor="manual-debt-booked-at"
-                label={t("manualDebts.form.fields.bookedAt")}
-              >
-                <Input
-                  defaultValue={getLocalDateToday()}
-                  id="manual-debt-booked-at"
-                  name="booked_at"
-                  type="date"
-                />
-              </FormField>
-
-              <FormField
-                error={getFieldError(fieldErrors, "passengers")}
-                htmlFor="manual-debt-passengers"
-                label={t("manualDebts.form.fields.passengers")}
-              >
-                <Textarea
-                  className="min-h-24"
-                  id="manual-debt-passengers"
-                  name="passengers"
-                />
-              </FormField>
-            </div>
-
-            <div className="rounded-xl border border-border bg-secondary/30 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                {t("manualDebts.form.routeGroup")}
-              </p>
-              <div className="mt-4">
-                <FormField
-                  error={getFieldError(fieldErrors, "itinerary")}
-                  htmlFor="manual-debt-itinerary"
-                  label={t("manualDebts.form.fields.route")}
-                >
-                  <Input id="manual-debt-itinerary" name="itinerary" />
-                </FormField>
-              </div>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <FormField
-                  error={getFieldError(fieldErrors, "departure_code")}
-                  htmlFor="manual-debt-departure-code"
-                  label={t("manualDebts.form.fields.departureCode")}
-                >
-                  <Input
-                    autoCapitalize="characters"
-                    id="manual-debt-departure-code"
-                    name="departure_code"
-                  />
-                </FormField>
-                <FormField
-                  error={getFieldError(fieldErrors, "arrival_code")}
-                  htmlFor="manual-debt-arrival-code"
-                  label={t("manualDebts.form.fields.arrivalCode")}
-                >
-                  <Input
-                    autoCapitalize="characters"
-                    id="manual-debt-arrival-code"
-                    name="arrival_code"
-                  />
-                </FormField>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-border bg-secondary/30 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                {t("manualDebts.form.pricingGroup")}
-              </p>
-              <div className="mt-4 grid gap-4">
-                <input name="net_price" type="hidden" value="0" />
                 <div className="grid gap-4">
                   <FormField
-                    error={getFieldError(fieldErrors, "ev_price")}
-                    htmlFor="manual-debt-ev-price"
-                    label={t("manualDebts.form.fields.evPrice")}
+                    error={getFieldError(fieldErrors, "customer_name")}
+                    htmlFor="manual-debt-customer"
+                    label={t("manualDebts.form.fields.customer")}
                   >
-                    <Input
-                      id="manual-debt-ev-price"
-                      inputMode="numeric"
-                      min={0}
-                      name="ev_price"
-                      onChange={(event) => setEvPrice(parseCurrencyInput(event.target.value))}
-                      type="text"
-                      value={evPrice > 0 ? formatCurrencyInput(evPrice) : ""}
+                    <CustomerAutocomplete
+                      customers={customers}
+                      id="manual-debt-customer"
+                      name="customer_name"
+                      noResultsLabel={t("manualDebts.form.customerNoResults")}
+                      placeholder={t("manualDebts.form.customerPlaceholder")}
                     />
                   </FormField>
+
                   <FormField
-                    error={getFieldError(fieldErrors, "ast_price")}
-                    htmlFor="manual-debt-ast-price"
-                    label={t("manualDebts.form.fields.astPrice")}
+                    error={getFieldError(fieldErrors, "booked_at")}
+                    htmlFor="manual-debt-booked-at"
+                    label={t("manualDebts.form.fields.bookedAt")}
                   >
                     <Input
-                      id="manual-debt-ast-price"
-                      inputMode="numeric"
-                      min={0}
-                      name="ast_price"
-                      onChange={(event) => setAstPrice(parseCurrencyInput(event.target.value))}
-                      type="text"
-                      value={astPrice > 0 ? formatCurrencyInput(astPrice) : ""}
+                      defaultValue={getLocalDateToday()}
+                      id="manual-debt-booked-at"
+                      name="booked_at"
+                      type="date"
                     />
                   </FormField>
+
                   <FormField
-                    error={getFieldError(fieldErrors, "thf_price")}
-                    htmlFor="manual-debt-thf-price"
-                    label={t("manualDebts.form.fields.thfPrice")}
+                    error={getFieldError(fieldErrors, "passengers")}
+                    htmlFor="manual-debt-passengers"
+                    label={t("manualDebts.form.fields.passengers")}
                   >
-                    <Input
-                      id="manual-debt-thf-price"
-                      inputMode="numeric"
-                      min={0}
-                      name="thf_price"
-                      onChange={(event) => setThfPrice(parseCurrencyInput(event.target.value))}
-                      type="text"
-                      value={thfPrice > 0 ? formatCurrencyInput(thfPrice) : ""}
-                    />
-                  </FormField>
-                  <FormField
-                    error={getFieldError(fieldErrors, "web_price")}
-                    htmlFor="manual-debt-web-price"
-                    label={t("manualDebts.form.fields.webPrice")}
-                  >
-                    <Input
-                      id="manual-debt-web-price"
-                      inputMode="numeric"
-                      min={0}
-                      name="web_price"
-                      onChange={(event) => setWebPrice(parseCurrencyInput(event.target.value))}
-                      type="text"
-                      value={webPrice > 0 ? formatCurrencyInput(webPrice) : ""}
-                    />
-                  </FormField>
-                  <FormField
-                    error={getFieldError(fieldErrors, "insurance_price")}
-                    htmlFor="manual-debt-insurance-price"
-                    label={t("manualDebts.form.fields.insurancePrice")}
-                  >
-                    <Input
-                      id="manual-debt-insurance-price"
-                      inputMode="numeric"
-                      min={0}
-                      name="insurance_price"
-                      onChange={(event) => setInsurancePrice(parseCurrencyInput(event.target.value))}
-                      type="text"
-                      value={insurancePrice > 0 ? formatCurrencyInput(insurancePrice) : ""}
-                    />
-                  </FormField>
-                  <FormField
-                    error={getFieldError(fieldErrors, "selling_price")}
-                    htmlFor="manual-debt-selling-price"
-                    label={t("manualDebts.form.fields.sellingPrice")}
-                  >
-                    <Input
-                      id="manual-debt-selling-price"
-                      inputMode="numeric"
-                      min={0}
-                      name="selling_price"
-                      onChange={(event) => setSellingPrice(parseCurrencyInput(event.target.value))}
-                      type="text"
-                      value={sellingPrice > 0 ? formatCurrencyInput(sellingPrice) : ""}
-                    />
-                  </FormField>
-                  <FormField
-                    error={getFieldError(fieldErrors, "discount")}
-                    htmlFor="manual-debt-discount"
-                    label={t("manualDebts.form.fields.discount")}
-                  >
-                    <Input
-                      id="manual-debt-discount"
-                      inputMode="numeric"
-                      min={0}
-                      name="discount"
-                      onChange={(event) => setDiscount(parseCurrencyInput(event.target.value))}
-                      type="text"
-                      value={discount > 0 ? formatCurrencyInput(discount) : ""}
+                    <Textarea
+                      className="min-h-24"
+                      id="manual-debt-passengers"
+                      name="passengers"
                     />
                   </FormField>
                 </div>
-                <div className="rounded-lg border border-border bg-white p-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    {t("manualDebts.table.columns.income")}
-                  </p>
-                  <p className="mt-1 text-base font-semibold text-foreground">
-                    {formatCurrency(trueIncome)}
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm leading-6 text-muted-foreground">
-                {t("manualDebts.form.saveHint")}
-              </p>
-              <SubmitButton
-                onSubmit={dispatchManualDebtAction}
-                pending={isSubmitPending}
-              />
-            </div>
-          </form>
-        </Panel>
+                <FormSection
+                  icon={CircleDollarSign}
+                  title={t("manualDebts.form.pricingGroup")}
+                >
+                  <div className="grid gap-4">
+                    <input name="net_price" type="hidden" value="0" />
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField
+                        error={getFieldError(fieldErrors, "ev_price")}
+                        htmlFor="manual-debt-ev-price"
+                        label={t("manualDebts.form.fields.evPrice")}
+                      >
+                        <Input
+                          id="manual-debt-ev-price"
+                          inputMode="numeric"
+                          min={0}
+                          name="ev_price"
+                          onChange={(event) => setEvPrice(parseCurrencyInput(event.target.value))}
+                          type="text"
+                          value={evPrice > 0 ? formatCurrencyInput(evPrice) : ""}
+                        />
+                      </FormField>
+                      <FormField
+                        error={getFieldError(fieldErrors, "ast_price")}
+                        htmlFor="manual-debt-ast-price"
+                        label={t("manualDebts.form.fields.astPrice")}
+                      >
+                        <Input
+                          id="manual-debt-ast-price"
+                          inputMode="numeric"
+                          min={0}
+                          name="ast_price"
+                          onChange={(event) => setAstPrice(parseCurrencyInput(event.target.value))}
+                          type="text"
+                          value={astPrice > 0 ? formatCurrencyInput(astPrice) : ""}
+                        />
+                      </FormField>
+                      <FormField
+                        error={getFieldError(fieldErrors, "thf_price")}
+                        htmlFor="manual-debt-thf-price"
+                        label={t("manualDebts.form.fields.thfPrice")}
+                      >
+                        <Input
+                          id="manual-debt-thf-price"
+                          inputMode="numeric"
+                          min={0}
+                          name="thf_price"
+                          onChange={(event) => setThfPrice(parseCurrencyInput(event.target.value))}
+                          type="text"
+                          value={thfPrice > 0 ? formatCurrencyInput(thfPrice) : ""}
+                        />
+                      </FormField>
+                      <FormField
+                        error={getFieldError(fieldErrors, "web_price")}
+                        htmlFor="manual-debt-web-price"
+                        label={t("manualDebts.form.fields.webPrice")}
+                      >
+                        <Input
+                          id="manual-debt-web-price"
+                          inputMode="numeric"
+                          min={0}
+                          name="web_price"
+                          onChange={(event) => setWebPrice(parseCurrencyInput(event.target.value))}
+                          type="text"
+                          value={webPrice > 0 ? formatCurrencyInput(webPrice) : ""}
+                        />
+                      </FormField>
+                      <FormField
+                        error={getFieldError(fieldErrors, "insurance_price")}
+                        htmlFor="manual-debt-insurance-price"
+                        label={t("manualDebts.form.fields.insurancePrice")}
+                      >
+                        <Input
+                          id="manual-debt-insurance-price"
+                          inputMode="numeric"
+                          min={0}
+                          name="insurance_price"
+                          onChange={(event) => setInsurancePrice(parseCurrencyInput(event.target.value))}
+                          type="text"
+                          value={insurancePrice > 0 ? formatCurrencyInput(insurancePrice) : ""}
+                        />
+                      </FormField>
+                      <FormField
+                        error={getFieldError(fieldErrors, "selling_price")}
+                        htmlFor="manual-debt-selling-price"
+                        label={t("manualDebts.form.fields.sellingPrice")}
+                      >
+                        <Input
+                          id="manual-debt-selling-price"
+                          inputMode="numeric"
+                          min={0}
+                          name="selling_price"
+                          onChange={(event) => setSellingPrice(parseCurrencyInput(event.target.value))}
+                          type="text"
+                          value={sellingPrice > 0 ? formatCurrencyInput(sellingPrice) : ""}
+                        />
+                      </FormField>
+                      <FormField
+                        error={getFieldError(fieldErrors, "discount")}
+                        htmlFor="manual-debt-discount"
+                        label={t("manualDebts.form.fields.discount")}
+                      >
+                        <Input
+                          id="manual-debt-discount"
+                          inputMode="numeric"
+                          min={0}
+                          name="discount"
+                          onChange={(event) => setDiscount(parseCurrencyInput(event.target.value))}
+                          type="text"
+                          value={discount > 0 ? formatCurrencyInput(discount) : ""}
+                        />
+                      </FormField>
+                    </div>
+                    <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-[inset_0_1px_0_rgba(27,97,201,0.08)]">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                        {t("manualDebts.table.columns.income")}
+                      </p>
+                      <p className="mt-1 text-lg font-semibold tracking-normal text-foreground tabular-nums">
+                        {formatCurrency(trueIncome)}
+                      </p>
+                    </div>
+                  </div>
+                </FormSection>
 
-        <Panel className="min-w-0">
-          <div className="shrink-0 border-b border-border bg-secondary/40 p-4">
-            <form
-              className="grid w-full gap-3 rounded-xl border border-border bg-white p-3 shadow-[var(--shadow-sm)] sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
-              onSubmit={handleApplyFilters}
-            >
-              <div className="space-y-1.5">
-                <Label
-                  className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
-                  htmlFor="manual-debt-from"
-                >
-                  {t("manualDebts.filters.from")}
-                </Label>
-                <Input
-                  id="manual-debt-from"
-                  onChange={(event) => setFromValue(event.target.value)}
-                  type="date"
-                  value={fromValue}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label
-                  className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
-                  htmlFor="manual-debt-to"
-                >
-                  {t("manualDebts.filters.to")}
-                </Label>
-                <Input
-                  id="manual-debt-to"
-                  onChange={(event) => setToValue(event.target.value)}
-                  type="date"
-                  value={toValue}
-                />
-              </div>
-              <Button className="self-end" type="submit" variant="outline">
-                {t("manualDebts.filters.apply")}
-              </Button>
-            </form>
-          </div>
-          {filterError ? (
-            <p className="border-b border-border px-5 py-3 text-sm text-red-600" role="alert">
-              {filterError}
-            </p>
-          ) : null}
-          <TableScrollArea>
-            <Table className="min-w-[1560px] border-collapse">
-              <TableHeader className="sticky top-0 z-20">
-                <TableRow className="bg-sidebar-accent hover:bg-sidebar-accent">
-                  <TableHead className="min-w-40 whitespace-nowrap border-r border-border bg-sidebar-accent px-5 py-3.5 font-semibold text-foreground">
-                    {t("manualDebts.table.columns.bookedAt")}
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-foreground">
-                    {t("manualDebts.table.columns.date")}
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-foreground">
-                    {t("manualDebts.table.columns.description")}
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
-                    {t("manualDebts.table.columns.customerPaid")}
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
-                    {t("manualDebts.table.columns.discount")}
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
-                    {t("manualDebts.table.columns.evPrice")}
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
-                    {t("manualDebts.table.columns.astPrice")}
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
-                    {t("manualDebts.table.columns.thfPrice")}
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
-                    {t("manualDebts.table.columns.webPrice")}
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
-                    {t("manualDebts.table.columns.insurancePrice")}
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
-                    {t("manualDebts.table.columns.income")}
-                  </TableHead>
-                  <TableHead className="sticky right-0 z-30 min-w-48 whitespace-nowrap bg-sidebar-accent px-5 py-3.5 text-right font-semibold text-foreground shadow-[-8px_0_14px_rgba(24,29,38,0.04)]">
-                    {t("manualDebts.table.columns.actions")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={12}>
-                      <EmptyState
-                        icon={ReceiptText}
-                        message={t("manualDebts.table.empty")}
+                <FormSection icon={Route} title={t("manualDebts.form.routeGroup")}>
+                  <div>
+                    <FormField
+                      error={getFieldError(fieldErrors, "itinerary")}
+                      htmlFor="manual-debt-itinerary"
+                      label={t("manualDebts.form.fields.route")}
+                    >
+                      <Input id="manual-debt-itinerary" name="itinerary" />
+                    </FormField>
+                  </div>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      error={getFieldError(fieldErrors, "departure_code")}
+                      htmlFor="manual-debt-departure-code"
+                      label={t("manualDebts.form.fields.departureCode")}
+                    >
+                      <Input
+                        autoCapitalize="characters"
+                        id="manual-debt-departure-code"
+                        name="departure_code"
                       />
-                    </TableCell>
+                    </FormField>
+                    <FormField
+                      error={getFieldError(fieldErrors, "arrival_code")}
+                      htmlFor="manual-debt-arrival-code"
+                      label={t("manualDebts.form.fields.arrivalCode")}
+                    >
+                      <Input
+                        autoCapitalize="characters"
+                        id="manual-debt-arrival-code"
+                        name="arrival_code"
+                      />
+                    </FormField>
+                  </div>
+                </FormSection>
+
+                <div className="grid gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      error={getFieldError(fieldErrors, "pnr")}
+                      htmlFor="manual-debt-pnr"
+                      label={t("manualDebts.form.fields.pnr")}
+                    >
+                      <Input
+                        autoCapitalize="characters"
+                        id="manual-debt-pnr"
+                        maxLength={6}
+                        name="pnr"
+                      />
+                    </FormField>
+                    <FormField
+                      error={getFieldError(fieldErrors, "ticket_number")}
+                      htmlFor="manual-debt-ticket-number"
+                      label={t("manualDebts.form.fields.ticketNumber")}
+                    >
+                      <Input id="manual-debt-ticket-number" name="ticket_number" />
+                    </FormField>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      error={getFieldError(fieldErrors, "airline")}
+                      htmlFor="manual-debt-airline"
+                      label={t("manualDebts.form.fields.airline")}
+                    >
+                      <AirlineAutocomplete
+                        id="manual-debt-airline"
+                        name="airline"
+                        noResultsLabel={t("manualDebts.form.airlineNoResults")}
+                        placeholder={t("manualDebts.form.chooseAirline")}
+                      />
+                    </FormField>
+                    <FormField
+                      error={getFieldError(fieldErrors, "flight_date")}
+                      htmlFor="manual-debt-flight-date"
+                      label={t("manualDebts.form.fields.flightDate")}
+                    >
+                      <Input
+                        defaultValue={getLocalDateToday()}
+                        id="manual-debt-flight-date"
+                        name="flight_date"
+                        type="date"
+                      />
+                    </FormField>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </Panel>
+        </div>
+
+        <div className="min-w-0 space-y-4">
+          <Panel className="min-w-0">
+            <div className="shrink-0 border-b border-border bg-secondary/35 p-4">
+              <form
+                className="grid w-full gap-3 rounded-xl border border-border bg-white p-3 shadow-[var(--shadow-sm)] sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                onSubmit={handleApplyFilters}
+              >
+                <div className="space-y-1.5">
+                  <Label
+                    className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+                    htmlFor="manual-debt-from"
+                  >
+                    {t("manualDebts.filters.from")}
+                  </Label>
+                  <Input
+                    id="manual-debt-from"
+                    onChange={(event) => setFromValue(event.target.value)}
+                    type="date"
+                    value={fromValue}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label
+                    className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+                    htmlFor="manual-debt-to"
+                  >
+                    {t("manualDebts.filters.to")}
+                  </Label>
+                  <Input
+                    id="manual-debt-to"
+                    onChange={(event) => setToValue(event.target.value)}
+                    type="date"
+                    value={toValue}
+                  />
+                </div>
+                <Button className="self-end" type="submit" variant="outline">
+                  <Filter className="h-4 w-4" />
+                  {t("manualDebts.filters.apply")}
+                </Button>
+              </form>
+            </div>
+            {filterError ? (
+              <p
+                className="border-b border-border px-5 py-3 text-sm text-red-600"
+                role="alert"
+              >
+                {filterError}
+              </p>
+            ) : null}
+            <TableScrollArea>
+              <Table className="min-w-[1560px] border-collapse">
+                <TableHeader className="sticky top-0 z-20">
+                  <TableRow className="bg-sidebar-accent hover:bg-sidebar-accent">
+                    <TableHead className="min-w-40 whitespace-nowrap border-r border-border bg-sidebar-accent px-5 py-3.5 font-semibold text-foreground">
+                      {t("manualDebts.table.columns.bookedAt")}
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-foreground">
+                      {t("manualDebts.table.columns.date")}
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-foreground">
+                      {t("manualDebts.table.columns.description")}
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                      {t("manualDebts.table.columns.customerPaid")}
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                      {t("manualDebts.table.columns.discount")}
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                      {t("manualDebts.table.columns.evPrice")}
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                      {t("manualDebts.table.columns.astPrice")}
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                      {t("manualDebts.table.columns.thfPrice")}
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                      {t("manualDebts.table.columns.webPrice")}
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                      {t("manualDebts.table.columns.insurancePrice")}
+                    </TableHead>
+                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                      {t("manualDebts.table.columns.income")}
+                    </TableHead>
+                    <TableHead className="sticky right-0 z-30 w-[104px] min-w-[104px] whitespace-nowrap bg-sidebar-accent px-3 py-3.5 text-right font-semibold text-foreground shadow-[-8px_0_14px_rgba(24,29,38,0.04)]">
+                      {t("manualDebts.table.columns.actions")}
+                    </TableHead>
                   </TableRow>
-                ) : (
-                  filteredRows.map((row) => (
-                    <ManualDebtTableRow key={row.id} row={row} />
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableScrollArea>
-        </Panel>
+                </TableHeader>
+                <TableBody>
+                  {filteredRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={12}>
+                        <EmptyState
+                          icon={ReceiptText}
+                          message={t("manualDebts.table.empty")}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredRows.map((row) => (
+                      <ManualDebtTableRow key={row.id} row={row} />
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableScrollArea>
+          </Panel>
+        </div>
       </div>
     </div>
   )
