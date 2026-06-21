@@ -110,21 +110,6 @@ export type {
   ManualDebtValidationMessages,
 } from "./manual-debt"
 
-// Ticket imports
-export {
-  TicketImportListSchema,
-  TicketImportSchema,
-  TicketImportSourceSchema,
-  TicketImportStatusSchema,
-  initialTicketImportActionState,
-} from "./ticket-import"
-export type {
-  TicketImport,
-  TicketImportActionState,
-  TicketImportSource,
-  TicketImportStatus,
-} from "./ticket-import"
-
 // Finance
 export {
   CustomerInvoiceListSchema,

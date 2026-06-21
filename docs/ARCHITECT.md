@@ -32,7 +32,7 @@
 
 ### Model: Ticket
 - `id`: UUID (PK)
-- `pnr`: String(6) - Booking Reference (may repeat across passenger-group rows; not globally unique)
+- `pnr`: String(6) Nullable - Booking Reference (may be empty when unavailable; may repeat across passenger-group rows; not globally unique)
 - `ticket_number`: String Nullable - Airline ticket number (not unique; may repeat across outbound/return legs)
 - `seat_code`: String Nullable - Optional seat assignment code (e.g. `12A`)
 - `fare_class`: String Nullable - Raw fare class / fare family label from source data (e.g. `B`, `L`, `Eco1`, `Flexible`)
@@ -61,7 +61,7 @@
 ### Ticket Route Rule
 - New ticket writes should treat `departure_place`, `arrival_place`, `departure_code`, and `arrival_code` as the structured source-of-truth route fields.
 - `itinerary` remains in the schema for backward compatibility and display, and should be derived from the route codes when both are available.
-- `pnr` can repeat across grouped passengers from the same booking and must not be used as a unique-row key.
+- `pnr` may be null when unavailable. When present, it can repeat across grouped passengers from the same booking and must not be used as a unique-row key.
 - Do not overload place fields with airport-level data. If the product later needs exact airport names/codes, add dedicated airport fields alongside the current place fields.
 
 ### Ticket Time Rule

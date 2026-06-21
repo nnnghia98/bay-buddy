@@ -12,6 +12,11 @@ const dashboardDateFormatter = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
 })
 
+function getTicketActivityTitle(ticket: TicketRead): string {
+  const ticketLabel = ticket.pnr ?? ticket.ticket_number ?? ticket.id.slice(0, 8)
+  return ticket.itinerary ? `${ticketLabel} - ${ticket.itinerary}` : ticketLabel
+}
+
 export type RevenueTrendPoint = {
   date: string
   label: string
@@ -282,7 +287,7 @@ function buildRecentActivity(input: {
       return {
         id: ticket.id,
         type: "ticket",
-        title: ticket.itinerary ? `${ticket.pnr} - ${ticket.itinerary}` : ticket.pnr,
+        title: getTicketActivityTitle(ticket),
         amount: ticket.selling_price,
         createdAt: activityTimestamp,
         href: `/customers/${ticket.customer_id}`,

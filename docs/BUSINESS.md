@@ -29,7 +29,7 @@ Each ticket parsed into the system follows a specific lifecycle. Status changes 
 
 ### Ticket Identity & Route Data
 
-- `pnr` (Mã chỗ) may repeat across multiple passengers in the same booking group and must not be treated as a globally unique ticket identity.
+- `pnr` (Mã chỗ) may be null when the booking reference is unavailable. When present, it may repeat across multiple passengers in the same booking group and must not be treated as a globally unique ticket identity.
 - Every ticket should store the airline `ticket_number` when available.
 - `ticket_number` is not a unique business key. Multiple rows may share the same number for return-trip scenarios or different legs.
 - `flight_date` is the scheduled flight datetime. It can be in the past and must not be blocked by the app base date time.

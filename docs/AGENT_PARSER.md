@@ -71,7 +71,7 @@ When the input is an **image or PDF**, apply the following visual analysis strat
 ## Output Format
 Return ONLY a valid JSON object with no markdown, no explanation:
 {
-  "pnr": "string (6 characters)",
+  "pnr": "string (6 characters) or null if not visible",
   "ticket_number": "string",
   "airline": "string (VNA|VJ|QH|VU)",
   "passengers": ["UPPERCASE FULLNAME 1", "UPPERCASE FULLNAME 2"],

@@ -726,7 +726,7 @@
           "Tickets"
         ],
         "summary": "Confirm & save an AI-parsed ticket",
-        "description": "Accepts the user-reviewed ticket data from the frontend. Automatically resolves or creates the customer record by name, saves the ticket as CONFIRMED, creates a CHARGE transaction for the debt, and updates the customer balance. All changes are committed atomically. Business rule: selling_price = net_price + service_fee (BUSINESS.md §2).",
+        "description": "Accepts the user-reviewed ticket data from the frontend. Automatically resolves or creates the customer record by name, saves the ticket as CONFIRMED, creates a CHARGE transaction for the debt, and updates the customer balance. All changes are committed atomically. Business rule: true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price) (BUSINESS.md §2).",
         "operationId": "confirm_ticket_api_v1_tickets_confirm_post",
         "requestBody": {
           "content": {
@@ -3030,9 +3030,16 @@
       "ParseFlightResponse": {
         "properties": {
           "pnr": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Pnr",
-            "description": "6-character PNR booking reference code."
+            "description": "6-character PNR booking reference code when visible."
           },
           "airline": {
             "type": "string",
@@ -3097,7 +3104,6 @@
         },
         "type": "object",
         "required": [
-          "pnr",
           "airline",
           "ticket_number",
           "passengers",
@@ -3261,14 +3267,28 @@
             "default": "INDIVIDUAL"
           },
           "pnr": {
-            "type": "string",
-            "maxLength": 6,
-            "minLength": 6,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 6,
+                "minLength": 6
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Pnr",
-            "description": "6-character PNR booking reference code."
+            "description": "Optional 6-character PNR booking reference code."
           },
           "airline": {
-            "$ref": "#/components/schemas/Airline",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Airline"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "description": "Carrier code: VNA | VJ | QH | VU."
           },
           "ticket_number": {
@@ -3315,9 +3335,8 @@
               "type": "string"
             },
             "type": "array",
-            "minItems": 1,
             "title": "Passengers",
-            "description": "List of passenger full names (UPPERCASE). At least one required."
+            "description": "List of passenger full names (UPPERCASE)."
           },
           "departure_place": {
             "anyOf": [
@@ -3390,11 +3409,59 @@
             "title": "Flight Date",
             "description": "Scheduled departure datetime (ISO-8601 / UTC)."
           },
+          "booked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booked At",
+            "description": "Real-world datetime when the ticket was booked manually by staff."
+          },
           "net_price": {
             "type": "number",
             "minimum": 0.0,
             "title": "Net Price",
             "description": "Net cost from airline/supplier (giá gốc). ≥ 0."
+          },
+          "ev_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Ev Price",
+            "description": "Host price from EV (giá EV). Empty values count as 0.",
+            "default": 0.0
+          },
+          "ast_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Ast Price",
+            "description": "Host net price from AST (giá AST). Empty values count as 0.",
+            "default": 0.0
+          },
+          "thf_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Thf Price",
+            "description": "Host net price from Thanh Hoang / THF (giá Thành Hoàng). Empty values count as 0.",
+            "default": 0.0
+          },
+          "web_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Web Price",
+            "description": "Host net price from WEB (giá WEB). Empty values count as 0.",
+            "default": 0.0
+          },
+          "insurance_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Insurance Price",
+            "description": "Insurance price (giá bảo hiểm). Empty values count as 0.",
+            "default": 0.0
           },
           "service_fee": {
             "type": "number",
@@ -3414,7 +3481,7 @@
               }
             ],
             "title": "Selling Price",
-            "description": "Final price charged to the customer (giá bán). If omitted, computed as net_price + service_fee. If provided, must equal net_price + service_fee."
+            "description": "Final price charged to the customer (giá bán). If omitted, computed as net_price + service_fee."
           },
           "discount": {
             "type": "number",
@@ -3433,32 +3500,43 @@
               }
             ],
             "title": "True Income",
-            "description": "Actual ticket income: selling_price + discount - net_price."
+            "description": "Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price)."
           }
         },
         "type": "object",
         "required": [
           "customer_name",
-          "pnr",
-          "airline",
-          "passengers",
           "flight_date",
           "net_price"
         ],
         "title": "TicketConfirmPayload",
-        "description": "Payload sent by the frontend when the user confirms an AI-parsed ticket.\n\nCustomer identification:\n    The user can identify the customer by name (and optionally `customer_type`).\n    The service will look up an existing customer by name (case-insensitive) or\n    create a new one if no match is found.\n\nPricing (docs/BUSINESS.md §2):\n    true_income = selling_price + discount - net_price\n    If `selling_price` is omitted, the service derives it from service_fee.\n    If `true_income` is supplied, it must match the computed income."
+        "description": "Payload sent by the frontend when the user confirms an AI-parsed ticket.\n\nCustomer identification:\n    The user can identify the customer by name (and optionally `customer_type`).\n    The service will look up an existing customer by name (case-insensitive) or\n    create a new one if no match is found.\n\nPricing (docs/BUSINESS.md §2):\n    true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price)\n    If `selling_price` is omitted, the service derives it from service_fee.\n    If `true_income` is supplied, it must match the computed income."
       },
       "TicketCreate": {
         "properties": {
           "pnr": {
-            "type": "string",
-            "maxLength": 6,
-            "minLength": 6,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 6,
+                "minLength": 6
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Pnr",
-            "description": "6-character PNR (Passenger Name Record) booking reference code. May repeat across passenger rows in group bookings."
+            "description": "Optional 6-character PNR (Passenger Name Record) booking reference code. May repeat across passenger rows in group bookings."
           },
           "airline": {
-            "$ref": "#/components/schemas/Airline",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Airline"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "description": "Carrier code: VNA (Vietnam Airlines), VJ (Vietjet), QH (Bamboo), VU (Vietravel)."
           },
           "ticket_number": {
@@ -3553,8 +3631,15 @@
             "description": "Compact arrival place code, e.g. SGN."
           },
           "itinerary": {
-            "type": "string",
-            "maxLength": 100,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Itinerary",
             "description": "Flight route string (hành trình), e.g. \"HAN-SGN\" or \"SGN-DAD-HAN\"."
           },
@@ -3564,11 +3649,59 @@
             "title": "Flight Date",
             "description": "Scheduled departure datetime stored in ISO-8601 / UTC."
           },
+          "booked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booked At",
+            "description": "Real-world datetime when the ticket was booked manually by staff."
+          },
           "net_price": {
             "type": "number",
             "minimum": 0.0,
             "title": "Net Price",
             "description": "Net cost from airline/supplier (giá gốc). Must be ≥ 0."
+          },
+          "ev_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Ev Price",
+            "description": "Host price from EV (giá EV). Empty values count as 0.",
+            "default": 0.0
+          },
+          "ast_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Ast Price",
+            "description": "Host net price from AST (giá AST). Empty values count as 0.",
+            "default": 0.0
+          },
+          "thf_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Thf Price",
+            "description": "Host net price from Thanh Hoang / THF (giá Thành Hoàng). Empty values count as 0.",
+            "default": 0.0
+          },
+          "web_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Web Price",
+            "description": "Host net price from WEB (giá WEB). Empty values count as 0.",
+            "default": 0.0
+          },
+          "insurance_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Insurance Price",
+            "description": "Insurance price (giá bảo hiểm). Empty values count as 0.",
+            "default": 0.0
           },
           "selling_price": {
             "type": "number",
@@ -3586,7 +3719,7 @@
           "true_income": {
             "type": "number",
             "title": "True Income",
-            "description": "Actual ticket income: selling_price + discount - net_price.",
+            "description": "Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price).",
             "default": 0.0
           },
           "status": {
@@ -3611,9 +3744,6 @@
         },
         "type": "object",
         "required": [
-          "pnr",
-          "airline",
-          "itinerary",
           "flight_date",
           "net_price",
           "selling_price",
@@ -3812,6 +3942,18 @@
             ],
             "title": "Flight Date"
           },
+          "booked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booked At"
+          },
           "net_price": {
             "anyOf": [
               {
@@ -3823,6 +3965,66 @@
               }
             ],
             "title": "Net Price"
+          },
+          "ev_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ev Price"
+          },
+          "ast_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ast Price"
+          },
+          "thf_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thf Price"
+          },
+          "web_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Web Price"
+          },
+          "insurance_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insurance Price"
           },
           "service_fee": {
             "anyOf": [

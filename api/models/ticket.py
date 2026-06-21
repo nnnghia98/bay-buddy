@@ -36,13 +36,15 @@ if TYPE_CHECKING:
 class TicketBase(SQLModel):
     """Fields shared between create/read schemas and the DB table."""
 
-    # Mã đặt chỗ – 6-character booking reference shared by grouped passengers.
-    pnr: str = Field(
+    # Mã đặt chỗ – optional 6-character booking reference shared by grouped passengers.
+    pnr: Optional[str] = Field(
+        default=None,
         index=True,
+        nullable=True,
         min_length=6,
         max_length=6,
         description=(
-            "6-character PNR (Passenger Name Record) booking reference code. "
+            "Optional 6-character PNR (Passenger Name Record) booking reference code. "
             "May repeat across passenger rows in group bookings."
         ),
     )

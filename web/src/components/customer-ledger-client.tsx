@@ -547,7 +547,7 @@ function LedgerRecordCorrectionDialog({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor={`pnr-${entry.id}`}>{t("customers.ledger.corrections.fields.pnr")}</Label>
-                  <Input id={`pnr-${entry.id}`} name="pnr" defaultValue={ticket.pnr} />
+                  <Input id={`pnr-${entry.id}`} name="pnr" defaultValue={ticket.pnr ?? ""} />
                   {getCorrectionError("pnr", state) ? (
                     <p className="text-sm text-red-600">{getCorrectionError("pnr", state)}</p>
                   ) : null}

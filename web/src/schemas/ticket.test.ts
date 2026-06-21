@@ -37,10 +37,10 @@ describe("TicketReadSchema", () => {
     expect(parsed.insurance_price).toBe(0)
   })
 
-  it("accepts a nullable airline from manual ticket entries", () => {
+  it("accepts nullable PNR and airline from manual ticket entries", () => {
     const parsed = TicketReadSchema.parse({
       id: "44444444-4444-4444-8444-444444444444",
-      pnr: "MANUAL",
+      pnr: null,
       airline: null,
       ticket_number: "7381234567890",
       departure_place: null,
@@ -62,13 +62,14 @@ describe("TicketReadSchema", () => {
       customer_id: "11111111-1111-4111-8111-111111111111",
     })
 
+    expect(parsed.pnr).toBeNull()
     expect(parsed.airline).toBeNull()
   })
 
   it("accepts a nullable itinerary from customer-only manual entries", () => {
     const parsed = TicketReadSchema.parse({
       id: "44444444-4444-4444-8444-444444444444",
-      pnr: "MANUAL",
+      pnr: null,
       airline: null,
       ticket_number: null,
       departure_place: null,

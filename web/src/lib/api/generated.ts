@@ -620,7 +620,7 @@ export interface paths {
         put?: never;
         /**
          * Confirm & save an AI-parsed ticket
-         * @description Accepts the user-reviewed ticket data from the frontend. Automatically resolves or creates the customer record by name, saves the ticket as CONFIRMED, creates a CHARGE transaction for the debt, and updates the customer balance. All changes are committed atomically. Business rule: selling_price = net_price + service_fee (BUSINESS.md §2).
+         * @description Accepts the user-reviewed ticket data from the frontend. Automatically resolves or creates the customer record by name, saves the ticket as CONFIRMED, creates a CHARGE transaction for the debt, and updates the customer balance. All changes are committed atomically. Business rule: true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price) (BUSINESS.md §2).
          */
         post: operations["confirm_ticket_api_v1_tickets_confirm_post"];
         delete?: never;
@@ -777,7 +777,7 @@ export interface components {
             /**
              * File
              * Format: binary
-             * @description Ticket PDF, screenshot, email HTML, or .eml file.
+             * @description Ticket email HTML or .eml file.
              */
             file: string;
         };
@@ -1013,9 +1013,9 @@ export interface components {
             passengers: string[];
             /**
              * Pnr
-             * @description 6-character PNR booking reference code.
+             * @description 6-character PNR booking reference code when visible.
              */
-            pnr: string;
+            pnr?: string | null;
             /**
              * Ticket Number
              * @description Airline ticket number.
@@ -1101,13 +1101,13 @@ export interface components {
          *         create a new one if no match is found.
          *
          *     Pricing (docs/BUSINESS.md §2):
-         *         true_income = selling_price + discount - net_price
+         *         true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price)
          *         If `selling_price` is omitted, the service derives it from service_fee.
          *         If `true_income` is supplied, it must match the computed income.
          */
         TicketConfirmPayload: {
             /** @description Carrier code: VNA | VJ | QH | VU. */
-            airline: components["schemas"]["Airline"];
+            airline?: components["schemas"]["Airline"] | null;
             /**
              * Arrival Code
              * @description Arrival place code, e.g. SGN.
@@ -1118,6 +1118,17 @@ export interface components {
              * @description Readable arrival place, e.g. Ho Chi Minh City.
              */
             arrival_place?: string | null;
+            /**
+             * Ast Price
+             * @description Host net price from AST (giá AST). Empty values count as 0.
+             * @default 0
+             */
+            ast_price: number;
+            /**
+             * Booked At
+             * @description Real-world datetime when the ticket was booked manually by staff.
+             */
+            booked_at?: string | null;
             /**
              * Customer Name
              * @description Full name of the customer. Used to look up or create the customer record.
@@ -1145,6 +1156,12 @@ export interface components {
              */
             discount: number;
             /**
+             * Ev Price
+             * @description Host price from EV (giá EV). Empty values count as 0.
+             * @default 0
+             */
+            ev_price: number;
+            /**
              * Fare Class
              * @description Optional fare class / fare family label from the source ticket.
              */
@@ -1155,6 +1172,12 @@ export interface components {
              * @description Scheduled departure datetime (ISO-8601 / UTC).
              */
             flight_date: string;
+            /**
+             * Insurance Price
+             * @description Insurance price (giá bảo hiểm). Empty values count as 0.
+             * @default 0
+             */
+            insurance_price: number;
             /**
              * Itinerary
              * @description Flight route string, e.g. "HAN-SGN". Derived from codes when omitted.
@@ -1167,14 +1190,14 @@ export interface components {
             net_price: number;
             /**
              * Passengers
-             * @description List of passenger full names (UPPERCASE). At least one required.
+             * @description List of passenger full names (UPPERCASE).
              */
-            passengers: string[];
+            passengers?: string[];
             /**
              * Pnr
-             * @description 6-character PNR booking reference code.
+             * @description Optional 6-character PNR booking reference code.
              */
-            pnr: string;
+            pnr?: string | null;
             /**
              * Seat Code
              * @description Optional seat assignment code, e.g. 12A.
@@ -1182,7 +1205,7 @@ export interface components {
             seat_code?: string | null;
             /**
              * Selling Price
-             * @description Final price charged to the customer (giá bán). If omitted, computed as net_price + service_fee. If provided, must equal net_price + service_fee.
+             * @description Final price charged to the customer (giá bán). If omitted, computed as net_price + service_fee.
              */
             selling_price?: number | null;
             /**
@@ -1192,15 +1215,27 @@ export interface components {
              */
             service_fee: number;
             /**
+             * Thf Price
+             * @description Host net price from Thanh Hoang / THF (giá Thành Hoàng). Empty values count as 0.
+             * @default 0
+             */
+            thf_price: number;
+            /**
              * Ticket Number
              * @description Airline ticket number.
              */
             ticket_number?: string | null;
             /**
              * True Income
-             * @description Actual ticket income: selling_price + discount - net_price.
+             * @description Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price).
              */
             true_income?: number | null;
+            /**
+             * Web Price
+             * @description Host net price from WEB (giá WEB). Empty values count as 0.
+             * @default 0
+             */
+            web_price: number;
         };
         /**
          * TicketCreate
@@ -1208,7 +1243,7 @@ export interface components {
          */
         TicketCreate: {
             /** @description Carrier code: VNA (Vietnam Airlines), VJ (Vietjet), QH (Bamboo), VU (Vietravel). */
-            airline: components["schemas"]["Airline"];
+            airline?: components["schemas"]["Airline"] | null;
             /**
              * Arrival Code
              * @description Compact arrival place code, e.g. SGN.
@@ -1219,6 +1254,17 @@ export interface components {
              * @description Human-readable arrival place, e.g. Ho Chi Minh City.
              */
             arrival_place?: string | null;
+            /**
+             * Ast Price
+             * @description Host net price from AST (giá AST). Empty values count as 0.
+             * @default 0
+             */
+            ast_price: number;
+            /**
+             * Booked At
+             * @description Real-world datetime when the ticket was booked manually by staff.
+             */
+            booked_at?: string | null;
             /**
              * Customer Id
              * Format: uuid
@@ -1241,6 +1287,12 @@ export interface components {
              */
             discount: number;
             /**
+             * Ev Price
+             * @description Host price from EV (giá EV). Empty values count as 0.
+             * @default 0
+             */
+            ev_price: number;
+            /**
              * Fare Class
              * @description Optional fare class / fare family label from the source ticket, e.g. B or Flexible.
              */
@@ -1252,10 +1304,16 @@ export interface components {
              */
             flight_date: string;
             /**
+             * Insurance Price
+             * @description Insurance price (giá bảo hiểm). Empty values count as 0.
+             * @default 0
+             */
+            insurance_price: number;
+            /**
              * Itinerary
              * @description Flight route string (hành trình), e.g. "HAN-SGN" or "SGN-DAD-HAN".
              */
-            itinerary: string;
+            itinerary?: string | null;
             /**
              * Net Price
              * @description Net cost from airline/supplier (giá gốc). Must be ≥ 0.
@@ -1268,9 +1326,9 @@ export interface components {
             passengers?: string[];
             /**
              * Pnr
-             * @description 6-character PNR (Passenger Name Record) booking reference code. May repeat across passenger rows in group bookings.
+             * @description Optional 6-character PNR (Passenger Name Record) booking reference code. May repeat across passenger rows in group bookings.
              */
-            pnr: string;
+            pnr?: string | null;
             /**
              * Seat Code
              * @description Optional seat assignment code, e.g. 12A.
@@ -1287,16 +1345,28 @@ export interface components {
              */
             status: components["schemas"]["TicketStatus"];
             /**
+             * Thf Price
+             * @description Host net price from Thanh Hoang / THF (giá Thành Hoàng). Empty values count as 0.
+             * @default 0
+             */
+            thf_price: number;
+            /**
              * Ticket Number
              * @description Airline ticket number. May repeat across outbound/return ticket rows.
              */
             ticket_number?: string | null;
             /**
              * True Income
-             * @description Actual ticket income: selling_price + discount - net_price.
+             * @description Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price).
              * @default 0
              */
             true_income: number;
+            /**
+             * Web Price
+             * @description Host net price from WEB (giá WEB). Empty values count as 0.
+             * @default 0
+             */
+            web_price: number;
         };
         /**
          * TicketReassignPayload
@@ -1337,6 +1407,10 @@ export interface components {
             arrival_code?: string | null;
             /** Arrival Place */
             arrival_place?: string | null;
+            /** Ast Price */
+            ast_price?: number | null;
+            /** Booked At */
+            booked_at?: string | null;
             /** Customer Id */
             customer_id?: string | null;
             /** Departure Code */
@@ -1345,10 +1419,14 @@ export interface components {
             departure_place?: string | null;
             /** Discount */
             discount?: number | null;
+            /** Ev Price */
+            ev_price?: number | null;
             /** Fare Class */
             fare_class?: string | null;
             /** Flight Date */
             flight_date?: string | null;
+            /** Insurance Price */
+            insurance_price?: number | null;
             /** Itinerary */
             itinerary?: string | null;
             /** Net Price */
@@ -1367,10 +1445,14 @@ export interface components {
              */
             service_fee?: number | null;
             status?: components["schemas"]["TicketStatus"] | null;
+            /** Thf Price */
+            thf_price?: number | null;
             /** Ticket Number */
             ticket_number?: string | null;
             /** True Income */
             true_income?: number | null;
+            /** Web Price */
+            web_price?: number | null;
         };
         /**
          * TokenResponse

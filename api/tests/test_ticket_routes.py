@@ -195,6 +195,29 @@ def test_confirm_ticket_allows_shared_pnr_for_group_passengers(
         assert customer.balance == pytest.approx(2400000)
 
 
+def test_confirm_ticket_allows_null_pnr(
+    test_client,
+    test_engine,
+):
+    response = test_client.post(
+        "/api/v1/tickets/confirm",
+        json=_confirm_payload() | {"pnr": None},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()["data"]
+    assert payload["ticket"]["pnr"] is None
+
+    with Session(test_engine) as session:
+        ticket = session.exec(select(Ticket).where(Ticket.pnr.is_(None))).one()
+        transaction = session.exec(
+            select(Transaction).where(Transaction.linked_ticket_id == ticket.id)
+        ).one()
+
+        assert ticket.pnr is None
+        assert f"ticket {ticket.id}" in transaction.note
+
+
 def test_confirm_ticket_allows_shared_ticket_numbers_for_return_flights(
     test_client,
     test_engine,

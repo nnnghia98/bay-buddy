@@ -130,7 +130,7 @@ def test_parse_flight_content_retries_temporary_gemini_unavailable(monkeypatch):
     assert model_names == ["gemini-3.1-flash-lite", "gemini-3.1-flash-lite"]
 
 
-def test_parse_flight_content_rejects_null_required_fields(monkeypatch):
+def test_parse_flight_content_allows_null_pnr_but_rejects_null_required_fields(monkeypatch):
     class FakeResponse:
         text = """
         {
@@ -163,5 +163,5 @@ def test_parse_flight_content_rejects_null_required_fields(monkeypatch):
     with pytest.raises(AIExtractionValidationError) as error:
         asyncio.run(parse_flight_content(b"fake image bytes", "image/png"))
 
-    assert "pnr" in str(error.value)
+    assert "pnr" not in str(error.value)
     assert "flight_date" in str(error.value)

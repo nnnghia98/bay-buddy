@@ -195,12 +195,15 @@ def _get_ticket_purchase_transaction(*, session: Session, ticket_id: uuid.UUID) 
 
 def _build_ticket_description(ticket: Ticket) -> str:
     route = ticket.itinerary.replace("-", "/") if ticket.itinerary else "No route"
-    return f"Flight PNR: {ticket.pnr} - {route}"
+    if ticket.pnr:
+        return f"Flight PNR: {ticket.pnr} - {route}"
+
+    return f"Flight ticket: {ticket.id} - {route}"
 
 
 def _build_passenger_snapshot(ticket: Ticket) -> str:
     passenger_names = [passenger.strip() for passenger in ticket.passengers if passenger.strip()]
-    return ", ".join(passenger_names) or ticket.pnr
+    return ", ".join(passenger_names) or ticket.pnr or str(ticket.id)
 
 
 def _build_invoice_item_for_ticket(ticket: Ticket, invoice_id: uuid.UUID) -> InvoiceItem:

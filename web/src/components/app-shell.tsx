@@ -10,7 +10,6 @@ import {
   ChevronDown,
   Database,
   FileText,
-  FileCheck2,
   Menu,
   ReceiptText,
   Settings,
@@ -61,7 +60,6 @@ type CustomerSummary = {
 type NavLabelKey =
   | "tickets"
   | "manualDebts"
-  | "ticketImports"
   | "activities"
   | "customers"
   | "reports"
@@ -82,7 +80,6 @@ const navItems: NavItem[] = [
   { labelKey: "tickets", href: "/tickets/input", icon: Ticket },
   { labelKey: "activities", href: "/activities", icon: Activity },
   { labelKey: "customers", href: "/customers", icon: Users },
-  { labelKey: "ticketImports", href: "/extract-ticket", icon: FileCheck2 },
   { labelKey: "settings", href: "/settings", icon: Settings },
   { labelKey: "dataCenter", href: "/data_center", icon: Database, adminOnly: true },
 ]
@@ -107,7 +104,6 @@ function useBreadcrumbs(
     ticketDetail: string
     aiTicketInput: string
     manualDebts: string
-    ticketImports: string
     invoices: string
     financeDocuments: string
     quotes: string
@@ -148,13 +144,6 @@ function useBreadcrumbs(
       return [
         { label: labels.tickets, href: "/tickets/input" },
         { label: labels.manualDebts, href: pathname },
-      ]
-    }
-
-    if (pathname.startsWith("/extract-ticket")) {
-      return [
-        { label: labels.tickets, href: "/tickets/input" },
-        { label: labels.ticketImports, href: pathname },
       ]
     }
 
@@ -487,7 +476,6 @@ export function AppShell({ children }: AppShellProps) {
         settings: t("appShell.nav.settings"),
         ticketActivity: t("appShell.breadcrumbs.ticketActivity"),
         ticketDetail: t("appShell.breadcrumbs.ticketDetail"),
-        ticketImports: t("appShell.breadcrumbs.ticketImports"),
         tickets: t("appShell.breadcrumbs.tickets"),
       }),
       [t],

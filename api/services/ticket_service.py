@@ -74,10 +74,11 @@ class TicketConfirmPayload(BaseModel):
     )
 
     # ── Ticket fields ────────────────────────────────────────────────────────
-    pnr: str = Field(
+    pnr: Optional[str] = Field(
+        default=None,
         min_length=6,
         max_length=6,
-        description="6-character PNR booking reference code.",
+        description="Optional 6-character PNR booking reference code.",
     )
     airline: Optional[Airline] = Field(
         default=None,
@@ -236,6 +237,7 @@ class TicketConfirmPayload(BaseModel):
 
     @model_validator(mode="after")
     def validate_route_details(self) -> "TicketConfirmPayload":
+        self.pnr = (self.pnr or "").strip().upper() or None
         self.ticket_number = (self.ticket_number or "").strip() or None
         self.seat_code = (self.seat_code or "").strip().upper() or None
         self.fare_class = (self.fare_class or "").strip() or None
@@ -493,7 +495,7 @@ def correct_confirmed_ticket(
     )
     purchase_transaction.amount = ticket.selling_price
     purchase_transaction.note = (
-        f"Auto-debt for PNR {ticket.pnr} – {ticket.itinerary} "
+        f"Auto-debt for ticket {ticket.pnr or ticket.id} – {ticket.itinerary} "
         f"on {ticket.flight_date.date()}"
     )
 
@@ -580,7 +582,8 @@ def _build_lifecycle_note(
     actor_user_id: uuid.UUID,
     suffix: str | None = None,
 ) -> str:
-    base = f"{action} ticket {ticket.pnr} ({ticket.itinerary}) by user {actor_user_id}"
+    ticket_label = ticket.pnr or str(ticket.id)
+    base = f"{action} ticket {ticket_label} ({ticket.itinerary}) by user {actor_user_id}"
     if suffix:
         return f"{base} - {suffix}"
     return base
@@ -663,7 +666,7 @@ def create_ticket_with_transaction(
         category=TransactionCategory.TICKET_PURCHASE,
         method="Ticket",
         note=(
-            f"Auto-debt for PNR {payload.pnr} – {payload.itinerary} "
+            f"Auto-debt for ticket {payload.pnr or ticket.id} – {payload.itinerary} "
             f"on {payload.flight_date.date()} by user {actor_user_id}"
         ),
         customer_id=customer.id,

@@ -8,7 +8,7 @@ Service reference: services/ai_agent.py
 Schema reference:  docs/AGENT_PARSER.md
 """
 
-from typing import Dict, Any
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
@@ -39,7 +39,7 @@ ALLOWED_MIME_TYPES = {
 class ParseFlightResponse(BaseModel):
     """Response schema matching AGENT_PARSER.md output format."""
 
-    pnr: str = Field(description="6-character PNR booking reference code.")
+    pnr: Optional[str] = Field(default=None, description="6-character PNR booking reference code when visible.")
     airline: str = Field(description="Airline code: VNA, VJ, QH, or VU.")
     ticket_number: str = Field(description="Airline ticket number.")
     passengers: list[str] = Field(description="List of passenger names in UPPERCASE.")

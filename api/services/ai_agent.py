@@ -92,7 +92,7 @@ Vietjet Air (VJ), Bamboo Airways (QH), and Vietravel Airlines (VU).
 ## Output Format:
 Return ONLY a valid JSON object with this exact structure:
 {
-  "pnr": "string (6 characters)",
+  "pnr": "string (6 characters) or null if not visible",
   "airline": "string (VNA|VJ|QH|VU)",
   "ticket_number": "string",
   "passengers": ["UPPERCASE FULLNAME 1", "UPPERCASE FULLNAME 2"],
@@ -129,7 +129,7 @@ async def parse_flight_content(file_bytes: bytes, mime_type: str) -> Dict[str, A
     Returns:
         Dictionary with extracted flight data matching AGENT_PARSER.md schema:
         {
-            "pnr": str,
+            "pnr": str | None,
             "airline": str,
             "ticket_number": str,
             "passengers": List[str],
@@ -199,7 +199,6 @@ async def parse_flight_content(file_bytes: bytes, mime_type: str) -> Dict[str, A
 
     # Validate required fields are present
     required_fields = [
-        "pnr",
         "airline",
         "ticket_number",
         "passengers",

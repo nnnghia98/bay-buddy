@@ -123,7 +123,7 @@ type TicketFormValues = {
 // ---------------------------------------------------------------------------
 
 interface ParsedFlightData {
-  pnr: string;
+  pnr?: string | null;
   airline: string;
   ticket_number: string;
   passengers: string[];
@@ -160,7 +160,6 @@ async function saveTicket(data: TicketFormValues) {
   const firstPassengerName = data.passengers
     .map((passenger) => passenger.name.trim())
     .find(Boolean);
-  const fallbackCodeFromTicket = data.ticketNumber.trim().slice(-6).toUpperCase().padStart(6, "X");
   const departureCode = data.departureCode?.trim().toUpperCase();
   const arrivalCode = data.arrivalCode?.trim().toUpperCase();
   const derivedItineraryFromCodes =
@@ -169,7 +168,7 @@ async function saveTicket(data: TicketFormValues) {
 
   const payload = {
     customer_name: data.customerName?.trim() || firstPassengerName || "Unknown Passenger",
-    pnr: data.pnr?.trim().toUpperCase() || fallbackCodeFromTicket,
+    pnr: data.pnr?.trim().toUpperCase() || null,
     airline: data.airline,
     ticket_number: data.ticketNumber,
     passengers: data.passengers.map((p) => p.name),
@@ -432,7 +431,7 @@ export default function CaptureTicketPage() {
   const mutation = useMutation({
     mutationFn: parseFileWithAI,
     onSuccess: (data) => {
-      form.setValue("pnr", data.pnr);
+      form.setValue("pnr", data.pnr ?? "");
       form.setValue("airline", data.airline);
       form.setValue("ticketNumber", data.ticket_number);
       form.setValue("departurePlace", data.departure_place);

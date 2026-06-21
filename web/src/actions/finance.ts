@@ -49,6 +49,10 @@ const optionalText = z
   .transform((value) => value.trim())
   .transform((value) => (value.length > 0 ? value : undefined))
 
+const optionalPnr = optionalText
+  .pipe(z.string().length(6).optional())
+  .transform((value) => value?.toUpperCase())
+
 const optionalAirline = optionalText.pipe(z.enum(["VNA", "VJ", "QH", "VU"]).optional())
 
 const moneyInput = z.coerce.number().min(0)
@@ -56,7 +60,7 @@ const moneyInput = z.coerce.number().min(0)
 const ticketCorrectionSchema = z.object({
   customer_id: z.string().uuid(),
   ticket_id: z.string().uuid(),
-  pnr: z.string().trim().length(6).transform((value) => value.toUpperCase()),
+  pnr: optionalPnr,
   airline: optionalAirline,
   ticket_number: optionalText,
   passengers: z
@@ -327,6 +331,7 @@ export async function updateTicketLedgerRecordAction(
   const { customer_id, ticket_id, ...values } = parsedInput.data
   const payload = {
     ...values,
+    pnr: values.pnr ?? null,
     airline: values.airline ?? null,
     itinerary:
       values.departure_code && values.arrival_code

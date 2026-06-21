@@ -178,7 +178,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
             <Label htmlFor="ticket-detail-pnr">
               {t("customers.ledger.corrections.fields.pnr")}
             </Label>
-            <Input id="ticket-detail-pnr" name="pnr" defaultValue={ticket.pnr} />
+            <Input id="ticket-detail-pnr" name="pnr" defaultValue={ticket.pnr ?? ""} />
             {fieldError("pnr") ? (
               <p className="text-sm text-red-600">{fieldError("pnr")}</p>
             ) : null}
@@ -447,7 +447,7 @@ export function TicketDetailClient({
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-semibold tracking-normal text-foreground">
-                {ticket.pnr}
+                {ticket.pnr ?? t("tickets.detail.emptyValue")}
               </h1>
               <StatusChip tone={getStatusTone(ticket.status)}>
                 {t(`tickets.statuses.${ticket.status}`)}

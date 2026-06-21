@@ -231,7 +231,7 @@ def get_customer_ledger(
                 id=ticket.id,
                 entry_type="ticket",
                 created_at=_normalize_ledger_datetime(ticket.updated_at),
-                content=ticket.pnr,
+                content=ticket.pnr or str(ticket.id),
                 amount=ticket.selling_price,
                 running_balance=0,
                 ticket=TicketRead.model_validate(ticket),

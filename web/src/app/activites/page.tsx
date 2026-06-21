@@ -216,7 +216,7 @@ export default async function TicketActivityPage({ searchParams }: PageProps) {
                           className="font-mono text-sm font-semibold text-primary hover:underline"
                           href={`/tickets/${row.ticket.id}`}
                         >
-                          {row.ticket.pnr}
+                          {row.ticket.pnr ?? t("tickets.activity.list.noPnr")}
                         </Link>
                         <StatusChip tone="success">
                           {t(`tickets.statuses.${row.ticket.status}`)}

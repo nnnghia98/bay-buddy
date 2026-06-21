@@ -130,7 +130,6 @@ export async function createManualDebtFromFormData(
       ? `${values.departure_code}-${values.arrival_code}`
       : null
   const route = values.itinerary ?? derivedRoute
-  const pnr = values.pnr ?? "MANUAL"
   const response = await fetch(buildUrl("/tickets/confirm"), {
     method: "POST",
     headers: {
@@ -139,7 +138,7 @@ export async function createManualDebtFromFormData(
     },
     body: JSON.stringify({
       customer_name: values.customer_name,
-      pnr,
+      pnr: values.pnr ?? null,
       airline: values.airline ?? null,
       ticket_number: values.ticket_number ?? null,
       passengers: values.passengers,

@@ -40,7 +40,9 @@ const TicketBaseSchema = z.object({
   pnr: z
     .string()
     .length(6, "PNR (mã đặt chỗ) must be exactly 6 characters.")
-    .toUpperCase(),
+    .toUpperCase()
+    .nullable()
+    .optional(),
 
   /** Airline carrier code. Maps to Python: airline */
   airline: AirlineSchema.nullable().optional(),
@@ -201,7 +203,7 @@ export type TicketRead = z.infer<typeof TicketReadSchema>;
 // ---------------------------------------------------------------------------
 
 export const TicketUpdateSchema = z.object({
-  pnr: z.string().length(6).toUpperCase().optional(),
+  pnr: z.string().length(6).toUpperCase().nullable().optional(),
   airline: AirlineSchema.optional(),
   ticket_number: z.string().min(1).max(50).optional(),
   passengers: z.array(z.string().min(1).toUpperCase()).min(1).optional(),
