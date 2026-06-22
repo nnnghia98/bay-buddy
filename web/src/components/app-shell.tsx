@@ -253,7 +253,7 @@ function ShellNavigation({
             </span>
             {compact ? (
               <span
-                className="pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 hidden -translate-y-1/2 whitespace-nowrap rounded-lg border border-border bg-white px-3 py-2 text-xs font-semibold text-foreground opacity-0 shadow-[var(--shadow-md)] transition-opacity duration-150 group-hover:block group-hover:opacity-100 group-focus-within:block group-focus-within:opacity-100"
+                className="pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 hidden -translate-y-1/2 whitespace-nowrap rounded-lg border border-border bg-white px-3 py-2 text-xs font-semibold text-foreground opacity-0 shadow-[var(--shadow-md)] transition-opacity duration-150 group-hover:block group-hover:opacity-100"
                 role="tooltip"
               >
                 {label}
@@ -341,7 +341,7 @@ function AuthenticatedShellLoading({
 
       <div className={getAuthenticatedContentOffsetClassName()}>
         <header className={cn("sticky top-0 z-30", getPageHeaderClassName())}>
-          <div className="flex min-h-14 items-center gap-3 px-4 py-3 sm:px-6 lg:px-7">
+          <div className="flex min-h-12 items-center gap-3 px-4 py-2 sm:px-6 lg:px-7">
             <SkeletonBlock className="h-11 w-11 lg:hidden" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-foreground">{homeLabel}</p>
@@ -598,11 +598,11 @@ export function AppShell({ children }: AppShellProps) {
               >
                 {breadcrumbs.map((crumb, index) => (
                   <React.Fragment key={`${crumb.href}-${crumb.label}`}>
-                    {index > 0 ? <span className="text-border">/</span> : null}
+                    {index > 0 ? <span className="text-border-strong">/</span> : null}
                     {index === breadcrumbs.length - 1 ? (
-                      <span className="font-medium text-foreground">{crumb.label}</span>
+                      <span className="font-semibold text-foreground">{crumb.label}</span>
                     ) : (
-                      <Link className="transition-colors hover:text-primary" href={crumb.href}>
+                      <Link className="font-medium transition-colors hover:text-primary" href={crumb.href}>
                         {crumb.label}
                       </Link>
                     )}
@@ -612,15 +612,15 @@ export function AppShell({ children }: AppShellProps) {
             </div>
 
             <details className="group relative">
-              <summary className="flex cursor-pointer list-none items-center gap-3 rounded-xl border border-border bg-white px-3 py-2 shadow-[var(--shadow-sm)] transition-[background-color,border-color,box-shadow] duration-200 hover:border-primary/20 hover:shadow-[var(--shadow-md)]">
-                <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-accent text-sm font-semibold text-primary">
+              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-[10px] border border-transparent px-2 py-1.5 transition-[background-color,border-color] duration-200 hover:border-border hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-accent text-sm font-semibold text-primary">
                   {getInitials(userName)}
                 </div>
                 <div className="hidden text-left sm:block">
-                  <p className="text-sm font-medium leading-[1.2] text-foreground">
+                  <p className="text-sm font-semibold leading-[1.2] text-foreground">
                     {userName}
                   </p>
-                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
                     {userRole}
                   </p>
                 </div>

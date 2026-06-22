@@ -26,7 +26,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ApiError, apiFetch, apiFetchData } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { LOGIN_PATH, SESSION_EXPIRED_LOGIN_PATH } from "@/lib/auth-token";
@@ -501,18 +500,19 @@ export default function CaptureTicketPage() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="space-y-4 pb-12">
-      <div className="grid min-w-0 grid-cols-1 gap-8 p-4 xl:grid-cols-[400px_minmax(0,1fr)] xl:items-start 2xl:grid-cols-[450px_minmax(0,1fr)]">
+    <div className="pb-12">
+      <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start 2xl:grid-cols-[400px_minmax(0,1fr)]">
           {/* ---------------------------------------------------------------- */}
           {/* Left column – File upload / Preview (Sticky)                     */}
           {/* ---------------------------------------------------------------- */}
-          <div className="flex flex-col gap-4 xl:sticky xl:top-6">
-            <Card className="border-border shadow-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg">Chứng từ đặt chỗ</CardTitle>
-                <CardDescription>Hỗ trợ ảnh JPEG, PNG, WebP hoặc file PDF e-ticket.</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 lg:sticky lg:top-16">
+            <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
+              <div className="border-b border-border px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                  Chứng từ đặt chỗ
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 p-4">
                 {/* Hidden native file input */}
                 <input
                   ref={fileInputRef}
@@ -539,10 +539,10 @@ export default function CaptureTicketPage() {
                   onDragLeave={onDragLeave}
                   onDrop={onDrop}
                   className={cn(
-                    "relative flex min-h-[320px] cursor-pointer select-none flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors overflow-hidden",
+                    "relative flex min-h-[220px] cursor-pointer select-none flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed transition-colors lg:min-h-[260px]",
                     isDragging
                       ? "border-primary bg-accent/65"
-                      : "border-border bg-secondary/50 hover:border-primary/35 hover:bg-accent/45",
+                      : "border-border-strong bg-secondary/35 hover:border-primary/35 hover:bg-accent/35",
                   )}
                 >
                   {/* Preview area */}
@@ -567,7 +567,7 @@ export default function CaptureTicketPage() {
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-3 p-8 text-center text-muted-foreground">
-                      <UploadCloud className="h-12 w-12 text-muted-foreground/60" strokeWidth={1.5} />
+                      <UploadCloud className="h-10 w-10 text-muted-foreground/60" strokeWidth={1.5} />
                       <div>
                         <p className="text-sm font-medium text-foreground">
                           Kéo thả, dán (Ctrl+V) hoặc bấm để tải file
@@ -641,8 +641,8 @@ export default function CaptureTicketPage() {
                     <p>{(mutation.error as Error).message}</p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </section>
           </div>
 
           {/* ---------------------------------------------------------------- */}
@@ -651,15 +651,16 @@ export default function CaptureTicketPage() {
           <form
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onSubmit={form.handleSubmit(onSubmit as any)}
-            className="flex min-w-0 flex-col gap-6"
+            className="flex min-w-0 flex-col gap-4"
           >
             {/* Customer & Price Card */}
-            <Card className="border-border shadow-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg">Thông tin giao dịch</CardTitle>
-                <CardDescription>Khách hàng thanh toán và giá trị vé (công nợ sẽ được ghi nhận cho khách hàng này).</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5">
+            <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
+              <div className="border-b border-border px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                  Thông tin giao dịch
+                </p>
+              </div>
+              <div className="space-y-5 p-4">
                 <div className="space-y-2">
                   <Label htmlFor="customerName" className="text-sm font-semibold text-foreground">Tên khách hàng</Label>
                   <Input
@@ -803,16 +804,17 @@ export default function CaptureTicketPage() {
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </section>
 
             {/* Flight Details Card */}
-            <Card className="border-border shadow-sm">
-              <CardHeader className="pb-4 border-b border-border/40 mb-4">
-                <CardTitle className="text-lg">Chi tiết chuyến bay</CardTitle>
-                <CardDescription>Thông tin hành trình và mã đặt chỗ.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+            <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
+              <div className="border-b border-border px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                  Chi tiết chuyến bay
+                </p>
+              </div>
+              <div className="space-y-6 p-4">
                 {/* PNR + Airline row */}
                 <div className="grid gap-4 2xl:grid-cols-3">
                   <div className="space-y-2">
@@ -951,15 +953,16 @@ export default function CaptureTicketPage() {
                     </p>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </section>
 
             {/* Passengers Card */}
-            <Card className="border-border shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
+              <div className="flex flex-row items-center justify-between gap-3 border-b border-border px-4 py-3">
                 <div>
-                  <CardTitle className="text-lg">Hành khách <span className="text-red-500">*</span></CardTitle>
-                  <CardDescription>Danh sách người bay trên vé này.</CardDescription>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                    Hành khách <span className="text-red-500">*</span>
+                  </p>
                 </div>
                 <Button
                   type="button"
@@ -972,8 +975,8 @@ export default function CaptureTicketPage() {
                   <Plus className="mr-1.5 h-4 w-4" />
                   Thêm người
                 </Button>
-              </CardHeader>
-              <CardContent className="space-y-3">
+              </div>
+              <div className="space-y-3 p-4">
                 {fields.map((field, index) => (
                   <div key={field.id} className="flex items-start gap-3">
                     <div className="flex-1 space-y-1">
@@ -1007,8 +1010,8 @@ export default function CaptureTicketPage() {
                     </Button>
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </div>
+            </section>
 
             {/* Submit Action */}
             <div className="flex flex-col gap-3 rounded-xl border border-primary/10 bg-primary/5 p-4 2xl:flex-row 2xl:items-center 2xl:justify-between">

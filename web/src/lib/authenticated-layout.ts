@@ -9,7 +9,7 @@ const WORK_SURFACE_CLASS_NAME =
   "rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]"
 
 const PAGE_HEADER_CLASS_NAME =
-  "min-h-14 border-b border-border/80 bg-white/88 shadow-[0_8px_24px_-28px_rgba(15,48,106,0.4)] backdrop-blur-md"
+  "min-h-12 border-b border-border/70 bg-background/92 backdrop-blur-md"
 
 const TABLE_SECTION_CLASS_NAME =
   "overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]"

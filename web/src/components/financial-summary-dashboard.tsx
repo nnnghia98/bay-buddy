@@ -4,7 +4,6 @@ import Link from "next/link"
 import * as React from "react"
 import {
   ArrowRight,
-  Clock3,
   CreditCard,
   Eye,
   EyeOff,
@@ -111,43 +110,6 @@ export function FinancialSummaryDashboard({
 
   return (
     <div className="space-y-6 pb-12 text-foreground">
-      <div className="relative overflow-hidden rounded-xl border border-border/90 bg-white px-5 py-5 shadow-[var(--shadow-md)] sm:px-6">
-        <div
-          className="pointer-events-none absolute inset-y-0 left-0 w-1.5 bg-primary"
-          aria-hidden="true"
-        />
-        <div
-          className="pointer-events-none absolute right-0 top-0 h-24 w-72 rounded-bl-full bg-accent/65"
-          aria-hidden="true"
-        />
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-              {t("dashboard.summary.eyebrow")}
-            </p>
-            <h1 className="mt-2 max-w-3xl text-2xl font-semibold leading-tight tracking-normal text-foreground sm:text-[1.7rem]">
-              {t("dashboard.summary.commandCenter.title")}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              {t("dashboard.summary.commandCenter.description")}
-            </p>
-          </div>
-          <div className="grid shrink-0 grid-cols-[auto_1fr] items-center gap-3 rounded-lg border border-border bg-secondary/70 px-3.5 py-3 text-left shadow-[var(--shadow-sm)] sm:min-w-56">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/15 bg-white text-primary">
-              <Clock3 aria-hidden="true" className="h-4 w-4" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                {t("dashboard.summary.commandCenter.updatedAt")}
-              </span>
-              <span className="mt-0.5 block text-sm font-semibold text-foreground tabular-nums">
-                {formatDateTime(summary.updatedAt)}
-              </span>
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* ------------------------------------------------------------------ */}
       {/* Metric strip                                                        */}
       {/* ------------------------------------------------------------------ */}
