@@ -4,6 +4,7 @@ This document sits beside `docs/DESIGN.md`.
 
 - `docs/DESIGN.md` defines the visual token baseline: white canvas, deep navy text, Airtable blue, simple borders, soft shadows, and restrained radius.
 - `docs/UX.md` defines how Bay Buddy should feel and behave as an operations product.
+- Generic/community frontend skills may assist with general UI craft, but they do not override this document or `docs/DESIGN.md`.
 
 The chosen direction is **Command Center, Calm Edition**.
 
@@ -264,6 +265,7 @@ Examples:
 Avoid:
 
 - Authenticated pages that look like landing pages.
+- Community-skill patterns that add heroes, AIDA marketing sections, cinematic scroll effects, or decorative motion to authenticated work surfaces.
 - Oversized hero sections that push work below the fold.
 - Decorative cards around every section.
 - Color-only status or balance meaning.

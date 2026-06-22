@@ -194,7 +194,7 @@
 
 ## 4. Frontend Architecture Standard (Vercel App Router)
 
-Bay Buddy now follows the `react-best-practices` standard aligned with Vercel's latest Next.js App Router guidance.
+Bay Buddy follows the project's Next.js App Router patterns, Bay Buddy DNA, and existing code conventions.
 
 - **Read Path**: Prefer React Server Components for fetching ledger data, ticket details, and other initial page payloads.
 - **Write Path**: Prefer Server Actions for mutations such as recording payments, confirming tickets, and updating ticket metadata.

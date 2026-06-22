@@ -27,10 +27,24 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 
 ### Mandatory DNA Standards
 
-- **Frontend Standard**: `react-best-practices` is part of the DNA. Follow Vercel's latest Next.js App Router recommendations by default.
-- **UI Skill Standard**: For any UI, layout, styling, dashboard, form, table, or design-system task, the agent MUST also use the local `frontend-design` skill in `.agents/skills/frontend-design/SKILL.md` together with the Bay Buddy DNA.
+- **Frontend Standard**: Follow the project's Next.js App Router patterns, Bay Buddy DNA, and existing code conventions by default.
+- **UI Skill Standard**: For any UI, layout, styling, dashboard, form, table, or design-system task, follow `frontend-design` for general design craft while treating `docs/DESIGN.md` and `docs/UX.md` as the Bay Buddy source of truth.
 - **Design/UX Standard**: For UI work, `docs/DESIGN.md` and `docs/UX.md` are mandatory references. If generic frontend guidance conflicts with Bay Buddy DNA, Bay Buddy DNA wins.
 - **Operational Workbench Standard**: Authenticated work pages should follow the `/debts/input` pattern when staff are entering data beside a record table: simple two-column workbench, primary action close to the form it submits, scroll-contained long forms, dense tables, and no redundant title/header/summary cards unless they add immediate operational value.
+
+### Current Skill Inventory
+
+Use this inventory to avoid loading removed or stale skills.
+
+- `frontend-design`: the default UI skill to follow for general design craft. It is no longer Bay Buddy-specific; Bay Buddy-specific UI rules live in `docs/DESIGN.md` and `docs/UX.md`.
+
+The following skills are available but must not be automatically tracked or used as project standards. Call them only when the user explicitly asks for that specific skill or workflow:
+
+- `design-taste-frontend-v1`: legacy taste skill kept only for explicit compatibility requests.
+- `gpt-taste`: high-motion, cinematic UI skill.
+- `redesign-existing-projects`: generic redesign audit/upgrade skill.
+
+Removed/stale skills that must not be referenced as project standards: `ui-ux-pro-max`, `react-best-practices`, and `vercel-react-best-practices`.
 
 ## 🛠 Tech Stack
 

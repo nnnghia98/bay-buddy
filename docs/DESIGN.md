@@ -191,6 +191,8 @@ components:
 
 > Inspired by Airtable's "sophisticated simplicity". Last updated to reflect the v2 UI patterns shipped across dashboard, customers, invoices, settings, ticket capture, and the `/debts/input` operational workbench.
 
+This document owns Bay Buddy-specific UI rules. External or community frontend skills may provide general design craft, but this file decides product-specific visual patterns, density, components, and interaction treatment.
+
 ---
 
 ## 1. Visual Theme & Atmosphere
@@ -555,3 +557,64 @@ Sits above the metric strip. Contains search (left) and primary action button (r
 - Don't add redundant intro cards, title panels, or explanatory headers when labels and breadcrumbs already provide context.
 - Don't add metric strips unless the numbers are necessary for the current workflow.
 - Don't use `py-5` for table row cells — use `py-3.5`.
+
+---
+
+## 11. Page-Specific Recipes
+
+These recipes preserve product decisions that should not live in a generic frontend skill.
+
+### Customers Directory (`/customers`)
+
+- Use the standard authenticated page stack: page action bar, metric strip when useful, then a table panel.
+- Keep search and customer creation in the action bar.
+- Use ghost buttons for repeated in-row edit/delete actions.
+- Use a `Loader2` table row that spans all columns while loading.
+- Customer avatars in rows use compact initials badges (`h-9 w-9 rounded-[10px]`).
+
+### Customer Ledger (`/customers/[id]`)
+
+- Keep customer identity, current balance, balance state, and `Record Payment` close to the ledger.
+- Negative balances are labelled `Tiền dư / Đặt cọc`.
+- Ledger mutations must show pending, optimistic, confirmed, failed, and rollback states explicitly.
+- Use `font-mono` for PNR, ticket number, invoice number, and other references.
+- History/timeline timestamps use audit time (`created_at` / `updated_at`), not `flight_date`.
+
+### Invoices (`/invoices`)
+
+- If the route requires a `customer_id` and none is provided, show a centered empty-state panel with a back-navigation action.
+- Invoice numbers use `font-mono`.
+- Use `ghost` for detail navigation and `default` for print or primary document actions.
+- Issued or paid invoices must visually communicate locked/read-only state.
+
+### Settings (`/settings`)
+
+- Admin users see a compact metric strip for total, active, and inactive users when those metrics help management.
+- The users table lives in a panel; place `UserEditorDialog` in the panel header/action area.
+- Guidance notes may use a side-by-side divided layout at the bottom when they explain real operational constraints.
+- Non-admin users see the restricted-access pattern with `ShieldOff` and a proper `<h1>`.
+
+### Ticket Capture (`/tickets/capture`)
+
+- Use a two-column sticky layout: upload/preview on the left, review form on the right.
+- AI-extracted fields use `border-primary/20 bg-primary/5`.
+- Parsing state uses an absolute overlay with `backdrop-blur-sm` and `Loader2`.
+- The confirmation action must make the công nợ impact explicit.
+
+---
+
+## 12. UI Implementation Checklist
+
+- All user-facing copy goes through `t()` from `next-international`.
+- Spacing, radius, color, and component structure match this file.
+- `CommandPanel` and `CommandPanelHeader` are not used for new screens.
+- Workbench pages avoid redundant title cards, intro cards, and decorative metric strips.
+- Long desktop workbench forms use internal scroll with the primary action still visible.
+- Empty, loading, error, pending, restricted, optimistic, and rollback states are handled.
+- Money values are right-aligned and `font-semibold`.
+- Reference numbers use `font-mono`.
+- Static panels have no hover transform.
+- Destructive buttons are explicitly red.
+- Submit buttons show `Loader2` while pending.
+- Mobile layouts remain usable without horizontal viewport breakage.
+- Semantic HTML, table headers, labels, accessible icon names, ARIA error states, and visible focus states are present.
