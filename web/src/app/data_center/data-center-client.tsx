@@ -118,15 +118,17 @@ function toDateTimeLocalValue(value: string | null): string {
 
 function MetricCard({ icon: Icon, label, value }: MetricCardProps) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
-        <Icon className="h-4 w-4" aria-hidden="true" />
+    <div className="group rounded-xl border border-border bg-white p-4 shadow-[var(--shadow-sm)] transition-[border-color,box-shadow] duration-200 hover:border-primary/20 hover:shadow-[var(--shadow-md)]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-primary/10 bg-accent text-primary">
+          <Icon className="h-4 w-4" aria-hidden="true" />
+        </div>
+        <p className="min-h-8 break-words text-right text-xl font-semibold leading-7 tracking-normal text-foreground">
+          {value}
+        </p>
       </div>
-      <p className="mt-3.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+      <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
         {label}
-      </p>
-      <p className="mt-1 min-h-8 break-words text-xl font-semibold leading-7 tracking-[-0.02em] text-foreground">
-        {value}
       </p>
     </div>
   )
@@ -441,45 +443,55 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
   }
 
   return (
-    <div className="space-y-6 pb-12 text-foreground">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-            {t("dataCenter.eyebrow")}
-          </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-[-0.02em] text-foreground">
-            {t("dataCenter.title")}
-          </h1>
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
-            {t("dataCenter.description")}
-          </p>
+    <div className="space-y-4 pb-12 text-foreground">
+      <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
+        <div className="space-y-4 px-5 py-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border border-primary/15 bg-accent text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+              <Database className="h-4 w-4" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                  {t("dataCenter.eyebrow")}
+                </p>
+                <StatusChip tone="warning">{t("dataCenter.reviewOnly")}</StatusChip>
+              </div>
+              <h1 className="mt-1 text-xl font-semibold tracking-[-0.02em] text-foreground">
+                {t("dataCenter.title")}
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+                {t("dataCenter.description")}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            <MetricCard
+              icon={Database}
+              label={t("dataCenter.metrics.tables")}
+              value={t("dataCenter.metrics.selectedTables", {
+                count: selectedTableKeys.length,
+                total: tableKeys.length,
+              })}
+            />
+            <MetricCard
+              icon={FileSpreadsheet}
+              label={t("dataCenter.metrics.backup")}
+              value={t("dataCenter.metrics.backupValue")}
+            />
+            <MetricCard
+              icon={ShieldCheck}
+              label={t("dataCenter.metrics.access")}
+              value={t("dataCenter.metrics.accessValue")}
+            />
+          </div>
         </div>
-        <StatusChip tone="warning">{t("dataCenter.reviewOnly")}</StatusChip>
-      </div>
+      </section>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <MetricCard
-          icon={Database}
-          label={t("dataCenter.metrics.tables")}
-          value={t("dataCenter.metrics.selectedTables", {
-            count: selectedTableKeys.length,
-            total: tableKeys.length,
-          })}
-        />
-        <MetricCard
-          icon={FileSpreadsheet}
-          label={t("dataCenter.metrics.backup")}
-          value={t("dataCenter.metrics.backupValue")}
-        />
-        <MetricCard
-          icon={ShieldCheck}
-          label={t("dataCenter.metrics.access")}
-          value={t("dataCenter.metrics.accessValue")}
-        />
-      </div>
-
-      <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3.5">
+      <div className="grid gap-4 xl:grid-cols-2">
+        <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-secondary/45 px-5 py-3.5">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
               {t("dataCenter.baseDateTime.eyebrow")}
@@ -494,7 +506,7 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
               : t("dataCenter.range.allValue")}
           </StatusChip>
         </div>
-        <div className="grid gap-4 px-5 py-5 lg:grid-cols-[1fr_auto_auto] lg:items-end">
+        <div className="grid gap-4 px-5 py-5 lg:grid-cols-[1fr_auto_auto] lg:items-end xl:grid-cols-1">
           <div className="space-y-2">
             <Label htmlFor="data-center-base-date-time">
               {t("dataCenter.baseDateTime.label")}
@@ -538,10 +550,10 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
             {t("dataCenter.baseDateTime.hint")}
           </p>
         </div>
-      </div>
+        </section>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+        <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
+          <div className="flex items-center justify-between border-b border-border bg-secondary/45 px-5 py-3.5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
             {t("dataCenter.range.eyebrow")}
           </p>
@@ -549,7 +561,7 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
             {dateTimeScopeLabel}
           </StatusChip>
         </div>
-        <div className="grid gap-4 px-5 py-5 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
+        <div className="grid gap-4 px-5 py-5 lg:grid-cols-[1fr_1fr_auto] lg:items-end xl:grid-cols-1">
           <div className="space-y-2">
             <Label htmlFor="data-center-from">
               {t("dataCenter.range.fromLabel")}
@@ -592,10 +604,11 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
             {t("dataCenter.range.hint")}
           </p>
         </div>
+        </section>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3.5">
+      <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-secondary/45 px-5 py-3.5">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
               {t("dataCenter.preview.eyebrow")}
@@ -667,7 +680,10 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
 
                 return (
                 <TableRow
-                  className={cn(!isSelected && "bg-secondary/20 opacity-65")}
+                  className={cn(
+                    "transition-colors duration-200 hover:bg-accent/20",
+                    !isSelected && "bg-secondary/20 opacity-65",
+                  )}
                   key={tableKey}
                 >
                   <TableCell className="px-5 py-3.5">
@@ -751,7 +767,7 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
               : t("dataCenter.preview.queryAction")}
           </Button>
         </div>
-      </div>
+      </section>
 
       <div className="grid gap-4 lg:grid-cols-3">
         {operationKeys.map((operation) => {
@@ -760,17 +776,17 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
           return (
             <div
               className={cn(
-                "overflow-hidden rounded-xl border bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.06)]",
+                "overflow-hidden rounded-xl border bg-white p-5 shadow-[var(--shadow-sm)] transition-[border-color,box-shadow] duration-200 hover:shadow-[var(--shadow-md)]",
                 isDestructive ? "border-rose-200" : "border-border",
               )}
               key={operation}
             >
               <div
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-lg border",
+                  "flex h-9 w-9 items-center justify-center rounded-[12px] border",
                   isDestructive
                     ? "border-rose-200 bg-rose-50 text-rose-700"
-                    : "border-border bg-secondary text-primary",
+                    : "border-primary/10 bg-accent text-primary",
                 )}
               >
                 <OperationIcon operation={operation} />
@@ -813,8 +829,8 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
         })}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-rose-200 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-        <div className="flex items-center justify-between border-b border-rose-200 px-5 py-3.5">
+      <section className="overflow-hidden rounded-xl border border-rose-200 bg-white shadow-[var(--shadow-sm)]">
+        <div className="flex items-center justify-between border-b border-rose-200 bg-rose-50/70 px-5 py-3.5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-rose-700">
             {t("dataCenter.danger.eyebrow")}
           </p>
@@ -880,7 +896,7 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   )
 }

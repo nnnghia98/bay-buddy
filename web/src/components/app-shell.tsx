@@ -8,6 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Activity,
   ChevronDown,
+  ChevronRight,
   Database,
   FileText,
   Menu,
@@ -341,12 +342,16 @@ function AuthenticatedShellLoading({
 
       <div className={getAuthenticatedContentOffsetClassName()}>
         <header className={cn("sticky top-0 z-30", getPageHeaderClassName())}>
-          <div className="flex min-h-12 items-center gap-3 px-4 py-2 sm:px-6 lg:px-7">
+          <div className="flex min-h-14 items-center gap-3 px-4 py-2 sm:px-6 lg:px-7">
             <SkeletonBlock className="h-11 w-11 lg:hidden" />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-foreground">{homeLabel}</p>
+              <div className="inline-flex min-h-10 max-w-full items-center rounded-[14px] border border-border/75 bg-white/78 px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                <p className="truncate text-sm font-semibold text-foreground">
+                  {homeLabel}
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-3 rounded-xl border border-border bg-white px-3 py-2 shadow-[var(--shadow-sm)]">
+            <div className="flex items-center gap-3 rounded-[16px] border border-border/80 bg-white/86 px-2.5 py-1.5 shadow-[var(--shadow-sm)]">
               <SkeletonBlock className="h-10 w-10 rounded-[12px]" />
               <div className="hidden min-w-24 space-y-2 sm:block">
                 <SkeletonBlock className="h-3 w-24" />
@@ -545,7 +550,7 @@ export function AppShell({ children }: AppShellProps) {
 
       <div className={getAuthenticatedContentOffsetClassName()}>
         <header className={cn("sticky top-0 z-30", getPageHeaderClassName())}>
-          <div className="flex min-h-14 items-center gap-3 px-4 py-3 sm:px-6 lg:px-7">
+          <div className="flex min-h-14 items-center gap-3 px-4 py-2 sm:px-6 lg:px-7">
             <Sheet onOpenChange={setIsSidebarOpen} open={isSidebarOpen}>
               <SheetTrigger asChild>
                 <Button
@@ -594,15 +599,26 @@ export function AppShell({ children }: AppShellProps) {
             <div className="min-w-0 flex-1">
               <nav
                 aria-label="Breadcrumb"
-                className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
+                className="inline-flex min-h-10 max-w-full items-center overflow-hidden rounded-[14px] border border-border/75 bg-white/78 px-3 text-sm text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]"
               >
                 {breadcrumbs.map((crumb, index) => (
                   <React.Fragment key={`${crumb.href}-${crumb.label}`}>
-                    {index > 0 ? <span className="text-border-strong">/</span> : null}
+                    {index > 0 ? (
+                      <ChevronRight
+                        aria-hidden="true"
+                        className="mx-1.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/45"
+                        strokeWidth={2}
+                      />
+                    ) : null}
                     {index === breadcrumbs.length - 1 ? (
-                      <span className="font-semibold text-foreground">{crumb.label}</span>
+                      <span className="min-w-0 truncate font-semibold text-foreground">
+                        {crumb.label}
+                      </span>
                     ) : (
-                      <Link className="font-medium transition-colors hover:text-primary" href={crumb.href}>
+                      <Link
+                        className="shrink-0 font-medium text-muted-foreground transition-colors hover:text-primary"
+                        href={crumb.href}
+                      >
                         {crumb.label}
                       </Link>
                     )}
@@ -612,23 +628,23 @@ export function AppShell({ children }: AppShellProps) {
             </div>
 
             <details className="group relative">
-              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-[10px] border border-transparent px-2 py-1.5 transition-[background-color,border-color] duration-200 hover:border-border hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-accent text-sm font-semibold text-primary">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-[16px] border border-border/80 bg-white/86 px-2.5 py-1.5 shadow-[var(--shadow-sm)] transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-px hover:border-primary/25 hover:bg-white hover:shadow-[var(--shadow-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-primary/10 bg-[linear-gradient(135deg,var(--theme-blue-soft),#ffffff)] text-sm font-semibold text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
                   {getInitials(userName)}
                 </div>
                 <div className="hidden text-left sm:block">
-                  <p className="text-sm font-semibold leading-[1.2] text-foreground">
+                  <p className="max-w-36 truncate text-sm font-semibold leading-[1.2] text-foreground">
                     {userName}
                   </p>
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                  <p className="max-w-36 truncate text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     {userRole}
                   </p>
                 </div>
-                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
+                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
               </summary>
-              <div className="absolute right-0 mt-3 w-56 rounded-xl border border-border bg-white p-2 shadow-[var(--shadow-lg)]">
+              <div className="absolute right-0 mt-2 w-56 rounded-[16px] border border-border/85 bg-white p-2 shadow-[var(--shadow-lg)]">
                 <button
-                  className="flex w-full items-center rounded-[12px] px-3 py-2 text-left text-sm text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground"
+                  className="flex w-full items-center rounded-[12px] px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground"
                   onClick={() => {
                     logout()
                     router.replace(LOGIN_PATH)
