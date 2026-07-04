@@ -2,10 +2,9 @@
 
 import * as React from "react"
 import { useActionState } from "react"
-import { useFormStatus } from "react-dom"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowRight, Loader2 } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { toast } from "sonner"
 
 import { updateTicketLedgerRecordAction, type LedgerCorrectionActionState } from "@/actions/finance"
@@ -16,7 +15,9 @@ import {
   voidTicketAction,
   type TicketLifecycleActionState,
 } from "@/actions/tickets"
-import { StatusChip } from "@/components/command-center"
+import { Panel, StatusChip } from "@/components/command-center"
+import { ActionSubmitButton } from "@/components/form-submit-button"
+import { DetailField, selectInputClassName } from "@/components/operations-ui"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -84,19 +85,8 @@ function LifecycleSubmitButton({
   variant?: "default" | "outline" | "destructive"
   disabled?: boolean
 }) {
-  const { pending } = useFormStatus()
-
   return (
-    <Button disabled={pending || disabled} type="submit" variant={variant}>
-      {pending ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          {pendingLabel}
-        </>
-      ) : (
-        idleLabel
-      )}
-    </Button>
+    <ActionSubmitButton disabled={disabled} idleLabel={idleLabel} pendingLabel={pendingLabel} variant={variant} />
   )
 }
 
@@ -130,12 +120,12 @@ function DetailItem({
   className?: string
 }) {
   return (
-    <div className={cn("rounded-lg border border-border bg-white p-4", className)}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
-      </p>
-      <div className="mt-2 text-sm font-medium text-foreground">{value}</div>
-    </div>
+    <DetailField
+      className={cn("bg-white", className)}
+      label={label}
+      labelMuted
+      value={value}
+    />
   )
 }
 
@@ -146,8 +136,6 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
     initialLedgerCorrectionActionState,
   )
   const fieldError = (field: string) => state.fieldErrors[field]
-  const selectClassName =
-    "flex h-11 w-full rounded-lg border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
 
   useActionToast(
     state,
@@ -156,7 +144,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
   )
 
   return (
-    <section className="rounded-xl border border-border bg-white p-5 shadow-[var(--shadow-sm)]">
+    <Panel className="p-5">
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
           {t("tickets.detail.adminEyebrow")}
@@ -198,7 +186,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               {t("customers.ledger.corrections.fields.airline")}
             </Label>
             <select
-              className={selectClassName}
+              className={selectInputClassName}
               id="ticket-detail-airline"
               name="airline"
               defaultValue={ticket.airline ?? ""}
@@ -229,7 +217,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
             {t("customers.ledger.corrections.fields.passengers")}
           </Label>
           <textarea
-            className="min-h-24 w-full rounded-lg border border-input bg-white px-3.5 py-2 text-sm font-medium placeholder:font-normal shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+            className="min-h-24 w-full rounded-md border border-input bg-white px-3.5 py-2 text-sm font-medium placeholder:font-normal shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
             id="ticket-detail-passengers"
             name="passengers"
             defaultValue={ticket.passengers.join("\n")}
@@ -391,7 +379,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
           />
         </div>
       </form>
-    </section>
+    </Panel>
   )
 }
 
@@ -418,9 +406,6 @@ export function TicketDetailClient({
     initialTicketLifecycleActionState,
   )
   const canChangeLifecycle = ticket.status === "CONFIRMED"
-  const selectClassName =
-    "flex h-11 w-full rounded-lg border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
-
   useActionToast(
     voidState,
     t("tickets.actions.voidSuccess"),
@@ -439,7 +424,7 @@ export function TicketDetailClient({
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border border-border bg-white p-5 shadow-[var(--shadow-sm)]">
+      <Panel className="p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
@@ -480,10 +465,10 @@ export function TicketDetailClient({
             value={formatCurrency(ticket.true_income)}
           />
         </div>
-      </section>
+      </Panel>
 
       <section className="grid gap-5 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-xl border border-border bg-white p-5 shadow-[var(--shadow-sm)]">
+        <Panel className="p-5">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
               {t("tickets.detail.ticketInfoEyebrow")}
@@ -524,10 +509,10 @@ export function TicketDetailClient({
               ))}
             </div>
           </div>
-        </div>
+        </Panel>
 
         <aside className="space-y-5">
-          <section className="rounded-xl border border-border bg-white p-5 shadow-[var(--shadow-sm)]">
+          <Panel className="p-5">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
               {t("tickets.detail.actionsEyebrow")}
             </p>
@@ -607,7 +592,7 @@ export function TicketDetailClient({
                   <div className="flex flex-col gap-3">
                     <select
                       aria-label={t("tickets.actions.reassignCustomer")}
-                      className={selectClassName}
+                      className={selectInputClassName}
                       name="new_customer_id"
                       defaultValue={availableCustomers[0]?.id ?? ""}
                     >
@@ -638,11 +623,11 @@ export function TicketDetailClient({
                 </div>
               </form>
             </div>
-          </section>
+          </Panel>
         </aside>
       </section>
 
-      <section className="rounded-xl border border-border bg-white p-5 shadow-[var(--shadow-sm)]">
+      <Panel className="p-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
           {t("tickets.detail.timestampsEyebrow")}
         </p>
@@ -656,7 +641,7 @@ export function TicketDetailClient({
             value={formatDateTime(ticket.updated_at)}
           />
         </div>
-      </section>
+      </Panel>
 
       {currentUserRole === "ADMIN" ? <TicketCorrectionForm ticket={ticket} /> : null}
 

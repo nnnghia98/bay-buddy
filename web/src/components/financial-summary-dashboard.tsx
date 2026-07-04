@@ -229,7 +229,7 @@ export function FinancialSummaryDashboard({
         <aside className="space-y-6">
           <Panel className="p-5">
             <div className="flex items-start gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-secondary text-primary">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-secondary text-primary">
                 <CreditCard aria-hidden="true" className="h-4 w-4" />
               </span>
               <div className="min-w-0">

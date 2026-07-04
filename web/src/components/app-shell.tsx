@@ -224,7 +224,7 @@ function ShellNavigation({
               : item.href !== "/" && pathname.startsWith(item.href)))
 
         const itemClasses = cn(
-          "group relative flex min-h-11 items-center rounded-[12px] border border-transparent text-sm font-semibold tracking-[0.08px] text-muted-foreground transition-[background-color,border-color,color,box-shadow,transform] duration-200 hover:border-primary/15 hover:bg-sidebar-accent hover:text-foreground active:translate-x-0",
+          "group relative flex min-h-11 items-center rounded-md border border-transparent text-sm font-semibold tracking-[0.08px] text-muted-foreground transition-[background-color,border-color,color,box-shadow,transform] duration-200 hover:border-primary/15 hover:bg-sidebar-accent hover:text-foreground active:translate-x-0",
           compact
             ? "w-12 justify-center px-1 py-1"
             : "gap-3 px-3.5 py-2.5 hover:translate-x-0.5",
@@ -242,7 +242,7 @@ function ShellNavigation({
             ) : null}
             <div
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-[10px] border border-border/70 bg-white text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors duration-200 group-hover:border-primary/20 group-hover:text-primary",
+                "flex h-9 w-9 items-center justify-center rounded-md border border-border/70 bg-white text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors duration-200 group-hover:border-primary/20 group-hover:text-primary",
                 compact && "border-transparent bg-transparent shadow-none group-hover:bg-white group-hover:shadow-[var(--shadow-sm)]",
                 isActive && (compact ? "bg-accent text-primary" : "border-primary/20 bg-accent text-primary"),
               )}
@@ -330,7 +330,7 @@ function AuthenticatedShellLoading({
           <div className="space-y-3 py-4">
             {Array.from({ length: 6 }).map((_, index) => (
               <div
-                className="flex min-h-11 items-center justify-center rounded-[12px] px-2 py-2"
+                className="flex min-h-11 items-center justify-center rounded-md px-2 py-2"
                 key={index}
               >
                 <SkeletonBlock className="h-9 w-9" />
@@ -345,14 +345,14 @@ function AuthenticatedShellLoading({
           <div className="flex min-h-14 items-center gap-3 px-4 py-2 sm:px-6 lg:px-7">
             <SkeletonBlock className="h-11 w-11 lg:hidden" />
             <div className="min-w-0 flex-1">
-              <div className="inline-flex min-h-10 max-w-full items-center rounded-[14px] border border-border/75 bg-white/78 px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+              <div className="inline-flex min-h-10 max-w-full items-center rounded-md border border-border/75 bg-white/78 px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
                 <p className="truncate text-sm font-semibold text-foreground">
                   {homeLabel}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-[16px] border border-border/80 bg-white/86 px-2.5 py-1.5 shadow-[var(--shadow-sm)]">
-              <SkeletonBlock className="h-10 w-10 rounded-[12px]" />
+            <div className="flex items-center gap-3 rounded-md border border-border/80 bg-white/86 px-2.5 py-1.5 shadow-[var(--shadow-sm)]">
+              <SkeletonBlock className="h-10 w-10 rounded-md" />
               <div className="hidden min-w-24 space-y-2 sm:block">
                 <SkeletonBlock className="h-3 w-24" />
                 <SkeletonBlock className="h-2.5 w-16" />
@@ -599,7 +599,7 @@ export function AppShell({ children }: AppShellProps) {
             <div className="min-w-0 flex-1">
               <nav
                 aria-label="Breadcrumb"
-                className="inline-flex min-h-10 max-w-full items-center overflow-hidden rounded-[14px] border border-border/75 bg-white/78 px-3 text-sm text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]"
+                className="inline-flex min-h-10 max-w-full items-center overflow-hidden rounded-md border border-border/75 bg-white/78 px-3 text-sm text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]"
               >
                 {breadcrumbs.map((crumb, index) => (
                   <React.Fragment key={`${crumb.href}-${crumb.label}`}>
@@ -628,8 +628,8 @@ export function AppShell({ children }: AppShellProps) {
             </div>
 
             <details className="group relative">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-[16px] border border-border/80 bg-white/86 px-2.5 py-1.5 shadow-[var(--shadow-sm)] transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-px hover:border-primary/25 hover:bg-white hover:shadow-[var(--shadow-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-primary/10 bg-[linear-gradient(135deg,var(--theme-blue-soft),#ffffff)] text-sm font-semibold text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-md border border-border/80 bg-white/86 px-2.5 py-1.5 shadow-[var(--shadow-sm)] transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-px hover:border-primary/25 hover:bg-white hover:shadow-[var(--shadow-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-md border border-primary/10 bg-[linear-gradient(135deg,var(--theme-blue-soft),#ffffff)] text-sm font-semibold text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
                   {getInitials(userName)}
                 </div>
                 <div className="hidden text-left sm:block">
@@ -642,9 +642,9 @@ export function AppShell({ children }: AppShellProps) {
                 </div>
                 <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
               </summary>
-              <div className="absolute right-0 mt-2 w-56 rounded-[16px] border border-border/85 bg-white p-2 shadow-[var(--shadow-lg)]">
+              <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border/85 bg-white p-2 shadow-[var(--shadow-lg)]">
                 <button
-                  className="flex w-full items-center rounded-[12px] px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground"
+                  className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground"
                   onClick={() => {
                     logout()
                     router.replace(LOGIN_PATH)

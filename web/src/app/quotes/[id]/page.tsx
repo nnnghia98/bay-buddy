@@ -6,16 +6,12 @@ import {
   Panel,
   PanelHeaderRow,
   StatusChip,
-  TableScrollArea,
 } from "@/components/command-center"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+  DocumentField,
+  DocumentSummaryGrid,
+  FinanceLineItemsTable,
+} from "@/components/finance-document-ui"
 import { formatCurrency } from "@/lib/formatters"
 import { fetchQuoteDetail } from "@/lib/server-finance"
 import { getI18n } from "@/locales/server"
@@ -87,7 +83,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
   return (
     <div className="space-y-4 text-foreground">
       {convertBannerMessage ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950 shadow-sm">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-950 shadow-sm">
           <p className="text-sm font-medium">{convertBannerMessage}</p>
         </div>
       ) : null}
@@ -108,66 +104,52 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             </div>
           }
         />
-        <div className="grid gap-3 p-4 lg:grid-cols-2">
-          <div className="rounded-lg border border-border bg-secondary/35 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("financeDocuments.common.customer")}
-            </p>
-            <p className="mt-2 text-sm font-medium leading-6 text-foreground">
-              {quote.customer_name_snapshot}
-            </p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              {t("financeDocuments.common.address")}:{" "}
-              {quote.customer_address_snapshot ?? t("financeDocuments.common.notUpdated")}
-            </p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              {t("financeDocuments.common.taxCode")}:{" "}
-              {quote.customer_tax_code_snapshot ?? t("financeDocuments.common.notUpdated")}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-border bg-secondary/35 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("financeDocuments.common.total")}
-            </p>
-            <p className="mt-2 text-2xl font-medium tracking-[-0.02em] text-foreground">
-              {formatCurrency(quote.total_amount)}
-            </p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              {t("financeDocuments.common.taxAmount")}: {formatCurrency(quote.tax_amount)}
-            </p>
-            <p className="text-xs leading-5 text-muted-foreground">
-              {t("financeDocuments.common.discountAmount")}: {formatCurrency(quote.discount_amount)}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-border bg-secondary/35 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("financeDocuments.common.createdAt")}
-            </p>
-            <p className="mt-2 text-sm leading-6 text-foreground">
-              {formatDate(quote.created_at)}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-border bg-secondary/35 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("financeDocuments.common.amountInWords")}
-            </p>
-            <p className="mt-2 text-sm leading-6 text-foreground">
-              {quote.amount_in_words}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-border bg-secondary/35 p-4 lg:col-span-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-              {t("financeDocuments.common.note")}
-            </p>
-            <p className="mt-2 text-sm leading-6 text-foreground">
-              {quote.note ?? t("financeDocuments.common.noNote")}
-            </p>
-          </div>
-        </div>
+        <DocumentSummaryGrid>
+          <DocumentField
+            label={t("financeDocuments.common.customer")}
+            value={
+              <>
+                <p>{quote.customer_name_snapshot}</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  {t("financeDocuments.common.address")}:{" "}
+                  {quote.customer_address_snapshot ?? t("financeDocuments.common.notUpdated")}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  {t("financeDocuments.common.taxCode")}:{" "}
+                  {quote.customer_tax_code_snapshot ?? t("financeDocuments.common.notUpdated")}
+                </p>
+              </>
+            }
+          />
+          <DocumentField
+            label={t("financeDocuments.common.total")}
+            value={
+              <>
+                <p>{formatCurrency(quote.total_amount)}</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  {t("financeDocuments.common.taxAmount")}: {formatCurrency(quote.tax_amount)}
+                </p>
+                <p className="text-xs leading-5 text-muted-foreground">
+                  {t("financeDocuments.common.discountAmount")}: {formatCurrency(quote.discount_amount)}
+                </p>
+              </>
+            }
+            valueClassName="text-2xl font-medium tracking-[-0.02em]"
+          />
+          <DocumentField
+            label={t("financeDocuments.common.createdAt")}
+            value={formatDate(quote.created_at)}
+          />
+          <DocumentField
+            label={t("financeDocuments.common.amountInWords")}
+            value={quote.amount_in_words}
+          />
+          <DocumentField
+            className="lg:col-span-2"
+            label={t("financeDocuments.common.note")}
+            value={quote.note ?? t("financeDocuments.common.noNote")}
+          />
+        </DocumentSummaryGrid>
       </Panel>
 
       <Panel>
@@ -190,39 +172,17 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             )
           }
         />
-        <TableScrollArea>
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-secondary/55 hover:bg-secondary/55">
-                <TableHead>{t("financeDocuments.common.columns.description")}</TableHead>
-                <TableHead>{t("financeDocuments.common.columns.passenger")}</TableHead>
-                <TableHead>{t("financeDocuments.common.columns.quantity")}</TableHead>
-                <TableHead>{t("financeDocuments.common.columns.unitPrice")}</TableHead>
-                <TableHead className="text-right">
-                  {t("financeDocuments.common.columns.total")}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {quote.items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="max-w-[20rem]">
-                    <div className="space-y-1">
-                      <p className="font-medium text-foreground">{item.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.linked_ticket_id ?? item.passenger_name_snapshot}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>{item.passenger_name_snapshot}</TableCell>
-                  <TableCell>{item.quantity}</TableCell>
-                  <TableCell>{formatCurrency(item.unit_price_snapshot)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableScrollArea>
+        <FinanceLineItemsTable
+          descriptionClassName="max-w-[20rem]"
+          items={quote.items}
+          labels={{
+            description: t("financeDocuments.common.columns.description"),
+            passenger: t("financeDocuments.common.columns.passenger"),
+            quantity: t("financeDocuments.common.columns.quantity"),
+            total: t("financeDocuments.common.columns.total"),
+            unitPrice: t("financeDocuments.common.columns.unitPrice"),
+          }}
+        />
       </Panel>
     </div>
   )

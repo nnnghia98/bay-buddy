@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { ArrowLeft, FileText } from "lucide-react"
 
-import { StatusChip, TableScrollArea } from "@/components/command-center"
+import { EmptyState, Panel, StatusChip, TableScrollArea } from "@/components/command-center"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/formatters"
@@ -36,9 +36,9 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
   if (!customerId) {
     return (
       <div className="pb-12 text-foreground">
-        <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+        <Panel>
           <div className="flex flex-col items-center gap-4 px-6 py-16 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-secondary text-primary">
+            <div className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-secondary text-primary">
               <FileText className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="space-y-1">
@@ -56,7 +56,7 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
               </Link>
             </Button>
           </div>
-        </div>
+        </Panel>
       </div>
     )
   }
@@ -65,7 +65,7 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
 
   return (
     <div className="pb-12 text-foreground">
-      <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+      <Panel>
         <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
             {t("financeDocuments.invoices.list.title")}
@@ -76,12 +76,10 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
         </div>
 
         {invoices.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-secondary text-muted-foreground">
-              <FileText className="h-4 w-4" aria-hidden="true" />
-            </div>
-            <p className="text-sm text-muted-foreground">{t("financeDocuments.invoices.list.emptyList")}</p>
-          </div>
+          <EmptyState
+            icon={FileText}
+            message={t("financeDocuments.invoices.list.emptyList")}
+          />
         ) : (
           <TableScrollArea>
             <Table>
@@ -131,7 +129,7 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
             </Table>
           </TableScrollArea>
         )}
-      </div>
+      </Panel>
     </div>
   )
 }

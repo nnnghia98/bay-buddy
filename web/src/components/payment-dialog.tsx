@@ -119,7 +119,7 @@ export function PaymentDialog({
     : t("customers.ledger.paymentDialog.amountPlaceholder")
 
   const selectClassName =
-    "flex h-11 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
+    "flex h-11 w-full rounded-md border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
 
   const paymentMethodLabels: Record<RecordPaymentFormValues["method"], string> = {
     "Chuyển khoản": t(
@@ -203,7 +203,7 @@ export function PaymentDialog({
         <form action={formAction} className="space-y-5" onSubmit={handleSubmit}>
           <input name="customer_id" type="hidden" value={customerId} />
 
-          <div className="rounded-[20px] border border-border bg-secondary/70 p-4">
+          <div className="rounded-lg border border-border bg-secondary/70 p-4">
             <div className="space-y-2">
               <Label htmlFor="amount">
                 {t("customers.ledger.paymentDialog.fields.amount")}
@@ -287,7 +287,7 @@ export function PaymentDialog({
             ) : null}
           </div>
 
-          <div className="space-y-3 rounded-[20px] border border-border bg-white p-4 shadow-[var(--shadow-sm)]">
+          <div className="space-y-3 rounded-lg border border-border bg-white p-4 shadow-[var(--shadow-sm)]">
             <div className="space-y-2">
               <Label htmlFor="evidence_url">
                 {t("customers.ledger.paymentDialog.fields.evidence")}
@@ -308,7 +308,7 @@ export function PaymentDialog({
               </p>
             </div>
 
-            <div className="flex items-center gap-2 rounded-[16px] border border-dashed border-border bg-secondary px-3 py-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-secondary px-3 py-3 text-sm text-muted-foreground">
               {evidenceUrl.trim() ? (
                 <>
                   <ReceiptText className="h-4 w-4 text-primary" />

@@ -52,6 +52,7 @@ _default_frontend_origins = ",".join(
         "http://127.0.0.1:3000",
         "http://localhost:6769",
         "http://127.0.0.1:6769",
+        "http://100.81.220.45:6769",
     ]
 )
 _allowed_origins: list[str] = [

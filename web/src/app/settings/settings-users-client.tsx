@@ -14,6 +14,10 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { StatusChip, TableScrollArea } from "@/components/command-center"
+import {
+  RestrictedAccessPanel,
+  selectInputClassName,
+} from "@/components/operations-ui"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -316,7 +320,7 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
                   {t("settings.users.fields.role")}
                 </Label>
                 <select
-                  className="flex h-11 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
+                  className={selectInputClassName}
                   id={`${mode}-role`}
                   name="role"
                   onChange={(event) => setRole(event.target.value as UserRead["role"])}
@@ -337,7 +341,7 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
                   {t("settings.users.fields.status")}
                 </Label>
                 <select
-                  className="flex h-11 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
+                  className={selectInputClassName}
                   id={`${mode}-status`}
                   name="is_active"
                   onChange={(event) => setIsActive(event.target.value === "true")}
@@ -444,21 +448,10 @@ export function SettingsUsersClient({
 
   if (currentUser.role !== "ADMIN") {
     return (
-      <div className="pb-12 text-foreground">
-        <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-          <div className="flex items-start gap-4 px-5 py-8">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-amber-200 bg-amber-50 text-amber-800">
-              <ShieldOff className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <div>
-              <h1 className="text-base font-semibold text-foreground">{t("settings.restricted.title")}</h1>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-                {t("settings.restricted.contact")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <RestrictedAccessPanel
+        title={t("settings.restricted.title")}
+        description={t("settings.restricted.contact")}
+      />
     )
   }
 
@@ -490,7 +483,7 @@ export function SettingsUsersClient({
       <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_14px_40px_rgba(24,29,38,0.06)]">
         <div className="flex flex-col gap-5 border-b border-border px-5 py-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-accent text-primary shadow-[0_10px_24px_rgba(27,97,201,0.08)]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-accent text-primary shadow-[0_10px_24px_rgba(27,97,201,0.08)]">
               <UserCog className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
@@ -518,7 +511,7 @@ export function SettingsUsersClient({
               <div className="flex items-center gap-3 px-5 py-4" key={metric.label}>
                 <div
                   className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border",
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-md border",
                     metric.className,
                   )}
                 >
@@ -542,7 +535,7 @@ export function SettingsUsersClient({
         <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
           {users.length === 0 ? (
             <div className="flex min-h-64 flex-col items-center justify-center px-6 py-14 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-secondary text-primary">
+              <div className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-secondary text-primary">
                 <UsersRound className="h-5 w-5" aria-hidden="true" />
               </div>
               <p className="mt-4 text-sm font-medium text-foreground">
@@ -577,7 +570,7 @@ export function SettingsUsersClient({
                           <div className="flex items-center gap-3">
                             <div
                               className={cn(
-                                "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-sm font-semibold transition-transform group-hover:scale-[1.02]",
+                                "flex h-10 w-10 shrink-0 items-center justify-center rounded-md border text-sm font-semibold transition-transform group-hover:scale-[1.02]",
                                 user.is_active
                                   ? "border-primary/15 bg-accent text-primary"
                                   : "border-border bg-secondary/50 text-muted-foreground",
@@ -641,7 +634,7 @@ export function SettingsUsersClient({
           </div>
           <div className="divide-y divide-border">
             <div className="flex items-start gap-3 px-5 py-4">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-accent text-primary">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-accent text-primary">
                 <ShieldCheck className="h-4 w-4" aria-hidden="true" />
               </div>
               <p className="text-sm leading-6 text-muted-foreground">
@@ -649,7 +642,7 @@ export function SettingsUsersClient({
               </p>
             </div>
             <div className="flex items-start gap-3 px-5 py-4">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-accent text-primary">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-accent text-primary">
                 <UserCog className="h-4 w-4" aria-hidden="true" />
               </div>
               <p className="text-sm leading-6 text-muted-foreground">

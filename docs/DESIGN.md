@@ -70,10 +70,10 @@ typography:
     lineHeight: 1.4
     letterSpacing: 0em
 rounded:
-  sm: 0.5rem
-  md: 0.625rem
+  sm: 0.25rem
+  md: 0.5rem
   lg: 0.75rem
-  xl: 0.875rem
+  xl: 1rem
   card: 1.5rem
   full: 9999px
 spacing:
@@ -97,7 +97,7 @@ components:
   panel:
     backgroundColor: "{colors.neutral}"
     textColor: "{colors.foreground}"
-    rounded: "{rounded.lg}"
+    rounded: "{rounded.xl}"
     padding: "{spacing.panel-x}"
     typography: "{typography.body-sm}"
   panel-muted:
@@ -137,7 +137,7 @@ components:
   input-default:
     backgroundColor: "{colors.neutral}"
     textColor: "{colors.foreground}"
-    rounded: "{rounded.xl}"
+    rounded: "{rounded.md}"
     typography: "{typography.body-sm}"
     height: 2.75rem
   table-header:
@@ -150,7 +150,7 @@ components:
   metric-card:
     backgroundColor: "{colors.neutral}"
     textColor: "{colors.foreground}"
-    rounded: "{rounded.lg}"
+    rounded: "{rounded.xl}"
     padding: "{spacing.metric-card-padding}"
   status-success:
     backgroundColor: "{colors.success}"
@@ -173,7 +173,7 @@ components:
   dialog:
     backgroundColor: "{colors.neutral}"
     textColor: "{colors.foreground}"
-    rounded: "{rounded.card}"
+    rounded: "{rounded.xl}"
     padding: "{spacing.2xl}"
   modal-overlay:
     backgroundColor: "{colors.overlay-ink}"
@@ -265,14 +265,28 @@ Positive letter-spacing (`tracking-[0.08em]`–`tracking-[0.28em]`) is required 
 
 ### Radius
 
+Bay Buddy uses a geometric radius scale to avoid bubble-wrap rounding while keeping nested surfaces visually proportional. The default interactive baseline is `md` (`8px`). The default structural baseline is `xl` (`16px`). Reserve `card` (`24px`) for hero banners and massive modals only.
+
+| Token | Value | Usage |
+|---|---:|---|
+| `sm` | `0.25rem` / `4px` | Checkboxes, micro-tags |
+| `md` | `0.5rem` / `8px` | Inputs, buttons, icon badges, compact avatars |
+| `lg` | `0.75rem` / `12px` | Small cards, nested blocks, inline feedback |
+| `xl` | `1rem` / `16px` | Panels, white cards, standard dialogs |
+| `card` | `1.5rem` / `24px` | Hero banners, massive modals only |
+| `full` | `9999px` | Pill badges, circular avatars |
+
 | Element | Radius |
 |---|---|
-| Panel / white card | `rounded-xl` (12px) |
-| Icon badge / avatar | `rounded-lg` (8px) or `rounded-[10px]` |
-| Large dialog card | `rounded-[24px]` |
+| Panel / white card | `rounded-xl` (16px) |
+| Icon badge / avatar | `rounded-md` (8px) |
+| Standard dialog / modal | `rounded-xl` (16px) |
+| Massive modal / hero banner | `rounded-card` (24px) |
 | Status chip | `rounded-full` |
-| Button (default) | `rounded-[12px]` (from shadcn token) |
-| Input | `rounded-[14px]` (from shadcn token) |
+| Button (default) | `rounded-md` (8px) |
+| Input | `rounded-md` (8px) |
+
+Nested proportionality rule: when an `8px` interactive element sits inside a structural container with `8px` padding, use a `16px` outer radius and an `8px` inner radius (`16px - 8px = 8px`) so curves stay concentric.
 
 ---
 
@@ -360,7 +374,7 @@ Used in a 3-column `sm:grid-cols-3` strip when summary values help staff decide 
 
 ```tsx
 <div className="overflow-hidden rounded-xl border border-border bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-  <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
+  <div className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-secondary text-primary">
     <Icon className="h-4 w-4" aria-hidden="true" />
   </div>
   <p className="mt-3.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
@@ -387,7 +401,7 @@ For customer and user rows in tables.
 
 ```tsx
 // Preferred compact size
-<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-accent text-xs font-semibold text-primary">
+<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent text-xs font-semibold text-primary">
   {initials}
 </div>
 ```
@@ -397,7 +411,7 @@ Do **not** use `h-12 w-12` in table rows — that is landing-page scale.
 ### 5.7 Icon Badge (for metric cards and status icons)
 
 ```tsx
-<div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
+<div className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-secondary text-primary">
   <Icon className="h-4 w-4" aria-hidden="true" />
 </div>
 ```
@@ -423,7 +437,7 @@ Sits above the metric strip. Contains search (left) and primary action button (r
 
 ```tsx
 <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-secondary text-muted-foreground">
+  <div className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-secondary text-muted-foreground">
     <Icon className="h-4 w-4" aria-hidden="true" />
   </div>
   <p className="text-sm text-muted-foreground">{emptyMessage}</p>
@@ -437,7 +451,7 @@ Sits above the metric strip. Contains search (left) and primary action button (r
   href={href}
   className="group flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-3.5 transition-all duration-150 hover:border-primary/25 hover:bg-accent/45 hover:shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
 >
-  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-primary transition-colors group-hover:border-primary/20 group-hover:bg-white">
+  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-secondary text-primary transition-colors group-hover:border-primary/20 group-hover:bg-white">
     <Icon className="h-4 w-4" aria-hidden="true" />
   </span>
   <span className="min-w-0 flex-1">
@@ -466,7 +480,7 @@ Sits above the metric strip. Contains search (left) and primary action button (r
 ```tsx
 <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
   <div className="flex items-start gap-4 px-5 py-8">
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-amber-200 bg-amber-50 text-amber-800">
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-amber-200 bg-amber-50 text-amber-800">
       <ShieldOff className="h-5 w-5" aria-hidden="true" />
     </div>
     <div>
@@ -570,7 +584,7 @@ These recipes preserve product decisions that should not live in a generic front
 - Keep search and customer creation in the action bar.
 - Use ghost buttons for repeated in-row edit/delete actions.
 - Use a `Loader2` table row that spans all columns while loading.
-- Customer avatars in rows use compact initials badges (`h-9 w-9 rounded-[10px]`).
+- Customer avatars in rows use compact initials badges (`h-9 w-9 rounded-md`).
 
 ### Customer Ledger (`/customers/[id]`)
 

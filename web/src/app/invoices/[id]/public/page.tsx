@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { FinanceLineItemsTable } from "@/components/finance-document-ui"
 import { formatCurrency } from "@/lib/formatters"
 import { fetchInvoicePublicView } from "@/lib/server-finance"
 import { getI18n } from "@/locales/server"
@@ -54,7 +54,7 @@ export default async function InvoicePublicPage({ params }: PageProps) {
                   {publicView.brand.slogan}
                 </CardDescription>
               </div>
-              <div className="rounded-xl border border-border bg-white px-4 py-3 text-sm leading-6 text-muted-foreground">
+              <div className="rounded-lg border border-border bg-white px-4 py-3 text-sm leading-6 text-muted-foreground">
                 <p>{t("financeDocuments.invoices.public.contact")}</p>
                 <p>{publicView.brand.support_email}</p>
                 <p>{publicView.brand.hotline}</p>
@@ -82,7 +82,7 @@ export default async function InvoicePublicPage({ params }: PageProps) {
               </div>
             </div>
 
-            <div className="grid gap-3 rounded-xl border border-border bg-secondary/30 p-4">
+            <div className="grid gap-3 rounded-lg border border-border bg-secondary/30 p-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   {t("financeDocuments.common.customer")}
@@ -118,36 +118,21 @@ export default async function InvoicePublicPage({ params }: PageProps) {
                 {t("financeDocuments.invoices.public.lineItemsTitle")}
               </h2>
             </div>
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-secondary/60 hover:bg-secondary/60">
-                  <TableHead>{t("financeDocuments.common.columns.description")}</TableHead>
-                  <TableHead>{t("financeDocuments.common.columns.passenger")}</TableHead>
-                  <TableHead className="text-right">{t("financeDocuments.common.columns.quantity")}</TableHead>
-                  <TableHead className="text-right">{t("financeDocuments.common.columns.unitPrice")}</TableHead>
-                  <TableHead className="text-right">{t("financeDocuments.common.columns.total")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {publicView.items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="max-w-[28rem]">
-                      <p className="font-medium text-foreground">{item.description}</p>
-                    </TableCell>
-                    <TableCell>{item.passenger_name_snapshot}</TableCell>
-                    <TableCell className="text-right">{item.quantity}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(item.unit_price_snapshot)}
-                    </TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <FinanceLineItemsTable
+              items={publicView.items}
+              labels={{
+                description: t("financeDocuments.common.columns.description"),
+                passenger: t("financeDocuments.common.columns.passenger"),
+                quantity: t("financeDocuments.common.columns.quantity"),
+                total: t("financeDocuments.common.columns.total"),
+                unitPrice: t("financeDocuments.common.columns.unitPrice"),
+              }}
+              showLinkedTicketId={false}
+            />
           </section>
 
           <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="rounded-xl border border-border bg-secondary/30 p-5">
+            <div className="rounded-lg border border-border bg-secondary/30 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 {t("financeDocuments.common.amountInWords")}
               </p>
@@ -156,7 +141,7 @@ export default async function InvoicePublicPage({ params }: PageProps) {
               </p>
             </div>
 
-            <div className="grid gap-3 rounded-xl border border-border bg-secondary/30 p-5">
+            <div className="grid gap-3 rounded-lg border border-border bg-secondary/30 p-5">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   {t("financeDocuments.common.taxAmount")}

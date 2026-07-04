@@ -11,13 +11,13 @@ import {
   Save,
   ShieldAlert,
   ShieldCheck,
-  ShieldOff,
   Trash2,
   Upload,
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { StatusChip, TableScrollArea } from "@/components/command-center"
+import { MetricCard, StatusChip, TableScrollArea } from "@/components/command-center"
+import { RestrictedAccessPanel } from "@/components/operations-ui"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -38,12 +38,6 @@ import type { UserRead } from "@/schemas"
 
 type DataCenterClientProps = {
   currentUser: UserRead
-}
-
-type MetricCardProps = {
-  icon: React.ComponentType<{ className?: string; "aria-hidden"?: "true" }>
-  label: string
-  value: string
 }
 
 type OperationKey = "backup" | "add" | "remove"
@@ -116,24 +110,6 @@ function toDateTimeLocalValue(value: string | null): string {
   return value.slice(0, 16)
 }
 
-function MetricCard({ icon: Icon, label, value }: MetricCardProps) {
-  return (
-    <div className="group rounded-xl border border-border bg-white p-4 shadow-[var(--shadow-sm)] transition-[border-color,box-shadow] duration-200 hover:border-primary/20 hover:shadow-[var(--shadow-md)]">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-primary/10 bg-accent text-primary">
-          <Icon className="h-4 w-4" aria-hidden="true" />
-        </div>
-        <p className="min-h-8 break-words text-right text-xl font-semibold leading-7 tracking-normal text-foreground">
-          {value}
-        </p>
-      </div>
-      <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-        {label}
-      </p>
-    </div>
-  )
-}
-
 function OperationIcon({ operation }: { operation: OperationKey }) {
   const iconClassName = "h-4 w-4"
 
@@ -185,23 +161,10 @@ function RestrictedDataCenter() {
   const t = useI18n()
 
   return (
-    <div className="pb-12 text-foreground">
-      <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-        <div className="flex items-start gap-4 px-5 py-8">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-amber-200 bg-amber-50 text-amber-800">
-            <ShieldOff className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <div>
-            <h1 className="text-base font-semibold text-foreground">
-              {t("dataCenter.restricted.title")}
-            </h1>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-              {t("dataCenter.restricted.description")}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <RestrictedAccessPanel
+      title={t("dataCenter.restricted.title")}
+      description={t("dataCenter.restricted.description")}
+    />
   )
 }
 
@@ -447,7 +410,7 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
       <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
         <div className="space-y-4 px-5 py-4">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border border-primary/15 bg-accent text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-accent text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
               <Database className="h-4 w-4" aria-hidden="true" />
             </div>
             <div className="min-w-0">
@@ -699,7 +662,7 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
                   </TableCell>
                   <TableCell className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-primary/15 bg-accent text-primary">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-accent text-primary">
                         <Database className="h-4 w-4" aria-hidden="true" />
                       </div>
                       <div>
@@ -783,7 +746,7 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
             >
               <div
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-[12px] border",
+                  "flex h-9 w-9 items-center justify-center rounded-md border",
                   isDestructive
                     ? "border-rose-200 bg-rose-50 text-rose-700"
                     : "border-primary/10 bg-accent text-primary",
@@ -838,7 +801,7 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
         </div>
         <div className="grid gap-5 px-5 py-5 lg:grid-cols-[1fr_360px]">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-rose-200 bg-rose-50 text-rose-700">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-rose-200 bg-rose-50 text-rose-700">
               <ShieldAlert className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>

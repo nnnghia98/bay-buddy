@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 
+import { Panel } from "@/components/command-center";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -506,7 +507,7 @@ export default function CaptureTicketPage() {
           {/* Left column – File upload / Preview (Sticky)                     */}
           {/* ---------------------------------------------------------------- */}
           <div className="flex flex-col gap-4 lg:sticky lg:top-16">
-            <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
+            <Panel>
               <div className="border-b border-border px-4 py-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
                   Chứng từ đặt chỗ
@@ -642,7 +643,7 @@ export default function CaptureTicketPage() {
                   </div>
                 )}
               </div>
-            </section>
+            </Panel>
           </div>
 
           {/* ---------------------------------------------------------------- */}
@@ -654,7 +655,7 @@ export default function CaptureTicketPage() {
             className="flex min-w-0 flex-col gap-4"
           >
             {/* Customer & Price Card */}
-            <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
+            <Panel>
               <div className="border-b border-border px-4 py-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
                   Thông tin giao dịch
@@ -682,7 +683,7 @@ export default function CaptureTicketPage() {
                   )}
                 </div>
 
-                <div className="rounded-xl border border-border/70 bg-secondary/30 p-4">
+                <div className="rounded-lg border border-border/70 bg-secondary/30 p-4">
                   <div className="space-y-3">
                     <div className="grid gap-2">
                       <Label htmlFor="totalPrice" className="text-sm font-semibold text-foreground">Giá gốc <span className="text-red-500">*</span></Label>
@@ -805,10 +806,10 @@ export default function CaptureTicketPage() {
                   </div>
                 </div>
               </div>
-            </section>
+            </Panel>
 
             {/* Flight Details Card */}
-            <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
+            <Panel>
               <div className="border-b border-border px-4 py-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
                   Chi tiết chuyến bay
@@ -893,7 +894,7 @@ export default function CaptureTicketPage() {
                 </div>
 
                 {/* Route & Date */}
-                <div className="grid gap-4 rounded-xl border border-border/50 bg-secondary/30 p-4 2xl:grid-cols-3">
+                <div className="grid gap-4 rounded-lg border border-border/50 bg-secondary/30 p-4 2xl:grid-cols-3">
                   <div className="space-y-2">
                     <Label htmlFor="departureCode">Mã nơi đi</Label>
                     <Input
@@ -954,10 +955,10 @@ export default function CaptureTicketPage() {
                   )}
                 </div>
               </div>
-            </section>
+            </Panel>
 
             {/* Passengers Card */}
-            <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
+            <Panel>
               <div className="flex flex-row items-center justify-between gap-3 border-b border-border px-4 py-3">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
@@ -1011,10 +1012,10 @@ export default function CaptureTicketPage() {
                   </div>
                 ))}
               </div>
-            </section>
+            </Panel>
 
             {/* Submit Action */}
-            <div className="flex flex-col gap-3 rounded-xl border border-primary/10 bg-primary/5 p-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
+            <div className="flex flex-col gap-3 rounded-lg border border-primary/10 bg-primary/5 p-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
               <div>
                 <p className="text-sm font-medium text-foreground">Xác nhận tạo công nợ</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Vé sau khi lưu sẽ được tính vào công nợ của khách hàng.</p>

@@ -63,7 +63,7 @@
   --font-geist:
     "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
-  --radius: 0.625rem;
+  --radius: 0.5rem;
 
   --shadow-2xs: var(--theme-shadow-panel);
   --shadow-xs: var(--theme-shadow-panel);
@@ -163,10 +163,12 @@
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-card: 1.5rem;
+  --radius-full: 9999px;
 
   --shadow-2xs: var(--shadow-2xs);
   --shadow-xs: var(--shadow-xs);

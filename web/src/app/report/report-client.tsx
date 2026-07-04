@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Download, Loader2 } from "lucide-react"
 
 import { StatusChip, TableScrollArea } from "@/components/command-center"
+import { TableStateRow } from "@/components/operations-ui"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -538,7 +539,7 @@ export function LedgerReportClient({
                 {t("report.filters.from")}
               </label>
               <input
-                className="h-10 w-full rounded-lg border border-input bg-white px-3 text-sm text-foreground shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm text-foreground shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
                 id="report-from"
                 name="from"
                 onChange={(event) => setFromValue(event.target.value)}
@@ -554,7 +555,7 @@ export function LedgerReportClient({
                 {t("report.filters.to")}
               </label>
               <input
-                className="h-10 w-full rounded-lg border border-input bg-white px-3 text-sm text-foreground shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm text-foreground shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
                 id="report-to"
                 name="to"
                 onChange={(event) => setToValue(event.target.value)}
@@ -644,20 +645,12 @@ export function LedgerReportClient({
             </TableHeader>
             <TableBody>
               {reportRows.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    className="py-16 text-center text-sm text-muted-foreground"
-                    colSpan={Math.max(selectedColumns.length, 1)}
-                  >
-                    {t("report.empty")}
-                  </TableCell>
-                </TableRow>
+                <TableStateRow
+                  colSpan={Math.max(selectedColumns.length, 1)}
+                  message={t("report.empty")}
+                />
               ) : selectedColumns.length === 0 ? (
-                <TableRow>
-                  <TableCell className="py-16 text-center text-sm text-muted-foreground">
-                    {t("report.noColumns")}
-                  </TableCell>
-                </TableRow>
+                <TableStateRow colSpan={1} message={t("report.noColumns")} />
               ) : (
                 reportRows.map((row, rowIndex) => (
                   <TableRow className="hover:bg-accent/35" key={row.id}>
@@ -726,7 +719,7 @@ export function LedgerReportClient({
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {columns.map((column) => (
               <label
-                className="flex min-h-10 items-center gap-3 rounded-lg border border-border bg-secondary/25 px-3 text-sm font-medium text-foreground"
+                className="flex min-h-10 items-center gap-3 rounded-md border border-border bg-secondary/25 px-3 text-sm font-medium text-foreground"
                 key={column.key}
               >
                 <input

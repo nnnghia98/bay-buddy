@@ -544,9 +544,9 @@ function FormSection({
   title: string
 }) {
   return (
-    <div className="rounded-xl border border-border/80 bg-secondary/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+    <div className="rounded-lg border border-border/80 bg-secondary/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-border bg-white text-primary shadow-[var(--shadow-sm)]">
+        <span className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-white text-primary shadow-[var(--shadow-sm)]">
           <Icon aria-hidden="true" className="h-4 w-4" />
         </span>
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
@@ -1270,7 +1270,7 @@ export function ManualDebtInputClient({
           <Panel className="min-w-0">
             <div className="shrink-0 border-b border-border bg-secondary/35 p-4">
               <form
-                className="grid w-full gap-3 rounded-xl border border-border bg-white p-3 shadow-[var(--shadow-sm)] sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                className="grid w-full gap-3 rounded-lg border border-border bg-white p-3 shadow-[var(--shadow-sm)] sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
                 onSubmit={handleApplyFilters}
               >
                 <div className="space-y-1.5">

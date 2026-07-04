@@ -7,7 +7,12 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { z } from "zod"
 
-import { StatusChip, TableScrollArea } from "@/components/command-center"
+import { MetricCard, Panel, StatusChip, TableScrollArea } from "@/components/command-center"
+import {
+  InitialsAvatar,
+  TableStateRow,
+  selectInputClassName,
+} from "@/components/operations-ui"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -44,15 +49,6 @@ const currentUserSchema = z.object({
   is_active: z.boolean(),
 })
 
-function getInitials(fullName: string): string {
-  return fullName
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("")
-}
-
 async function fetchCustomers(): Promise<CustomerDirectoryItem[]> {
   const payload = await apiFetchData<unknown>("/customers/")
   return customerDirectorySchema.parse(payload)
@@ -61,33 +57,6 @@ async function fetchCustomers(): Promise<CustomerDirectoryItem[]> {
 async function fetchCurrentUser(): Promise<z.infer<typeof currentUserSchema>> {
   const payload = await apiFetchData<unknown>("/auth/me")
   return currentUserSchema.parse(payload)
-}
-
-// ---------------------------------------------------------------------------
-// Metric card — consistent with new dashboard style
-// ---------------------------------------------------------------------------
-function MetricCard({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: React.ComponentType<{ className?: string; "aria-hidden"?: "true" }>
-  label: string
-  value: string | number
-}) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
-        <Icon className="h-4 w-4" aria-hidden="true" />
-      </div>
-      <p className="mt-3.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-foreground">
-        {value}
-      </p>
-    </div>
-  )
 }
 
 export default function CustomersPage() {
@@ -250,26 +219,22 @@ export default function CustomersPage() {
   // Table body states
   // ---------------------------------------------------------------------------
   const customerRows = customersQuery.isLoading ? (
-    <TableRow>
-      <TableCell className="py-16 text-center" colSpan={tableColumnCount}>
-        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span className="text-sm">{t("customers.directory.loading")}</span>
-        </div>
-      </TableCell>
-    </TableRow>
+    <TableStateRow
+      colSpan={tableColumnCount}
+      message={t("customers.directory.loading")}
+      state="loading"
+    />
   ) : customersQuery.isError ? (
-    <TableRow>
-      <TableCell className="py-12 text-center text-sm text-red-600" colSpan={tableColumnCount}>
-        {t("customers.directory.error")}
-      </TableCell>
-    </TableRow>
+    <TableStateRow
+      colSpan={tableColumnCount}
+      message={t("customers.directory.error")}
+      state="error"
+    />
   ) : filteredCustomers.length === 0 ? (
-    <TableRow>
-      <TableCell className="py-12 text-center text-sm text-muted-foreground" colSpan={tableColumnCount}>
-        {t("customers.directory.empty")}
-      </TableCell>
-    </TableRow>
+    <TableStateRow
+      colSpan={tableColumnCount}
+      message={t("customers.directory.empty")}
+    />
   ) : (
     filteredCustomers.map((customer) => (
       <TableRow
@@ -281,9 +246,7 @@ export default function CustomersPage() {
         {/* Name + initials */}
         <TableCell className="px-5 py-3.5">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-accent text-xs font-semibold text-primary">
-              {getInitials(customer.full_name)}
-            </div>
+            <InitialsAvatar value={customer.full_name} />
             <div>
               <div className="text-sm font-medium text-foreground leading-snug">
                 {customer.full_name}
@@ -421,7 +384,7 @@ export default function CustomersPage() {
                     {t("customers.management.fields.type")}
                   </Label>
                   <select
-                    className="flex h-11 w-full rounded-[14px] border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
+                    className={selectInputClassName}
                     id="create-customer-type"
                     onChange={(e) => setCreateType(e.target.value as "INDIVIDUAL" | "BUSINESS")}
                     value={createType}
@@ -519,7 +482,7 @@ export default function CustomersPage() {
       {/* ------------------------------------------------------------------ */}
       {/* Customer table                                                      */}
       {/* ------------------------------------------------------------------ */}
-      <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+      <Panel>
         <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
             {t("customers.directory.title")}
@@ -546,7 +509,7 @@ export default function CustomersPage() {
             <TableBody>{customerRows}</TableBody>
           </Table>
         </TableScrollArea>
-      </div>
+      </Panel>
 
       {/* ------------------------------------------------------------------ */}
       {/* Admin dialogs — edit & delete                                       */}

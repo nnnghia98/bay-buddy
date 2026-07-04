@@ -1,8 +1,6 @@
 "use client"
 
-import { useFormStatus } from "react-dom"
-
-import { Button } from "@/components/ui/button"
+import { ActionSubmitButton } from "@/components/form-submit-button"
 
 type ConvertQuoteSubmitButtonProps = {
   label: string
@@ -13,11 +11,5 @@ export function ConvertQuoteSubmitButton({
   label,
   pendingLabel,
 }: ConvertQuoteSubmitButtonProps) {
-  const { pending } = useFormStatus()
-
-  return (
-    <Button disabled={pending} type="submit">
-      {pending ? pendingLabel : label}
-    </Button>
-  )
+  return <ActionSubmitButton idleLabel={label} pendingLabel={pendingLabel} />
 }

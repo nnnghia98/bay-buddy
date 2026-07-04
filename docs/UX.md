@@ -2,7 +2,7 @@
 
 This document sits beside `docs/DESIGN.md`.
 
-- `docs/DESIGN.md` defines the visual token baseline: white canvas, deep navy text, Airtable blue, simple borders, soft shadows, and restrained radius.
+- `docs/DESIGN.md` defines the visual token baseline: white canvas, deep navy text, Airtable blue, simple borders, soft shadows, and a geometric radius scale.
 - `docs/UX.md` defines how Bay Buddy should feel and behave as an operations product.
 - Generic/community frontend skills may assist with general UI craft, but they do not override this document or `docs/DESIGN.md`.
 
@@ -45,7 +45,7 @@ Add these UX-specific visual rules:
 
 - Use compact working surfaces for dashboards, ledgers, invoices, and ticket capture.
 - Avoid giant hero cards inside authenticated app pages.
-- Keep cards at 8px radius or follow existing shadcn component radius unless a reusable pattern already uses a larger value.
+- Use `8px` radius for interactive controls, icon badges, and compact avatars; use `16px` for structural panels and standard dialogs.
 - Use status chips with text and color together; never rely on color alone.
 - Make primary actions visually persistent near the data they affect.
 - Prefer tables for financial records on desktop and mobile-safe stacked rows or horizontal scroll on narrow screens.
