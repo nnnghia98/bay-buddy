@@ -224,31 +224,25 @@ function ShellNavigation({
               : item.href !== "/" && pathname.startsWith(item.href)))
 
         const itemClasses = cn(
-          "group relative flex min-h-11 items-center rounded-md border border-transparent text-sm font-semibold tracking-[0.08px] text-muted-foreground transition-[background-color,border-color,color,box-shadow,transform] duration-200 hover:border-primary/15 hover:bg-sidebar-accent hover:text-foreground active:translate-x-0",
+          "group relative flex min-h-11 items-center overflow-hidden rounded-md border border-border bg-transparent text-sm font-semibold tracking-[0.08px] text-foreground/70 transition-[background-color,border-color,color,box-shadow,transform] duration-200 hover:border-primary/25 hover:bg-sidebar-accent/65 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar active:translate-x-0",
           compact
-            ? "w-12 justify-center px-1 py-1"
-            : "gap-3 px-3.5 py-2.5 hover:translate-x-0.5",
+            ? "h-12 w-12 justify-center p-0"
+            : "w-full gap-3 px-3.5 py-2.5 hover:translate-x-0.5",
           isActive &&
-            (compact
-              ? "border-primary/10 bg-white text-primary shadow-[0_10px_24px_-18px_rgba(27,97,201,0.7)]"
-              : "border-primary/15 bg-white text-primary shadow-[var(--shadow-sm)]"),
-          item.disabled && "cursor-default opacity-55",
+            "border-primary bg-[#e0f2ff] text-primary shadow-[0_12px_26px_-22px_rgba(27,97,201,0.72)] hover:border-primary hover:bg-[#e0f2ff] hover:text-primary",
+          item.disabled &&
+            "cursor-default opacity-55 hover:border-border hover:bg-transparent hover:text-foreground/70",
         )
 
         const content = (
           <>
-            {compact && isActive ? (
-              <span className="absolute left-[-0.55rem] h-7 w-1 rounded-r-full bg-primary" />
+            {isActive ? (
+              <span
+                aria-hidden="true"
+                className="absolute inset-y-2 left-0 w-1 rounded-r-full bg-primary"
+              />
             ) : null}
-            <div
-              className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-md border border-border/70 bg-white text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition-colors duration-200 group-hover:border-primary/20 group-hover:text-primary",
-                compact && "border-transparent bg-transparent shadow-none group-hover:bg-white group-hover:shadow-[var(--shadow-sm)]",
-                isActive && (compact ? "bg-accent text-primary" : "border-primary/20 bg-accent text-primary"),
-              )}
-            >
-              <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
-            </div>
+            <Icon aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={2} />
             <span className={cn("flex-1 text-left", compact && "sr-only")}>
               {label}
             </span>
@@ -278,6 +272,7 @@ function ShellNavigation({
 
         return (
           <Link
+            aria-current={isActive ? "page" : undefined}
             aria-label={compact ? label : undefined}
             className={itemClasses}
             href={item.href}
@@ -330,10 +325,10 @@ function AuthenticatedShellLoading({
           <div className="space-y-3 py-4">
             {Array.from({ length: 6 }).map((_, index) => (
               <div
-                className="flex min-h-11 items-center justify-center rounded-md px-2 py-2"
+                className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-transparent"
                 key={index}
               >
-                <SkeletonBlock className="h-9 w-9" />
+                <SkeletonBlock className="h-4 w-4 rounded-sm" />
               </div>
             ))}
           </div>
