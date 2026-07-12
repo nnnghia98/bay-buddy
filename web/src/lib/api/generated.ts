@@ -742,6 +742,176 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workbooks/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Editing Session Route */
+        post: operations["create_editing_session_route_api_v1_workbooks_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbooks/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Editing Session Route */
+        get: operations["get_editing_session_route_api_v1_workbooks_sessions__session_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbooks/sessions/{session_id}/column-configuration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Session Column Configuration Route */
+        patch: operations["update_session_column_configuration_route_api_v1_workbooks_sessions__session_id__column_configuration_patch"];
+        trace?: never;
+    };
+    "/api/v1/workbooks/sessions/{session_id}/columns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Session Column Route */
+        post: operations["add_session_column_route_api_v1_workbooks_sessions__session_id__columns_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbooks/sessions/{session_id}/columns/{column_id}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Remove Session Column Route */
+        post: operations["remove_session_column_route_api_v1_workbooks_sessions__session_id__columns__column_id__remove_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbooks/sessions/{session_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Current Workbook Route */
+        get: operations["download_current_workbook_route_api_v1_workbooks_sessions__session_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbooks/sessions/{session_id}/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Session Records Route */
+        get: operations["read_session_records_route_api_v1_workbooks_sessions__session_id__records_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbooks/sessions/{session_id}/saves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save Session Changes Route */
+        post: operations["save_session_changes_route_api_v1_workbooks_sessions__session_id__saves_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbooks/sessions/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Latest Editing Session Route */
+        get: operations["get_latest_editing_session_route_api_v1_workbooks_sessions_latest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbooks/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Workbook Route */
+        post: operations["upload_workbook_route_api_v1_workbooks_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -811,6 +981,15 @@ export interface components {
              * File
              * Format: binary
              * @description Image (JPEG/PNG/WebP) or PDF of a flight booking confirmation.
+             */
+            file: string;
+        };
+        /** Body_upload_workbook_route_api_v1_workbooks_uploads_post */
+        Body_upload_workbook_route_api_v1_workbooks_uploads_post: {
+            /**
+             * File
+             * Format: binary
+             * @description Excel .xlsx or legacy .xls workbook.
              */
             file: string;
         };
@@ -1083,6 +1262,11 @@ export interface components {
              */
             note?: string | null;
         };
+        /**
+         * SortDirection
+         * @enum {string}
+         */
+        SortDirection: "asc" | "desc";
         /**
          * SystemSettingUpdate
          * @description Partial settings update payload.
@@ -1648,6 +1832,368 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** WorkbookAddColumnRequest */
+        WorkbookAddColumnRequest: {
+            /** Base Version */
+            base_version: number;
+            /** @default text */
+            data_type: components["schemas"]["WorkbookColumnDataType"];
+            /** Label */
+            label: string;
+        };
+        /** WorkbookColumnConfiguration */
+        WorkbookColumnConfiguration: {
+            /** Column Number */
+            column_number: number;
+            data_type: components["schemas"]["WorkbookColumnDataType"];
+            /**
+             * Hidden
+             * @default false
+             */
+            hidden: boolean;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            origin: components["schemas"]["WorkbookColumnOrigin"];
+            semantic_field?: components["schemas"]["WorkbookSemanticField"] | null;
+            /**
+             * Sticky
+             * @default false
+             */
+            sticky: boolean;
+        };
+        /** WorkbookColumnConfigurationRequest */
+        WorkbookColumnConfigurationRequest: {
+            /** Hidden Column Ids */
+            hidden_column_ids?: string[];
+            /** Sticky Column Ids */
+            sticky_column_ids?: string[];
+        };
+        /**
+         * WorkbookColumnDataType
+         * @enum {string}
+         */
+        WorkbookColumnDataType: "text" | "number" | "date" | "currency";
+        /**
+         * WorkbookColumnOrigin
+         * @enum {string}
+         */
+        WorkbookColumnOrigin: "source" | "user";
+        /** WorkbookErrorDetail */
+        WorkbookErrorDetail: {
+            /** Code */
+            code: string;
+            /** Details */
+            details?: {
+                [key: string]: unknown;
+            };
+            /** Message */
+            message: string;
+        };
+        /** WorkbookErrorResponse */
+        WorkbookErrorResponse: {
+            detail: components["schemas"]["WorkbookErrorDetail"];
+        };
+        /**
+         * WorkbookMappingStatus
+         * @enum {string}
+         */
+        WorkbookMappingStatus: "READY" | "MAPPING_INCOMPLETE" | "AMBIGUOUS_MAPPING";
+        /** WorkbookPagination */
+        WorkbookPagination: {
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** WorkbookPriceChange */
+        WorkbookPriceChange: {
+            /** Row Number */
+            row_number: number;
+            values: components["schemas"]["WorkbookPriceChangeValues"];
+        };
+        /** WorkbookPriceChangeValues */
+        WorkbookPriceChangeValues: {
+            /** Net Price */
+            net_price?: number | null;
+            /** Selling Price */
+            selling_price?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** WorkbookRecordColumn */
+        WorkbookRecordColumn: {
+            /** @default text */
+            data_type: components["schemas"]["WorkbookColumnDataType"];
+            /** Editable */
+            editable: boolean;
+            /** Field */
+            field: string;
+            /** Group Label */
+            group_label?: string | null;
+            /**
+             * Header Row Span
+             * @default 1
+             */
+            header_row_span: number;
+            /**
+             * Hidden
+             * @default false
+             */
+            hidden: boolean;
+            /**
+             * Id
+             * @default legacy
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /** @default source */
+            origin: components["schemas"]["WorkbookColumnOrigin"];
+            semantic_field?: components["schemas"]["WorkbookSemanticField"] | null;
+            /**
+             * Sticky
+             * @default false
+             */
+            sticky: boolean;
+        };
+        /** WorkbookRecordItem */
+        WorkbookRecordItem: {
+            /** Editable */
+            editable: {
+                [key: string]: boolean;
+            };
+            /** Row Number */
+            row_number: number;
+            /** Values */
+            values: {
+                [key: string]: string | number | boolean | null;
+            };
+        };
+        /** WorkbookRecordsPage */
+        WorkbookRecordsPage: {
+            /** Columns */
+            columns: components["schemas"]["WorkbookRecordColumn"][];
+            /**
+             * Header Row Count
+             * @default 1
+             */
+            header_row_count: number;
+            /** Items */
+            items: components["schemas"]["WorkbookRecordItem"][];
+            pagination: components["schemas"]["WorkbookPagination"];
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Sheet Name */
+            sheet_name: string;
+            /** Version */
+            version: number;
+        };
+        /** WorkbookRemoveColumnRequest */
+        WorkbookRemoveColumnRequest: {
+            /** Base Version */
+            base_version: number;
+        };
+        /** WorkbookSaveRequest */
+        WorkbookSaveRequest: {
+            /** Base Version */
+            base_version: number;
+            /** Changes */
+            changes: components["schemas"]["WorkbookPriceChange"][];
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+        };
+        /** WorkbookSaveResponse */
+        WorkbookSaveResponse: {
+            /** Changed Cells */
+            changed_cells: number;
+            /** Current Version */
+            current_version: number;
+            /**
+             * Operation Id
+             * Format: uuid
+             */
+            operation_id: string;
+            /** Previous Version */
+            previous_version: number;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Saved At
+             * Format: date-time
+             */
+            saved_at: string;
+        };
+        /**
+         * WorkbookSemanticField
+         * @enum {string}
+         */
+        WorkbookSemanticField: "passenger_name" | "pnr" | "ticket_number" | "net_price" | "selling_price";
+        /** WorkbookSessionCreateRequest */
+        WorkbookSessionCreateRequest: {
+            /** Sheet Name */
+            sheet_name: string;
+            /**
+             * Workbook Id
+             * Format: uuid
+             */
+            workbook_id: string;
+        };
+        /** WorkbookSessionResponse */
+        WorkbookSessionResponse: {
+            /** Column Config */
+            column_config?: components["schemas"]["WorkbookColumnConfiguration"][];
+            /** Column Mapping */
+            column_mapping: {
+                [key: string]: number;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Current Version */
+            current_version: number;
+            /** Header Row Number */
+            header_row_number: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Original Filename */
+            original_filename: string;
+            /** Selected Sheet Name */
+            selected_sheet_name: string;
+            status: components["schemas"]["WorkbookSessionStatus"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Workbook Id
+             * Format: uuid
+             */
+            workbook_id: string;
+        };
+        /**
+         * WorkbookSessionStatus
+         * @description Lifecycle state of an independent workbook editing branch.
+         * @enum {string}
+         */
+        WorkbookSessionStatus: "DRAFT" | "COMPLETED" | "DISCARDED" | "FAILED";
+        /** WorkbookSuccessResponse[WorkbookRecordsPage] */
+        WorkbookSuccessResponse_WorkbookRecordsPage_: {
+            data: components["schemas"]["WorkbookRecordsPage"];
+            /** Error */
+            error?: null;
+            /**
+             * Success
+             * @default true
+             * @constant
+             */
+            success: true;
+        };
+        /** WorkbookSuccessResponse[WorkbookSaveResponse] */
+        WorkbookSuccessResponse_WorkbookSaveResponse_: {
+            data: components["schemas"]["WorkbookSaveResponse"];
+            /** Error */
+            error?: null;
+            /**
+             * Success
+             * @default true
+             * @constant
+             */
+            success: true;
+        };
+        /** WorkbookSuccessResponse[WorkbookSessionResponse] */
+        WorkbookSuccessResponse_WorkbookSessionResponse_: {
+            data: components["schemas"]["WorkbookSessionResponse"];
+            /** Error */
+            error?: null;
+            /**
+             * Success
+             * @default true
+             * @constant
+             */
+            success: true;
+        };
+        /** WorkbookSuccessResponse[WorkbookUploadResponse] */
+        WorkbookSuccessResponse_WorkbookUploadResponse_: {
+            data: components["schemas"]["WorkbookUploadResponse"];
+            /** Error */
+            error?: null;
+            /**
+             * Success
+             * @default true
+             * @constant
+             */
+            success: true;
+        };
+        /** WorkbookUploadResponse */
+        WorkbookUploadResponse: {
+            /** Checksum */
+            checksum: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** File Size */
+            file_size: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Mime Type */
+            mime_type: string;
+            /** Original Filename */
+            original_filename: string;
+            /** Sheet Count */
+            sheet_count: number;
+            /** Sheets */
+            sheets: components["schemas"]["WorksheetInspectionResponse"][];
+        };
+        /** WorksheetInspectionResponse */
+        WorksheetInspectionResponse: {
+            /** Ambiguous Fields */
+            ambiguous_fields: {
+                [key: string]: number[];
+            };
+            /** Column Mapping */
+            column_mapping: {
+                [key: string]: number;
+            };
+            /** Detected Headers */
+            detected_headers: string[];
+            /** Header Row Number */
+            header_row_number?: number | null;
+            mapping_status: components["schemas"]["WorkbookMappingStatus"];
+            /** Max Column */
+            max_column: number;
+            /** Max Row */
+            max_row: number;
+            /** Missing Required Fields */
+            missing_required_fields: components["schemas"]["WorkbookSemanticField"][];
+            /** Name */
+            name: string;
         };
     };
     responses: never;
@@ -3229,6 +3775,557 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    create_editing_session_route_api_v1_workbooks_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbookSessionCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookSessionResponse_"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
+    get_editing_session_route_api_v1_workbooks_sessions__session_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookSessionResponse_"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
+    update_session_column_configuration_route_api_v1_workbooks_sessions__session_id__column_configuration_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbookColumnConfigurationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookSessionResponse_"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
+    add_session_column_route_api_v1_workbooks_sessions__session_id__columns_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbookAddColumnRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookSessionResponse_"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_session_column_route_api_v1_workbooks_sessions__session_id__columns__column_id__remove_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                column_id: string;
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbookRemoveColumnRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookSessionResponse_"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
+    download_current_workbook_route_api_v1_workbooks_sessions__session_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current immutable workbook version. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
+    read_session_records_route_api_v1_workbooks_sessions__session_id__records_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+                search?: string | null;
+                sort_by?: components["schemas"]["WorkbookSemanticField"] | null;
+                sort_direction?: components["schemas"]["SortDirection"];
+            };
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookRecordsPage_"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
+    save_session_changes_route_api_v1_workbooks_sessions__session_id__saves_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbookSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookSaveResponse_"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
+    get_latest_editing_session_route_api_v1_workbooks_sessions_latest_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookSessionResponse_"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
+    upload_workbook_route_api_v1_workbooks_uploads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_workbook_route_api_v1_workbooks_uploads_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookUploadResponse_"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
                 };
             };
         };

@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronRight,
   Database,
+  FileSpreadsheet,
   FileText,
   Menu,
   ReceiptText,
@@ -66,6 +67,7 @@ type NavLabelKey =
   | "reports"
   | "settings"
   | "dataCenter"
+  | "workbookEditor"
 
 type NavItem = {
   labelKey: NavLabelKey
@@ -78,6 +80,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { labelKey: "manualDebts", href: "/debts/input", icon: ReceiptText },
   { labelKey: "reports", href: "/report", icon: FileText },
+  { labelKey: "workbookEditor", href: "/workbook-editor-v2", icon: FileSpreadsheet },
   { labelKey: "tickets", href: "/tickets/input", icon: Ticket },
   { labelKey: "activities", href: "/activities", icon: Activity },
   { labelKey: "customers", href: "/customers", icon: Users },
@@ -111,6 +114,7 @@ function useBreadcrumbs(
     reports: string
     settings: string
     dataCenter: string
+    workbookEditor: string
     fallback: string
   },
   customerName?: string,
@@ -186,6 +190,10 @@ function useBreadcrumbs(
 
     if (pathname.startsWith("/data_center")) {
       return [{ label: labels.dataCenter, href: pathname }]
+    }
+
+    if (pathname.startsWith("/workbook-editor-v2")) {
+      return [{ label: labels.workbookEditor, href: pathname }]
     }
 
     return [{ label: labels.fallback, href: pathname }]
@@ -467,6 +475,7 @@ export function AppShell({ children }: AppShellProps) {
         customerDetail: t("appShell.breadcrumbs.customerDetail"),
         customers: t("appShell.nav.customers"),
         dataCenter: t("appShell.nav.dataCenter"),
+        workbookEditor: t("appShell.breadcrumbs.workbookEditor"),
         fallback: t("appShell.breadcrumbs.fallback"),
         financeDocuments: t("appShell.breadcrumbs.financeDocuments"),
         invoices: t("appShell.nav.invoices"),

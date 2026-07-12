@@ -2528,6 +2528,895 @@
         ]
       }
     },
+    "/api/v1/workbooks/uploads": {
+      "post": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Upload Workbook Route",
+        "operationId": "upload_workbook_route_api_v1_workbooks_uploads_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_workbook_route_api_v1_workbooks_uploads_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookUploadResponse_"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request Entity Too Large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/workbooks/sessions": {
+      "post": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Create Editing Session Route",
+        "operationId": "create_editing_session_route_api_v1_workbooks_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbookSessionCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookSessionResponse_"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/workbooks/sessions/latest": {
+      "get": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Get Latest Editing Session Route",
+        "operationId": "get_latest_editing_session_route_api_v1_workbooks_sessions_latest_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookSessionResponse_"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/workbooks/sessions/{session_id}": {
+      "get": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Get Editing Session Route",
+        "operationId": "get_editing_session_route_api_v1_workbooks_sessions__session_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookSessionResponse_"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/v1/workbooks/sessions/{session_id}/records": {
+      "get": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Read Session Records Route",
+        "operationId": "read_session_records_route_api_v1_workbooks_sessions__session_id__records_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkbookSemanticField"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort By"
+            }
+          },
+          {
+            "name": "sort_direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection",
+              "default": "asc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookRecordsPage_"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/v1/workbooks/sessions/{session_id}/columns": {
+      "post": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Add Session Column Route",
+        "operationId": "add_session_column_route_api_v1_workbooks_sessions__session_id__columns_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbookAddColumnRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookSessionResponse_"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/v1/workbooks/sessions/{session_id}/columns/{column_id}/remove": {
+      "post": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Remove Session Column Route",
+        "operationId": "remove_session_column_route_api_v1_workbooks_sessions__session_id__columns__column_id__remove_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "column_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Column Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbookRemoveColumnRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookSessionResponse_"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/v1/workbooks/sessions/{session_id}/column-configuration": {
+      "patch": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Update Session Column Configuration Route",
+        "operationId": "update_session_column_configuration_route_api_v1_workbooks_sessions__session_id__column_configuration_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbookColumnConfigurationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookSessionResponse_"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/v1/workbooks/sessions/{session_id}/saves": {
+      "post": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Save Session Changes Route",
+        "operationId": "save_session_changes_route_api_v1_workbooks_sessions__session_id__saves_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbookSaveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookSaveResponse_"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/v1/workbooks/sessions/{session_id}/download": {
+      "get": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Download Current Workbook Route",
+        "operationId": "download_current_workbook_route_api_v1_workbooks_sessions__session_id__download_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current immutable workbook version.",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -2654,6 +3543,21 @@
           "file"
         ],
         "title": "Body_parse_flight_api_v1_ai_parse_post"
+      },
+      "Body_upload_workbook_route_api_v1_workbooks_uploads_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File",
+            "description": "Excel .xlsx or legacy .xls workbook."
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_workbook_route_api_v1_workbooks_uploads_post"
       },
       "CustomerCreate": {
         "properties": {
@@ -3232,6 +4136,14 @@
         ],
         "title": "RecordPaymentPayload",
         "description": "Payload accepted by POST /customers/{id}/payments."
+      },
+      "SortDirection": {
+        "type": "string",
+        "enum": [
+          "asc",
+          "desc"
+        ],
+        "title": "SortDirection"
       },
       "SystemSettingUpdate": {
         "properties": {
@@ -4522,6 +5434,916 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WorkbookAddColumnRequest": {
+        "properties": {
+          "base_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Base Version"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "data_type": {
+            "$ref": "#/components/schemas/WorkbookColumnDataType",
+            "default": "text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "base_version",
+          "label"
+        ],
+        "title": "WorkbookAddColumnRequest"
+      },
+      "WorkbookColumnConfiguration": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Label"
+          },
+          "column_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Column Number"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/WorkbookColumnOrigin"
+          },
+          "data_type": {
+            "$ref": "#/components/schemas/WorkbookColumnDataType"
+          },
+          "hidden": {
+            "type": "boolean",
+            "title": "Hidden",
+            "default": false
+          },
+          "sticky": {
+            "type": "boolean",
+            "title": "Sticky",
+            "default": false
+          },
+          "semantic_field": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookSemanticField"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "column_number",
+          "origin",
+          "data_type"
+        ],
+        "title": "WorkbookColumnConfiguration"
+      },
+      "WorkbookColumnConfigurationRequest": {
+        "properties": {
+          "hidden_column_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "title": "Hidden Column Ids"
+          },
+          "sticky_column_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "title": "Sticky Column Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "WorkbookColumnConfigurationRequest"
+      },
+      "WorkbookColumnDataType": {
+        "type": "string",
+        "enum": [
+          "text",
+          "number",
+          "date",
+          "currency"
+        ],
+        "title": "WorkbookColumnDataType"
+      },
+      "WorkbookColumnOrigin": {
+        "type": "string",
+        "enum": [
+          "source",
+          "user"
+        ],
+        "title": "WorkbookColumnOrigin"
+      },
+      "WorkbookErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "WorkbookErrorDetail"
+      },
+      "WorkbookErrorResponse": {
+        "properties": {
+          "detail": {
+            "$ref": "#/components/schemas/WorkbookErrorDetail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "WorkbookErrorResponse"
+      },
+      "WorkbookMappingStatus": {
+        "type": "string",
+        "enum": [
+          "READY",
+          "MAPPING_INCOMPLETE",
+          "AMBIGUOUS_MAPPING"
+        ],
+        "title": "WorkbookMappingStatus"
+      },
+      "WorkbookPagination": {
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "total_pages": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Pages"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "page",
+          "page_size",
+          "total",
+          "total_pages"
+        ],
+        "title": "WorkbookPagination"
+      },
+      "WorkbookPriceChange": {
+        "properties": {
+          "row_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Row Number"
+          },
+          "values": {
+            "$ref": "#/components/schemas/WorkbookPriceChangeValues"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "row_number",
+          "values"
+        ],
+        "title": "WorkbookPriceChange"
+      },
+      "WorkbookPriceChangeValues": {
+        "properties": {
+          "net_price": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Price"
+          },
+          "selling_price": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selling Price"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "WorkbookPriceChangeValues"
+      },
+      "WorkbookRecordColumn": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id",
+            "default": "legacy"
+          },
+          "field": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Field"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Label"
+          },
+          "editable": {
+            "type": "boolean",
+            "title": "Editable"
+          },
+          "semantic_field": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookSemanticField"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "origin": {
+            "$ref": "#/components/schemas/WorkbookColumnOrigin",
+            "default": "source"
+          },
+          "data_type": {
+            "$ref": "#/components/schemas/WorkbookColumnDataType",
+            "default": "text"
+          },
+          "hidden": {
+            "type": "boolean",
+            "title": "Hidden",
+            "default": false
+          },
+          "sticky": {
+            "type": "boolean",
+            "title": "Sticky",
+            "default": false
+          },
+          "group_label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Label"
+          },
+          "header_row_span": {
+            "type": "integer",
+            "maximum": 2.0,
+            "minimum": 1.0,
+            "title": "Header Row Span",
+            "default": 1
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "field",
+          "label",
+          "editable"
+        ],
+        "title": "WorkbookRecordColumn"
+      },
+      "WorkbookRecordItem": {
+        "properties": {
+          "row_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Row Number"
+          },
+          "values": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Values"
+          },
+          "editable": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Editable"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "row_number",
+          "values",
+          "editable"
+        ],
+        "title": "WorkbookRecordItem"
+      },
+      "WorkbookRecordsPage": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version"
+          },
+          "sheet_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Sheet Name"
+          },
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbookRecordColumn"
+            },
+            "type": "array",
+            "title": "Columns"
+          },
+          "header_row_count": {
+            "type": "integer",
+            "maximum": 2.0,
+            "minimum": 1.0,
+            "title": "Header Row Count",
+            "default": 1
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbookRecordItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/WorkbookPagination"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "session_id",
+          "version",
+          "sheet_name",
+          "columns",
+          "items",
+          "pagination"
+        ],
+        "title": "WorkbookRecordsPage"
+      },
+      "WorkbookRemoveColumnRequest": {
+        "properties": {
+          "base_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Base Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "base_version"
+        ],
+        "title": "WorkbookRemoveColumnRequest"
+      },
+      "WorkbookSaveRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "base_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Base Version"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbookPriceChange"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Changes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "base_version",
+          "changes"
+        ],
+        "title": "WorkbookSaveRequest"
+      },
+      "WorkbookSaveResponse": {
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Id"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "previous_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Previous Version"
+          },
+          "current_version": {
+            "type": "integer",
+            "minimum": 2.0,
+            "title": "Current Version"
+          },
+          "changed_cells": {
+            "type": "integer",
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "title": "Changed Cells"
+          },
+          "saved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Saved At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_id",
+          "request_id",
+          "previous_version",
+          "current_version",
+          "changed_cells",
+          "saved_at"
+        ],
+        "title": "WorkbookSaveResponse"
+      },
+      "WorkbookSemanticField": {
+        "type": "string",
+        "enum": [
+          "passenger_name",
+          "pnr",
+          "ticket_number",
+          "net_price",
+          "selling_price"
+        ],
+        "title": "WorkbookSemanticField"
+      },
+      "WorkbookSessionCreateRequest": {
+        "properties": {
+          "workbook_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workbook Id"
+          },
+          "sheet_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Sheet Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "workbook_id",
+          "sheet_name"
+        ],
+        "title": "WorkbookSessionCreateRequest"
+      },
+      "WorkbookSessionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workbook_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workbook Id"
+          },
+          "original_filename": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Original Filename"
+          },
+          "selected_sheet_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Selected Sheet Name"
+          },
+          "header_row_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Header Row Number"
+          },
+          "column_mapping": {
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 1.0
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/WorkbookSemanticField"
+            },
+            "type": "object",
+            "title": "Column Mapping"
+          },
+          "column_config": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbookColumnConfiguration"
+            },
+            "type": "array",
+            "title": "Column Config"
+          },
+          "current_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Current Version"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WorkbookSessionStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "workbook_id",
+          "original_filename",
+          "selected_sheet_name",
+          "header_row_number",
+          "column_mapping",
+          "current_version",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "WorkbookSessionResponse"
+      },
+      "WorkbookSessionStatus": {
+        "type": "string",
+        "enum": [
+          "DRAFT",
+          "COMPLETED",
+          "DISCARDED",
+          "FAILED"
+        ],
+        "title": "WorkbookSessionStatus",
+        "description": "Lifecycle state of an independent workbook editing branch."
+      },
+      "WorkbookSuccessResponse_WorkbookRecordsPage_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true,
+            "title": "Success",
+            "default": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/WorkbookRecordsPage"
+          },
+          "error": {
+            "type": "null",
+            "title": "Error"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "WorkbookSuccessResponse[WorkbookRecordsPage]"
+      },
+      "WorkbookSuccessResponse_WorkbookSaveResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true,
+            "title": "Success",
+            "default": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/WorkbookSaveResponse"
+          },
+          "error": {
+            "type": "null",
+            "title": "Error"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "WorkbookSuccessResponse[WorkbookSaveResponse]"
+      },
+      "WorkbookSuccessResponse_WorkbookSessionResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true,
+            "title": "Success",
+            "default": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/WorkbookSessionResponse"
+          },
+          "error": {
+            "type": "null",
+            "title": "Error"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "WorkbookSuccessResponse[WorkbookSessionResponse]"
+      },
+      "WorkbookSuccessResponse_WorkbookUploadResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true,
+            "title": "Success",
+            "default": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/WorkbookUploadResponse"
+          },
+          "error": {
+            "type": "null",
+            "title": "Error"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "WorkbookSuccessResponse[WorkbookUploadResponse]"
+      },
+      "WorkbookUploadResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "original_filename": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Original Filename"
+          },
+          "mime_type": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Mime Type"
+          },
+          "file_size": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "File Size"
+          },
+          "checksum": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Checksum"
+          },
+          "sheet_count": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Sheet Count"
+          },
+          "sheets": {
+            "items": {
+              "$ref": "#/components/schemas/WorksheetInspectionResponse"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Sheets"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "original_filename",
+          "mime_type",
+          "file_size",
+          "checksum",
+          "sheet_count",
+          "sheets",
+          "created_at"
+        ],
+        "title": "WorkbookUploadResponse"
+      },
+      "WorksheetInspectionResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "max_row": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Max Row"
+          },
+          "max_column": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Max Column"
+          },
+          "header_row_number": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Header Row Number"
+          },
+          "detected_headers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Detected Headers"
+          },
+          "column_mapping": {
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 1.0
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/WorkbookSemanticField"
+            },
+            "type": "object",
+            "title": "Column Mapping"
+          },
+          "mapping_status": {
+            "$ref": "#/components/schemas/WorkbookMappingStatus"
+          },
+          "missing_required_fields": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbookSemanticField"
+            },
+            "type": "array",
+            "title": "Missing Required Fields"
+          },
+          "ambiguous_fields": {
+            "additionalProperties": {
+              "items": {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              "type": "array"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/WorkbookSemanticField"
+            },
+            "type": "object",
+            "title": "Ambiguous Fields"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "max_row",
+          "max_column",
+          "detected_headers",
+          "column_mapping",
+          "mapping_status",
+          "missing_required_fields",
+          "ambiguous_fields"
+        ],
+        "title": "WorksheetInspectionResponse"
       }
     },
     "securitySchemes": {

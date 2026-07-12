@@ -58,6 +58,14 @@ from .quote import Quote, QuoteConvertResponse, QuoteCreate, QuoteDetail, QuoteR
 from .quote_item import QuoteItem, QuoteItemRead
 from .system_setting import SystemSetting, SystemSettingRead, SystemSettingUpdate
 from .transaction import Transaction, TransactionCreate, TransactionRead, TransactionUpdate
+from .workbook import (
+    Workbook,
+    WorkbookOperation,
+    WorkbookOperationType,
+    WorkbookSession,
+    WorkbookSessionStatus,
+    WorkbookVersion,
+)
 
 # Expose SQLModel.metadata so Alembic's env.py can do:
 #   from models import metadata
@@ -128,4 +136,11 @@ __all__ = [
     "SystemSetting",
     "SystemSettingRead",
     "SystemSettingUpdate",
+    # Workbook Editor V2
+    "Workbook",
+    "WorkbookSession",
+    "WorkbookSessionStatus",
+    "WorkbookVersion",
+    "WorkbookOperation",
+    "WorkbookOperationType",
 ]

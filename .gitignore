@@ -32,6 +32,7 @@ ENV/
 *.db
 *.sqlite3
 api/alembic/versions/*.pyc
+api/storage/workbooks/
 
 # --- IDE & OS ---
 .vscode/
@@ -46,5 +47,6 @@ Thumbs.db
 !.agents/skills/frontend-design/SKILL.md
 .claude/
 .codex/
+.worktrees/
 .superpowers/
 skills-lock.json

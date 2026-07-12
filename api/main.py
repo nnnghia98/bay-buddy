@@ -17,6 +17,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
+from core.settings import settings as runtime_settings
 from database import create_db_and_tables
 from runtime_env_logging import log_runtime_environment_summary
 
@@ -122,6 +123,7 @@ from routes import (
     tickets,
     transactions,
     users,
+    workbooks,
 )
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
@@ -134,6 +136,12 @@ app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Tr
 app.include_router(finance.router,      prefix="/api/v1/finance",      tags=["Finance"])
 app.include_router(data_center.router,  prefix="/api/v1/data-center",  tags=["Data Center"])
 app.include_router(settings.router,     prefix="/api/v1/settings",     tags=["Settings"])
+app.include_router(workbooks.router,    prefix="/api/v1/workbooks",    tags=["Workbooks"])
+
+app.add_middleware(
+    workbooks.WorkbookUploadSizeLimitMiddleware,
+    max_file_bytes=runtime_settings.workbook_max_upload_bytes,
+)
 
 # ---------------------------------------------------------------------------
 # Health check

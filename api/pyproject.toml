@@ -32,6 +32,8 @@ passlib = { version = "*", extras = ["bcrypt"] }
 # HTTP client (used by Gemini SDK internally)
 httpx = "*"
 google-genai = "^1.70.0"
+openpyxl = "^3.1.5"
+xlrd = "^2.0.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
