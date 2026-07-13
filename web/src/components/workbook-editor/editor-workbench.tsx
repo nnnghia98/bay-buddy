@@ -26,6 +26,7 @@ import {
   type WorkbookSemanticField,
   type WorkbookSession,
   type WorkbookColumnDataType,
+  type WorkbookColumnFormula,
 } from "@/schemas/workbook"
 import { parseVndDraft } from "./editable-price-cell"
 import { EditorFeedback, type EditorSaveState } from "./editor-feedback"
@@ -71,6 +72,7 @@ function triggerBlobDownload(blob: Blob, filename: string) {
 export function validateWorkbookDrafts(
   drafts: DraftMap,
   invalidMessage: string,
+  columns?: WorkbookRecordsPage["columns"],
 ): { errors: ErrorMap; changes: WorkbookSaveRequest["changes"] } {
   const errors: ErrorMap = new Map()
   const changes: WorkbookSaveRequest["changes"] = []
@@ -79,11 +81,23 @@ export function validateWorkbookDrafts(
     for (const field of Object.keys(rowDraft)) {
       const draft = rowDraft[field]
       if (draft === undefined) continue
-      const amount = parseVndDraft(draft)
-      if ((field === "net_price" || field === "selling_price") && (amount === null || amount > WORKBOOK_MAX_SAFE_VND)) {
+      const column = columns?.find((item) => item.field === field)
+      const dataType = column?.data_type ?? ((field === "net_price" || field === "selling_price") ? "currency" : "text")
+      const normalized = draft.trim()
+      const amount = dataType === "currency" ? parseVndDraft(draft) : null
+      const number = dataType === "number" && normalized ? Number(normalized.replace(",", ".")) : null
+      if (dataType === "currency" && normalized && (amount === null || amount > WORKBOOK_MAX_SAFE_VND)) {
+        errors.set(`${rowNumber}:${field}`, invalidMessage)
+      } else if (dataType === "number" && normalized && (number === null || !Number.isFinite(number))) {
         errors.set(`${rowNumber}:${field}`, invalidMessage)
       } else {
-        values[field] = field === "net_price" || field === "selling_price" ? amount : draft
+        values[field] = dataType === "currency"
+          ? (normalized ? amount : null)
+          : dataType === "number"
+            ? (normalized ? number : null)
+            : dataType === "date"
+              ? (normalized || null)
+              : draft
       }
     }
     if (Object.keys(values).length > 0) changes.push({ row_number: rowNumber, values })
@@ -231,7 +245,7 @@ export function EditorWorkbench({
     await queryClient.invalidateQueries({ queryKey: workbookQueryKeys.recordsRoot(initialSession.id) })
   }
   const addColumnsMutation = useMutation({
-    mutationFn: ({ label, dataType }: { label: string; dataType: WorkbookColumnDataType }) => addWorkbookColumn(initialSession.id, baseVersion, label, dataType),
+    mutationFn: ({ label, dataType, formula }: { label: string; dataType: WorkbookColumnDataType; formula?: WorkbookColumnFormula }) => addWorkbookColumn(initialSession.id, baseVersion, label, dataType, formula),
     onSuccess: async (session) => {
       await refreshColumns(session)
     },
@@ -282,7 +296,8 @@ export function EditorWorkbench({
   const handleSave = () => {
     const validated = validateWorkbookDrafts(
       drafts,
-      t("workbookEditor.editor.validation.wholeVnd"),
+      t("workbookEditor.editor.validation.invalidCell"),
+      records.columns,
     )
     setCellErrors(validated.errors)
     if (validated.errors.size > 0 || validated.changes.length === 0) {
@@ -290,21 +305,10 @@ export function EditorWorkbench({
       setFeedback(t("workbookEditor.editor.feedback.validationFailed"))
       return
     }
-    const typedChanges = validated.changes.map((change) => ({
-      ...change,
-      values: Object.fromEntries(Object.entries(change.values).map(([field, value]) => {
-        const type = records.columns.find((column) => column.field === field)?.data_type
-        if ((type === "currency" || type === "number") && typeof value === "string") {
-          const parsed = parseVndDraft(value)
-          return [field, parsed ?? value]
-        }
-        return [field, value]
-      })),
-    }))
     saveMutation.mutate({
       request_id: crypto.randomUUID(),
       base_version: baseVersion,
-      changes: typedChanges,
+      changes: validated.changes,
     })
   }
 
@@ -364,7 +368,7 @@ export function EditorWorkbench({
 
       <Panel className={cn(recordsQuery.isFetching && "opacity-80")}>
         <WorkbookTableToolbar
-          columnControls={<WorkbookColumnControls busy={addColumnsMutation.isPending || removeColumnMutation.isPending || configurationMutation.isPending} columns={records.columns} onAdd={(label, dataType) => addColumnsMutation.mutate({ label, dataType })} onConfigurationChange={(hidden, sticky) => configurationMutation.mutate({ hidden, sticky })} onRemove={(id) => removeColumnMutation.mutate(id)} t={t} />}
+          columnControls={<WorkbookColumnControls busy={addColumnsMutation.isPending || removeColumnMutation.isPending || configurationMutation.isPending} columns={records.columns} onAdd={(label, dataType, formula) => addColumnsMutation.mutate({ label, dataType, formula })} onConfigurationChange={(hidden, sticky) => configurationMutation.mutate({ hidden, sticky })} onRemove={(id) => removeColumnMutation.mutate(id)} t={t} />}
           onSearch={(value) => {
             const nextSearch = value.trim()
             setSearch(nextSearch)

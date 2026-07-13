@@ -8,6 +8,8 @@ Environment variables (see .env.example):
     DATABASE_URL   SQLAlchemy connection string
     SECRET_KEY     JWT signing secret  (min 32 chars)
     FRONTEND_URL   Allowed CORS origin (e.g. http://localhost:6769)
+    INTERNAL_ACCESS_CODE     Optional shared code for internal access login
+    INTERNAL_ACCESS_USERNAME Active account used by internal access login
 """
 
 import os

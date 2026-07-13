@@ -8,7 +8,7 @@ import {
   useReactTable,
   type ColumnDef,
 } from "@tanstack/react-table"
-import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react"
+import { ArrowDown, ArrowUp, ChevronsUpDown, FunctionSquare } from "lucide-react"
 
 import { EmptyState } from "@/components/command-center"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -62,7 +62,7 @@ export function WorkbookRecordsTable({
         onClick={() => column.semantic_field && onSort(column.semantic_field)}
         type="button"
       >
-        <span className="whitespace-pre-line normal-case tracking-normal">{column.label}</span>
+        <span className="flex items-center gap-1.5 whitespace-pre-line normal-case tracking-normal">{column.formula ? <FunctionSquare aria-hidden="true" className="size-3.5 text-primary" /> : null}{column.label}</span>
         {column.semantic_field ? <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 opacity-60" /> : null}
       </button>
     )
@@ -100,7 +100,7 @@ export function WorkbookRecordsTable({
                 onClick={() => column.semantic_field && onSort(column.semantic_field)}
                 type="button"
               >
-                <span>{column.label}</span>
+                <span className="flex items-center gap-1.5">{column.formula ? <FunctionSquare aria-hidden="true" className="size-3.5 text-primary" /> : null}{column.label}</span>
                 {column.semantic_field ? <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 opacity-60" /> : null}
               </button>
             )
@@ -133,7 +133,7 @@ export function WorkbookRecordsTable({
             if (column.data_type === "date" && value) {
               const date = new Date(String(value)); if (!Number.isNaN(date.getTime())) display = new Intl.DateTimeFormat("en-GB").format(date)
             }
-            return <span className={cn("block min-w-32 px-4 py-3 text-sm", column.data_type === "currency" && "text-right tabular-nums")}>{display}</span>
+            return <span className={cn("block min-w-32 px-4 py-3 text-sm", (column.data_type === "currency" || column.data_type === "number") && "text-right tabular-nums", column.formula && "bg-primary/[0.035] font-medium text-foreground/80")}>{display}</span>
           },
         }),
       ),

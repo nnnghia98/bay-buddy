@@ -13,6 +13,7 @@ import {
   type WorkbookSession,
   type WorkbookUpload,
   type WorkbookColumnDataType,
+  type WorkbookColumnFormula,
 } from "@/schemas/workbook"
 import { ZodError } from "zod"
 import {
@@ -157,12 +158,13 @@ export async function addWorkbookColumn(
   baseVersion: number,
   label: string,
   dataType: WorkbookColumnDataType,
+  formula?: WorkbookColumnFormula,
 ): Promise<WorkbookSession> {
   const payload = await workbookJsonRequest(() =>
     workbookApiFetchData<WorkbookSession>(`sessions/${sessionId}/columns`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ base_version: baseVersion, label, data_type: dataType }),
+      body: JSON.stringify({ base_version: baseVersion, label, data_type: dataType, formula }),
     }),
   )
   return workbookSessionSchema.parse(payload)

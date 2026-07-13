@@ -1839,6 +1839,7 @@ export interface components {
             base_version: number;
             /** @default text */
             data_type: components["schemas"]["WorkbookColumnDataType"];
+            formula?: components["schemas"]["WorkbookColumnFormula"] | null;
             /** Label */
             label: string;
         };
@@ -1847,6 +1848,7 @@ export interface components {
             /** Column Number */
             column_number: number;
             data_type: components["schemas"]["WorkbookColumnDataType"];
+            formula?: components["schemas"]["WorkbookColumnFormula"] | null;
             /**
              * Hidden
              * @default false
@@ -1876,6 +1878,14 @@ export interface components {
          * @enum {string}
          */
         WorkbookColumnDataType: "text" | "number" | "date" | "currency";
+        /** WorkbookColumnFormula */
+        WorkbookColumnFormula: {
+            /** Left Column Id */
+            left_column_id: string;
+            operator: components["schemas"]["WorkbookFormulaOperator"];
+            /** Right Column Id */
+            right_column_id: string;
+        };
         /**
          * WorkbookColumnOrigin
          * @enum {string}
@@ -1896,6 +1906,11 @@ export interface components {
         WorkbookErrorResponse: {
             detail: components["schemas"]["WorkbookErrorDetail"];
         };
+        /**
+         * WorkbookFormulaOperator
+         * @enum {string}
+         */
+        WorkbookFormulaOperator: "+" | "-" | "*" | "/" | "%";
         /**
          * WorkbookMappingStatus
          * @enum {string}
@@ -1935,6 +1950,7 @@ export interface components {
             editable: boolean;
             /** Field */
             field: string;
+            formula?: components["schemas"]["WorkbookColumnFormula"] | null;
             /** Group Label */
             group_label?: string | null;
             /**

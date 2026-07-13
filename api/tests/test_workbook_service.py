@@ -365,7 +365,12 @@ def test_sessions_are_independent_and_records_read_server_side(engine, storage) 
         untouched = read_session_records(
             db, storage, actor=actor, session_id=second.id
         )
-        assert untouched.page.records[0].values["selling_price"] == 1_200_000
+        selling_column = next(
+            column
+            for column in untouched.page.columns
+            if column.semantic_field == "selling_price"
+        )
+        assert untouched.page.records[0].values[selling_column.field] == 1_200_000
 
 
 def test_save_versions_audits_replays_conflicts_and_downloads(engine, storage) -> None:

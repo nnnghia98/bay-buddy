@@ -5451,6 +5451,16 @@
           "data_type": {
             "$ref": "#/components/schemas/WorkbookColumnDataType",
             "default": "text"
+          },
+          "formula": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookColumnFormula"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -5504,6 +5514,16 @@
                 "type": "null"
               }
             ]
+          },
+          "formula": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookColumnFormula"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -5549,6 +5569,33 @@
           "currency"
         ],
         "title": "WorkbookColumnDataType"
+      },
+      "WorkbookColumnFormula": {
+        "properties": {
+          "left_column_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Left Column Id"
+          },
+          "operator": {
+            "$ref": "#/components/schemas/WorkbookFormulaOperator"
+          },
+          "right_column_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Right Column Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "left_column_id",
+          "operator",
+          "right_column_id"
+        ],
+        "title": "WorkbookColumnFormula"
       },
       "WorkbookColumnOrigin": {
         "type": "string",
@@ -5599,6 +5646,17 @@
           "detail"
         ],
         "title": "WorkbookErrorResponse"
+      },
+      "WorkbookFormulaOperator": {
+        "type": "string",
+        "enum": [
+          "+",
+          "-",
+          "*",
+          "/",
+          "%"
+        ],
+        "title": "WorkbookFormulaOperator"
       },
       "WorkbookMappingStatus": {
         "type": "string",
@@ -5765,6 +5823,16 @@
             "minimum": 1.0,
             "title": "Header Row Span",
             "default": 1
+          },
+          "formula": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookColumnFormula"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,

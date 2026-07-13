@@ -4,6 +4,12 @@ import type { components } from "@/lib/api/generated"
 
 export type WorkbookUpload = components["schemas"]["WorkbookUploadResponse"]
 export type WorkbookColumnDataType = "text" | "number" | "date" | "currency"
+export type WorkbookFormulaOperator = "+" | "-" | "*" | "/" | "%"
+export type WorkbookColumnFormula = {
+  left_column_id: string
+  operator: WorkbookFormulaOperator
+  right_column_id: string
+}
 export type WorkbookColumn = {
   id: string
   field: string
@@ -16,6 +22,7 @@ export type WorkbookColumn = {
   sticky: boolean
   group_label?: string | null
   header_row_span?: number
+  formula?: WorkbookColumnFormula | null
 }
 export type WorkbookSession = components["schemas"]["WorkbookSessionResponse"] & {
   column_config: Array<
@@ -156,6 +163,11 @@ export const workbookSessionSchema = z.object({
     id: z.string(), label: z.string(), column_number: z.number().int().positive(),
     origin: z.enum(["source", "user"]), data_type: z.enum(["text", "number", "date", "currency"]),
     hidden: z.boolean(), sticky: z.boolean(), semantic_field: semanticFieldSchema.nullable().optional(),
+    formula: z.object({
+      left_column_id: z.string().min(1),
+      operator: z.enum(["+", "-", "*", "/", "%"]),
+      right_column_id: z.string().min(1),
+    }).nullable().optional(),
   })).default([]),
 }) satisfies z.ZodType<WorkbookSession>
 
@@ -177,6 +189,11 @@ export const workbookRecordsPageSchema = z.object({
       sticky: z.boolean().default(false),
       group_label: z.string().nullable().optional(),
       header_row_span: z.number().int().min(1).max(2).default(1),
+      formula: z.object({
+        left_column_id: z.string().min(1),
+        operator: z.enum(["+", "-", "*", "/", "%"]),
+        right_column_id: z.string().min(1),
+      }).nullable().optional(),
     }),
   ),
   items: z.array(

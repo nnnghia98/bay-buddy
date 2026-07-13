@@ -324,6 +324,7 @@ async def read_session_records_route(
                 "sticky": column.sticky,
                 "group_label": column.group_label,
                 "header_row_span": column.header_row_span,
+                "formula": column.formula,
             }
             for column in result.page.columns
         ],
@@ -373,6 +374,7 @@ async def add_session_column_route(
         base_version=payload.base_version,
         label=payload.label,
         data_type=payload.data_type.value,
+        formula=(payload.formula.model_dump(mode="json") if payload.formula else None),
     )
     return success_response(_session_response(result).model_dump(mode="json"))
 

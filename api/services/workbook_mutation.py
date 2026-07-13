@@ -17,6 +17,7 @@ from typing import Sequence
 
 from openpyxl import load_workbook
 from openpyxl.cell.cell import Cell
+from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
 from services.workbook_validation import (
@@ -47,7 +48,7 @@ class AuditedPriceChange:
     field: str
     column_number: int
     old_value: object
-    new_value: int
+    new_value: object
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,6 +90,7 @@ def add_workbook_column(
     sheet_name: str,
     header_row_number: int,
     label: str,
+    formula: dict[str, object] | None = None,
 ) -> StructuralColumnResult:
     """Append one user-owned column without changing source columns."""
     source, output = Path(source_path), Path(output_path)
@@ -99,7 +101,53 @@ def add_workbook_column(
             raise _reject("SHEET_NOT_FOUND", "Selected worksheet does not exist.")
         worksheet = workbook[sheet_name]
         column_number = worksheet.max_column + 1
+        header_end_row = max(
+            (
+                merged.max_row
+                for merged in worksheet.merged_cells.ranges
+                if merged.min_row <= header_row_number <= merged.max_row
+            ),
+            default=header_row_number,
+        )
+        if header_end_row == header_row_number and header_row_number < worksheet.max_row:
+            next_values = [
+                worksheet.cell(header_row_number + 1, column).value
+                for column in range(1, worksheet.max_column + 1)
+            ]
+            top_values = [
+                worksheet.cell(header_row_number, column).value
+                for column in range(1, worksheet.max_column + 1)
+            ]
+            populated = [value for value in next_values if value not in (None, "")]
+            if (
+                populated
+                and len(populated) <= max(4, worksheet.max_column // 2)
+                and all(isinstance(value, str) for value in populated)
+                and any(value in (None, "") for value in top_values)
+            ):
+                header_end_row += 1
         worksheet.cell(header_row_number, column_number, label)
+        if header_end_row > header_row_number:
+            worksheet.merge_cells(
+                start_row=header_row_number,
+                start_column=column_number,
+                end_row=header_end_row,
+                end_column=column_number,
+            )
+        if formula:
+            left = int(formula["left_column_number"])
+            right = int(formula["right_column_number"])
+            operator = str(formula["operator"])
+            if operator not in {"+", "-", "*", "/", "%"}:
+                raise _reject("INVALID_FORMULA", "Formula operator is not supported.")
+            excel_operator = "*" if operator == "%" else operator
+            suffix = "/100" if operator == "%" else ""
+            for row_number in range(header_end_row + 1, worksheet.max_row + 1):
+                if all(worksheet.cell(row_number, column).value is None for column in range(1, column_number)):
+                    continue
+                left_ref = f"{get_column_letter(left)}{row_number}"
+                right_ref = f"{get_column_letter(right)}{row_number}"
+                worksheet.cell(row_number, column_number, f"={left_ref}{excel_operator}{right_ref}{suffix}")
         _publish_workbook(workbook, output)
         return StructuralColumnResult(column_number=column_number)
     except WorkbookMutationError:
@@ -380,7 +428,7 @@ def apply_price_changes(
     columns = _mapped_columns(column_mapping) if not column_config else {
         str(item["id"]): int(item["column_number"])
         for item in column_config
-        if item.get("origin") == "user" or item.get("semantic_field") in _EDITABLE_FIELDS
+        if not item.get("formula")
     }
     try:
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -415,9 +463,11 @@ def apply_price_changes(
                         column_number = int(semantic_item["column_number"]) if semantic_item else None
                     if column_number is None:
                         raise _reject("COLUMN_NOT_EDITABLE", "Column is not editable.")
+                    item = next((item for item in column_config if int(item["column_number"]) == column_number), {})
+                    if item.get("formula"):
+                        raise _reject("COLUMN_NOT_EDITABLE", "Formula columns are derived and cannot be edited.")
                     cell = worksheet.cell(change.row_number, column_number)
                     _validate_editable_cell(worksheet, cell)
-                    item = next((item for item in column_config if int(item["column_number"]) == column_number), {})
                     data_type = item.get("data_type", "text")
                     if data_type == "currency":
                         new_value = _normalize_vnd(value)
@@ -487,4 +537,3 @@ def apply_price_changes(
                 temporary_path.unlink(missing_ok=True)
             except OSError:
                 pass
-

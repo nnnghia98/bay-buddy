@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import * as z from "zod"
-import { Loader2, Lock, User } from "lucide-react"
+import { KeyRound, Loader2, Lock, User } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -17,11 +17,16 @@ import { apiFetch } from "@/lib/api"
 import { useI18n } from "@/locales/client"
 
 const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
+  username: z.string().min(1),
+  password: z.string().min(1),
+})
+
+const internalLoginSchema = z.object({
+  accessCode: z.string().min(1),
 })
 
 type LoginValues = z.infer<typeof loginSchema>
+type InternalLoginValues = z.infer<typeof internalLoginSchema>
 
 type LoginResponse = {
   access_token: string
@@ -42,6 +47,16 @@ async function loginRequest(values: LoginValues): Promise<LoginResponse> {
   })
 }
 
+async function internalLoginRequest(
+  values: InternalLoginValues,
+): Promise<LoginResponse> {
+  return apiFetch<LoginResponse>("/auth/internal-login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ access_code: values.accessCode }),
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
@@ -50,10 +65,15 @@ export default function LoginPage() {
   const t = useI18n()
   const { login, token, isReady } = useAuth()
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [usePasswordLogin, setUsePasswordLogin] = React.useState(false)
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { username: "", password: "" },
+  })
+  const internalForm = useForm<InternalLoginValues>({
+    resolver: zodResolver(internalLoginSchema),
+    defaultValues: { accessCode: "" },
   })
 
   React.useEffect(() => {
@@ -70,7 +90,22 @@ export default function LoginPage() {
       toast.success(t("login.successToast"))
       router.replace("/")
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to sign in"
+      const message = error instanceof Error ? error.message : t("login.error")
+      toast.error(message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const onInternalSubmit = async (values: InternalLoginValues) => {
+    setIsSubmitting(true)
+    try {
+      const response = await internalLoginRequest(values)
+      login(response.access_token)
+      toast.success(t("login.successToast"))
+      router.replace("/")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t("login.error")
       toast.error(message)
     } finally {
       setIsSubmitting(false)
@@ -102,76 +137,134 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Form */}
-        <form className="space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
-          {/* Username */}
-          <div className="space-y-2">
-            <Label htmlFor="username">{t("login.usernameLabel")}</Label>
-            <div className="relative">
-              <User
-                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <Input
-                id="username"
-                autoComplete="username"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                className="pl-10 text-base md:text-sm"
-                placeholder={t("login.usernamePlaceholder")}
-                {...form.register("username")}
-              />
+        {usePasswordLogin ? (
+          <form className="space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="space-y-2">
+              <Label htmlFor="username">{t("login.usernameLabel")}</Label>
+              <div className="relative">
+                <User
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  autoCapitalize="none"
+                  autoComplete="username"
+                  autoCorrect="off"
+                  className="pl-10 text-base md:text-sm"
+                  id="username"
+                  placeholder={t("login.usernamePlaceholder")}
+                  spellCheck={false}
+                  {...form.register("username")}
+                />
+              </div>
+              {form.formState.errors.username && (
+                <p className="text-xs text-red-600" role="alert">
+                  {t("login.usernameRequired")}
+                </p>
+              )}
             </div>
-            {form.formState.errors.username && (
-              <p className="text-xs text-red-600">
-                {form.formState.errors.username.message}
-              </p>
-            )}
-          </div>
 
-          {/* Password */}
-          <div className="space-y-2">
-            <Label htmlFor="password">{t("login.passwordLabel")}</Label>
-            <div className="relative">
-              <Lock
-                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                className="pl-10"
-                placeholder="••••••••"
-                {...form.register("password")}
-              />
+            <div className="space-y-2">
+              <Label htmlFor="password">{t("login.passwordLabel")}</Label>
+              <div className="relative">
+                <Lock
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  autoComplete="current-password"
+                  className="pl-10"
+                  id="password"
+                  placeholder="••••••••"
+                  type="password"
+                  {...form.register("password")}
+                />
+              </div>
+              {form.formState.errors.password && (
+                <p className="text-xs text-red-600" role="alert">
+                  {t("login.passwordRequired")}
+                </p>
+              )}
             </div>
-            {form.formState.errors.password && (
-              <p className="text-xs text-red-600">
-                {form.formState.errors.password.message}
-              </p>
-            )}
-          </div>
 
-          {/* Submit */}
-          <Button
-            className="w-full justify-center"
-            disabled={isSubmitting}
-            size="lg"
-            type="submit"
-            id="login-submit-btn"
+            <Button
+              className="w-full justify-center"
+              disabled={isSubmitting}
+              id="login-submit-btn"
+              size="lg"
+              type="submit"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                  {t("login.submitting")}
+                </>
+              ) : (
+                t("login.submit")
+              )}
+            </Button>
+            <button
+              className="w-full text-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              onClick={() => setUsePasswordLogin(false)}
+              type="button"
+            >
+              {t("login.useAccessCode")}
+            </button>
+          </form>
+        ) : (
+          <form
+            className="space-y-5"
+            onSubmit={internalForm.handleSubmit(onInternalSubmit)}
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                {t("login.submitting")}
-              </>
-            ) : (
-              t("login.submit")
-            )}
-          </Button>
-        </form>
+            <div className="space-y-2">
+              <Label htmlFor="access-code">{t("login.accessCodeLabel")}</Label>
+              <div className="relative">
+                <KeyRound
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  autoComplete="current-password"
+                  className="pl-10"
+                  id="access-code"
+                  placeholder={t("login.accessCodePlaceholder")}
+                  type="password"
+                  {...internalForm.register("accessCode")}
+                />
+              </div>
+              {internalForm.formState.errors.accessCode && (
+                <p className="text-xs text-red-600" role="alert">
+                  {t("login.accessCodeRequired")}
+                </p>
+              )}
+            </div>
+
+            <Button
+              className="w-full justify-center"
+              disabled={isSubmitting}
+              id="login-submit-btn"
+              size="lg"
+              type="submit"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                  {t("login.submitting")}
+                </>
+              ) : (
+                t("login.submit")
+              )}
+            </Button>
+
+            <button
+              className="w-full text-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              onClick={() => setUsePasswordLogin(true)}
+              type="button"
+            >
+              {t("login.usePassword")}
+            </button>
+          </form>
+        )}
 
         {/* Footer */}
         <p className="mt-8 text-center text-xs text-muted-foreground">

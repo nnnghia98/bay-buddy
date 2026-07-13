@@ -130,6 +130,26 @@ class WorkbookColumnOrigin(str, Enum):
     USER = "user"
 
 
+class WorkbookFormulaOperator(str, Enum):
+    ADD = "+"
+    SUBTRACT = "-"
+    MULTIPLY = "*"
+    DIVIDE = "/"
+    PERCENT = "%"
+
+
+class WorkbookColumnFormula(_WorkbookSchema):
+    left_column_id: str = Field(min_length=1, max_length=64)
+    operator: WorkbookFormulaOperator
+    right_column_id: str = Field(min_length=1, max_length=64)
+
+    @model_validator(mode="after")
+    def references_are_distinct(self) -> Self:
+        if self.left_column_id == self.right_column_id:
+            raise ValueError("Formula operands must reference different columns.")
+        return self
+
+
 class WorkbookColumnConfiguration(_WorkbookSchema):
     id: str = Field(min_length=1, max_length=64)
     label: str = Field(max_length=255)
@@ -139,12 +159,14 @@ class WorkbookColumnConfiguration(_WorkbookSchema):
     hidden: bool = False
     sticky: bool = False
     semantic_field: WorkbookSemanticField | None = None
+    formula: WorkbookColumnFormula | None = None
 
 
 class WorkbookAddColumnRequest(_WorkbookSchema):
     base_version: int = Field(ge=1)
     label: str = Field(min_length=1, max_length=255)
     data_type: WorkbookColumnDataType = WorkbookColumnDataType.TEXT
+    formula: WorkbookColumnFormula | None = None
 
 
 class WorkbookRemoveColumnRequest(_WorkbookSchema):
@@ -198,6 +220,7 @@ class WorkbookRecordColumn(_WorkbookSchema):
     sticky: bool = False
     group_label: str | None = Field(default=None, max_length=255)
     header_row_span: int = Field(default=1, ge=1, le=2)
+    formula: WorkbookColumnFormula | None = None
 
 
 WorkbookCellValue = StrictStr | StrictInt | StrictFloat | StrictBool | date | datetime | None
@@ -253,7 +276,10 @@ class WorkbookPriceChangeValues(_WorkbookSchema):
 
     @model_validator(mode="after")
     def at_least_one_price(self) -> Self:
-        if self.model_extra and any(not key.startswith("user-") for key in self.model_extra):
+        if self.model_extra and any(
+            not key.startswith(("source-", "user-"))
+            for key in self.model_extra
+        ):
             raise ValueError("Unknown editable column ID.")
         if self.net_price is None and self.selling_price is None and not self.model_extra:
             raise ValueError("At least one cell value is required.")

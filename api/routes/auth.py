@@ -3,10 +3,14 @@ routes/auth.py – Authentication endpoints for Bay Buddy API.
 
 Endpoints:
     POST /api/v1/auth/login  – Exchange username & password for a JWT access token.
+    POST /api/v1/auth/internal-login – Exchange a shared internal access code for a JWT.
     GET  /api/v1/auth/me     – Retrieve the currently authenticated user profile.
 """
 
 from __future__ import annotations
+
+import os
+import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -25,6 +29,12 @@ class TokenResponse(BaseModel):
 
     access_token: str
     token_type: str = "bearer"
+
+
+class InternalLoginRequest(BaseModel):
+    """Payload accepted by the internal shared access-code login."""
+
+    access_code: str
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -47,6 +57,42 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is inactive",
+        )
+
+    access_token = create_access_token(data={"sub": user.username})
+    return TokenResponse(access_token=access_token)
+
+
+@router.post("/internal-login", response_model=TokenResponse)
+async def login_with_internal_access_code(
+    payload: InternalLoginRequest,
+    session: SessionDep,
+) -> TokenResponse:
+    """Issue a JWT for the configured internal account after code verification."""
+    configured_access_code = os.getenv("INTERNAL_ACCESS_CODE")
+    configured_username = os.getenv("INTERNAL_ACCESS_USERNAME")
+
+    if not configured_access_code or not configured_username:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Internal access login is not enabled",
+        )
+
+    if not secrets.compare_digest(payload.access_code, configured_access_code):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid access code",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    statement = select(User).where(User.username == configured_username)
+    user = session.exec(statement).first()
+
+    if user is None or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid access code",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     access_token = create_access_token(data={"sub": user.username})

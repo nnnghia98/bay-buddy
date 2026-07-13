@@ -17,6 +17,13 @@
 5. Protected routes resolve the token through `OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")` and then load the authenticated user with `get_current_user`.
 6. Swagger UI uses the same OAuth2 password flow, so the generated OpenAPI schema can request a token and attach the bearer header automatically to locked endpoints.
 
+### Internal Access-Code Login
+
+- Internal deployments may enable `POST /api/v1/auth/internal-login` with both `INTERNAL_ACCESS_CODE` and `INTERNAL_ACCESS_USERNAME`.
+- The access code is compared in constant time and is never stored in the database or returned by the API.
+- `INTERNAL_ACCESS_USERNAME` must identify an active user. The resulting JWT is issued for that account, so RBAC and `created_by` audit records remain intact.
+- If either setting is absent, the endpoint is disabled. The normal OAuth2 username/password endpoint remains available for administration and Swagger UI.
+
 ### Model: User
 - `id`: UUID (PK)
 - `username`: String (Unique)

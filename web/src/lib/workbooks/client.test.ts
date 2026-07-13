@@ -25,6 +25,7 @@ vi.mock("@/lib/auth-storage", () => ({
 
 import { ApiError } from "@/lib/api"
 import {
+  addWorkbookColumn,
   downloadCurrentWorkbook,
   fetchLatestWorkbookSession,
   fetchWorkbookSession,
@@ -53,6 +54,30 @@ beforeEach(() => {
 })
 
 describe("workbook client", () => {
+  it("sends the safe formula AST when adding a derived column", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true, data: session, error: null })),
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    await addWorkbookColumn(session.id, 1, "Commission", "currency", {
+      left_column_id: "source-fare",
+      operator: "%",
+      right_column_id: "source-rate",
+    })
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      base_version: 1,
+      label: "Commission",
+      data_type: "currency",
+      formula: {
+        left_column_id: "source-fare",
+        operator: "%",
+        right_column_id: "source-rate",
+      },
+    })
+  })
+
   it("returns the latest restorable workbook session", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ success: true, data: session, error: null })),

@@ -54,6 +54,7 @@ class WorkbookColumn:
     sticky: bool = False
     group_label: str | None = None
     header_row_span: int = 1
+    formula: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -256,10 +257,10 @@ def _is_editable_price_cell(
     return not (sheet_protected and cell.protection.locked)
 
 
-def _read_merged_price_cells(
+def _read_merged_cells(
     path: Path,
     worksheet: Any,
-    price_columns: set[int],
+    columns: set[int],
 ) -> set[tuple[int, int]]:
     worksheet_path = getattr(worksheet, "_worksheet_path", None)
     if not worksheet_path:
@@ -274,7 +275,7 @@ def _read_merged_price_cells(
             reference = element.attrib.get("ref")
             if reference:
                 min_column, min_row, max_column, max_row = range_boundaries(reference)
-                for column_number in price_columns:
+                for column_number in columns:
                     if min_column <= column_number <= max_column:
                         merged_cells.update(
                             (row_number, column_number)
@@ -282,6 +283,28 @@ def _read_merged_price_cells(
                         )
             element.clear()
     return merged_cells
+
+
+def _formula_value(
+    formula: dict[str, Any], values_by_id: dict[str, Any]
+) -> int | float | None:
+    """Evaluate the deliberately tiny, row-local formula language."""
+    left = values_by_id.get(str(formula.get("left_column_id")))
+    right = values_by_id.get(str(formula.get("right_column_id")))
+    if isinstance(left, bool) or isinstance(right, bool) or not isinstance(left, (int, float)) or not isinstance(right, (int, float)):
+        return None
+    operator = formula.get("operator")
+    if operator == "+":
+        return left + right
+    if operator == "-":
+        return left - right
+    if operator == "*":
+        return left * right
+    if operator == "/":
+        return None if right == 0 else left / right
+    if operator == "%":
+        return left * right / 100
+    return None
 
 
 def _sort_value(value: Any) -> tuple[int, int, Any]:
@@ -360,12 +383,27 @@ def read_workbook_records(
         header_end_row, header_structure = _read_header_structure(
             worksheet, header_row_number
         )
+        ordered_column_numbers = tuple(
+            int(item["column_number"])
+            for item in (column_config or [])
+            if isinstance(item, dict)
+            and isinstance(item.get("column_number"), int)
+            and 1 <= int(item["column_number"]) <= worksheet.max_column
+        ) or tuple(range(1, worksheet.max_column + 1))
         columns = tuple(
             WorkbookColumn(
-                field=str(semantic_by_column.get(column_number) or config_by_number.get(column_number, {}).get("id") or f"column_{column_number}"),
+                field=str(
+                    config_by_number.get(column_number, {}).get("id")
+                    or semantic_by_column.get(column_number)
+                    or f"column_{column_number}"
+                ),
                 header=header_structure[column_number][0],
                 column_number=column_number,
-                editable=semantic_by_column.get(column_number) in PRICE_FIELDS,
+                editable=(
+                    not bool(config_by_number.get(column_number, {}).get("formula"))
+                    if column_config
+                    else semantic_by_column.get(column_number) in PRICE_FIELDS
+                ),
                 semantic_field=semantic_by_column.get(column_number),
                 id=str(config_by_number.get(column_number, {}).get("id") or f"source-{column_number}"),
                 origin=str(config_by_number.get(column_number, {}).get("origin", "source")),
@@ -374,11 +412,12 @@ def read_workbook_records(
                 sticky=bool(config_by_number.get(column_number, {}).get("sticky", False)),
                 group_label=header_structure[column_number][1],
                 header_row_span=header_structure[column_number][2],
+                formula=config_by_number.get(column_number, {}).get("formula"),
             )
-            for column_number in range(1, worksheet.max_column + 1)
+            for column_number in ordered_column_numbers
         )
         records: list[WorkbookRecord] = []
-        visible_columns = tuple(range(1, worksheet.max_column + 1))
+        visible_columns = ordered_column_numbers
         identity_search_fields = tuple(
             field for field in column_mapping if field not in PRICE_FIELDS
         )
@@ -395,14 +434,10 @@ def read_workbook_records(
         normalized_search = _normalize_search_value(search)
         protection = getattr(worksheet, "protection", None)
         sheet_protected = bool(protection and protection.sheet)
-        merged_cells = _read_merged_price_cells(
+        merged_cells = _read_merged_cells(
             Path(path),
             worksheet,
-            {
-                column_mapping[field]
-                for field in PRICE_FIELDS
-                if field in column_mapping
-            },
+            set(visible_columns),
         )
 
         for row_number, row in enumerate(
@@ -419,6 +454,11 @@ def read_workbook_records(
                 column.field: cell_by_column[column.column_number].value
                 for column in columns
             }
+            values_by_id = {column.id: values[column.field] for column in columns}
+            for column in columns:
+                if column.formula:
+                    values[column.field] = _formula_value(column.formula, values_by_id)
+                    values_by_id[column.id] = values[column.field]
             if normalized_search and not any(
                 normalized_search in _normalize_search_value(values[field])
                 for field in search_fields
@@ -433,7 +473,8 @@ def read_workbook_records(
                     merged_cells=merged_cells,
                 )
                 for column in columns
-                if column.origin == "user" or column.semantic_field in PRICE_FIELDS
+                if (column_config and not column.formula)
+                or (not column_config and column.semantic_field in PRICE_FIELDS)
             }
             records.append(
                 WorkbookRecord(
@@ -444,19 +485,20 @@ def read_workbook_records(
             )
 
         if sort_by is not None:
+            sort_field = semantic_fields[sort_by]
             records.sort(key=lambda record: record.row_number)
             populated_records = [
                 record
                 for record in records
-                if _sort_value(record.values[sort_by])[0] == 0
+                if _sort_value(record.values[sort_field])[0] == 0
             ]
             blank_records = [
                 record
                 for record in records
-                if _sort_value(record.values[sort_by])[0] == 1
+                if _sort_value(record.values[sort_field])[0] == 1
             ]
             populated_records.sort(
-                key=lambda record: _sort_value(record.values[sort_by]),
+                key=lambda record: _sort_value(record.values[sort_field]),
                 reverse=sort_direction == "desc",
             )
             records = populated_records + blank_records

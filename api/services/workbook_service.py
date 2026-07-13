@@ -1002,6 +1002,7 @@ def add_session_column(
     base_version: int,
     label: str,
     data_type: str,
+    formula: dict[str, str] | None = None,
 ) -> EditingSessionDescriptor:
     """Append an arbitrary user-owned column as an immutable version."""
 
@@ -1036,6 +1037,33 @@ def add_session_column(
             current = _get_version(
                 db, session_id=session_id, version_number=base_version
             )
+            config = _normalized_column_config(editing_session)
+            formula_for_mutation: dict[str, object] | None = None
+            if formula is not None:
+                by_id = {str(item.get("id")): item for item in config}
+                left = by_id.get(formula["left_column_id"])
+                right = by_id.get(formula["right_column_id"])
+                if left is None or right is None:
+                    raise WorkbookServiceError(
+                        "INVALID_FORMULA", 422, "Formula references an unknown column."
+                    )
+                if left.get("formula") or right.get("formula"):
+                    raise WorkbookServiceError(
+                        "INVALID_FORMULA", 422, "Formula columns cannot be used as operands."
+                    )
+                if left.get("data_type") not in {"number", "currency"} or right.get(
+                    "data_type"
+                ) not in {"number", "currency"}:
+                    raise WorkbookServiceError(
+                        "INVALID_FORMULA",
+                        422,
+                        "Formula operands must be number or currency columns.",
+                    )
+                formula_for_mutation = {
+                    "left_column_number": int(left["column_number"]),
+                    "operator": formula["operator"],
+                    "right_column_number": int(right["column_number"]),
+                }
             next_number = base_version + 1
             version_id = uuid.uuid4()
             key = f"sessions/{session_id}/{next_number:06d}-{version_id}.xlsx"
@@ -1052,11 +1080,11 @@ def add_session_column(
                     sheet_name=editing_session.selected_sheet_name,
                     header_row_number=editing_session.header_row_number,
                     label=normalized_label,
+                    formula=formula_for_mutation,
                 )
                 with output_path.open("rb") as generated:
                     stored = storage.put_immutable(key=key, source=generated)
             column_id = f"user-{uuid.uuid4()}"
-            config = _normalized_column_config(editing_session)
             config.append(
                 {
                     "id": column_id,
@@ -1067,6 +1095,7 @@ def add_session_column(
                     "hidden": False,
                     "sticky": False,
                     "semantic_field": None,
+                    "formula": formula,
                 }
             )
             editing_session.column_config = config
@@ -1151,6 +1180,18 @@ def remove_session_column(
                     "SOURCE_COLUMN_IMMUTABLE",
                     422,
                     "Columns from the uploaded workbook cannot be removed.",
+                )
+            if any(
+                item.get("formula")
+                and column_id
+                in {
+                    item["formula"].get("left_column_id"),
+                    item["formula"].get("right_column_id"),
+                }
+                for item in config
+            ):
+                raise WorkbookServiceError(
+                    "COLUMN_IN_USE", 422, "Column is referenced by a formula and cannot be removed."
                 )
             column_number = int(target["column_number"])
             current = _get_version(
