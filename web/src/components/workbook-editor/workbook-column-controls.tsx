@@ -19,6 +19,8 @@ import type { FormulaTranslator } from "./formula-expression-node"
 export function WorkbookColumnControls({
   columns,
   busy,
+  baseVersion,
+  sessionId,
   onAdd,
   onConfigurationChange,
   onUpdateFormula,
@@ -26,6 +28,8 @@ export function WorkbookColumnControls({
 }: {
   columns: WorkbookColumn[]
   busy: boolean
+  baseVersion?: number
+  sessionId?: string
   onAdd: (label: string, dataType: WorkbookColumnDataType) => void
   onConfigurationChange: (hidden: string[], sticky: string[]) => void
   onUpdateFormula: (columnId: string | undefined, label: string, dataType: "number" | "currency", formula: WorkbookColumnFormula | null) => void
@@ -35,7 +39,9 @@ export function WorkbookColumnControls({
   const [label, setLabel] = React.useState("")
   const [dataType, setDataType] = React.useState<WorkbookColumnDataType>("text")
   const [formulaOpen, setFormulaOpen] = React.useState(false)
+  const [formulaTarget, setFormulaTarget] = React.useState<WorkbookColumn | null>(null)
   const numericColumns = columns.filter((column) => column.data_type === "number" || column.data_type === "currency")
+  const formulaColumns = columns.filter((column) => column.origin === "user" && column.formula)
   const hiddenColumns = columns.filter((column) => column.hidden)
   const hidden = hiddenColumns.map((column) => column.id)
   const sticky = columns.filter((column) => column.sticky).map((column) => column.id)
@@ -54,7 +60,26 @@ export function WorkbookColumnControls({
         </DialogContent>
       </Dialog>
 
-      <Button disabled={numericColumns.length === 0 || busy} onClick={() => setFormulaOpen(true)} size="sm" title={numericColumns.length === 0 ? t("workbookEditor.editor.columns.formulaNeedsColumns") : undefined} type="button" variant="outline"><FunctionSquare />{t("workbookEditor.editor.columns.formula")}</Button>
+      <Button disabled={numericColumns.length === 0 || busy} onClick={() => { setFormulaTarget(null); setFormulaOpen(true) }} size="sm" title={numericColumns.length === 0 ? t("workbookEditor.editor.columns.formulaNeedsColumns") : undefined} type="button" variant="outline"><FunctionSquare />{t("workbookEditor.editor.columns.formula")}</Button>
+
+      {formulaColumns.length ? (
+        <select
+          aria-label={t("workbookEditor.editor.columns.editFormula")}
+          className="h-9 max-w-40 rounded-md border border-input bg-white px-2 text-sm"
+          disabled={busy}
+          onChange={(event) => {
+            const target = formulaColumns.find((column) => column.id === event.target.value)
+            if (!target) return
+            setFormulaTarget(target)
+            setFormulaOpen(true)
+            event.currentTarget.value = ""
+          }}
+          value=""
+        >
+          <option disabled value="">{t("workbookEditor.editor.columns.editFormula")}</option>
+          {formulaColumns.map((column) => <option key={column.id} value={column.id}>{column.label || t("workbookEditor.editor.columns.unnamed")}</option>)}
+        </select>
+      ) : null}
 
       {hiddenColumns.length > 0 ? <Sheet>
         <SheetTrigger asChild>
@@ -75,15 +100,21 @@ export function WorkbookColumnControls({
       </Sheet> : null}
 
       <FormulaBuilderDialog
+        baseVersion={baseVersion}
         busy={busy}
         columns={columns}
         onApply={(nextLabel, nextDataType, formula) => {
-          onUpdateFormula(undefined, nextLabel, nextDataType, formula)
+          onUpdateFormula(formulaTarget?.id, nextLabel, nextDataType, formula)
           setFormulaOpen(false)
         }}
-        onOpenChange={setFormulaOpen}
+        onOpenChange={(nextOpen) => {
+          setFormulaOpen(nextOpen)
+          if (!nextOpen) setFormulaTarget(null)
+        }}
         open={formulaOpen}
+        sessionId={sessionId}
         t={t}
+        targetColumn={formulaTarget}
       />
     </div>
   )

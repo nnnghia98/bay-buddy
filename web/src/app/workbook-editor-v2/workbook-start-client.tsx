@@ -2,7 +2,6 @@
 
 import {
   AlertTriangle,
-  CheckCircle2,
   FileSpreadsheet,
   LoaderCircle,
   ShieldCheck,
@@ -19,7 +18,6 @@ import {
   uploadWorkbook,
 } from "@/lib/workbooks/client"
 import type {
-  WorkbookMappingStatus as MappingStatus,
   WorkbookSessionList,
   WorkbookUpload as WorkbookUploadData,
   WorksheetInspection,
@@ -28,12 +26,6 @@ import { useI18n } from "@/locales/client"
 import { cn } from "@/lib/utils"
 
 type PendingAction = "upload" | "session" | null
-
-const statusTone: Record<MappingStatus, string> = {
-  READY: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  MAPPING_INCOMPLETE: "border-amber-200 bg-amber-50 text-amber-800",
-  AMBIGUOUS_MAPPING: "border-rose-200 bg-rose-50 text-rose-700",
-}
 
 export function WorkbookStartClient({
   initialSessions,
@@ -63,8 +55,6 @@ export function WorkbookStartClient({
         INVALID_XLS: "workbookEditor.errors.invalidWorkbook",
         UNSAFE_XLSX_ARCHIVE: "workbookEditor.errors.unsafeWorkbook",
         WORKBOOK_LIMIT_EXCEEDED: "workbookEditor.errors.workbookLimit",
-        MAPPING_INCOMPLETE: "workbookEditor.errors.mappingIncomplete",
-        AMBIGUOUS_MAPPING: "workbookEditor.errors.mappingAmbiguous",
         NETWORK_ERROR: "workbookEditor.errors.network",
       }
       return text(knownKeys[code] ?? fallbackKey)
@@ -213,23 +203,10 @@ export function WorkbookStartClient({
                     <SheetOption
                       key={sheet.name}
                       labels={{
-                        ready: text("workbookEditor.sheets.ready"),
-                        incomplete: text("workbookEditor.sheets.incomplete"),
-                        ambiguous: text("workbookEditor.sheets.ambiguous"),
                         rowsColumns: text("workbookEditor.sheets.rowsColumns"),
-                        missing: text("workbookEditor.sheets.missing"),
-                        ambiguousFields: text("workbookEditor.sheets.ambiguousFields"),
                         headerLabel: text("workbookEditor.sheets.headerLabel"),
                         headerRow: text("workbookEditor.sheets.headerRow"),
                         headerPreviewEmpty: text("workbookEditor.sheets.headerPreviewEmpty"),
-                        mappingNote: text("workbookEditor.sheets.mappingNote"),
-                      }}
-                      fieldLabels={{
-                        net_price: text("workbookEditor.fields.netPrice"),
-                        selling_price: text("workbookEditor.fields.sellingPrice"),
-                        passenger_name: text("workbookEditor.fields.passengerName"),
-                        pnr: text("workbookEditor.fields.pnr"),
-                        ticket_number: text("workbookEditor.fields.ticketNumber"),
                       }}
                       onHeaderSelect={setSelectedHeaderRow}
                       onSelect={(name) => {
@@ -292,7 +269,6 @@ function SheetOption({
   onSelect,
   onHeaderSelect,
   labels,
-  fieldLabels,
 }: {
   sheet: WorksheetInspection
   selected: boolean
@@ -300,42 +276,13 @@ function SheetOption({
   onSelect: (name: string) => void
   onHeaderSelect: (rowNumber: number) => void
   labels: {
-    ready: string
-    incomplete: string
-    ambiguous: string
     rowsColumns: string
-    missing: string
-    ambiguousFields: string
     headerLabel: string
     headerRow: string
     headerPreviewEmpty: string
-    mappingNote: string
   }
-  fieldLabels: Record<string, string>
 }) {
   const selectable = sheet.header_candidates.length > 0
-  const activeCandidate = sheet.header_candidates.find(
-    (candidate) => candidate.row_number === selectedHeaderRow,
-  ) ?? sheet.header_candidates.find(
-    (candidate) => candidate.row_number === sheet.header_row_number,
-  ) ?? sheet.header_candidates[0]
-  const mappingStatus = activeCandidate?.mapping_status ?? sheet.mapping_status
-  const statusLabel =
-    mappingStatus === "READY"
-      ? labels.ready
-      : mappingStatus === "AMBIGUOUS_MAPPING"
-        ? labels.ambiguous
-        : labels.incomplete
-  const detail =
-    mappingStatus === "AMBIGUOUS_MAPPING"
-      ? `${labels.ambiguousFields}: ${Object.keys(activeCandidate?.ambiguous_fields ?? sheet.ambiguous_fields)
-          .map((field) => fieldLabels[field] ?? field)
-          .join(", ")}`
-      : mappingStatus === "MAPPING_INCOMPLETE"
-        ? `${labels.missing}: ${(activeCandidate?.missing_required_fields ?? sheet.missing_required_fields)
-            .map((field) => fieldLabels[field] ?? field)
-            .join(", ")}`
-        : null
 
   return (
     <label
@@ -356,20 +303,9 @@ function SheetOption({
           value={sheet.name}
         />
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <span className="truncate text-sm font-semibold" title={sheet.name}>
-              {sheet.name}
-            </span>
-            <span
-              className={cn(
-                "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold",
-                statusTone[mappingStatus],
-              )}
-            >
-              {mappingStatus === "READY" ? <CheckCircle2 aria-hidden="true" className="size-3" /> : null}
-              {statusLabel}
-            </span>
-          </div>
+          <span className="block truncate text-sm font-semibold" title={sheet.name}>
+            {sheet.name}
+          </span>
           <p className="mt-1 text-xs text-muted-foreground">
             {labels.rowsColumns}: {sheet.max_row} × {sheet.max_column}
           </p>
@@ -391,10 +327,8 @@ function SheetOption({
                   )
                 })}
               </select>
-              <p className="text-xs leading-5 text-muted-foreground">{labels.mappingNote}</p>
             </div>
           ) : null}
-          {detail ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</p> : null}
         </div>
       </div>
     </label>

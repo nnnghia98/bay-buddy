@@ -31,6 +31,7 @@ import { useWorkbookDraft } from "@/lib/workbooks/use-workbook-draft"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
 import {
+  WORKBOOK_MAX_SAFE_VND,
   WORKBOOK_MAX_TEXT_LENGTH,
   type WorkbookRecordsPage,
   type WorkbookSaveRequest,
@@ -114,7 +115,10 @@ export function parseWorkbookCellDraft(
 ): { valid: boolean; value: string | number | boolean | null } {
   const normalized = draft.trim()
   if (dataType === "text") {
-    return { valid: draft.length <= WORKBOOK_MAX_TEXT_LENGTH, value: draft }
+    return {
+      valid: draft.length <= WORKBOOK_MAX_TEXT_LENGTH && !draft.startsWith("="),
+      value: draft,
+    }
   }
   if (!normalized) return { valid: true, value: null }
   if (dataType === "number" || dataType === "currency") {
@@ -138,6 +142,15 @@ export function parseWorkbookCellDraft(
   }
 }
 
+function isValidSemanticVnd(value: string | number | boolean | null): boolean {
+  return value === null || (
+    typeof value === "number"
+    && Number.isInteger(value)
+    && value >= 0
+    && value <= WORKBOOK_MAX_SAFE_VND
+  )
+}
+
 export function validateWorkbookDrafts(
   drafts: DraftMap,
   invalidMessage: string,
@@ -154,7 +167,12 @@ export function validateWorkbookDrafts(
       const dataType = column?.data_type
         ?? ((field === "net_price" || field === "selling_price") ? "currency" : "text")
       const parsed = parseWorkbookCellDraft(draft, dataType, column?.number_format)
-      if (!parsed.valid) errors.set(`${rowNumber}:${field}`, invalidMessage)
+      const isSemanticVnd = column?.semantic_field === "net_price"
+        || column?.semantic_field === "selling_price"
+        || field === "net_price"
+        || field === "selling_price"
+      const validSemanticVnd = !isSemanticVnd || isValidSemanticVnd(parsed.value)
+      if (!parsed.valid || !validSemanticVnd) errors.set(`${rowNumber}:${field}`, invalidMessage)
       else values[field] = parsed.value
     }
     if (Object.keys(values).length > 0) changes.push({ row_number: rowNumber, values })
@@ -197,7 +215,7 @@ export function EditorWorkbench({
   }), [initialSession, userId])
   const localDraft = useWorkbookDraft({
     identity: draftIdentity,
-    serverVersion: initialSession.current_version,
+    serverVersion: baseVersion,
   })
   const drafts = React.useMemo(
     () => workbookDraftToMap(localDraft.draft),
@@ -208,6 +226,7 @@ export function EditorWorkbench({
   const [feedback, setFeedback] = React.useState<string>()
   const [isDownloading, setIsDownloading] = React.useState(false)
   const [conflictDialogOpen, setConflictDialogOpen] = React.useState(false)
+  const [reconciliationQueued, setReconciliationQueued] = React.useState(false)
   const recoveryKeyRef = React.useRef<string | undefined>(undefined)
   const replayedRequestRef = React.useRef<string | undefined>(undefined)
   const pageSize = 50
@@ -243,6 +262,16 @@ export function EditorWorkbench({
   const records = recordsQuery.data ?? initialRecords
   const dirtyCount = workbookDraftDirtyCount(localDraft.draft)
   const hasUnresolvedConflicts = workbookDraftHasUnresolvedConflicts(localDraft.draft)
+
+  React.useEffect(() => {
+    if (dirtyCount === 0) return
+    const confirmNavigation = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ""
+    }
+    window.addEventListener("beforeunload", confirmNavigation)
+    return () => window.removeEventListener("beforeunload", confirmNavigation)
+  }, [dirtyCount])
   const conflictCells = localDraft.draft?.cells.filter(
     (cell) => cell.conflict?.resolution === "unresolved",
   ) ?? []
@@ -284,10 +313,15 @@ export function EditorWorkbench({
       )
       return { latest, values, hasConflicts }
     },
-    onSuccess: ({ latest, values, hasConflicts }) => {
+    onSuccess: ({ latest, values, hasConflicts }, draft) => {
       setBaseVersion(latest.current_version)
       queryClient.setQueryData(workbookQueryKeys.session(initialSession.id), latest)
-      localDraft.applyReconciliation(latest.current_version, values)
+      const repeatReconciliation = localDraft.applyReconciliation(
+        latest.current_version,
+        values,
+        { revision: draft.revision, cells: draft.cells },
+      )
+      setReconciliationQueued(repeatReconciliation)
       setSaveState(hasConflicts ? "conflict" : "dirty")
       setFeedback(t(
         hasConflicts
@@ -313,7 +347,7 @@ export function EditorWorkbench({
       setSaveState("saving")
       setFeedback(t("workbookEditor.editor.feedback.saving"))
     },
-    onSuccess: async (result) => {
+    onSuccess: async (result, request) => {
       setBaseVersion(result.current_version)
       setCellErrors(new Map())
       queryClient.setQueryData<WorkbookSession>(
@@ -324,9 +358,17 @@ export function EditorWorkbench({
         queryClient.invalidateQueries({ queryKey: workbookQueryKeys.session(initialSession.id) }),
         queryClient.invalidateQueries({ queryKey: workbookQueryKeys.recordsRoot(initialSession.id) }),
       ])
-      await localDraft.clear("saved")
-      setSaveState("saved")
-      setFeedback(t("workbookEditor.editor.feedback.saved"))
+      const remainingDraft = await localDraft.acknowledgeSave(
+        result.current_version,
+        request.request_id,
+      )
+      if (remainingDraft) {
+        setSaveState("dirty")
+        setFeedback(t("workbookEditor.editor.feedback.rebased"))
+      } else {
+        setSaveState("saved")
+        setFeedback(t("workbookEditor.editor.feedback.saved"))
+      }
     },
     onError: (error) => {
       const code = error instanceof WorkbookClientError ? error.code : "REQUEST_FAILED"
@@ -362,11 +404,12 @@ export function EditorWorkbench({
     }
 
     if (
-      draft.serverBaseVersion < baseVersion
+      (draft.serverBaseVersion < baseVersion || reconciliationQueued)
       && recoveryKeyRef.current !== draft.updatedAt
       && !reconciliationMutation.isPending
     ) {
       recoveryKeyRef.current = draft.updatedAt
+      setReconciliationQueued(false)
       setSaveState("conflict")
       setFeedback(t("workbookEditor.editor.feedback.reconciling"))
       reconciliationMutation.mutate(draft)
@@ -397,6 +440,7 @@ export function EditorWorkbench({
     localDraft.isHydrated,
     reconciliationMutation,
     saveMutation,
+    reconciliationQueued,
     t,
   ])
 
@@ -481,18 +525,34 @@ export function EditorWorkbench({
     onError: (error) => structuralError(error, "workbookEditor.editor.feedback.removeColumnFailed"),
   })
   const configurationMutation = useMutation({
-    mutationFn: ({ hidden, sticky }: { hidden: string[]; sticky: string[] }) => updateWorkbookColumnConfiguration(initialSession.id, hidden, sticky),
+    mutationFn: ({ hidden, sticky }: { hidden: string[]; sticky: string[] }) => updateWorkbookColumnConfiguration(initialSession.id, baseVersion, hidden, sticky),
     onSuccess: async (session) => { queryClient.setQueryData(workbookQueryKeys.session(initialSession.id), session); await queryClient.invalidateQueries({ queryKey: workbookQueryKeys.recordsRoot(initialSession.id) }) },
   })
   const hiddenColumnIds = records.columns.filter((column) => column.hidden).map((column) => column.id)
   const stickyColumnIds = records.columns.filter((column) => column.sticky).map((column) => column.id)
+  const structuralActionsDisabled = dirtyCount > 0
+    || saveMutation.isPending
+    || reconciliationMutation.isPending
+    || configurationMutation.isPending
+    || removeColumnMutation.isPending
+    || addColumnsMutation.isPending
+    || updateColumnMutation.isPending
+  const structuralActionDisabledReason = dirtyCount > 0
+    ? t("workbookEditor.editor.unsavedCount", { count: dirtyCount })
+    : saveMutation.isPending
+      ? t("workbookEditor.editor.feedback.saving")
+      : reconciliationMutation.isPending
+        ? t("workbookEditor.editor.feedback.reconciling")
+        : undefined
   const hideColumn = (columnId: string) => {
+    if (structuralActionsDisabled) return
     configurationMutation.mutate({
       hidden: [...hiddenColumnIds, columnId],
       sticky: stickyColumnIds.filter((id) => id !== columnId),
     })
   }
   const toggleStickyColumn = (columnId: string, sticky: boolean) => {
+    if (structuralActionsDisabled) return
     configurationMutation.mutate({
       hidden: hiddenColumnIds,
       sticky: sticky
@@ -505,6 +565,9 @@ export function EditorWorkbench({
       const record = records.items.find((item) => item.row_number === rowNumber)
       const column = records.columns.find((item) => item.field === field)
       const parsed = parseWorkbookCellDraft(value, column?.data_type ?? "text", column?.number_format)
+      const isSemanticVnd = column?.semantic_field === "net_price"
+        || column?.semantic_field === "selling_price"
+      const isValid = parsed.valid && (!isSemanticVnd || isValidSemanticVnd(parsed.value))
       const storedCell = localDraft.draft?.cells.find(
         (cell) => cell.rowNumber === rowNumber && cell.columnId === field,
       )
@@ -514,8 +577,8 @@ export function EditorWorkbench({
         columnId: field,
         originalValue: original,
         localInput: value,
-        ...(parsed.valid ? { localValue: parsed.value } : {}),
-        matchesOriginal: parsed.valid && Object.is(parsed.value, original),
+        ...(isValid ? { localValue: parsed.value } : {}),
+        matchesOriginal: isValid && Object.is(parsed.value, original),
       })
       setCellErrors((current) => {
         const next = new Map(current)
@@ -622,11 +685,13 @@ export function EditorWorkbench({
       <Panel className={cn(recordsQuery.isFetching && "opacity-80")}>
         <WorkbookTableToolbar
           columnControls={<WorkbookColumnControls
-            busy={dirtyCount > 0 || addColumnsMutation.isPending || updateColumnMutation.isPending || removeColumnMutation.isPending || configurationMutation.isPending}
+            baseVersion={baseVersion}
+            busy={structuralActionsDisabled || addColumnsMutation.isPending || updateColumnMutation.isPending}
             columns={records.columns}
             onAdd={(label, dataType) => addColumnsMutation.mutate({ label, dataType })}
             onConfigurationChange={(hidden, sticky) => configurationMutation.mutate({ hidden, sticky })}
             onUpdateFormula={(columnId, nextLabel, nextDataType, formula) => updateColumnMutation.mutate({ columnId, label: nextLabel, dataType: nextDataType, formula })}
+            sessionId={initialSession.id}
             t={t}
           />}
           onSearch={(value) => {
@@ -664,10 +729,14 @@ export function EditorWorkbench({
             remove: t("workbookEditor.editor.columns.removeColumn"),
             removeConfirm: t("workbookEditor.editor.columns.removeColumnConfirm"),
           }}
-          isConfiguringColumns={configurationMutation.isPending || removeColumnMutation.isPending}
+          isConfiguringColumns={structuralActionsDisabled}
+          structuralActionDisabledReason={structuralActionDisabledReason}
           onDraftChange={handleDraftChange}
           onHideColumn={hideColumn}
-          onRemoveColumn={(columnId) => removeColumnMutation.mutate(columnId)}
+          onRemoveColumn={(columnId) => {
+            if (structuralActionsDisabled || localDraft.draft?.cells.some((cell) => cell.columnId === columnId)) return
+            removeColumnMutation.mutate(columnId)
+          }}
           onSort={handleSort}
           onToggleSticky={toggleStickyColumn}
           records={records}

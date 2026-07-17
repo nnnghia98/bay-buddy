@@ -37,6 +37,12 @@ export const workbookPendingSaveSchema = z.object({
       values: z.record(z.string().min(1).max(255), workbookDraftValueSchema),
     })).min(1).max(500),
   }),
+  submittedCells: z.array(z.object({
+    rowNumber: z.number().int().positive(),
+    columnId: z.string().min(1).max(255),
+    value: workbookDraftValueSchema,
+  })).max(WORKBOOK_DRAFT_MAX_CELLS).optional(),
+  draftRevision: z.number().int().nonnegative().default(0),
   createdAt: z.iso.datetime(),
   retryable: z.boolean(),
   lastErrorCode: z.string().max(100).optional(),
@@ -51,6 +57,8 @@ export const workbookDraftRecordSchema = z.object({
   originalFilename: z.string().min(1).max(255),
   sheetName: z.string().min(1).max(255),
   serverBaseVersion: z.number().int().positive(),
+  // Defaults keep locally persisted v1 drafts readable after this field was added.
+  revision: z.number().int().nonnegative().default(0),
   cells: z.array(workbookDraftCellSchema).max(WORKBOOK_DRAFT_MAX_CELLS),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
@@ -107,6 +115,7 @@ export function createWorkbookDraft(
     schemaVersion: WORKBOOK_DRAFT_SCHEMA_VERSION,
     ...identity,
     serverBaseVersion,
+    revision: 0,
     cells: [],
     createdAt: now,
     updatedAt: now,
@@ -152,6 +161,7 @@ export function updateWorkbookDraftCell(
   return workbookDraftRecordSchema.parse({
     ...draft,
     serverBaseVersion,
+    revision: draft.revision + 1,
     cells,
     updatedAt: now,
     status: "dirty",
@@ -188,6 +198,9 @@ export function withPendingWorkbookSave(
   payload: WorkbookSaveRequest,
   now = new Date().toISOString(),
 ): WorkbookDraftRecord {
+  const submittedCells = payload.changes.flatMap((change) => Object.entries(change.values).map(
+    ([columnId, value]) => ({ rowNumber: change.row_number, columnId, value }),
+  ))
   return workbookDraftRecordSchema.parse({
     ...draft,
     status: "saving",
@@ -195,9 +208,61 @@ export function withPendingWorkbookSave(
     pendingSave: {
       requestId: payload.request_id,
       payload,
+      submittedCells,
+      draftRevision: draft.revision,
       createdAt: now,
       retryable: true,
     },
+  })
+}
+
+/**
+ * Acknowledge only the cells that are still identical to the request snapshot.
+ * Edits made while the request was in flight remain as a rebased local draft.
+ */
+export function acknowledgeWorkbookSave(
+  draft: WorkbookDraftRecord,
+  currentVersion: number,
+  requestId: string,
+  now = new Date().toISOString(),
+): WorkbookDraftRecord | null {
+  if (draft.pendingSave?.requestId !== requestId) return draft
+
+  const submittedCells = draft.pendingSave.submittedCells ?? draft.pendingSave.payload.changes.flatMap(
+    (change) => Object.entries(change.values).map(
+      ([columnId, value]) => ({ rowNumber: change.row_number, columnId, value }),
+    ),
+  )
+  const submitted = new Map(
+    submittedCells.map((cell) => [
+      `${cell.rowNumber}:${cell.columnId}`,
+      cell.value,
+    ]),
+  )
+  const cells = draft.cells.flatMap((cell) => {
+    const submittedValue = submitted.get(`${cell.rowNumber}:${cell.columnId}`)
+    if (submittedValue === undefined && !submitted.has(`${cell.rowNumber}:${cell.columnId}`)) {
+      return [cell]
+    }
+    const localValue = cell.localValue ?? cell.localInput
+    if (Object.is(localValue, submittedValue)) return []
+    return [{
+      ...cell,
+      // The acknowledged value is now the correct server-side baseline for the newer edit.
+      originalValue: submittedValue as WorkbookCellValue,
+      conflict: undefined,
+    }]
+  })
+  if (cells.length === 0) return null
+  const hasUnresolved = cells.some((cell) => cell.conflict?.resolution === "unresolved")
+  return workbookDraftRecordSchema.parse({
+    ...draft,
+    serverBaseVersion: currentVersion,
+    revision: draft.revision + 1,
+    cells,
+    updatedAt: now,
+    status: hasUnresolved ? "conflict" : "dirty",
+    pendingSave: undefined,
   })
 }
 
@@ -206,6 +271,12 @@ export function withWorkbookSaveError(
   code: string,
   now = new Date().toISOString(),
 ): WorkbookDraftRecord {
+  const retryableCodes = new Set([
+    "REQUEST_FAILED",
+    "NETWORK_ERROR",
+    "STORAGE_WRITE_FAILED",
+    "SERVICE_UNAVAILABLE",
+  ])
   return workbookDraftRecordSchema.parse({
     ...draft,
     status: code === "VERSION_CONFLICT" ? "conflict" : "error",
@@ -213,7 +284,7 @@ export function withWorkbookSaveError(
     pendingSave: draft.pendingSave
       ? {
           ...draft.pendingSave,
-          retryable: code !== "VERSION_CONFLICT",
+          retryable: retryableCodes.has(code),
           lastErrorCode: code,
         }
       : undefined,
@@ -224,14 +295,19 @@ export function reconcileWorkbookDraft(
   draft: WorkbookDraftRecord,
   currentVersion: number,
   serverCells: WorkbookCellServerValue[],
+  inspectedCells: readonly Pick<WorkbookDraftCell, "rowNumber" | "columnId">[] = draft.cells,
   now = new Date().toISOString(),
 ): WorkbookDraftRecord {
+  const inspectedKeys = new Set(
+    inspectedCells.map((cell) => `${cell.rowNumber}:${cell.columnId}`),
+  )
   const serverValues = new Map(
     serverCells.map((cell) => [`${cell.rowNumber}:${cell.columnId}`, cell.value]),
   )
   let hasConflicts = false
   const cells = draft.cells.map((cell) => {
     const key = `${cell.rowNumber}:${cell.columnId}`
+    if (!inspectedKeys.has(key)) return cell
     if (!serverValues.has(key)) {
       hasConflicts = true
       return {
@@ -250,12 +326,16 @@ export function reconcileWorkbookDraft(
       conflict: { serverValue, resolution: "unresolved" as const },
     }
   })
+  const hasUnresolved = hasConflicts || cells.some(
+    (cell) => cell.conflict?.resolution === "unresolved",
+  )
   return workbookDraftRecordSchema.parse({
     ...draft,
     serverBaseVersion: currentVersion,
+    revision: draft.revision + 1,
     cells,
     updatedAt: now,
-    status: hasConflicts ? "conflict" : "dirty",
+    status: hasUnresolved ? "conflict" : "dirty",
     pendingSave: draft.pendingSave
       ? { ...draft.pendingSave, retryable: false, lastErrorCode: "VERSION_CONFLICT" }
       : undefined,
@@ -285,6 +365,7 @@ export function resolveWorkbookDraftConflict(
   return workbookDraftRecordSchema.parse({
     ...draft,
     cells,
+    revision: draft.revision + 1,
     updatedAt: now,
     status: hasUnresolved ? "conflict" : "dirty",
   })

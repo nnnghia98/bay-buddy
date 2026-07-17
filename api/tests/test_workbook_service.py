@@ -44,6 +44,7 @@ from services.workbook_service import (
     remove_session_column,
     save_session_changes,
     update_session_column,
+    update_session_column_configuration,
     upload_workbook,
 )
 from services.workbook_validation import MappingStatus
@@ -1243,6 +1244,99 @@ def test_formula_preview_add_update_and_dependency_removal(engine, storage) -> N
         assert updated_column["label"] == "Rounded margin"
         assert updated_column["formula"] is None
         assert len(db.exec(select(WorkbookVersion)).all()) == 4
+
+
+def test_column_configuration_is_version_checked_and_versionless(engine, storage) -> None:
+    with Session(engine) as db:
+        actor = make_user(db)
+        uploaded = upload(db, storage, actor)
+        editing = create_editing_session(
+            db,
+            storage,
+            actor=actor,
+            workbook_id=uploaded.id,
+            sheet_name="Tickets",
+        )
+        first_id = editing.column_config[0]["id"]
+
+        configured = update_session_column_configuration(
+            db,
+            actor=actor,
+            session_id=editing.id,
+            base_version=1,
+            hidden_column_ids=[first_id],
+            sticky_column_ids=[],
+        )
+        assert configured.current_version == 1
+        assert configured.column_config[0]["hidden"] is True
+        assert len(db.exec(select(WorkbookVersion)).all()) == 1
+
+        added = add_session_column(
+            db,
+            storage,
+            actor=actor,
+            session_id=editing.id,
+            base_version=1,
+            label="Note",
+            data_type="text",
+        )
+        with pytest.raises(WorkbookServiceError) as stale:
+            update_session_column_configuration(
+                db,
+                actor=actor,
+                session_id=editing.id,
+                base_version=1,
+                hidden_column_ids=[],
+                sticky_column_ids=[],
+            )
+        assert stale.value.code == "VERSION_CONFLICT"
+        persisted = db.get(WorkbookSession, editing.id)
+        assert persisted is not None
+        assert any(item["id"] == added.column_config[-1]["id"] for item in persisted.column_config)
+
+
+def test_column_type_change_rejects_incompatible_populated_values(engine, storage) -> None:
+    with Session(engine) as db:
+        actor = make_user(db)
+        uploaded = upload(db, storage, actor)
+        editing = create_editing_session(
+            db,
+            storage,
+            actor=actor,
+            workbook_id=uploaded.id,
+            sheet_name="Tickets",
+        )
+        added = add_session_column(
+            db,
+            storage,
+            actor=actor,
+            session_id=editing.id,
+            base_version=1,
+            label="Note",
+            data_type="text",
+        )
+        note_id = added.column_config[-1]["id"]
+        saved = save_session_changes(
+            db,
+            storage,
+            actor=actor,
+            session_id=editing.id,
+            request_id=uuid.uuid4(),
+            base_version=2,
+            changes=[PriceChange(row_number=2, values={note_id: "not a number"})],
+        )
+
+        with pytest.raises(WorkbookServiceError) as incompatible:
+            update_session_column(
+                db,
+                storage,
+                actor=actor,
+                session_id=editing.id,
+                column_id=note_id,
+                base_version=saved.current_version,
+                data_type="number",
+            )
+        assert incompatible.value.code == "INVALID_COLUMN_TYPE"
 
 
 def test_formula_preview_and_update_enforce_base_version(engine, storage) -> None:

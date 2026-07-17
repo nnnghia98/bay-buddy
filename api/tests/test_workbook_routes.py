@@ -134,6 +134,56 @@ def test_upload_middleware_rejects_declared_oversize_before_service(
     assert called is False
 
 
+@pytest.mark.anyio
+async def test_upload_middleware_rejects_chunked_oversize_during_receive() -> None:
+    downstream_completed = False
+
+    async def downstream(scope, receive, send) -> None:
+        nonlocal downstream_completed
+        while True:
+            message = await receive()
+            if message["type"] == "http.disconnect":
+                return
+            if not message.get("more_body", False):
+                downstream_completed = True
+                await send({"type": "http.response.start", "status": 204, "headers": []})
+                await send({"type": "http.response.body", "body": b""})
+                return
+
+    middleware = routes.WorkbookUploadSizeLimitMiddleware(
+        downstream,
+        max_file_bytes=4,
+        overhead_allowance=0,
+    )
+    chunks = iter(
+        [
+            {"type": "http.request", "body": b"abc", "more_body": True},
+            {"type": "http.request", "body": b"def", "more_body": False},
+        ]
+    )
+    sent: list[dict] = []
+
+    async def receive() -> dict:
+        return next(chunks)
+
+    async def send(message: dict) -> None:
+        sent.append(message)
+
+    await middleware(
+        {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/v1/workbooks/uploads",
+            "headers": [],
+        },
+        receive,
+        send,
+    )
+
+    assert downstream_completed is False
+    assert sent[0]["status"] == 413
+
+
 def test_create_session_returns_201_success_envelope(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:

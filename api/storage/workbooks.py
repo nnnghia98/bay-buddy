@@ -97,6 +97,14 @@ class LocalWorkbookStorage:
         _, path = self._resolve_key(key)
         return path.is_file()
 
+    def local_read_path(self, *, key: str) -> Path:
+        """Expose the constrained immutable path for verified local reads."""
+
+        _, path = self._resolve_key(key)
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        return path
+
     def _resolve_key(self, key: str) -> tuple[str, Path]:
         if not isinstance(key, str) or not key or "\x00" in key:
             raise ValueError("Storage key must be a non-empty relative path.")

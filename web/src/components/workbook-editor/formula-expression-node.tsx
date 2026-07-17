@@ -78,6 +78,10 @@ export function FormulaExpressionNode({
 }) {
   const maxGuidedDepth = 5
   const canNest = depth < maxGuidedDepth
+  const numericColumns = React.useMemo(
+    () => columns.filter((column) => column.data_type === "number" || column.data_type === "currency"),
+    [columns],
+  )
   const kinds: ExpressionKind[] = expected === "boolean"
     ? ["comparison"]
     : canNest
@@ -102,18 +106,20 @@ export function FormulaExpressionNode({
       </div>
 
       {expression.type === "column" ? (
-        <select
-          aria-label={t("workbookEditor.editor.columns.builder.column")}
-          className={selectClass}
-          onChange={(event) => onChange({ ...expression, column_id: event.target.value })}
-          value={expression.column_id}
-        >
-          {columns.map((column) => (
-            <option key={column.id} value={column.id}>
-              {column.label || t("workbookEditor.editor.columns.unnamed")}{column.formula ? ` · ${t("workbookEditor.editor.columns.derivedShort")}` : ""}
-            </option>
-          ))}
-        </select>
+        numericColumns.length ? (
+          <select
+            aria-label={t("workbookEditor.editor.columns.builder.column")}
+            className={selectClass}
+            onChange={(event) => onChange({ ...expression, column_id: event.target.value })}
+            value={expression.column_id}
+          >
+            {numericColumns.map((column) => (
+              <option key={column.id} value={column.id}>
+                {column.label || t("workbookEditor.editor.columns.unnamed")}{column.formula ? ` · ${t("workbookEditor.editor.columns.derivedShort")}` : ""}
+              </option>
+            ))}
+          </select>
+        ) : <p className="text-xs text-muted-foreground">{t("workbookEditor.editor.columns.formulaNeedsColumns")}</p>
       ) : null}
 
       {expression.type === "constant" ? (

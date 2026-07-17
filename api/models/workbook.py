@@ -133,6 +133,8 @@ class WorkbookSession(SQLModel, table=True):
         default_factory=list,
         sa_column=Column(JSON, nullable=False, default=list),
     )
+    meaningful_max_row: int | None = Field(default=None, nullable=True)
+    meaningful_max_column: int | None = Field(default=None, nullable=True)
     current_version: int = Field(default=1)
     status: WorkbookSessionStatus = Field(
         default=WorkbookSessionStatus.DRAFT,

@@ -12,7 +12,7 @@ import uuid
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from decimal import Decimal
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any, BinaryIO, Iterator, Sequence
 
@@ -47,6 +47,7 @@ from services.workbook_mutation import (
     add_workbook_column,
     remove_workbook_column,
     update_workbook_column,
+    validate_workbook_column_values,
 )
 from services.workbook_reader import (
     WorkbookCellReference,
@@ -86,6 +87,8 @@ _SUPPORTED_UPLOAD_MIME_TYPES = frozenset(
 _COPY_CHUNK_SIZE = 1024 * 1024
 _sqlite_save_locks: dict[uuid.UUID, threading.RLock] = {}
 _sqlite_save_locks_guard = threading.Lock()
+_verified_local_objects: set[tuple[int, int, int, int, str]] = set()
+_verified_local_objects_guard = threading.Lock()
 
 
 class WorkbookServiceError(RuntimeError):
@@ -325,6 +328,29 @@ def _metadata_sheet(workbook: Workbook, sheet_name: str) -> dict[str, Any]:
     raise WorkbookServiceError("SHEET_NOT_FOUND", 404, "Worksheet was not found.")
 
 
+def _session_meaningful_bounds(
+    editing_session: WorkbookSession,
+    workbook: Workbook,
+) -> tuple[int, int]:
+    """Return persisted processing bounds, with upload metadata for old rows."""
+
+    sheet = _metadata_sheet(workbook, editing_session.selected_sheet_name)
+    max_row = editing_session.meaningful_max_row or sheet.get("max_row")
+    max_column = editing_session.meaningful_max_column or sheet.get("max_column")
+    if (
+        isinstance(max_row, bool)
+        or not isinstance(max_row, int)
+        or max_row < 1
+        or isinstance(max_column, bool)
+        or not isinstance(max_column, int)
+        or max_column < 1
+    ):
+        raise WorkbookServiceError(
+            "INVALID_XLSX", 422, "Worksheet processing bounds are unavailable."
+        )
+    return max_row, max_column
+
+
 def _get_workbook(db: Session, workbook_id: uuid.UUID, actor: User) -> Workbook:
     workbook = db.get(Workbook, workbook_id)
     if workbook is None:
@@ -366,6 +392,50 @@ def _materialized_object(
     checksum: str,
     expected_size: int,
 ) -> Iterator[Path]:
+    local_read_path = getattr(storage, "local_read_path", None)
+    if callable(local_read_path):
+        try:
+            local_path = Path(local_read_path(key=key))
+            stat = local_path.stat()
+            identity = (
+                stat.st_dev,
+                stat.st_ino,
+                stat.st_size,
+                stat.st_mtime_ns,
+                checksum,
+            )
+            with _verified_local_objects_guard:
+                verified = identity in _verified_local_objects
+            if not verified:
+                digest = hashlib.sha256()
+                with local_path.open("rb") as source:
+                    while chunk := source.read(_COPY_CHUNK_SIZE):
+                        digest.update(chunk)
+                if stat.st_size != expected_size or digest.hexdigest() != checksum:
+                    raise WorkbookServiceError(
+                        "STORAGE_OBJECT_MISSING",
+                        500,
+                        "Workbook file failed integrity checking.",
+                    )
+                with _verified_local_objects_guard:
+                    if len(_verified_local_objects) >= 1024:
+                        _verified_local_objects.clear()
+                    _verified_local_objects.add(identity)
+            elif stat.st_size != expected_size:
+                raise WorkbookServiceError(
+                    "STORAGE_OBJECT_MISSING",
+                    500,
+                    "Workbook file failed integrity checking.",
+                )
+            yield local_path
+            return
+        except WorkbookServiceError:
+            raise
+        except (OSError, ValueError) as exc:
+            raise WorkbookServiceError(
+                "STORAGE_OBJECT_MISSING", 500, "Workbook file is unavailable."
+            ) from exc
+
     temporary_path = _materialize_verified_object(
         storage,
         key=key,
@@ -558,10 +628,11 @@ def _editor_primary_column_end(
     header_structure: dict[int, tuple[str, str | None, int]],
     *,
     legacy_source: bool,
+    max_column: int | None = None,
 ) -> int:
     """Keep a legacy main header band visible while retaining its hidden tail."""
 
-    max_column = int(worksheet.max_column or 0)
+    max_column = max_column or int(worksheet.max_column or 0)
     if not legacy_source or max_column < 1:
         return max_column
 
@@ -655,8 +726,13 @@ def create_editing_session(
             source_workbook = load_workbook(session_path, read_only=True, data_only=False)
             try:
                 source_sheet = source_workbook[sheet_name]
+                meaningful_max_row = int(sheet.get("max_row", 0))
+                meaningful_max_column = int(sheet.get("max_column", 0))
                 header_end_row, header_structure = read_header_structure(
-                    source_sheet, header_row
+                    source_sheet,
+                    header_row,
+                    max_row=meaningful_max_row,
+                    max_column=meaningful_max_column,
                 )
                 primary_column_end = _editor_primary_column_end(
                     session_path,
@@ -664,17 +740,18 @@ def create_editing_session(
                     header_structure,
                     legacy_source=Path(workbook.original_filename).suffix.casefold()
                     == ".xls",
+                    max_column=meaningful_max_column,
                 )
                 inferred_types = {
                     column_number: "text"
-                    for column_number in range(1, source_sheet.max_column + 1)
+                    for column_number in range(1, meaningful_max_column + 1)
                 }
                 unresolved_columns = set(inferred_types)
                 for row in source_sheet.iter_rows(
                     min_row=header_end_row + 1,
-                    max_row=source_sheet.max_row,
+                    max_row=meaningful_max_row,
                     min_col=1,
-                    max_col=source_sheet.max_column,
+                    max_col=meaningful_max_column,
                 ):
                     for column_number in tuple(unresolved_columns):
                         cell = row[column_number - 1]
@@ -682,7 +759,9 @@ def create_editing_session(
                             continue
                         if isinstance(cell.value, bool):
                             inferred_types[column_number] = "boolean"
-                        elif isinstance(cell.value, (date, datetime)) or cell.is_date:
+                        elif isinstance(
+                            cell.value, (date, datetime, time, timedelta)
+                        ) or cell.is_date:
                             inferred_types[column_number] = "date"
                         elif isinstance(cell.value, (int, float)):
                             format_text = str(cell.number_format).casefold()
@@ -732,6 +811,8 @@ def create_editing_session(
             header_row_number=header_row,
             column_mapping=dict(mapping),
             column_config=column_config,
+            meaningful_max_row=int(sheet["max_row"]),
+            meaningful_max_column=int(sheet["max_column"]),
             current_version=1,
             status=WorkbookSessionStatus.DRAFT,
             created_by=_id(actor.id),
@@ -842,17 +923,23 @@ def _ensure_legacy_session_visibility(
         source_workbook = load_workbook(path, read_only=True, data_only=False)
         try:
             source_sheet = source_workbook[editing_session.selected_sheet_name]
+            meaningful_max_row, meaningful_max_column = _session_meaningful_bounds(
+                editing_session, workbook
+            )
             _header_end_row, header_structure = read_header_structure(
                 source_sheet,
                 editing_session.header_row_number,
+                max_row=meaningful_max_row,
+                max_column=meaningful_max_column,
             )
             primary_column_end = _editor_primary_column_end(
                 path,
                 source_sheet,
                 header_structure,
                 legacy_source=True,
+                max_column=meaningful_max_column,
             )
-            source_max_column = int(source_sheet.max_column or 0)
+            source_max_column = meaningful_max_column
             if primary_column_end == source_max_column:
                 grouped_columns = [
                     column_number
@@ -1116,6 +1203,9 @@ def read_session_records(
             "WORKBOOK_NOT_FOUND", 404, "Workbook was not found."
         )
     _ensure_legacy_session_visibility(db, storage, editing_session, workbook)
+    meaningful_max_row, meaningful_max_column = _session_meaningful_bounds(
+        editing_session, workbook
+    )
     version = _get_version(
         db,
         session_id=_id(editing_session.id),
@@ -1143,6 +1233,8 @@ def read_session_records(
                 search=search,
                 sort_by=sort_by,
                 sort_direction=sort_direction,
+                meaningful_max_row=meaningful_max_row,
+                meaningful_max_column=meaningful_max_column,
             )
             return SessionRecordsResult(
                 session_id=session_id,
@@ -1179,6 +1271,14 @@ def lookup_session_cell_values(
         session_id=_id(editing_session.id),
         version_number=base_version,
     )
+    workbook = db.get(Workbook, editing_session.workbook_id)
+    if workbook is None:
+        raise WorkbookServiceError(
+            "WORKBOOK_NOT_FOUND", 404, "Workbook was not found."
+        )
+    meaningful_max_row, meaningful_max_column = _session_meaningful_bounds(
+        editing_session, workbook
+    )
     try:
         with _materialized_object(
             storage,
@@ -1193,6 +1293,8 @@ def lookup_session_cell_values(
                 column_config=_normalized_column_config(editing_session),
                 cells=cells,
                 max_cells=max_cells,
+                meaningful_max_row=meaningful_max_row,
+                meaningful_max_column=meaningful_max_column,
             )
         return SessionCellValuesResult(
             session_id=session_id,
@@ -1226,6 +1328,14 @@ def preview_session_formula(
             details={"current_version": editing_session.current_version},
         )
     config = _normalized_column_config(editing_session)
+    workbook_record = db.get(Workbook, editing_session.workbook_id)
+    if workbook_record is None:
+        raise WorkbookServiceError(
+            "WORKBOOK_NOT_FOUND", 404, "Workbook was not found."
+        )
+    meaningful_max_row, meaningful_max_column = _session_meaningful_bounds(
+        editing_session, workbook_record
+    )
     preview_column_id = output_column_id or "__formula_preview__"
     target = next(
         (item for item in config if item.get("id") == preview_column_id),
@@ -1288,14 +1398,17 @@ def preview_session_formula(
                     )
                 worksheet = workbook[editing_session.selected_sheet_name]
                 header_end_row, _structure = read_header_structure(
-                    worksheet, editing_session.header_row_number
+                    worksheet,
+                    editing_session.header_row_number,
+                    max_row=meaningful_max_row,
+                    max_column=meaningful_max_column,
                 )
                 requested_rows = list(sample_rows or [])
                 if requested_rows:
                     if any(
                         isinstance(row_number, bool)
                         or row_number <= header_end_row
-                        or row_number > worksheet.max_row
+                        or row_number > meaningful_max_row
                         for row_number in requested_rows
                     ):
                         raise WorkbookServiceError(
@@ -1304,7 +1417,9 @@ def preview_session_formula(
                 else:
                     requested_rows = [
                         row_number
-                        for row_number in range(header_end_row + 1, worksheet.max_row + 1)
+                        for row_number in range(
+                            header_end_row + 1, meaningful_max_row + 1
+                        )
                         if any(
                             worksheet.cell(row_number, int(item["column_number"])).value
                             not in (None, "")
@@ -1511,6 +1626,14 @@ def _save_session_changes_locked(
         current = _get_version(
             db, session_id=session_id, version_number=editing_session.current_version
         )
+        workbook_record = db.get(Workbook, editing_session.workbook_id)
+        if workbook_record is None:
+            raise WorkbookServiceError(
+                "WORKBOOK_NOT_FOUND", 404, "Workbook was not found."
+            )
+        meaningful_max_row, meaningful_max_column = _session_meaningful_bounds(
+            editing_session, workbook_record
+        )
         next_number = editing_session.current_version + 1
         next_version_id = uuid.uuid4()
         next_key = (
@@ -1536,6 +1659,8 @@ def _save_session_changes_locked(
                     changes=changes,
                     max_changes=max_changes,
                     column_config=_normalized_column_config(editing_session),
+                    meaningful_max_row=meaningful_max_row,
+                    meaningful_max_column=meaningful_max_column,
                 )
             except WorkbookMutationError as exc:
                 raise _translate_domain_error(exc) from exc
@@ -1677,6 +1802,14 @@ def add_session_column(
             current = _get_version(
                 db, session_id=session_id, version_number=base_version
             )
+            workbook_record = db.get(Workbook, editing_session.workbook_id)
+            if workbook_record is None:
+                raise WorkbookServiceError(
+                    "WORKBOOK_NOT_FOUND", 404, "Workbook was not found."
+                )
+            meaningful_max_row, meaningful_max_column = _session_meaningful_bounds(
+                editing_session, workbook_record
+            )
             config = _normalized_column_config(editing_session)
             column_id = f"user-{uuid.uuid4()}"
             new_column = {
@@ -1719,6 +1852,8 @@ def add_session_column(
                     header_row_number=editing_session.header_row_number,
                     label=normalized_label,
                     column_config=proposed_config,
+                    meaningful_max_row=meaningful_max_row,
+                    meaningful_max_column=meaningful_max_column,
                 )
                 with output_path.open("rb") as generated:
                     stored = storage.put_immutable(key=key, source=generated)
@@ -1727,6 +1862,7 @@ def add_session_column(
                     "STORAGE_WRITE_FAILED", 500, "Workbook column position is invalid."
                 )
             editing_session.column_config = proposed_config
+            editing_session.meaningful_max_column = meaningful_max_column + 1
             editing_session.current_version = next_number
             editing_session.updated_at = utc_now()
             db.add(
@@ -1801,6 +1937,14 @@ def update_session_column(
                     details={"current_version": editing_session.current_version},
                 )
             config = _normalized_column_config(editing_session)
+            workbook_record = db.get(Workbook, editing_session.workbook_id)
+            if workbook_record is None:
+                raise WorkbookServiceError(
+                    "WORKBOOK_NOT_FOUND", 404, "Workbook was not found."
+                )
+            meaningful_max_row, meaningful_max_column = _session_meaningful_bounds(
+                editing_session, workbook_record
+            )
             target = next((item for item in config if item.get("id") == column_id), None)
             if target is None:
                 raise WorkbookServiceError("COLUMN_NOT_FOUND", 404, "Column was not found.")
@@ -1860,6 +2004,17 @@ def update_session_column(
                 expected_size=current.file_size,
             ) as source_path, tempfile.TemporaryDirectory() as directory:
                 output_path = Path(directory) / "output.xlsx"
+                if data_type is not None and next_formula is None:
+                    validate_workbook_column_values(
+                        source_path,
+                        sheet_name=editing_session.selected_sheet_name,
+                        header_row_number=editing_session.header_row_number,
+                        column_number=int(target["column_number"]),
+                        data_type=next_type,
+                        semantic_field=target.get("semantic_field"),
+                        meaningful_max_row=meaningful_max_row,
+                        meaningful_max_column=meaningful_max_column,
+                    )
                 update_workbook_column(
                     source_path,
                     output_path,
@@ -1869,6 +2024,8 @@ def update_session_column(
                     label=next_label,
                     column_config=proposed_config,
                     clear_column_values=bool(target.get("formula")) and next_formula is None,
+                    meaningful_max_row=meaningful_max_row,
+                    meaningful_max_column=meaningful_max_column,
                 )
                 with output_path.open("rb") as generated:
                     stored = storage.put_immutable(key=key, source=generated)
@@ -1945,6 +2102,14 @@ def remove_session_column(
                     details={"current_version": editing_session.current_version},
                 )
             config = _normalized_column_config(editing_session)
+            workbook_record = db.get(Workbook, editing_session.workbook_id)
+            if workbook_record is None:
+                raise WorkbookServiceError(
+                    "WORKBOOK_NOT_FOUND", 404, "Workbook was not found."
+                )
+            meaningful_max_row, meaningful_max_column = _session_meaningful_bounds(
+                editing_session, workbook_record
+            )
             target = next((item for item in config if item.get("id") == column_id), None)
             if target is None:
                 raise WorkbookServiceError(
@@ -2002,10 +2167,13 @@ def remove_session_column(
                     column_number=column_number,
                     header_row_number=editing_session.header_row_number,
                     column_config=next_config,
+                    meaningful_max_row=meaningful_max_row,
+                    meaningful_max_column=meaningful_max_column,
                 )
                 with output_path.open("rb") as generated:
                     stored = storage.put_immutable(key=key, source=generated)
             editing_session.column_config = next_config
+            editing_session.meaningful_max_column = meaningful_max_column - 1
             editing_session.column_mapping = {
                 field: int(number) - (1 if int(number) > column_number else 0)
                 for field, number in editing_session.column_mapping.items()
@@ -2049,42 +2217,72 @@ def update_session_column_configuration(
     *,
     actor: User,
     session_id: uuid.UUID,
+    base_version: int,
     hidden_column_ids: Sequence[str],
     sticky_column_ids: Sequence[str],
 ) -> EditingSessionDescriptor:
     """Persist display-only preferences without creating a workbook version."""
-    editing_session = _get_session(db, session_id, actor)
-    if editing_session.status != WorkbookSessionStatus.DRAFT:
-        raise WorkbookServiceError(
-            "SESSION_NOT_ACTIVE", 409, "Editing session is not active."
-        )
-    known = {str(item.get("id")) for item in editing_session.column_config}
-    requested = set(hidden_column_ids) | set(sticky_column_ids)
-    if requested - known:
-        raise WorkbookServiceError(
-            "COLUMN_NOT_FOUND",
-            422,
-            "Column configuration contains an unknown column ID.",
-            details={"column_ids": sorted(requested - known)},
-        )
-    hidden, sticky = set(hidden_column_ids), set(sticky_column_ids)
-    editing_session.column_config = [
-        {
-            **item,
-            "hidden": str(item.get("id")) in hidden,
-            "sticky": str(item.get("id")) in sticky,
-        }
-        for item in _normalized_column_config(editing_session)
-    ]
-    editing_session.updated_at = utc_now()
-    db.add(editing_session)
-    db.commit()
-    workbook = db.get(Workbook, editing_session.workbook_id)
-    if workbook is None:
-        raise WorkbookServiceError(
-            "WORKBOOK_NOT_FOUND", 404, "Workbook was not found."
-        )
-    return _describe_session(editing_session, workbook.original_filename)
+    with _serialize_local_save(db, session_id):
+        try:
+            editing_session = db.exec(
+                select(WorkbookSession)
+                .where(WorkbookSession.id == session_id)
+                .with_for_update()
+            ).one_or_none()
+            if editing_session is None:
+                raise WorkbookServiceError(
+                    "SESSION_NOT_FOUND", 404, "Session was not found."
+                )
+            _authorize_owner(actor=actor, owner_id=editing_session.created_by)
+            if editing_session.status != WorkbookSessionStatus.DRAFT:
+                raise WorkbookServiceError(
+                    "SESSION_NOT_ACTIVE", 409, "Editing session is not active."
+                )
+            if base_version != editing_session.current_version:
+                raise WorkbookServiceError(
+                    "VERSION_CONFLICT",
+                    409,
+                    "Workbook session has a newer version.",
+                    details={"current_version": editing_session.current_version},
+                )
+            config = _normalized_column_config(editing_session)
+            known = {str(item.get("id")) for item in config}
+            requested = set(hidden_column_ids) | set(sticky_column_ids)
+            if requested - known:
+                raise WorkbookServiceError(
+                    "COLUMN_NOT_FOUND",
+                    422,
+                    "Column configuration contains an unknown column ID.",
+                    details={"column_ids": sorted(requested - known)},
+                )
+            hidden, sticky = set(hidden_column_ids), set(sticky_column_ids)
+            editing_session.column_config = [
+                {
+                    **item,
+                    "hidden": str(item.get("id")) in hidden,
+                    "sticky": str(item.get("id")) in sticky,
+                }
+                for item in config
+            ]
+            editing_session.updated_at = utc_now()
+            db.add(editing_session)
+            db.commit()
+            workbook = db.get(Workbook, editing_session.workbook_id)
+            if workbook is None:
+                raise WorkbookServiceError(
+                    "WORKBOOK_NOT_FOUND", 404, "Workbook was not found."
+                )
+            return _describe_session(editing_session, workbook.original_filename)
+        except WorkbookServiceError:
+            db.rollback()
+            raise
+        except Exception as exc:
+            db.rollback()
+            raise WorkbookServiceError(
+                "SESSION_UPDATE_FAILED",
+                500,
+                "Column configuration could not be updated.",
+            ) from exc
 
 
 def get_current_download(

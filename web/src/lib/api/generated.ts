@@ -1986,6 +1986,8 @@ export interface components {
         };
         /** WorkbookColumnConfigurationRequest */
         WorkbookColumnConfigurationRequest: {
+            /** Base Version */
+            base_version: number;
             /** Hidden Column Ids */
             hidden_column_ids?: string[];
             /** Sticky Column Ids */
@@ -2308,6 +2310,8 @@ export interface components {
             id: string;
             /** Label */
             label: string;
+            /** Number Format */
+            number_format?: string | null;
             /** @default source */
             origin: components["schemas"]["WorkbookColumnOrigin"];
             semantic_field?: components["schemas"]["WorkbookSemanticField"] | null;
@@ -4640,6 +4644,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

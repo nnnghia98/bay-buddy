@@ -103,6 +103,7 @@ def _regenerate_formula_cells(
     *,
     header_row_number: int,
     column_config: list[dict[str, object]],
+    meaningful_max_row: int | None = None,
 ) -> None:
     try:
         normalized, formula_order = normalize_column_formulas(column_config)
@@ -119,8 +120,11 @@ def _regenerate_formula_cells(
         for item in normalized
         if int(item["column_number"]) not in formula_numbers
     ]
-    header_end_row = _header_end_row(worksheet, header_row_number)
-    for row_number in range(header_end_row + 1, worksheet.max_row + 1):
+    max_row = meaningful_max_row or int(worksheet.max_row or 0)
+    header_end_row = _header_end_row(
+        worksheet, header_row_number, max_row=max_row
+    )
+    for row_number in range(header_end_row + 1, max_row + 1):
         has_record = any(
             worksheet.cell(row_number, column_number).value not in (None, "")
             for column_number in data_numbers
@@ -146,6 +150,8 @@ def add_workbook_column(
     label: str,
     formula: dict[str, object] | None = None,
     column_config: list[dict[str, object]] | None = None,
+    meaningful_max_row: int | None = None,
+    meaningful_max_column: int | None = None,
 ) -> StructuralColumnResult:
     """Append one user-owned column without changing source columns."""
     source, output = Path(source_path), Path(output_path)
@@ -155,8 +161,15 @@ def add_workbook_column(
         if sheet_name not in workbook.sheetnames:
             raise _reject("SHEET_NOT_FOUND", "Selected worksheet does not exist.")
         worksheet = workbook[sheet_name]
-        column_number = worksheet.max_column + 1
-        header_end_row = _header_end_row(worksheet, header_row_number)
+        max_row = meaningful_max_row or int(worksheet.max_row or 0)
+        max_column = meaningful_max_column or int(worksheet.max_column or 0)
+        column_number = max_column + 1
+        header_end_row = _header_end_row(
+            worksheet,
+            header_row_number,
+            max_row=max_row,
+            max_column=max_column,
+        )
         worksheet.cell(header_row_number, column_number, label)
         if header_end_row > header_row_number:
             worksheet.merge_cells(
@@ -170,6 +183,7 @@ def add_workbook_column(
                 worksheet,
                 header_row_number=header_row_number,
                 column_config=column_config,
+                meaningful_max_row=max_row,
             )
             _enable_full_calculation(workbook)
         elif formula:
@@ -180,8 +194,11 @@ def add_workbook_column(
                 raise _reject("INVALID_FORMULA", "Formula operator is not supported.")
             excel_operator = "*" if operator == "%" else operator
             suffix = "/100" if operator == "%" else ""
-            for row_number in range(header_end_row + 1, worksheet.max_row + 1):
-                if all(worksheet.cell(row_number, column).value is None for column in range(1, column_number)):
+            for row_number in range(header_end_row + 1, max_row + 1):
+                if all(
+                    worksheet.cell(row_number, column).value is None
+                    for column in range(1, max_column + 1)
+                ):
                     continue
                 left_ref = f"{get_column_letter(left)}{row_number}"
                 right_ref = f"{get_column_letter(right)}{row_number}"
@@ -204,6 +221,8 @@ def remove_workbook_column(
     column_number: int,
     header_row_number: int | None = None,
     column_config: list[dict[str, object]] | None = None,
+    meaningful_max_row: int | None = None,
+    meaningful_max_column: int | None = None,
 ) -> StructuralColumnResult:
     """Remove one user-owned physical column."""
     source, output = Path(source_path), Path(output_path)
@@ -213,7 +232,8 @@ def remove_workbook_column(
         if sheet_name not in workbook.sheetnames:
             raise _reject("SHEET_NOT_FOUND", "Selected worksheet does not exist.")
         worksheet = workbook[sheet_name]
-        if column_number < 1 or column_number > worksheet.max_column:
+        max_column = meaningful_max_column or int(worksheet.max_column or 0)
+        if column_number < 1 or column_number > max_column:
             raise _reject("COLUMN_NOT_FOUND", "Column was not found.")
         worksheet.delete_cols(column_number, 1)
         if column_config is not None:
@@ -223,6 +243,7 @@ def remove_workbook_column(
                 worksheet,
                 header_row_number=header_row_number,
                 column_config=column_config,
+                meaningful_max_row=meaningful_max_row,
             )
             _enable_full_calculation(workbook)
         _publish_workbook(workbook, output)
@@ -245,6 +266,8 @@ def update_workbook_column(
     label: str,
     column_config: list[dict[str, object]],
     clear_column_values: bool = False,
+    meaningful_max_row: int | None = None,
+    meaningful_max_column: int | None = None,
 ) -> StructuralColumnResult:
     """Update one user column header and regenerate every managed formula."""
 
@@ -255,17 +278,25 @@ def update_workbook_column(
         if sheet_name not in workbook.sheetnames:
             raise _reject("SHEET_NOT_FOUND", "Selected worksheet does not exist.")
         worksheet = workbook[sheet_name]
-        if column_number < 1 or column_number > worksheet.max_column:
+        max_row = meaningful_max_row or int(worksheet.max_row or 0)
+        max_column = meaningful_max_column or int(worksheet.max_column or 0)
+        if column_number < 1 or column_number > max_column:
             raise _reject("COLUMN_NOT_FOUND", "Column was not found.")
         worksheet.cell(header_row_number, column_number, label)
         if clear_column_values:
-            header_end_row = _header_end_row(worksheet, header_row_number)
-            for row_number in range(header_end_row + 1, worksheet.max_row + 1):
+            header_end_row = _header_end_row(
+                worksheet,
+                header_row_number,
+                max_row=max_row,
+                max_column=max_column,
+            )
+            for row_number in range(header_end_row + 1, max_row + 1):
                 worksheet.cell(row_number, column_number).value = None
         _regenerate_formula_cells(
             worksheet,
             header_row_number=header_row_number,
             column_config=column_config,
+            meaningful_max_row=max_row,
         )
         _enable_full_calculation(workbook)
         _publish_workbook(workbook, output)
@@ -371,12 +402,25 @@ def _normalize_date(value: object) -> date | datetime | None:
         raise _reject("INVALID_CELL_VALUE", "Date columns require a valid ISO date.") from exc
 
 
-def _normalize_configured_value(data_type: object, value: object) -> object:
+def _normalize_configured_value(
+    data_type: object,
+    value: object,
+    *,
+    semantic_field: object = None,
+) -> object:
+    """Normalize a configured value using its semantic rule when present."""
+    if semantic_field in _EDITABLE_FIELDS:
+        return _normalize_vnd(value)
     if data_type == "text":
         if value is None:
             return None
         if not isinstance(value, str):
             raise _reject("INVALID_CELL_VALUE", "Text columns require text or null.")
+        if value.startswith("="):
+            raise _reject(
+                "INVALID_CELL_VALUE",
+                "Text values cannot begin with '='. Use a managed formula column instead.",
+            )
         if len(value) > MAX_EXCEL_TEXT_LENGTH:
             raise _reject(
                 "INVALID_CELL_VALUE",
@@ -394,6 +438,53 @@ def _normalize_configured_value(data_type: object, value: object) -> object:
             return value
         raise _reject("INVALID_CELL_VALUE", "Boolean columns require true, false, or null.")
     raise _reject("INVALID_CELL_VALUE", "Column data type is not supported.")
+
+
+def validate_workbook_column_values(
+    source_path: str | Path,
+    *,
+    sheet_name: str,
+    header_row_number: int,
+    column_number: int,
+    data_type: str,
+    semantic_field: str | None = None,
+    meaningful_max_row: int | None = None,
+    meaningful_max_column: int | None = None,
+) -> None:
+    """Ensure a metadata type change matches every populated physical value."""
+
+    workbook = load_workbook(Path(source_path), read_only=False, data_only=False)
+    try:
+        if sheet_name not in workbook.sheetnames:
+            raise _reject("SHEET_NOT_FOUND", "Selected worksheet does not exist.")
+        worksheet = workbook[sheet_name]
+        max_row = meaningful_max_row or int(worksheet.max_row or 0)
+        max_column = meaningful_max_column or int(worksheet.max_column or 0)
+        if column_number < 1 or column_number > max_column:
+            raise _reject("COLUMN_NOT_FOUND", "Column was not found.")
+        header_end_row = _header_end_row(
+            worksheet,
+            header_row_number,
+            max_row=max_row,
+            max_column=max_column,
+        )
+        for row_number in range(header_end_row + 1, max_row + 1):
+            value = worksheet.cell(row_number, column_number).value
+            if value is None:
+                continue
+            try:
+                _normalize_configured_value(
+                    data_type,
+                    value,
+                    semantic_field=semantic_field,
+                )
+            except WorkbookMutationError as exc:
+                raise _reject(
+                    "INVALID_COLUMN_TYPE",
+                    f"Column contains a value incompatible with {data_type} at row {row_number}.",
+                ) from exc
+    finally:
+        workbook.close()
 
 
 def _mapped_columns(column_mapping: dict[str, int]) -> dict[str, int]:
@@ -452,14 +543,18 @@ def _prepare_changes(
     columns: dict[str, int],
     changes: Sequence[PriceChange],
     max_changes: int,
+    meaningful_max_row: int | None = None,
+    meaningful_max_column: int | None = None,
 ) -> list[tuple[Cell, AuditedPriceChange]]:
     if isinstance(max_changes, bool) or max_changes < 1:
         raise _reject("INVALID_ROW", "Maximum change count must be positive.")
     if not changes or len(changes) > max_changes:
         raise _reject("INVALID_ROW", f"Provide between 1 and {max_changes} row changes.")
-    if header_row_number < 1 or header_row_number > worksheet.max_row:
+    max_row = meaningful_max_row or int(worksheet.max_row or 0)
+    max_column = meaningful_max_column or int(worksheet.max_column or 0)
+    if header_row_number < 1 or header_row_number > max_row:
         raise _reject("INVALID_ROW", "Header row is outside the worksheet.")
-    if any(column > worksheet.max_column for column in columns.values()):
+    if any(column > max_column for column in columns.values()):
         raise _reject("MAPPING_INCOMPLETE", "Mapped price column is outside the worksheet.")
 
     prepared: list[tuple[Cell, AuditedPriceChange]] = []
@@ -471,9 +566,12 @@ def _prepare_changes(
         if row_number in seen_rows:
             raise _reject("INVALID_ROW", "Duplicate physical row numbers are not allowed.")
         seen_rows.add(row_number)
-        if row_number <= header_row_number or row_number > worksheet.max_row:
+        if row_number <= header_row_number or row_number > max_row:
             raise _reject("INVALID_ROW", "Physical row is outside the workbook data area.")
-        if all(worksheet.cell(row=row_number, column=column).value is None for column in range(1, worksheet.max_column + 1)):
+        if all(
+            worksheet.cell(row=row_number, column=column).value is None
+            for column in range(1, max_column + 1)
+        ):
             raise _reject("INVALID_ROW", "Blank worksheet rows cannot be edited.")
 
         requested = {
@@ -515,7 +613,15 @@ def _prepare_changes(
     return prepared
 
 
-def _header_end_row(worksheet: Worksheet, header_row_number: int) -> int:
+def _header_end_row(
+    worksheet: Worksheet,
+    header_row_number: int,
+    *,
+    max_row: int | None = None,
+    max_column: int | None = None,
+) -> int:
+    max_row = max_row or int(worksheet.max_row or 0)
+    max_column = max_column or int(worksheet.max_column or 0)
     header_end_row = max(
         (
             merged.max_row
@@ -524,19 +630,20 @@ def _header_end_row(worksheet: Worksheet, header_row_number: int) -> int:
         ),
         default=header_row_number,
     )
-    if header_end_row == header_row_number and header_row_number < worksheet.max_row:
+    header_end_row = min(header_end_row, max_row)
+    if header_end_row == header_row_number and header_row_number < max_row:
         next_values = [
             worksheet.cell(header_row_number + 1, column).value
-            for column in range(1, worksheet.max_column + 1)
+            for column in range(1, max_column + 1)
         ]
         top_values = [
             worksheet.cell(header_row_number, column).value
-            for column in range(1, worksheet.max_column + 1)
+            for column in range(1, max_column + 1)
         ]
         populated = [value for value in next_values if value not in (None, "")]
         if (
             populated
-            and len(populated) <= max(4, worksheet.max_column // 2)
+            and len(populated) <= max(4, max_column // 2)
             and all(isinstance(value, str) for value in populated)
             and any(value in (None, "") for value in top_values)
         ):
@@ -551,12 +658,16 @@ def _prepare_configured_changes(
     column_config: list[dict[str, object]],
     changes: Sequence[PriceChange],
     max_changes: int,
+    meaningful_max_row: int | None = None,
+    meaningful_max_column: int | None = None,
 ) -> list[tuple[Cell, AuditedPriceChange]]:
     if isinstance(max_changes, bool) or max_changes < 1:
         raise _reject("INVALID_ROW", "Maximum change count must be positive.")
     if not changes or len(changes) > max_changes:
         raise _reject("INVALID_ROW", f"Provide between 1 and {max_changes} row changes.")
-    if header_row_number < 1 or header_row_number > worksheet.max_row:
+    max_row = meaningful_max_row or int(worksheet.max_row or 0)
+    max_column = meaningful_max_column or int(worksheet.max_column or 0)
+    if header_row_number < 1 or header_row_number > max_row:
         raise _reject("INVALID_ROW", "Header row is outside the worksheet.")
 
     by_id: dict[str, dict[str, object]] = {}
@@ -571,7 +682,7 @@ def _prepare_configured_changes(
             or isinstance(column_number, bool)
             or not isinstance(column_number, int)
             or column_number < 1
-            or column_number > worksheet.max_column
+            or column_number > max_column
         ):
             raise _reject("INVALID_MAPPING", "Column configuration is invalid.")
         if column_id in by_id:
@@ -583,7 +694,12 @@ def _prepare_configured_changes(
 
     prepared: list[tuple[Cell, AuditedPriceChange]] = []
     seen_rows: set[int] = set()
-    header_end_row = _header_end_row(worksheet, header_row_number)
+    header_end_row = _header_end_row(
+        worksheet,
+        header_row_number,
+        max_row=max_row,
+        max_column=max_column,
+    )
     for change in changes:
         row_number = change.row_number
         if isinstance(row_number, bool) or not isinstance(row_number, int):
@@ -591,7 +707,7 @@ def _prepare_configured_changes(
         if row_number in seen_rows:
             raise _reject("INVALID_ROW", "Duplicate physical row numbers are not allowed.")
         seen_rows.add(row_number)
-        if row_number <= header_end_row or row_number > worksheet.max_row:
+        if row_number <= header_end_row or row_number > max_row:
             raise _reject("INVALID_ROW", "Physical row is outside the workbook data area.")
         if all(
             worksheet.cell(
@@ -602,23 +718,33 @@ def _prepare_configured_changes(
         ):
             raise _reject("INVALID_ROW", "Blank worksheet rows cannot be edited.")
 
-        requested = dict(change.values or {})
+        requested = list((change.values or {}).items())
         if change.net_price is not None:
-            requested.setdefault("net_price", change.net_price)
+            requested.append(("net_price", change.net_price))
         if change.selling_price is not None:
-            requested.setdefault("selling_price", change.selling_price)
+            requested.append(("selling_price", change.selling_price))
         if not requested:
             raise _reject("INVALID_CELL_VALUE", "Each row must include at least one cell value.")
 
-        for requested_field, value in requested.items():
+        seen_targets: set[tuple[int, int]] = set()
+        for requested_field, value in requested:
             item = by_id.get(requested_field) or by_semantic.get(requested_field)
             if item is None or item.get("formula"):
                 raise _reject("COLUMN_NOT_EDITABLE", "Column is not editable.")
             column_number = int(item["column_number"])
+            target = (row_number, column_number)
+            if target in seen_targets:
+                raise _reject(
+                    "INVALID_CELL_VALUE",
+                    "A cell may be updated only once per save request.",
+                )
+            seen_targets.add(target)
             cell = worksheet.cell(row=row_number, column=column_number)
             _validate_editable_cell(worksheet, cell)
             new_value = _normalize_configured_value(
-                item.get("data_type", "text"), value
+                item.get("data_type", "text"),
+                value,
+                semantic_field=item.get("semantic_field"),
             )
             if cell.value == new_value:
                 continue
@@ -675,7 +801,7 @@ def _validate_generated_workbook(
         ) from exc
 
     try:
-        workbook = load_workbook(path, read_only=False, data_only=False)
+        workbook = load_workbook(path, read_only=True, data_only=False)
     except Exception as exc:
         raise _reject("STORAGE_WRITE_FAILED", "Generated workbook could not be validated.") from exc
     try:
@@ -685,31 +811,16 @@ def _validate_generated_workbook(
                 "Generated workbook changed worksheet structure.",
             )
         for expected_sheet, generated_sheet in zip(
-            expected_workbook.worksheets,
-            workbook.worksheets,
+            expected_workbook.worksheets, workbook.worksheets
         ):
             if (
                 expected_sheet.max_row != generated_sheet.max_row
                 or expected_sheet.max_column != generated_sheet.max_column
-                or tuple(expected_sheet.merged_cells.ranges)
-                != tuple(generated_sheet.merged_cells.ranges)
             ):
                 raise _reject(
                     "STORAGE_WRITE_FAILED",
                     "Generated workbook changed worksheet structure.",
                 )
-            for row_number in range(1, expected_sheet.max_row + 1):
-                for column_number in range(1, expected_sheet.max_column + 1):
-                    expected_cell = expected_sheet.cell(row_number, column_number)
-                    generated_cell = generated_sheet.cell(row_number, column_number)
-                    if (
-                        not _cell_values_equal(expected_cell.value, generated_cell.value)
-                        or expected_cell.style_id != generated_cell.style_id
-                    ):
-                        raise _reject(
-                            "STORAGE_WRITE_FAILED",
-                            "Generated workbook changed unrelated content.",
-                        )
         if sheet_name not in workbook.sheetnames:
             raise _reject("STORAGE_WRITE_FAILED", "Generated workbook lost its worksheet.")
         worksheet = workbook[sheet_name]
@@ -733,6 +844,8 @@ def apply_price_changes(
     changes: Sequence[PriceChange],
     max_changes: int = 500,
     column_config: list[dict[str, object]] | None = None,
+    meaningful_max_row: int | None = None,
+    meaningful_max_column: int | None = None,
 ) -> WorkbookMutationResult:
     """Apply validated price changes and atomically publish a new workbook."""
 
@@ -765,6 +878,8 @@ def apply_price_changes(
                 column_config=column_config,
                 changes=changes,
                 max_changes=max_changes,
+                meaningful_max_row=meaningful_max_row,
+                meaningful_max_column=meaningful_max_column,
             )
         else:
             prepared = _prepare_changes(
@@ -773,6 +888,8 @@ def apply_price_changes(
                 columns=columns,
                 changes=changes,
                 max_changes=max_changes,
+                meaningful_max_row=meaningful_max_row,
+                meaningful_max_column=meaningful_max_column,
             )
         for cell, audit in prepared:
             cell.value = audit.new_value

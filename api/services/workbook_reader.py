@@ -12,7 +12,7 @@ import unicodedata
 import xml.etree.ElementTree as ET
 from zipfile import BadZipFile, ZipFile
 from dataclasses import dataclass
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from typing import Any, Final, Sequence
 
@@ -113,10 +113,14 @@ def _source_header_text(value: Any) -> str:
 def read_header_structure(
     worksheet: Any,
     header_row_number: int,
+    *,
+    max_row: int | None = None,
+    max_column: int | None = None,
 ) -> tuple[int, dict[int, tuple[str, str | None, int]]]:
     """Read a one- or two-level Excel header without translating its labels."""
 
-    max_column = worksheet.max_column
+    max_column = max_column if max_column is not None else worksheet.max_column
+    max_row = max_row if max_row is not None else worksheet.max_row
     top_values = {
         column: worksheet.cell(header_row_number, column).value
         for column in range(1, max_column + 1)
@@ -128,7 +132,8 @@ def read_header_structure(
         if merged_range.min_row <= header_row_number <= merged_range.max_row:
             header_end_row = max(header_end_row, merged_range.max_row)
 
-    if header_end_row == header_row_number and header_row_number < worksheet.max_row:
+    header_end_row = min(header_end_row, max_row)
+    if header_end_row == header_row_number and header_row_number < max_row:
         next_values = [
             worksheet.cell(header_row_number + 1, column).value
             for column in range(1, max_column + 1)
@@ -186,6 +191,38 @@ def read_header_structure(
                 2,
             )
     return header_end_row, structure
+
+
+def normalize_workbook_cell_value(value: Any) -> Any:
+    """Convert Excel-only temporal values to stable JSON-safe values."""
+
+    if isinstance(value, time):
+        return value.isoformat()
+    if isinstance(value, timedelta):
+        total_microseconds = (
+            value.days * 86_400_000_000
+            + value.seconds * 1_000_000
+            + value.microseconds
+        )
+        sign = "-" if total_microseconds < 0 else ""
+        total_microseconds = abs(total_microseconds)
+        total_seconds, microseconds = divmod(total_microseconds, 1_000_000)
+        days, remainder = divmod(total_seconds, 86_400)
+        hours, remainder = divmod(remainder, 3_600)
+        minutes, seconds = divmod(remainder, 60)
+        seconds_text = str(seconds)
+        if microseconds:
+            seconds_text += f".{microseconds:06d}".rstrip("0")
+        date_part = f"{days}D" if days else ""
+        time_parts = ""
+        if hours:
+            time_parts += f"{hours}H"
+        if minutes:
+            time_parts += f"{minutes}M"
+        if seconds or microseconds or not (date_part or time_parts):
+            time_parts += f"{seconds_text}S"
+        return f"{sign}P{date_part}T{time_parts}"
+    return value
 
 
 def _normalize_search_value(value: Any) -> str:
@@ -355,6 +392,8 @@ def read_workbook_cell_values(
     column_config: list[dict[str, Any]],
     cells: Sequence[WorkbookCellReference],
     max_cells: int = 500,
+    meaningful_max_row: int | None = None,
+    meaningful_max_column: int | None = None,
 ) -> tuple[WorkbookCellValueResult, ...]:
     """Read bounded sparse cell values using stable configured column IDs."""
 
@@ -419,22 +458,27 @@ def read_workbook_cell_values(
         if sheet_name not in workbook.sheetnames:
             raise WorkbookReadError("SHEET_NOT_FOUND", "Worksheet was not found.")
         worksheet = workbook[sheet_name]
-        if header_row_number > worksheet.max_row:
+        max_row = meaningful_max_row or int(worksheet.max_row or 0)
+        max_column = meaningful_max_column or int(worksheet.max_column or 0)
+        if header_row_number > max_row:
             raise WorkbookReadError(
                 "INVALID_ROW",
                 "Header row is outside the selected worksheet.",
             )
-        if max(column_numbers) > worksheet.max_column:
+        if max(column_numbers) > max_column:
             raise WorkbookReadError(
                 "INVALID_MAPPING",
                 "A configured column is outside the selected worksheet.",
             )
         header_end_row, _header_structure = read_header_structure(
-            worksheet, header_row_number
+            worksheet,
+            header_row_number,
+            max_row=max_row,
+            max_column=max_column,
         )
         requested_rows = {row_number for row_number, _column_id in references}
         if any(
-            row_number <= header_end_row or row_number > worksheet.max_row
+            row_number <= header_end_row or row_number > max_row
             for row_number in requested_rows
         ):
             raise WorkbookReadError(
@@ -480,7 +524,9 @@ def read_workbook_cell_values(
             WorkbookCellValueResult(
                 row_number=row_number,
                 column_id=column_id,
-                value=values_by_reference[(row_number, column_id)],
+                value=normalize_workbook_cell_value(
+                    values_by_reference[(row_number, column_id)]
+                ),
             )
             for row_number, column_id in references
         )
@@ -509,6 +555,8 @@ def read_workbook_records(
     search: str | None = None,
     sort_by: str | None = None,
     sort_direction: str = "asc",
+    meaningful_max_row: int | None = None,
+    meaningful_max_column: int | None = None,
 ) -> WorkbookRecordPage:
     """Read a filtered, sorted page of semantic records from one worksheet."""
 
@@ -534,12 +582,14 @@ def read_workbook_records(
         if sheet_name not in workbook.sheetnames:
             raise WorkbookReadError("SHEET_NOT_FOUND", "Worksheet was not found.")
         worksheet = workbook[sheet_name]
-        if header_row_number > worksheet.max_row:
+        max_row = meaningful_max_row or int(worksheet.max_row or 0)
+        max_column = meaningful_max_column or int(worksheet.max_column or 0)
+        if header_row_number > max_row:
             raise WorkbookReadError(
                 "INVALID_ROW",
                 "Header row is outside the selected worksheet.",
             )
-        if column_mapping and max(column_mapping.values()) > worksheet.max_column:
+        if column_mapping and max(column_mapping.values()) > max_column:
             raise WorkbookReadError(
                 "INVALID_MAPPING",
                 "A mapped column is outside the selected worksheet.",
@@ -560,15 +610,18 @@ def read_workbook_records(
             if isinstance(item, dict) and isinstance(item.get("column_number"), int)
         }
         header_end_row, header_structure = read_header_structure(
-            worksheet, header_row_number
+            worksheet,
+            header_row_number,
+            max_row=max_row,
+            max_column=max_column,
         )
         ordered_column_numbers = tuple(
             int(item["column_number"])
             for item in normalized_config
             if isinstance(item, dict)
             and isinstance(item.get("column_number"), int)
-            and 1 <= int(item["column_number"]) <= worksheet.max_column
-        ) or tuple(range(1, worksheet.max_column + 1))
+            and 1 <= int(item["column_number"]) <= max_column
+        ) or tuple(range(1, max_column + 1))
         columns = tuple(
             WorkbookColumn(
                 field=str(
@@ -594,7 +647,7 @@ def read_workbook_records(
                 formula=config_by_number.get(column_number, {}).get("formula"),
                 number_format=str(
                     worksheet.cell(
-                        row=min(header_end_row + 1, worksheet.max_row),
+                        row=min(header_end_row + 1, max_row),
                         column=column_number,
                     ).number_format
                     or "General"
@@ -603,6 +656,9 @@ def read_workbook_records(
             for column_number in ordered_column_numbers
         )
         records: list[WorkbookRecord] = []
+        matched_total = 0
+        page_start = (page - 1) * page_size
+        page_end = page_start + page_size
         visible_columns = ordered_column_numbers
         sortable_fields = {
             key: column.field
@@ -626,7 +682,11 @@ def read_workbook_records(
         )
 
         for row_number, row in enumerate(
-            worksheet.iter_rows(min_row=header_end_row + 1),
+            worksheet.iter_rows(
+                min_row=header_end_row + 1,
+                max_row=max_row,
+                max_col=max_column,
+            ),
             start=header_end_row + 1,
         ):
             if all(cell.value is None for cell in row):
@@ -651,17 +711,41 @@ def read_workbook_records(
                 for field in search_fields
             ):
                 continue
+            matched_total += 1
+            if sort_by is None and not page_start < matched_total <= page_end:
+                continue
             editable = {
-                column.field: _is_editable_cell(
-                    cell_by_column[column.column_number],
-                    row_number=row_number,
-                    column_number=column.column_number,
-                    sheet_protected=sheet_protected,
-                    merged_cells=merged_cells,
+                column.field: (
+                    _is_editable_cell(
+                        cell_by_column[column.column_number],
+                        row_number=row_number,
+                        column_number=column.column_number,
+                        sheet_protected=sheet_protected,
+                        merged_cells=merged_cells,
+                    )
+                    and not (
+                        column.data_type == "date"
+                        and isinstance(
+                            cell_by_column[column.column_number].value,
+                            (datetime, time, timedelta),
+                        )
+                        and not (
+                            isinstance(
+                                cell_by_column[column.column_number].value,
+                                datetime,
+                            )
+                            and cell_by_column[column.column_number].value.time()
+                            == time.min
+                        )
+                    )
                 )
                 for column in columns
                 if (column_config and not column.formula)
                 or (not column_config and column.semantic_field in PRICE_FIELDS)
+            }
+            values = {
+                field: normalize_workbook_cell_value(value)
+                for field, value in values.items()
             }
             records.append(
                 WorkbookRecord(
@@ -690,10 +774,13 @@ def read_workbook_records(
             )
             records = populated_records + blank_records
 
-        total = len(records)
+        total = len(records) if sort_by is not None else matched_total
         total_pages = math.ceil(total / page_size) if total else 0
-        start = (page - 1) * page_size
-        page_records = tuple(records[start : start + page_size])
+        page_records = (
+            tuple(records[page_start:page_end])
+            if sort_by is not None
+            else tuple(records)
+        )
         return WorkbookRecordPage(
             columns=columns,
             records=page_records,

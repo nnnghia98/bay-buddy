@@ -6,6 +6,7 @@ import * as React from "react"
 import { createClientUuid } from "@/lib/client-uuid"
 import type { WorkbookCellValue, WorkbookSaveRequest } from "@/schemas/workbook"
 import {
+  acknowledgeWorkbookSave,
   reconcileWorkbookDraft,
   resolveWorkbookDraftConflict,
   updateWorkbookDraftCell,
@@ -160,11 +161,29 @@ export function useWorkbookDraft({
   const applyReconciliation = React.useCallback((
     currentVersion: number,
     cells: WorkbookCellServerValue[],
-  ) => {
+    inspected: { revision: number; cells: WorkbookDraftRecord["cells"] },
+  ): boolean => {
     const current = queryClient.getQueryData<WorkbookDraftRecord | null>(queryKey)
-    if (!current) return
-    setDraft(reconcileWorkbookDraft(current, currentVersion, cells), { immediate: true })
+    if (!current) return false
+    const changedDuringLookup = current.revision !== inspected.revision
+    setDraft(
+      reconcileWorkbookDraft(current, currentVersion, cells, inspected.cells),
+      { immediate: true },
+    )
+    return changedDuringLookup
   }, [queryClient, queryKey, setDraft])
+
+  const acknowledgeSave = React.useCallback(async (
+    currentVersion: number,
+    requestId: string,
+  ): Promise<WorkbookDraftRecord | null> => {
+    const current = queryClient.getQueryData<WorkbookDraftRecord | null>(queryKey)
+    if (!current) return null
+    const next = acknowledgeWorkbookSave(current, currentVersion, requestId)
+    setDraft(next)
+    await persist()
+    return next
+  }, [persist, queryClient, queryKey, setDraft])
 
   const resolveConflict = React.useCallback((
     rowNumber: number,
@@ -205,6 +224,7 @@ export function useWorkbookDraft({
     beginSave,
     markSaveError,
     applyReconciliation,
+    acknowledgeSave,
     resolveConflict,
     clear,
     flush: persist,

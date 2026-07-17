@@ -371,10 +371,22 @@ def _meaningful_worksheet_bounds(path: Path, worksheet: Any) -> tuple[int, int]:
     if not worksheet_path:
         return int(worksheet.max_row or 0), int(worksheet.max_column or 0)
 
+    merged_ranges: list[tuple[int, int, int, int]] = []
+    with zipfile.ZipFile(path) as archive, archive.open(worksheet_path) as worksheet_xml:
+        for _event, element in ET.iterparse(worksheet_xml, events=("end",)):
+            if element.tag.endswith("mergeCell"):
+                reference = element.attrib.get("ref")
+                if reference:
+                    merged_ranges.append(range_boundaries(reference))
+            element.clear()
+
+    merged_anchors = {
+        (min_row, min_column)
+        for min_column, min_row, _max_column, _max_row in merged_ranges
+    }
+    meaningful_merged_anchors: set[tuple[int, int]] = set()
     max_row = 0
     max_column = 0
-    meaningful_cells: set[tuple[int, int]] = set()
-    merged_ranges: list[tuple[int, int, int, int]] = []
     with zipfile.ZipFile(path) as archive, archive.open(worksheet_path) as worksheet_xml:
         for _event, element in ET.iterparse(worksheet_xml, events=("end",)):
             if element.tag.endswith("}c") or element.tag == "c":
@@ -392,18 +404,16 @@ def _meaningful_worksheet_bounds(path: Path, worksheet: Any) -> tuple[int, int]:
                     if has_formula or has_value:
                         column_letters, row_number = coordinate_from_string(reference)
                         column_number = column_index_from_string(column_letters)
-                        meaningful_cells.add((row_number, column_number))
+                        if (row_number, column_number) in merged_anchors:
+                            meaningful_merged_anchors.add(
+                                (row_number, column_number)
+                            )
                         max_row = max(max_row, row_number)
                         max_column = max(max_column, column_number)
                 element.clear()
-            elif element.tag.endswith("mergeCell"):
-                reference = element.attrib.get("ref")
-                if reference:
-                    merged_ranges.append(range_boundaries(reference))
-                element.clear()
 
     for min_column, min_row, max_merged_column, max_merged_row in merged_ranges:
-        if (min_row, min_column) not in meaningful_cells:
+        if (min_row, min_column) not in meaningful_merged_anchors:
             continue
         max_row = max(max_row, max_merged_row)
         max_column = max(max_column, max_merged_column)

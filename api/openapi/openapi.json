@@ -3839,6 +3839,16 @@
             },
             "description": "Not Found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
           "422": {
             "description": "Workbook domain error or request validation error.",
             "content": {
@@ -6309,6 +6319,11 @@
       },
       "WorkbookColumnConfigurationRequest": {
         "properties": {
+          "base_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Base Version"
+          },
           "hidden_column_ids": {
             "items": {
               "type": "string"
@@ -6328,6 +6343,9 @@
         },
         "additionalProperties": false,
         "type": "object",
+        "required": [
+          "base_version"
+        ],
         "title": "WorkbookColumnConfigurationRequest"
       },
       "WorkbookColumnDataType": {
@@ -7916,6 +7934,18 @@
                 "type": "null"
               }
             ]
+          },
+          "number_format": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Number Format"
           }
         },
         "additionalProperties": false,

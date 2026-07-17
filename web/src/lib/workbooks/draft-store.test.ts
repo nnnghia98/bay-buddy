@@ -3,12 +3,14 @@ import "fake-indexeddb/auto"
 import { beforeEach, describe, expect, it } from "vitest"
 
 import {
+  acknowledgeWorkbookSave,
   classifyWorkbookDraftHydration,
   createWorkbookDraft,
   reconcileWorkbookDraft,
   resolveWorkbookDraftConflict,
   updateWorkbookDraftCell,
   withPendingWorkbookSave,
+  withWorkbookSaveError,
 } from "./draft-schema"
 import {
   cleanupWorkbookDrafts,
@@ -94,6 +96,102 @@ describe("workbook draft storage", () => {
     expect(restored?.pendingSave?.requestId).toBe(payload.request_id)
     expect(restored?.pendingSave?.payload).toEqual(payload)
     expect(restored?.pendingSave?.retryable).toBe(true)
+    expect(restored?.pendingSave?.submittedCells).toEqual([
+      { rowNumber: 7, columnId: "selling-price", value: 1_200_000 },
+    ])
+  })
+
+  it("retries only transient pending-save failures", () => {
+    const payload = {
+      request_id: "0d98086b-d363-4ed5-819a-07891d3a03cb",
+      base_version: 2,
+      changes: [{ row_number: 7, values: { "selling-price": 1_200_000 } }],
+    }
+    const pending = withPendingWorkbookSave(dirtyDraft(), payload)
+
+    expect(withWorkbookSaveError(pending, "REQUEST_FAILED").pendingSave?.retryable).toBe(true)
+    expect(withWorkbookSaveError(pending, "INVALID_CELL_VALUE").pendingSave?.retryable).toBe(false)
+    expect(withWorkbookSaveError(pending, "SESSION_NOT_ACTIVE").pendingSave?.retryable).toBe(false)
+  })
+
+  it("acknowledges only cells from the submitted snapshot", () => {
+    const payload = {
+      request_id: "0d98086b-d363-4ed5-819a-07891d3a03cb",
+      base_version: 2,
+      changes: [{ row_number: 7, values: { "selling-price": 1_200_000 } }],
+    }
+    const saving = withPendingWorkbookSave(dirtyDraft(), payload)
+    const withNewCell = updateWorkbookDraftCell(
+      saving,
+      identity(),
+      2,
+      {
+        rowNumber: 8,
+        columnId: "selling-price",
+        originalValue: 2_000_000,
+        localInput: "2.400.000",
+        localValue: 2_400_000,
+        matchesOriginal: false,
+      },
+    )!
+
+    const acknowledged = acknowledgeWorkbookSave(
+      withNewCell,
+      3,
+      payload.request_id,
+    )!
+
+    expect(acknowledged.serverBaseVersion).toBe(3)
+    expect(acknowledged.status).toBe("dirty")
+    expect(acknowledged.cells).toMatchObject([{ rowNumber: 8, localValue: 2_400_000 }])
+    expect(acknowledged.pendingSave).toBeUndefined()
+  })
+
+  it("keeps a newer edit to a submitted cell and rebases its original value", () => {
+    const payload = {
+      request_id: "0d98086b-d363-4ed5-819a-07891d3a03cb",
+      base_version: 2,
+      changes: [{ row_number: 7, values: { "selling-price": 1_200_000 } }],
+    }
+    const saving = withPendingWorkbookSave(dirtyDraft(), payload)
+    const newerEdit = updateWorkbookDraftCell(
+      saving,
+      identity(),
+      2,
+      {
+        rowNumber: 7,
+        columnId: "selling-price",
+        originalValue: 1_000_000,
+        localInput: "1.300.000",
+        localValue: 1_300_000,
+        matchesOriginal: false,
+      },
+    )!
+
+    const acknowledged = acknowledgeWorkbookSave(
+      newerEdit,
+      3,
+      payload.request_id,
+    )!
+
+    expect(acknowledged.cells).toMatchObject([{
+      rowNumber: 7,
+      localValue: 1_300_000,
+      originalValue: 1_200_000,
+    }])
+  })
+
+  it("clears a draft only when every current cell was acknowledged", () => {
+    const payload = {
+      request_id: "0d98086b-d363-4ed5-819a-07891d3a03cb",
+      base_version: 2,
+      changes: [{ row_number: 7, values: { "selling-price": 1_200_000 } }],
+    }
+    expect(acknowledgeWorkbookSave(
+      withPendingWorkbookSave(dirtyDraft(), payload),
+      3,
+      payload.request_id,
+    )).toBeNull()
   })
 
   it("clears one session or every draft for only the authenticated user", async () => {
@@ -135,6 +233,30 @@ describe("workbook draft storage", () => {
       serverValue: 2_100_000,
       resolution: "unresolved",
     })
+  })
+
+  it("does not create a false conflict for a cell added after a reconciliation lookup", () => {
+    const beforeLookup = dirtyDraft()
+    const withNewCell = updateWorkbookDraftCell(
+      beforeLookup,
+      identity(),
+      2,
+      {
+        rowNumber: 8,
+        columnId: "selling-price",
+        originalValue: 2_000_000,
+        localInput: "2.400.000",
+        localValue: 2_400_000,
+        matchesOriginal: false,
+      },
+    )!
+
+    const reconciled = reconcileWorkbookDraft(withNewCell, 3, [
+      { rowNumber: 7, columnId: "selling-price", value: 1_000_000 },
+    ], beforeLookup.cells)
+
+    expect(reconciled.cells).toHaveLength(2)
+    expect(reconciled.cells[1].conflict).toBeUndefined()
   })
 
   it("requires keep-local or use-server conflict choices", () => {

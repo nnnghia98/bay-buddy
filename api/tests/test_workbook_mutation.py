@@ -167,6 +167,199 @@ def test_generic_changes_validate_types_and_preserve_formats(tmp_path: Path) -> 
     generated.close()
 
 
+@pytest.mark.parametrize("value", ["=1+1", '=HYPERLINK("https://example.com", "link")'])
+def test_configured_text_changes_reject_formula_injection(
+    tmp_path: Path,
+    value: str,
+) -> None:
+    source = tmp_path / "source.xlsx"
+    output = tmp_path / "output.xlsx"
+    _make_workbook(source)
+
+    with pytest.raises(WorkbookMutationError) as raised:
+        apply_price_changes(
+            source,
+            output,
+            sheet_name="Tickets",
+            header_row_number=1,
+            column_mapping={},
+            column_config=[
+                {"id": "source-notes", "column_number": 5, "data_type": "text"}
+            ],
+            changes=[PriceChange(row_number=2, values={"source-notes": value})],
+        )
+
+    assert raised.value.code == "INVALID_CELL_VALUE"
+    assert not output.exists()
+
+
+def test_configured_text_changes_preserve_normal_text(tmp_path: Path) -> None:
+    source = tmp_path / "source.xlsx"
+    output = tmp_path / "output.xlsx"
+    _make_workbook(source)
+
+    apply_price_changes(
+        source,
+        output,
+        sheet_name="Tickets",
+        header_row_number=1,
+        column_mapping={},
+        column_config=[
+            {"id": "source-notes", "column_number": 5, "data_type": "text"}
+        ],
+        changes=[
+            PriceChange(
+                row_number=2,
+                values={"source-notes": "Need invoice = confirmed"},
+            )
+        ],
+    )
+
+    workbook = load_workbook(output, data_only=False)
+    assert workbook["Tickets"]["E2"].value == "Need invoice = confirmed"
+    workbook.close()
+
+
+def test_configured_changes_keep_imported_formula_cells_non_editable(tmp_path: Path) -> None:
+    source = tmp_path / "source.xlsx"
+    output = tmp_path / "output.xlsx"
+    _make_workbook(source)
+    workbook = load_workbook(source)
+    workbook["Tickets"]["E2"] = "=C2+D2"
+    workbook.save(source)
+    workbook.close()
+
+    with pytest.raises(WorkbookMutationError) as raised:
+        apply_price_changes(
+            source,
+            output,
+            sheet_name="Tickets",
+            header_row_number=1,
+            column_mapping={},
+            column_config=[
+                {"id": "source-notes", "column_number": 5, "data_type": "text"}
+            ],
+            changes=[
+                PriceChange(row_number=2, values={"source-notes": "updated"})
+            ],
+        )
+
+    assert raised.value.code == "CELL_NOT_EDITABLE"
+    assert not output.exists()
+
+
+@pytest.mark.parametrize(
+    ("column_id", "semantic_field", "value"),
+    [
+        ("source-cost", "net_price", 0),
+        ("source-sale", "selling_price", 1_250_000),
+    ],
+)
+def test_semantic_vnd_prices_accept_whole_non_negative_values(
+    tmp_path: Path,
+    column_id: str,
+    semantic_field: str,
+    value: int,
+) -> None:
+    source = tmp_path / "source.xlsx"
+    output = tmp_path / "output.xlsx"
+    _make_workbook(source)
+    column_number = 3 if semantic_field == "net_price" else 4
+
+    apply_price_changes(
+        source,
+        output,
+        sheet_name="Tickets",
+        header_row_number=1,
+        column_mapping={},
+        column_config=[
+            {
+                "id": column_id,
+                "column_number": column_number,
+                "data_type": "currency",
+                "semantic_field": semantic_field,
+            }
+        ],
+        changes=[PriceChange(row_number=2, values={column_id: value})],
+    )
+
+    workbook = load_workbook(output, data_only=False)
+    assert workbook["Tickets"].cell(2, column_number).value == value
+    workbook.close()
+
+
+@pytest.mark.parametrize("semantic_field", ["net_price", "selling_price"])
+@pytest.mark.parametrize("value", [-1, 1.5, MAX_SAFE_VND + 1])
+def test_semantic_vnd_prices_reject_invalid_values(
+    tmp_path: Path,
+    semantic_field: str,
+    value: object,
+) -> None:
+    source = tmp_path / "source.xlsx"
+    output = tmp_path / "output.xlsx"
+    _make_workbook(source)
+
+    with pytest.raises(WorkbookMutationError) as raised:
+        apply_price_changes(
+            source,
+            output,
+            sheet_name="Tickets",
+            header_row_number=1,
+            column_mapping={},
+            column_config=[
+                {
+                    "id": f"source-{semantic_field}",
+                    "column_number": 3 if semantic_field == "net_price" else 4,
+                    "data_type": "currency",
+                    "semantic_field": semantic_field,
+                }
+            ],
+            changes=[
+                PriceChange(
+                    row_number=2,
+                    values={f"source-{semantic_field}": value},
+                )
+            ],
+        )
+
+    assert raised.value.code == "INVALID_CELL_VALUE"
+    assert not output.exists()
+
+
+def test_rejects_duplicate_configured_cell_targets_after_alias_resolution(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.xlsx"
+    output = tmp_path / "output.xlsx"
+    _make_workbook(source)
+
+    with pytest.raises(WorkbookMutationError) as raised:
+        apply_price_changes(
+            source,
+            output,
+            sheet_name="Tickets",
+            header_row_number=1,
+            column_mapping={},
+            column_config=[
+                {
+                    "id": "source-cost",
+                    "column_number": 3,
+                    "data_type": "currency",
+                    "semantic_field": "net_price",
+                }
+            ],
+            changes=[
+                PriceChange(
+                    row_number=2,
+                    values={"source-cost": 1_050_000, "net_price": 1_100_000},
+                )
+            ],
+        )
+
+    assert raised.value.code == "INVALID_CELL_VALUE"
+    assert not output.exists()
+
+
 @pytest.mark.parametrize(
     ("data_type", "value"),
     [
@@ -439,7 +632,6 @@ def test_structural_changes_regenerate_formula_references_and_calc_flags(tmp_pat
     assert generated.calculation.calcMode == "auto"
     assert generated.calculation.fullCalcOnLoad is True
     generated.close()
-
     after_remove = [
         {**item, "column_number": int(item["column_number"]) - 1}
         for item in before
@@ -484,3 +676,30 @@ def test_structural_changes_regenerate_formula_references_and_calc_flags(tmp_pat
     assert generated["Data"]["C2"].value == "=MAX(A2,B2,0)"
     generated.close()
 
+
+def test_add_column_uses_meaningful_bound_not_formatting_dimension(tmp_path: Path) -> None:
+    source = tmp_path / "formatted-source.xlsx"
+    output = tmp_path / "bounded-output.xlsx"
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Data"
+    worksheet.append(["Name", "Value"])
+    worksheet.append(["A", 1])
+    worksheet.cell(1, 256).fill = PatternFill(fill_type="solid", fgColor="FFFFFF")
+    workbook.save(source)
+    workbook.close()
+
+    result = add_workbook_column(
+        source,
+        output,
+        sheet_name="Data",
+        header_row_number=1,
+        label="Note",
+        meaningful_max_row=2,
+        meaningful_max_column=2,
+    )
+
+    assert result.column_number == 3
+    generated = load_workbook(output)
+    assert generated["Data"]["C1"].value == "Note"
+    generated.close()

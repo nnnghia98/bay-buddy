@@ -53,6 +53,7 @@ export function WorkbookRecordsTable({
   errors,
   headerActionLabels,
   isConfiguringColumns,
+  structuralActionDisabledReason,
   onDraftChange,
   onHideColumn,
   onRemoveColumn,
@@ -75,6 +76,7 @@ export function WorkbookRecordsTable({
     removeConfirm: string
   }
   isConfiguringColumns: boolean
+  structuralActionDisabledReason?: string
   onDraftChange: (rowNumber: number, field: string, value: string) => void
   onHideColumn: (columnId: string) => void
   onRemoveColumn: (columnId: string) => void
@@ -116,7 +118,9 @@ export function WorkbookRecordsTable({
             )}
             disabled={isConfiguringColumns}
             onClick={() => onToggleSticky(column.id, !column.sticky)}
-            title={column.sticky ? headerActionLabels.unpin : headerActionLabels.pin}
+            title={isConfiguringColumns && structuralActionDisabledReason
+              ? structuralActionDisabledReason
+              : column.sticky ? headerActionLabels.unpin : headerActionLabels.pin}
             type="button"
           >
             <Pin aria-hidden="true" className={cn("size-3.5", column.sticky && "fill-current")} />
@@ -128,7 +132,9 @@ export function WorkbookRecordsTable({
             onClick={() => {
               if (window.confirm(headerActionLabels.removeConfirm.replace("{column}", column.label))) onRemoveColumn(column.id)
             }}
-            title={headerActionLabels.remove}
+            title={isConfiguringColumns && structuralActionDisabledReason
+              ? structuralActionDisabledReason
+              : headerActionLabels.remove}
             type="button"
           >
             <Trash2 aria-hidden="true" className="size-3.5" />
@@ -138,7 +144,9 @@ export function WorkbookRecordsTable({
             className="grid size-7 place-items-center rounded-sm text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             disabled={isConfiguringColumns}
             onClick={() => onHideColumn(column.id)}
-            title={headerActionLabels.hide}
+            title={isConfiguringColumns && structuralActionDisabledReason
+              ? structuralActionDisabledReason
+              : headerActionLabels.hide}
             type="button"
           >
             <EyeOff aria-hidden="true" className="size-3.5" />
@@ -159,6 +167,7 @@ export function WorkbookRecordsTable({
     onToggleSticky,
     sortBy,
     sortDirection,
+    structuralActionDisabledReason,
   ])
   const groupedHeaderRuns: Array<{
     columns: typeof visibleColumns

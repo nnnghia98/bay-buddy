@@ -8,7 +8,6 @@ import {
   History,
   LoaderCircle,
   Pencil,
-  Search,
   Trash2,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -16,7 +15,6 @@ import * as React from "react"
 
 import { SessionRenameDialog } from "@/components/workbook-editor/session-rename-dialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -36,7 +34,6 @@ import {
   workbookQueryKeys,
   type WorkbookSessionListQuery,
 } from "@/lib/workbooks/query-keys"
-import { cn } from "@/lib/utils"
 import type {
   WorkbookSessionList,
   WorkbookSessionSummary,
@@ -45,14 +42,6 @@ import type {
 export type WorkbookSessionLocalState = "dirty" | "saving" | "conflict"
 
 const PAGE_SIZE = 10
-const filterStatuses = ["DRAFT", "COMPLETED", "FAILED"] as const
-
-const statusTone: Record<WorkbookSessionSummary["status"], string> = {
-  DRAFT: "border-blue-200 bg-blue-50 text-blue-700",
-  COMPLETED: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  FAILED: "border-rose-200 bg-rose-50 text-rose-700",
-  DISCARDED: "border-border bg-secondary text-muted-foreground",
-}
 
 const updatedAtFormatter = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -107,9 +96,6 @@ export function WorkbookSessionLibrary({
   const t = useI18n()
   const text = React.useCallback((key: string) => t(key as never), [t])
   const [page, setPage] = React.useState(1)
-  const [searchInput, setSearchInput] = React.useState("")
-  const [search, setSearch] = React.useState("")
-  const [status, setStatus] = React.useState<"" | WorkbookSessionSummary["status"]>("")
   const [renamingSession, setRenamingSession] = React.useState<WorkbookSessionSummary>()
   const [feedback, setFeedback] = React.useState<string>()
   const [renameError, setRenameError] = React.useState<string>()
@@ -130,14 +116,12 @@ export function WorkbookSessionLibrary({
   const query: WorkbookSessionListQuery = {
     page,
     pageSize: PAGE_SIZE,
-    search: search || undefined,
-    status: status || undefined,
   }
   const sessionsQuery = useQuery({
     queryKey: workbookQueryKeys.sessions(query),
     queryFn: () => fetchWorkbookSessions(query),
     initialData:
-      page === 1 && !search && !status
+      page === 1
         ? initialData
         : undefined,
     placeholderData: (previous) => previous,
@@ -165,11 +149,14 @@ export function WorkbookSessionLibrary({
   const discardMutation = useMutation({
     mutationFn: discardWorkbookSession,
     onSuccess: (discarded) => {
+      const nextTotal = Math.max(0, data.pagination.total - 1)
+      const nextTotalPages = nextTotal ? Math.ceil(nextTotal / PAGE_SIZE) : 0
       void draftSummaries.clearSession(discarded.id)
       queryClient.setQueriesData<WorkbookSessionList>(
         { queryKey: workbookQueryKeys.sessionsRoot() },
         (current) => removeSessionFromPages(current, discarded.id),
       )
+      setPage((current) => Math.min(current, Math.max(nextTotalPages, 1)))
       setFeedback(text("workbookEditor.library.deleteSuccess"))
       void queryClient.invalidateQueries({ queryKey: workbookQueryKeys.sessionsRoot() })
     },
@@ -183,69 +170,9 @@ export function WorkbookSessionLibrary({
 
   return (
     <section
-      aria-labelledby="workbook-library-title"
+      aria-label={text("workbookEditor.library.title")}
       className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
     >
-      <div className="flex flex-col gap-4 border-b border-border px-5 py-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-primary">
-            <History aria-hidden="true" className="size-4" />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em]">
-              {text("workbookEditor.library.eyebrow")}
-            </p>
-          </div>
-          <h2 className="mt-1 text-lg font-semibold tracking-[-0.02em]" id="workbook-library-title">
-            {text("workbookEditor.library.title")}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {text("workbookEditor.library.description")}
-          </p>
-        </div>
-        <form
-          className="flex flex-col gap-2 sm:flex-row"
-          onSubmit={(event) => {
-            event.preventDefault()
-            setPage(1)
-            setSearch(searchInput.trim())
-          }}
-        >
-          <label className="sr-only" htmlFor="workbook-session-search">
-            {text("workbookEditor.library.searchLabel")}
-          </label>
-          <Input
-            className="h-9 min-w-64"
-            id="workbook-session-search"
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder={text("workbookEditor.library.searchPlaceholder")}
-            type="search"
-            value={searchInput}
-          />
-          <label className="sr-only" htmlFor="workbook-session-status">
-            {text("workbookEditor.library.statusLabel")}
-          </label>
-          <select
-            className="h-9 rounded-md border border-input bg-white px-3 text-sm"
-            id="workbook-session-status"
-            onChange={(event) => {
-              setPage(1)
-              setStatus(event.target.value as typeof status)
-            }}
-            value={status}
-          >
-            <option value="">{text("workbookEditor.library.statusAll")}</option>
-            {filterStatuses.map((value) => (
-              <option key={value} value={value}>
-                {text(`workbookEditor.library.statuses.${value}`)}
-              </option>
-            ))}
-          </select>
-          <Button className="h-9" type="submit" variant="outline">
-            <Search aria-hidden="true" className="size-4" />
-            {text("workbookEditor.library.searchAction")}
-          </Button>
-        </form>
-      </div>
-
       {feedback ? (
         <div aria-live="polite" className="border-b border-border bg-secondary/30 px-5 py-2 text-sm">
           {feedback}
@@ -263,24 +190,43 @@ export function WorkbookSessionLibrary({
           </Button>
         </div>
       ) : data.items.length === 0 ? (
-        <div className="px-6 py-12 text-center">
-          <History aria-hidden="true" className="mx-auto size-7 text-muted-foreground/60" />
-          <p className="mt-3 text-sm font-medium">{text("workbookEditor.library.emptyTitle")}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {text("workbookEditor.library.emptyDescription")}
-          </p>
-        </div>
+        <>
+          <div className="px-6 py-12 text-center">
+            <History aria-hidden="true" className="mx-auto size-7 text-muted-foreground/60" />
+            <p className="mt-3 text-sm font-medium">{text("workbookEditor.library.emptyTitle")}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {text("workbookEditor.library.emptyDescription")}
+            </p>
+          </div>
+          {data.pagination.total > 0 ? (
+            <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-3 text-sm text-muted-foreground">
+              <Button
+                disabled={page <= 1 || sessionsQuery.isFetching}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                {text("workbookEditor.library.pagination.previous")}
+              </Button>
+              <span>
+                {replaceToken(
+                  replaceToken(text("workbookEditor.library.pagination.page"), "page", String(page)),
+                  "total",
+                  String(Math.max(totalPages, 1)),
+                )}
+              </span>
+            </div>
+          ) : null}
+        </>
       ) : (
         <>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>{text("workbookEditor.library.columns.name")}</TableHead>
-                <TableHead>{text("workbookEditor.library.columns.sheet")}</TableHead>
                 <TableHead>{text("workbookEditor.library.columns.updated")}</TableHead>
-                <TableHead>{text("workbookEditor.library.columns.version")}</TableHead>
-                <TableHead>{text("workbookEditor.library.columns.status")}</TableHead>
-                <TableHead className="text-right">{text("workbookEditor.library.columns.actions")}</TableHead>
+                <TableHead className="w-36 text-right">{text("workbookEditor.library.columns.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -293,53 +239,27 @@ export function WorkbookSessionLibrary({
                       <p className="font-semibold" title={session.display_name}>
                         {session.display_name}
                       </p>
-                      <p className="mt-0.5 max-w-72 truncate text-xs text-muted-foreground" title={session.original_filename}>
-                        {session.original_filename}
-                      </p>
-                    </TableCell>
-                    <TableCell className="min-w-36 text-muted-foreground">
-                      {session.selected_sheet_name}
                     </TableCell>
                     <TableCell className="min-w-44 text-muted-foreground">
                       {updatedAtFormatter.format(new Date(session.updated_at))}
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {replaceToken(
-                        text("workbookEditor.library.version"),
-                        "version",
-                        String(session.current_version),
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1.5">
-                        <span
-                          className={cn(
-                            "inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold",
-                            statusTone[session.status],
-                          )}
-                        >
-                          {text(`workbookEditor.library.statuses.${session.status}`)}
-                        </span>
-                        {localState ? (
-                          <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">
-                            {text(`workbookEditor.library.localStatuses.${localState}`)}
-                          </span>
-                        ) : null}
-                      </div>
-                    </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1.5">
                         <Button
+                          aria-label={text("workbookEditor.library.actions.open")}
+                          className="h-8 w-8"
                           onClick={() => router.push(`/workbook-editor-v2/sessions/${session.id}`)}
-                          size="sm"
+                          size="icon"
+                          title={text("workbookEditor.library.actions.open")}
                           type="button"
-                          variant="outline"
+                          variant="ghost"
                         >
-                          <ArrowRight aria-hidden="true" className="size-3.5" />
-                          {text("workbookEditor.library.actions.open")}
+                          <ArrowRight aria-hidden="true" className="size-4" />
                         </Button>
                         {localState ? (
                           <Button
+                            aria-label={text("workbookEditor.library.actions.clearLocal")}
+                            className="h-8 w-8"
                             onClick={() => {
                               const prompt = replaceToken(
                                 text("workbookEditor.library.clearLocalConfirm"),
@@ -352,30 +272,34 @@ export function WorkbookSessionLibrary({
                                 })
                               }
                             }}
-                            size="sm"
+                            size="icon"
+                            title={text("workbookEditor.library.actions.clearLocal")}
                             type="button"
                             variant="ghost"
                           >
-                            <Eraser aria-hidden="true" className="size-3.5" />
-                            {text("workbookEditor.library.actions.clearLocal")}
+                            <Eraser aria-hidden="true" className="size-4" />
                           </Button>
                         ) : null}
                         {active ? (
                           <>
                             <Button
+                              aria-label={text("workbookEditor.library.actions.rename")}
+                              className="h-8 w-8"
                               onClick={() => {
                                 setFeedback(undefined)
                                 setRenameError(undefined)
                                 setRenamingSession(session)
                               }}
-                              size="sm"
+                              size="icon"
+                              title={text("workbookEditor.library.actions.rename")}
                               type="button"
-                              className="bg-red-600 text-white hover:bg-red-700"
+                              variant="ghost"
                             >
-                              <Pencil aria-hidden="true" className="size-3.5" />
-                              {text("workbookEditor.library.actions.rename")}
+                              <Pencil aria-hidden="true" className="size-4" />
                             </Button>
                             <Button
+                              aria-label={text("workbookEditor.library.actions.delete")}
+                              className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
                               disabled={discardMutation.isPending}
                               onClick={() => {
                                 const prompt = replaceToken(
@@ -388,19 +312,19 @@ export function WorkbookSessionLibrary({
                                   discardMutation.mutate(session.id)
                                 }
                               }}
-                              size="sm"
+                              size="icon"
+                              title={text("workbookEditor.library.actions.delete")}
                               type="button"
                               variant="ghost"
                             >
                               {discardMutation.isPending && discardMutation.variables === session.id ? (
                                 <LoaderCircle
                                   aria-hidden="true"
-                                  className="size-3.5 animate-spin motion-reduce:animate-none"
+                                  className="size-4 animate-spin motion-reduce:animate-none"
                                 />
                               ) : (
-                                <Trash2 aria-hidden="true" className="size-3.5" />
+                                <Trash2 aria-hidden="true" className="size-4" />
                               )}
-                              {text("workbookEditor.library.actions.delete")}
                             </Button>
                           </>
                         ) : null}

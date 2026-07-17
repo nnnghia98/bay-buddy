@@ -24,6 +24,10 @@ from models import (
     TicketImport,
     Transaction,
     User,
+    Workbook,
+    WorkbookOperation,
+    WorkbookSession,
+    WorkbookVersion,
 )
 from models.enums import UserRole, get_transaction_balance_delta
 
@@ -260,6 +264,10 @@ def _bulk_delete_all_time(
     current_user_id = current_user.id
 
     delete_plan: list[tuple[str, type[SQLModel], Any]] = [
+        ("workbook_operations", WorkbookOperation, delete(WorkbookOperation)),
+        ("workbook_versions", WorkbookVersion, delete(WorkbookVersion)),
+        ("workbook_sessions", WorkbookSession, delete(WorkbookSession)),
+        ("workbooks", Workbook, delete(Workbook)),
         ("ticket_imports", TicketImport, delete(TicketImport)),
         ("quote_items", QuoteItem, delete(QuoteItem)),
         ("invoice_items", InvoiceItem, delete(InvoiceItem)),
@@ -311,6 +319,10 @@ def _recalculate_customer_balances(session: SessionDep) -> None:
 
 def _empty_deleted_counts() -> dict[str, int]:
     return {
+        "workbook_operations": 0,
+        "workbook_versions": 0,
+        "workbook_sessions": 0,
+        "workbooks": 0,
         "ticket_imports": 0,
         "quote_items": 0,
         "invoice_items": 0,

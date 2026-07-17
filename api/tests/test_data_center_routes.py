@@ -26,6 +26,7 @@ from models.ticket import Ticket
 from models.ticket_import import TicketImport
 from models.transaction import Transaction
 from models.user import User
+from models.workbook import Workbook
 
 
 def create_test_client(
@@ -383,6 +384,18 @@ def test_admin_can_wipe_all_tables_all_time() -> None:
         updated_at=datetime(2026, 5, 2, 8, 33),
     )
     session.add(unlinked_import)
+    session.add(
+        Workbook(
+            original_filename="prices.xlsx",
+            original_relative_path="originals/test/source.xlsx",
+            original_checksum="a" * 64,
+            mime_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            file_size=10,
+            sheet_count=1,
+            sheet_metadata=[],
+            created_by=staff_user.id,
+        )
+    )
     session.commit()
 
     response = client.request(
@@ -411,6 +424,7 @@ def test_admin_can_wipe_all_tables_all_time() -> None:
     assert payload["data"]["deleted"]["tickets"] == 2
     assert payload["data"]["deleted"]["transactions"] == 1
     assert payload["data"]["deleted"]["ticket_imports"] == 2
+    assert payload["data"]["deleted"]["workbooks"] == 1
     assert payload["data"]["deleted"]["users"] == 1
 
 

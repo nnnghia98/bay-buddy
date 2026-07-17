@@ -98,7 +98,7 @@ _DOWNLOAD_RESPONSE = {
 
 
 class WorkbookUploadSizeLimitMiddleware:
-    """Reject declared oversized workbook requests before multipart parsing."""
+    """Reject oversized workbook requests before multipart parsing."""
 
     def __init__(
         self,
@@ -140,6 +140,41 @@ class WorkbookUploadSizeLimitMiddleware:
                 )
                 await response(scope, receive, send)
                 return
+
+            received_bytes = 0
+            rejected = False
+
+            async def limited_receive() -> dict[str, Any]:
+                nonlocal received_bytes, rejected
+                message = await receive()
+                if message.get("type") != "http.request":
+                    return message
+                received_bytes += len(message.get("body", b""))
+                if received_bytes > self.max_request_bytes:
+                    rejected = True
+                    # Starlette's multipart parser sees a clean disconnect. The
+                    # outer middleware owns the final, stable error response.
+                    return {"type": "http.disconnect"}
+                return message
+
+            async def limited_send(message: dict[str, Any]) -> None:
+                if not rejected:
+                    await send(message)
+
+            await self.app(scope, limited_receive, limited_send)
+            if rejected:
+                response = JSONResponse(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    content={
+                        "detail": {
+                            "code": "FILE_TOO_LARGE",
+                            "message": "Workbook exceeds the upload size limit.",
+                            "details": {},
+                        }
+                    },
+                )
+                await response(scope, receive, send)
+            return
         await self.app(scope, receive, send)
 
 
@@ -663,6 +698,7 @@ async def remove_session_column_route(
     response_model=WorkbookSuccessResponse[WorkbookSessionResponse],
     responses={
         404: _ERROR_RESPONSE,
+        409: _ERROR_RESPONSE,
         422: _VALIDATION_RESPONSE,
         500: _ERROR_RESPONSE,
     },
@@ -679,6 +715,7 @@ async def update_session_column_configuration_route(
         db,
         actor=current_user,
         session_id=session_id,
+        base_version=payload.base_version,
         hidden_column_ids=payload.hidden_column_ids,
         sticky_column_ids=payload.sticky_column_ids,
     )

@@ -67,7 +67,13 @@ describe("WorkbookStartClient", () => {
     expect(html).toContain("workbookEditor.sheets.emptyTitle")
     expect(html).toContain("workbookEditor.library.title")
     expect(html).toContain("July supplier prices")
-    expect(html).toContain("prices.xlsx")
+    expect(html).toContain("workbookEditor.library.columns.name")
+    expect(html).toContain("workbookEditor.library.columns.updated")
+    expect(html).toContain("workbookEditor.library.columns.actions")
+    expect(html).not.toContain("workbookEditor.library.searchAction")
+    expect(html).not.toContain("workbookEditor.library.columns.sheet")
+    expect(html).not.toContain("workbookEditor.library.columns.version")
+    expect(html).not.toContain("workbookEditor.library.columns.status")
     expect(html.match(/<section/g)).toHaveLength(2)
   })
 
@@ -80,7 +86,7 @@ describe("WorkbookStartClient", () => {
     expect(html).not.toContain("preferences")
   })
 
-  it("surfaces user-scoped local status and clear action", () => {
+  it("shows the clear action when a session has local changes", () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
@@ -96,7 +102,6 @@ describe("WorkbookStartClient", () => {
       </QueryClientProvider>,
     )
 
-    expect(html).toContain("workbookEditor.library.localStatuses.conflict")
     expect(html).toContain("workbookEditor.library.actions.clearLocal")
   })
 })

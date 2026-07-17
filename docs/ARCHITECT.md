@@ -221,6 +221,13 @@ Bay Buddy follows the project's Next.js App Router patterns, Bay Buddy DNA, and 
 7. `recordPaymentAction` must call `revalidatePath('/customers/[id]')` so the RSC ledger refreshes after a successful mutation, instead of manually refetching on the client.
 8. After the Server Action completes, the optimistic row is reconciled with the persisted transaction or rolled back if validation/authentication fails.
 
+### Workbook Editor v2 integrity rules
+
+- Workbook sessions persist the selected sheet's meaningful row and column bounds. Formatting-only Excel dimensions must not expand later reads, saves, previews, or structural mutations.
+- Ordinary text edits cannot begin with `=`. Excel formulas are created only through the validated managed-formula AST and server preview workflow.
+- Semantic `net_price` and `selling_price` cells use whole, non-negative VND values up to `1,000,000,000,000`; generic currency columns keep their configured numeric behavior.
+- Time-only Excel cells are returned as ISO local-time strings. Durations are returned as ISO-8601 duration strings. Date-time cells with a non-midnight time remain read-only until date-time editing is supported.
+
 ## 5. Customer Endpoints
 - `GET /api/v1/customers` returns the customer directory used by the web UI.
 - The directory payload includes `id`, `full_name`, `phone`, and `current_balance`.

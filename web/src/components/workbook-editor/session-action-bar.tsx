@@ -56,7 +56,7 @@ export function SessionActionBar({
           <Trash2 aria-hidden="true" className="h-4 w-4" />
           {clearDraftLabel}
         </Button>
-        <Button disabled={isDownloading || isSaving || dirtyCount > 0} onClick={onDownload} type="button" variant="outline">
+        <Button disabled={isDownloading || isSaving} onClick={onDownload} type="button" variant="outline">
           {isDownloading ? (
             <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin motion-reduce:animate-none" />
           ) : (

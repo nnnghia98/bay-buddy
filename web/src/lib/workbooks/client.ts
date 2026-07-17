@@ -232,12 +232,13 @@ export async function removeWorkbookColumn(sessionId: string, columnId: string, 
 
 export async function updateWorkbookColumnConfiguration(
   sessionId: string,
+  baseVersion: number,
   hiddenColumnIds: string[],
   stickyColumnIds: string[],
 ): Promise<WorkbookSession> {
   const payload = await workbookJsonRequest(() => workbookApiFetchData<WorkbookSession>(
     `sessions/${sessionId}/column-configuration`,
-    { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hidden_column_ids: hiddenColumnIds, sticky_column_ids: stickyColumnIds }) },
+    { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ base_version: baseVersion, hidden_column_ids: hiddenColumnIds, sticky_column_ids: stickyColumnIds }) },
   ))
   return workbookSessionSchema.parse(payload)
 }

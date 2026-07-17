@@ -378,6 +378,7 @@ class WorkbookRemoveColumnRequest(_WorkbookSchema):
 
 
 class WorkbookColumnConfigurationRequest(_WorkbookSchema):
+    base_version: int = Field(ge=1)
     hidden_column_ids: list[str] = Field(default_factory=list, max_length=500)
     sticky_column_ids: list[str] = Field(default_factory=list, max_length=500)
 

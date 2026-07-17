@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import time, timedelta
 from pathlib import Path
 
 import pytest
 from openpyxl import Workbook
+from openpyxl.styles import PatternFill
 
 from services.workbook_reader import (
     WorkbookCellReference,
@@ -419,3 +421,52 @@ def test_rejects_invalid_workbook_without_exposing_path(tmp_path: Path) -> None:
 
     assert error.value.code == "INVALID_XLSX"
     assert str(invalid_path) not in str(error.value)
+
+
+def test_normalizes_time_only_and_duration_values(tmp_path: Path) -> None:
+    path = tmp_path / "temporal.xlsx"
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Temporal"
+    worksheet.append(["Time", "Duration"])
+    worksheet.append([time(15, 30), timedelta(days=1, hours=2, minutes=3)])
+    worksheet["A2"].number_format = "hh:mm:ss"
+    worksheet["B2"].number_format = "[h]:mm:ss"
+    workbook.save(path)
+    workbook.close()
+
+    result = read_workbook_records(
+        path,
+        sheet_name="Temporal",
+        header_row_number=1,
+        column_mapping={},
+    )
+
+    assert result.records[0].values == {
+        "column_1": "15:30:00",
+        "column_2": "P1DT2H3M",
+    }
+
+
+def test_meaningful_bounds_ignore_formatting_only_tail(tmp_path: Path) -> None:
+    path = tmp_path / "formatted-tail.xlsx"
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Bounded"
+    worksheet.append(["Name", "Value"])
+    worksheet.append(["Row", 10])
+    worksheet.cell(1_048_576, 1).fill = PatternFill(fill_type="solid", fgColor="FFFFFF")
+    workbook.save(path)
+    workbook.close()
+
+    result = read_workbook_records(
+        path,
+        sheet_name="Bounded",
+        header_row_number=1,
+        column_mapping={},
+        meaningful_max_row=2,
+        meaningful_max_column=2,
+    )
+
+    assert [record.row_number for record in result.records] == [2]
+    assert [column.header for column in result.columns] == ["Name", "Value"]
