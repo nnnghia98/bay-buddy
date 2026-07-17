@@ -85,8 +85,20 @@ class WorkbookValidationError(ValueError):
 
 
 @dataclass(frozen=True, slots=True)
+class HeaderCandidateInspection:
+    """One bounded non-empty row that can be selected as a worksheet header."""
+
+    row_number: int
+    detected_headers: tuple[str, ...]
+    column_mapping: dict[str, int]
+    mapping_status: MappingStatus
+    missing_required_fields: tuple[str, ...]
+    ambiguous_fields: dict[str, tuple[int, ...]]
+
+
+@dataclass(frozen=True, slots=True)
 class WorksheetInspection:
-    """Safe worksheet metadata and detected business-column mapping."""
+    """Safe worksheet metadata and best-effort business-column mapping."""
 
     name: str
     max_row: int
@@ -97,6 +109,7 @@ class WorksheetInspection:
     mapping_status: MappingStatus
     missing_required_fields: tuple[str, ...]
     ambiguous_fields: dict[str, tuple[int, ...]]
+    header_candidates: tuple[HeaderCandidateInspection, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -423,36 +436,9 @@ def _first_non_empty_rows(
     return rows
 
 
-def _inspect_sheet(
-    *,
-    name: str,
-    max_row: int,
-    max_column: int,
-    non_empty_rows: list[tuple[int, tuple[object, ...]]],
-) -> WorksheetInspection:
-    candidates = [
-        candidate
-        for row_number, values in non_empty_rows
-        if (candidate := _header_candidate(row_number, values)).score > 0
-    ]
-    ready_candidates = [candidate for candidate in candidates if candidate.ready]
-    selectable = ready_candidates or candidates
-    selected = (
-        min(selectable, key=lambda item: (-item.score, item.row_number))
-        if selectable
-        else None
-    )
-    if selected is None and non_empty_rows:
-        row_number, values = non_empty_rows[0]
-        selected = _HeaderCandidate(
-            row_number=row_number,
-            headers=tuple("" if value is None else str(value).strip() for value in values),
-            mapping={},
-            ambiguous={},
-        )
-
-    mapping = dict(selected.mapping) if selected else {}
-    ambiguous = dict(selected.ambiguous) if selected else {}
+def _candidate_inspection(candidate: _HeaderCandidate) -> HeaderCandidateInspection:
+    mapping = dict(candidate.mapping)
+    ambiguous = dict(candidate.ambiguous)
     missing = tuple(
         field
         for field in _REQUIRED_FIELDS
@@ -464,17 +450,81 @@ def _inspect_sheet(
         status = MappingStatus.MAPPING_INCOMPLETE
     else:
         status = MappingStatus.READY
+    return HeaderCandidateInspection(
+        row_number=candidate.row_number,
+        detected_headers=candidate.headers,
+        column_mapping=mapping,
+        mapping_status=status,
+        missing_required_fields=missing,
+        ambiguous_fields=ambiguous,
+    )
+
+
+def _inspect_sheet(
+    *,
+    name: str,
+    max_row: int,
+    max_column: int,
+    non_empty_rows: list[tuple[int, tuple[object, ...]]],
+) -> WorksheetInspection:
+    candidates = [
+        _header_candidate(row_number, values)
+        for row_number, values in non_empty_rows
+    ]
+    mapped_candidates = [candidate for candidate in candidates if candidate.score > 0]
+    ready_candidates = [candidate for candidate in mapped_candidates if candidate.ready]
+    selectable = ready_candidates or mapped_candidates or candidates
+    exposed_candidates: list[_HeaderCandidate] = []
+    if candidates:
+        non_empty_counts = [
+            sum(bool(header) for header in candidate.headers)
+            for candidate in candidates
+        ]
+        densest_index = non_empty_counts.index(max(non_empty_counts))
+        exposed_candidates.extend(candidates[: densest_index + 1])
+    exposed_row_numbers = {candidate.row_number for candidate in exposed_candidates}
+    exposed_candidates.extend(
+        candidate
+        for candidate in mapped_candidates
+        if candidate.row_number not in exposed_row_numbers
+    )
+    exposed_candidates.sort(key=lambda candidate: candidate.row_number)
+    selected = (
+        min(selectable, key=lambda item: (-item.score, item.row_number))
+        if selectable
+        else None
+    )
+    selected_inspection = _candidate_inspection(selected) if selected else None
 
     return WorksheetInspection(
         name=name,
         max_row=max_row,
         max_column=max_column,
-        header_row_number=selected.row_number if selected else None,
-        detected_headers=selected.headers if selected else (),
-        column_mapping=mapping,
-        mapping_status=status,
-        missing_required_fields=missing,
-        ambiguous_fields=ambiguous,
+        header_row_number=(
+            selected_inspection.row_number if selected_inspection else None
+        ),
+        detected_headers=(
+            selected_inspection.detected_headers if selected_inspection else ()
+        ),
+        column_mapping=(
+            selected_inspection.column_mapping if selected_inspection else {}
+        ),
+        mapping_status=(
+            selected_inspection.mapping_status
+            if selected_inspection
+            else MappingStatus.MAPPING_INCOMPLETE
+        ),
+        missing_required_fields=(
+            selected_inspection.missing_required_fields
+            if selected_inspection
+            else _REQUIRED_FIELDS
+        ),
+        ambiguous_fields=(
+            selected_inspection.ambiguous_fields if selected_inspection else {}
+        ),
+        header_candidates=tuple(
+            _candidate_inspection(candidate) for candidate in exposed_candidates
+        ),
     )
 
 

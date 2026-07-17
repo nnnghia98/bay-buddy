@@ -12,11 +12,12 @@ import uuid
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from decimal import Decimal
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, BinaryIO, Iterator, Sequence
 
 from openpyxl import load_workbook
+from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
@@ -30,20 +31,34 @@ from models import (
     WorkbookSessionStatus,
     WorkbookVersion,
 )
+from services.workbook_formula import (
+    WorkbookFormulaError,
+    dependent_formula_columns,
+    evaluate_normalized_formula_columns,
+    normalize_column_formulas,
+    normalize_formula,
+    referenced_column_ids,
+    render_readable_expression,
+)
 from services.workbook_mutation import (
     PriceChange,
     WorkbookMutationError,
     apply_price_changes,
     add_workbook_column,
     remove_workbook_column,
+    update_workbook_column,
 )
 from services.workbook_reader import (
+    WorkbookCellReference,
+    WorkbookCellValueResult,
     WorkbookReadError,
     WorkbookRecordPage,
+    read_header_structure,
+    read_hidden_columns,
+    read_workbook_cell_values,
     read_workbook_records,
 )
 from services.workbook_validation import (
-    MappingStatus,
     WorkbookValidationError,
     WorksheetInspection,
     validate_and_inspect_workbook,
@@ -119,11 +134,58 @@ class EditingSessionDescriptor:
 
 
 @dataclass(frozen=True, slots=True)
+class SessionSummaryDescriptor:
+    id: uuid.UUID
+    display_name: str
+    original_filename: str
+    selected_sheet_name: str
+    current_version: int
+    status: WorkbookSessionStatus
+    created_at: datetime
+    updated_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class SessionListResult:
+    items: tuple[SessionSummaryDescriptor, ...]
+    page: int
+    page_size: int
+    total: int
+    total_pages: int
+
+
+@dataclass(frozen=True, slots=True)
 class SessionRecordsResult:
     session_id: uuid.UUID
     version: int
     sheet_name: str
     page: WorkbookRecordPage
+
+
+@dataclass(frozen=True, slots=True)
+class SessionCellValuesResult:
+    session_id: uuid.UUID
+    version: int
+    cells: tuple[WorkbookCellValueResult, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class FormulaPreviewRow:
+    row_number: int
+    value: int | float | None
+    error_code: str | None = None
+    error_message: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class FormulaPreviewResult:
+    valid: bool
+    normalized_formula: dict[str, Any] | None
+    readable_expression: str | None
+    referenced_column_ids: tuple[str, ...]
+    results: tuple[FormulaPreviewRow, ...]
+    errors: tuple[dict[str, Any], ...] = ()
+    warnings: tuple[dict[str, Any], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -239,6 +301,20 @@ def _sheet_metadata(sheet: WorksheetInspection) -> dict[str, Any]:
         "ambiguous_fields": {
             field: list(columns) for field, columns in sheet.ambiguous_fields.items()
         },
+        "header_candidates": [
+            {
+                "row_number": candidate.row_number,
+                "detected_headers": list(candidate.detected_headers),
+                "column_mapping": dict(candidate.column_mapping),
+                "mapping_status": candidate.mapping_status.value,
+                "missing_required_fields": list(candidate.missing_required_fields),
+                "ambiguous_fields": {
+                    field: list(columns)
+                    for field, columns in candidate.ambiguous_fields.items()
+                },
+            }
+            for candidate in sheet.header_candidates
+        ],
     }
 
 
@@ -476,6 +552,38 @@ def upload_workbook(
                     pass
 
 
+def _editor_primary_column_end(
+    path: Path,
+    worksheet: Any,
+    header_structure: dict[int, tuple[str, str | None, int]],
+    *,
+    legacy_source: bool,
+) -> int:
+    """Keep a legacy main header band visible while retaining its hidden tail."""
+
+    max_column = int(worksheet.max_column or 0)
+    if not legacy_source or max_column < 1:
+        return max_column
+
+    grouped_columns = [
+        column_number
+        for column_number, (_label, group_label, _row_span) in header_structure.items()
+        if group_label
+    ]
+    if not grouped_columns:
+        return max_column
+
+    group_end = max(grouped_columns)
+    trailing_columns = set(range(group_end + 1, max_column + 1))
+    if not trailing_columns:
+        return max_column
+
+    hidden_trailing = trailing_columns & read_hidden_columns(path, worksheet)
+    if len(hidden_trailing) * 2 < len(trailing_columns):
+        return max_column
+    return group_end
+
+
 def create_editing_session(
     db: Session,
     storage: WorkbookStorage,
@@ -483,24 +591,40 @@ def create_editing_session(
     actor: User,
     workbook_id: uuid.UUID,
     sheet_name: str,
+    header_row_number: int | None = None,
 ) -> EditingSessionDescriptor:
-    """Create an independent editing branch and immutable version 1."""
+    """Create an independent editing branch from an explicit header candidate."""
 
     try:
         workbook = _get_workbook(db, workbook_id, actor)
         sheet = _metadata_sheet(workbook, sheet_name)
-        mapping_status = sheet.get("mapping_status")
-        if mapping_status == MappingStatus.AMBIGUOUS_MAPPING.value:
-            raise WorkbookServiceError(
-                "AMBIGUOUS_MAPPING",
-                422,
-                "Worksheet price-column mapping is ambiguous.",
-                details={
-                    "ambiguous_fields": sheet.get("ambiguous_fields", {}),
-                },
-            )
-        header_row = sheet.get("header_row_number")
-        mapping = sheet.get("column_mapping")
+        requested_header = header_row_number or sheet.get("header_row_number")
+        candidates = sheet.get("header_candidates", [])
+        selected_candidate = next(
+            (
+                candidate
+                for candidate in candidates
+                if candidate.get("row_number") == requested_header
+            ),
+            None,
+        )
+        if selected_candidate is None:
+            if requested_header == sheet.get("header_row_number"):
+                selected_candidate = sheet
+            else:
+                raise WorkbookServiceError(
+                    "INVALID_ROW",
+                    422,
+                    "Header row must be one of the inspected worksheet candidates.",
+                    details={
+                        "header_row_numbers": [
+                            candidate.get("row_number") for candidate in candidates
+                        ]
+                    },
+                )
+        header_row = selected_candidate.get("row_number", requested_header)
+        mapping = selected_candidate.get("column_mapping", {})
+        headers = selected_candidate.get("detected_headers", [])
         if not isinstance(header_row, int) or not isinstance(mapping, dict):
             raise WorkbookServiceError(
                 "INVALID_ROW", 422, "Worksheet header row is unavailable."
@@ -525,26 +649,62 @@ def create_editing_session(
                 "STORAGE_OBJECT_MISSING", 500, "Workbook original failed integrity checking."
             )
 
-        headers = sheet.get("detected_headers", [])
         semantic_by_column = {int(column): field for field, column in mapping.items()}
         inferred_types: dict[int, str] = {}
         with _materialized_object(storage, key=stored.key, checksum=stored.checksum, expected_size=stored.size) as session_path:
             source_workbook = load_workbook(session_path, read_only=True, data_only=False)
             try:
                 source_sheet = source_workbook[sheet_name]
-                for column_number in range(1, source_sheet.max_column + 1):
-                    inferred = "text"
-                    for row_number in range(header_row + 1, min(source_sheet.max_row, header_row + 50) + 1):
-                        cell = source_sheet.cell(row_number, column_number)
+                header_end_row, header_structure = read_header_structure(
+                    source_sheet, header_row
+                )
+                primary_column_end = _editor_primary_column_end(
+                    session_path,
+                    source_sheet,
+                    header_structure,
+                    legacy_source=Path(workbook.original_filename).suffix.casefold()
+                    == ".xls",
+                )
+                inferred_types = {
+                    column_number: "text"
+                    for column_number in range(1, source_sheet.max_column + 1)
+                }
+                unresolved_columns = set(inferred_types)
+                for row in source_sheet.iter_rows(
+                    min_row=header_end_row + 1,
+                    max_row=source_sheet.max_row,
+                    min_col=1,
+                    max_col=source_sheet.max_column,
+                ):
+                    for column_number in tuple(unresolved_columns):
+                        cell = row[column_number - 1]
                         if cell.value is None:
                             continue
-                        if isinstance(cell.value, (datetime,)) or cell.is_date:
-                            inferred = "date"
-                        elif isinstance(cell.value, (int, float)) and not isinstance(cell.value, bool):
+                        if isinstance(cell.value, bool):
+                            inferred_types[column_number] = "boolean"
+                        elif isinstance(cell.value, (date, datetime)) or cell.is_date:
+                            inferred_types[column_number] = "date"
+                        elif isinstance(cell.value, (int, float)):
                             format_text = str(cell.number_format).casefold()
-                            inferred = "currency" if any(token in format_text for token in ("₫", "vnd", "[$₫")) else "number"
+                            inferred_types[column_number] = (
+                                "currency"
+                                if any(
+                                    token in format_text
+                                    for token in (
+                                        "₫",
+                                        "vnd",
+                                        "[$₫",
+                                        "$",
+                                        "€",
+                                        "£",
+                                        "¥",
+                                    )
+                                )
+                                else "number"
+                            )
+                        unresolved_columns.remove(column_number)
+                    if not unresolved_columns:
                         break
-                    inferred_types[column_number] = inferred
             finally:
                 source_workbook.close()
         column_config = [
@@ -559,7 +719,7 @@ def create_editing_session(
                 "column_number": column_number,
                 "origin": "source",
                 "data_type": "currency" if semantic_by_column.get(column_number) in {"net_price", "selling_price"} else inferred_types.get(column_number, "text"),
-                "hidden": str(headers[column_number - 1] if column_number <= len(headers) else "").strip().casefold() in {"no.", "no", "stt", "số tt", "số thứ tự"},
+                "hidden": column_number > primary_column_end,
                 "sticky": False,
                 "semantic_field": semantic_by_column.get(column_number),
             }
@@ -615,6 +775,15 @@ def _normalized_column_config(
         if item.get("label") is None:
             item["label"] = ""
         normalized.append(item)
+    try:
+        normalized, _order = normalize_column_formulas(normalized)
+    except WorkbookFormulaError as exc:
+        raise WorkbookServiceError(
+            exc.code,
+            _error_status(exc.code),
+            str(exc),
+            details=exc.details,
+        ) from exc
     return normalized
 
 
@@ -639,11 +808,115 @@ def _describe_session(
     )
 
 
+def _ensure_legacy_session_visibility(
+    db: Session,
+    storage: WorkbookStorage,
+    editing_session: WorkbookSession,
+    workbook: Workbook,
+) -> None:
+    """Upgrade untouched legacy column visibility without changing workbook data."""
+
+    if Path(workbook.original_filename).suffix.casefold() != ".xls":
+        return
+    config = _normalized_column_config(editing_session)
+    source_columns = [item for item in config if item.get("origin") == "source"]
+    hidden_source_columns = [item for item in source_columns if item.get("hidden")]
+    if any(
+        str(item.get("label", "")).strip().casefold()
+        not in {"no.", "no", "stt", "số tt", "số thứ tự"}
+        for item in hidden_source_columns
+    ):
+        return
+
+    version = _get_version(
+        db,
+        session_id=_id(editing_session.id),
+        version_number=editing_session.current_version,
+    )
+    with _materialized_object(
+        storage,
+        key=version.relative_path,
+        checksum=version.checksum,
+        expected_size=version.file_size,
+    ) as path:
+        source_workbook = load_workbook(path, read_only=True, data_only=False)
+        try:
+            source_sheet = source_workbook[editing_session.selected_sheet_name]
+            _header_end_row, header_structure = read_header_structure(
+                source_sheet,
+                editing_session.header_row_number,
+            )
+            primary_column_end = _editor_primary_column_end(
+                path,
+                source_sheet,
+                header_structure,
+                legacy_source=True,
+            )
+            source_max_column = int(source_sheet.max_column or 0)
+            if primary_column_end == source_max_column:
+                grouped_columns = [
+                    column_number
+                    for column_number, (
+                        _label,
+                        group_label,
+                        _row_span,
+                    ) in header_structure.items()
+                    if group_label
+                ]
+                legacy_group_end = max(grouped_columns, default=source_max_column)
+                # Versions created before XLS visibility preservation have no
+                # hidden-column metadata. Only repair a large untouched tail.
+                if source_max_column - legacy_group_end >= 8:
+                    primary_column_end = legacy_group_end
+        finally:
+            source_workbook.close()
+    if primary_column_end >= max(
+        (int(item["column_number"]) for item in source_columns),
+        default=0,
+    ):
+        return
+
+    updated = [
+        {
+            **item,
+            "hidden": (
+                int(item["column_number"]) > primary_column_end
+                if item.get("origin") == "source"
+                else bool(item.get("hidden", False))
+            ),
+        }
+        for item in config
+    ]
+    if updated == config:
+        return
+    editing_session.column_config = updated
+    db.add(editing_session)
+    db.commit()
+    db.refresh(editing_session)
+
+
+def _session_summary(
+    editing_session: WorkbookSession,
+    original_filename: str,
+) -> SessionSummaryDescriptor:
+    return SessionSummaryDescriptor(
+        id=_id(editing_session.id),
+        display_name=(editing_session.display_name or "").strip() or original_filename,
+        original_filename=original_filename,
+        selected_sheet_name=editing_session.selected_sheet_name,
+        current_version=editing_session.current_version,
+        status=editing_session.status,
+        created_at=_utc_datetime(editing_session.created_at),
+        updated_at=_utc_datetime(editing_session.updated_at),
+    )
+
+
 def get_editing_session(
     db: Session,
     *,
     actor: User,
     session_id: uuid.UUID,
+    storage: WorkbookStorage | None = None,
 ) -> EditingSessionDescriptor:
     editing_session = _get_session(db, session_id, actor)
     workbook = db.get(Workbook, editing_session.workbook_id)
@@ -651,7 +924,149 @@ def get_editing_session(
         raise WorkbookServiceError(
             "WORKBOOK_NOT_FOUND", 404, "Workbook was not found."
         )
+    if storage is not None:
+        _ensure_legacy_session_visibility(db, storage, editing_session, workbook)
     return _describe_session(editing_session, workbook.original_filename)
+
+
+def list_editing_sessions(
+    db: Session,
+    *,
+    actor: User,
+    page: int = 1,
+    page_size: int = 10,
+    search: str | None = None,
+    session_status: WorkbookSessionStatus | None = None,
+) -> SessionListResult:
+    """List the authenticated user's sessions, newest activity first."""
+
+    if page < 1 or page_size < 1 or page_size > 100:
+        raise WorkbookServiceError(
+            "INVALID_PAGINATION", 422, "Session pagination is invalid."
+        )
+
+    conditions = []
+    if actor.role != UserRole.ADMIN:
+        conditions.append(WorkbookSession.created_by == _id(actor.id))
+    if session_status is None:
+        conditions.append(WorkbookSession.status != WorkbookSessionStatus.DISCARDED)
+    else:
+        conditions.append(WorkbookSession.status == session_status)
+
+    normalized_search = search.strip() if search else ""
+    if normalized_search:
+        pattern = f"%{normalized_search}%"
+        conditions.append(
+            or_(
+                WorkbookSession.display_name.ilike(pattern),
+                Workbook.original_filename.ilike(pattern),
+                WorkbookSession.selected_sheet_name.ilike(pattern),
+            )
+        )
+
+    total = db.exec(
+        select(func.count())
+        .select_from(WorkbookSession)
+        .join(Workbook, WorkbookSession.workbook_id == Workbook.id)
+        .where(*conditions)
+    ).one()
+    rows = db.exec(
+        select(WorkbookSession, Workbook)
+        .join(Workbook, WorkbookSession.workbook_id == Workbook.id)
+        .where(*conditions)
+        .order_by(
+            WorkbookSession.updated_at.desc(),
+            WorkbookSession.created_at.desc(),
+        )
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    ).all()
+    return SessionListResult(
+        items=tuple(
+            _session_summary(editing_session, workbook.original_filename)
+            for editing_session, workbook in rows
+        ),
+        page=page,
+        page_size=page_size,
+        total=total,
+        total_pages=math.ceil(total / page_size) if total else 0,
+    )
+
+
+def rename_editing_session(
+    db: Session,
+    *,
+    actor: User,
+    session_id: uuid.UUID,
+    display_name: str,
+) -> SessionSummaryDescriptor:
+    """Rename an active session without changing workbook contents."""
+
+    normalized_name = display_name.strip()
+    if not normalized_name or len(normalized_name) > 255:
+        raise WorkbookServiceError(
+            "INVALID_SESSION_NAME", 422, "Session name is invalid."
+        )
+    try:
+        editing_session = _get_session(db, session_id, actor)
+        if editing_session.status != WorkbookSessionStatus.DRAFT:
+            raise WorkbookServiceError(
+                "SESSION_NOT_ACTIVE", 409, "Editing session is not active."
+            )
+        workbook = db.get(Workbook, editing_session.workbook_id)
+        if workbook is None:
+            raise WorkbookServiceError(
+                "WORKBOOK_NOT_FOUND", 404, "Workbook was not found."
+            )
+        editing_session.display_name = normalized_name
+        editing_session.updated_at = utc_now()
+        db.add(editing_session)
+        db.commit()
+        return _session_summary(editing_session, workbook.original_filename)
+    except WorkbookServiceError:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        raise WorkbookServiceError(
+            "SESSION_UPDATE_FAILED", 500, "Session could not be renamed."
+        ) from exc
+
+
+def discard_editing_session(
+    db: Session,
+    *,
+    actor: User,
+    session_id: uuid.UUID,
+) -> SessionSummaryDescriptor:
+    """Soft-discard an active session while preserving its audit history."""
+
+    try:
+        editing_session = _get_session(db, session_id, actor)
+        if editing_session.status != WorkbookSessionStatus.DRAFT:
+            raise WorkbookServiceError(
+                "SESSION_NOT_ACTIVE", 409, "Editing session is not active."
+            )
+        workbook = db.get(Workbook, editing_session.workbook_id)
+        if workbook is None:
+            raise WorkbookServiceError(
+                "WORKBOOK_NOT_FOUND", 404, "Workbook was not found."
+            )
+        discarded_at = utc_now()
+        editing_session.status = WorkbookSessionStatus.DISCARDED
+        editing_session.discarded_at = discarded_at
+        editing_session.updated_at = discarded_at
+        db.add(editing_session)
+        db.commit()
+        return _session_summary(editing_session, workbook.original_filename)
+    except WorkbookServiceError:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        raise WorkbookServiceError(
+            "SESSION_UPDATE_FAILED", 500, "Session could not be discarded."
+        ) from exc
 
 
 def get_latest_editing_session(
@@ -695,6 +1110,12 @@ def read_session_records(
     sort_direction: str = "asc",
 ) -> SessionRecordsResult:
     editing_session = _get_session(db, session_id, actor)
+    workbook = db.get(Workbook, editing_session.workbook_id)
+    if workbook is None:
+        raise WorkbookServiceError(
+            "WORKBOOK_NOT_FOUND", 404, "Workbook was not found."
+        )
+    _ensure_legacy_session_visibility(db, storage, editing_session, workbook)
     version = _get_version(
         db,
         session_id=_id(editing_session.id),
@@ -733,7 +1154,223 @@ def read_session_records(
         raise _translate_domain_error(exc) from exc
 
 
+def lookup_session_cell_values(
+    db: Session,
+    storage: WorkbookStorage,
+    *,
+    actor: User,
+    session_id: uuid.UUID,
+    base_version: int,
+    cells: Sequence[WorkbookCellReference],
+    max_cells: int = 500,
+) -> SessionCellValuesResult:
+    """Read current sparse cells for safe client-side draft reconciliation."""
+
+    editing_session = _get_session(db, session_id, actor)
+    if base_version != editing_session.current_version:
+        raise WorkbookServiceError(
+            "VERSION_CONFLICT",
+            409,
+            "Workbook session has a newer version.",
+            details={"current_version": editing_session.current_version},
+        )
+    version = _get_version(
+        db,
+        session_id=_id(editing_session.id),
+        version_number=base_version,
+    )
+    try:
+        with _materialized_object(
+            storage,
+            key=version.relative_path,
+            checksum=version.checksum,
+            expected_size=version.file_size,
+        ) as path:
+            values = read_workbook_cell_values(
+                path,
+                sheet_name=editing_session.selected_sheet_name,
+                header_row_number=editing_session.header_row_number,
+                column_config=_normalized_column_config(editing_session),
+                cells=cells,
+                max_cells=max_cells,
+            )
+        return SessionCellValuesResult(
+            session_id=session_id,
+            version=version.version_number,
+            cells=values,
+        )
+    except WorkbookReadError as exc:
+        raise _translate_domain_error(exc) from exc
+
+
+def preview_session_formula(
+    db: Session,
+    storage: WorkbookStorage,
+    *,
+    actor: User,
+    session_id: uuid.UUID,
+    base_version: int,
+    formula: dict[str, Any],
+    output_type: str,
+    output_column_id: str | None = None,
+    sample_rows: Sequence[int] | None = None,
+) -> FormulaPreviewResult:
+    """Validate and evaluate a proposed formula without mutating the session."""
+
+    editing_session = _get_session(db, session_id, actor)
+    if base_version != editing_session.current_version:
+        raise WorkbookServiceError(
+            "VERSION_CONFLICT",
+            409,
+            "Workbook session has a newer version.",
+            details={"current_version": editing_session.current_version},
+        )
+    config = _normalized_column_config(editing_session)
+    preview_column_id = output_column_id or "__formula_preview__"
+    target = next(
+        (item for item in config if item.get("id") == preview_column_id),
+        None,
+    )
+    if output_column_id is not None and target is None:
+        raise WorkbookServiceError("COLUMN_NOT_FOUND", 404, "Column was not found.")
+    proposed_column = {
+        **(target or {}),
+        "id": preview_column_id,
+        "label": (target or {}).get("label") or "Formula preview",
+        "column_number": int((target or {}).get("column_number") or (max(int(item["column_number"]) for item in config) + 1)),
+        "origin": "user",
+        "data_type": output_type,
+        "formula": formula,
+    }
+    proposed_config = [
+        proposed_column if item.get("id") == preview_column_id else item
+        for item in config
+    ]
+    if target is None:
+        proposed_config.append(proposed_column)
+
+    try:
+        normalized_config, formula_order = normalize_column_formulas(proposed_config)
+        normalized_proposed = next(
+            item for item in normalized_config if item["id"] == preview_column_id
+        )["formula"]
+        expression = render_readable_expression(normalized_proposed, normalized_config)
+        references = referenced_column_ids(normalized_proposed)
+    except WorkbookFormulaError as exc:
+        return FormulaPreviewResult(
+            valid=False,
+            normalized_formula=None,
+            readable_expression=None,
+            referenced_column_ids=(),
+            results=(),
+            errors=(
+                {
+                    "code": exc.code,
+                    "message": str(exc),
+                    "details": exc.details,
+                },
+            ),
+        )
+
+    version = _get_version(db, session_id=session_id, version_number=base_version)
+    try:
+        with _materialized_object(
+            storage,
+            key=version.relative_path,
+            checksum=version.checksum,
+            expected_size=version.file_size,
+        ) as path:
+            workbook = load_workbook(path, read_only=True, data_only=False)
+            try:
+                if editing_session.selected_sheet_name not in workbook.sheetnames:
+                    raise WorkbookServiceError(
+                        "SHEET_NOT_FOUND", 404, "Worksheet was not found."
+                    )
+                worksheet = workbook[editing_session.selected_sheet_name]
+                header_end_row, _structure = read_header_structure(
+                    worksheet, editing_session.header_row_number
+                )
+                requested_rows = list(sample_rows or [])
+                if requested_rows:
+                    if any(
+                        isinstance(row_number, bool)
+                        or row_number <= header_end_row
+                        or row_number > worksheet.max_row
+                        for row_number in requested_rows
+                    ):
+                        raise WorkbookServiceError(
+                            "INVALID_ROW", 422, "A preview row is outside the workbook data area."
+                        )
+                else:
+                    requested_rows = [
+                        row_number
+                        for row_number in range(header_end_row + 1, worksheet.max_row + 1)
+                        if any(
+                            worksheet.cell(row_number, int(item["column_number"])).value
+                            not in (None, "")
+                            for item in config
+                            if not item.get("formula")
+                        )
+                    ][:5]
+
+                results: list[FormulaPreviewRow] = []
+                for row_number in requested_rows:
+                    values = {
+                        str(item["id"]): worksheet.cell(
+                            row_number, int(item["column_number"])
+                        ).value
+                        for item in config
+                    }
+                    values, evaluations = evaluate_normalized_formula_columns(
+                        normalized_config, formula_order, values
+                    )
+                    evaluation = evaluations[preview_column_id]
+                    results.append(
+                        FormulaPreviewRow(
+                            row_number=row_number,
+                            value=evaluation.value,
+                            error_code=evaluation.error_code,
+                            error_message=evaluation.error_message,
+                        )
+                    )
+            finally:
+                workbook.close()
+    except WorkbookServiceError:
+        raise
+    except (WorkbookReadError, OSError, ValueError, KeyError) as exc:
+        raise _translate_domain_error(exc) from exc
+
+    warnings: list[dict[str, Any]] = []
+    if not results:
+        warnings.append(
+            {
+                "code": "NO_PREVIEW_ROWS",
+                "message": "No populated workbook rows are available for preview.",
+                "details": {},
+            }
+        )
+    row_errors = [result for result in results if result.error_code]
+    if row_errors:
+        warnings.append(
+            {
+                "code": "PREVIEW_ROW_ERRORS",
+                "message": "Formula could not be evaluated for one or more preview rows.",
+                "details": {"row_numbers": [result.row_number for result in row_errors]},
+            }
+        )
+    return FormulaPreviewResult(
+        valid=not row_errors,
+        normalized_formula=normalized_proposed,
+        readable_expression=expression,
+        referenced_column_ids=references,
+        results=tuple(results),
+        warnings=tuple(warnings),
+    )
+
+
 def _json_value(value: Any) -> Any:
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
     if isinstance(value, Decimal):
         return str(value)
     if isinstance(value, float):
@@ -910,7 +1547,10 @@ def _save_session_changes_locked(
                     "STORAGE_WRITE_FAILED", 500, "Workbook version could not be stored."
                 ) from exc
 
-        audited_changes = [asdict(change) for change in mutation.changes]
+        audited_changes = [
+            {key: _json_value(value) for key, value in asdict(change).items()}
+            for change in mutation.changes
+        ]
         version = WorkbookVersion(
             id=next_version_id,
             session_id=session_id,
@@ -1002,7 +1642,7 @@ def add_session_column(
     base_version: int,
     label: str,
     data_type: str,
-    formula: dict[str, str] | None = None,
+    formula: dict[str, Any] | None = None,
 ) -> EditingSessionDescriptor:
     """Append an arbitrary user-owned column as an immutable version."""
 
@@ -1038,32 +1678,30 @@ def add_session_column(
                 db, session_id=session_id, version_number=base_version
             )
             config = _normalized_column_config(editing_session)
-            formula_for_mutation: dict[str, object] | None = None
-            if formula is not None:
-                by_id = {str(item.get("id")): item for item in config}
-                left = by_id.get(formula["left_column_id"])
-                right = by_id.get(formula["right_column_id"])
-                if left is None or right is None:
-                    raise WorkbookServiceError(
-                        "INVALID_FORMULA", 422, "Formula references an unknown column."
-                    )
-                if left.get("formula") or right.get("formula"):
-                    raise WorkbookServiceError(
-                        "INVALID_FORMULA", 422, "Formula columns cannot be used as operands."
-                    )
-                if left.get("data_type") not in {"number", "currency"} or right.get(
-                    "data_type"
-                ) not in {"number", "currency"}:
-                    raise WorkbookServiceError(
-                        "INVALID_FORMULA",
-                        422,
-                        "Formula operands must be number or currency columns.",
-                    )
-                formula_for_mutation = {
-                    "left_column_number": int(left["column_number"]),
-                    "operator": formula["operator"],
-                    "right_column_number": int(right["column_number"]),
-                }
+            column_id = f"user-{uuid.uuid4()}"
+            new_column = {
+                "id": column_id,
+                "label": normalized_label,
+                "column_number": max(int(item["column_number"]) for item in config) + 1,
+                "origin": "user",
+                "data_type": data_type,
+                "hidden": False,
+                "sticky": False,
+                "semantic_field": None,
+                "formula": formula,
+            }
+            proposed_config = config + [new_column]
+            try:
+                proposed_config, _formula_order = normalize_column_formulas(
+                    proposed_config
+                )
+            except WorkbookFormulaError as exc:
+                raise WorkbookServiceError(
+                    exc.code,
+                    _error_status(exc.code),
+                    str(exc),
+                    details=exc.details,
+                ) from exc
             next_number = base_version + 1
             version_id = uuid.uuid4()
             key = f"sessions/{session_id}/{next_number:06d}-{version_id}.xlsx"
@@ -1080,25 +1718,15 @@ def add_session_column(
                     sheet_name=editing_session.selected_sheet_name,
                     header_row_number=editing_session.header_row_number,
                     label=normalized_label,
-                    formula=formula_for_mutation,
+                    column_config=proposed_config,
                 )
                 with output_path.open("rb") as generated:
                     stored = storage.put_immutable(key=key, source=generated)
-            column_id = f"user-{uuid.uuid4()}"
-            config.append(
-                {
-                    "id": column_id,
-                    "label": normalized_label,
-                    "column_number": mutation.column_number,
-                    "origin": "user",
-                    "data_type": data_type,
-                    "hidden": False,
-                    "sticky": False,
-                    "semantic_field": None,
-                    "formula": formula,
-                }
-            )
-            editing_session.column_config = config
+            if mutation.column_number != int(new_column["column_number"]):
+                raise WorkbookServiceError(
+                    "STORAGE_WRITE_FAILED", 500, "Workbook column position is invalid."
+                )
+            editing_session.column_config = proposed_config
             editing_session.current_version = next_number
             editing_session.updated_at = utc_now()
             db.add(
@@ -1133,6 +1761,153 @@ def add_session_column(
             db.rollback()
             raise WorkbookServiceError(
                 "STORAGE_WRITE_FAILED", 500, "Workbook column could not be added."
+            ) from exc
+
+
+def update_session_column(
+    db: Session,
+    storage: WorkbookStorage,
+    *,
+    actor: User,
+    session_id: uuid.UUID,
+    column_id: str,
+    base_version: int,
+    label: str | None = None,
+    data_type: str | None = None,
+    formula: dict[str, Any] | None = None,
+    formula_was_provided: bool = False,
+) -> EditingSessionDescriptor:
+    """Rename or edit a user formula column as one immutable version."""
+
+    with _serialize_local_save(db, session_id):
+        try:
+            editing_session = db.exec(
+                select(WorkbookSession)
+                .where(WorkbookSession.id == session_id)
+                .with_for_update()
+            ).one_or_none()
+            if editing_session is None:
+                raise WorkbookServiceError("SESSION_NOT_FOUND", 404, "Session was not found.")
+            _authorize_owner(actor=actor, owner_id=editing_session.created_by)
+            if editing_session.status != WorkbookSessionStatus.DRAFT:
+                raise WorkbookServiceError(
+                    "SESSION_NOT_ACTIVE", 409, "Editing session is not active."
+                )
+            if base_version != editing_session.current_version:
+                raise WorkbookServiceError(
+                    "VERSION_CONFLICT",
+                    409,
+                    "Workbook session has a newer version.",
+                    details={"current_version": editing_session.current_version},
+                )
+            config = _normalized_column_config(editing_session)
+            target = next((item for item in config if item.get("id") == column_id), None)
+            if target is None:
+                raise WorkbookServiceError("COLUMN_NOT_FOUND", 404, "Column was not found.")
+            if target.get("origin") != "user":
+                raise WorkbookServiceError(
+                    "SOURCE_COLUMN_IMMUTABLE",
+                    422,
+                    "Columns from the uploaded workbook cannot be renamed or assigned formulas.",
+                )
+
+            next_label = label.strip() if label is not None else str(target.get("label") or "")
+            if not next_label:
+                raise WorkbookServiceError(
+                    "INVALID_COLUMN", 422, "Column label cannot be blank."
+                )
+            next_type = data_type or str(target.get("data_type", "text"))
+            next_formula = formula if formula_was_provided else target.get("formula")
+            if next_formula is not None and next_type not in {"number", "currency"}:
+                raise WorkbookServiceError(
+                    "INVALID_FORMULA_OUTPUT_TYPE",
+                    422,
+                    "Formula output must be number or currency.",
+                )
+            updated_target = {
+                **target,
+                "label": next_label,
+                "data_type": next_type,
+                "formula": next_formula,
+            }
+            proposed_config = [
+                updated_target if item.get("id") == column_id else item
+                for item in config
+            ]
+            try:
+                proposed_config, _formula_order = normalize_column_formulas(
+                    proposed_config
+                )
+            except WorkbookFormulaError as exc:
+                raise WorkbookServiceError(
+                    exc.code,
+                    _error_status(exc.code),
+                    str(exc),
+                    details=exc.details,
+                ) from exc
+            if proposed_config == config:
+                raise WorkbookServiceError(
+                    "NO_CHANGES", 422, "Column update does not change the workbook."
+                )
+
+            current = _get_version(db, session_id=session_id, version_number=base_version)
+            next_number, version_id = base_version + 1, uuid.uuid4()
+            key = f"sessions/{session_id}/{next_number:06d}-{version_id}.xlsx"
+            with _materialized_object(
+                storage,
+                key=current.relative_path,
+                checksum=current.checksum,
+                expected_size=current.file_size,
+            ) as source_path, tempfile.TemporaryDirectory() as directory:
+                output_path = Path(directory) / "output.xlsx"
+                update_workbook_column(
+                    source_path,
+                    output_path,
+                    sheet_name=editing_session.selected_sheet_name,
+                    header_row_number=editing_session.header_row_number,
+                    column_number=int(target["column_number"]),
+                    label=next_label,
+                    column_config=proposed_config,
+                    clear_column_values=bool(target.get("formula")) and next_formula is None,
+                )
+                with output_path.open("rb") as generated:
+                    stored = storage.put_immutable(key=key, source=generated)
+
+            editing_session.column_config = proposed_config
+            editing_session.current_version = next_number
+            editing_session.updated_at = utc_now()
+            db.add(
+                WorkbookVersion(
+                    id=version_id,
+                    session_id=session_id,
+                    version_number=next_number,
+                    relative_path=stored.key,
+                    checksum=stored.checksum,
+                    file_size=stored.size,
+                    change_summary={
+                        "type": "UPDATE_COLUMN",
+                        "column_id": column_id,
+                        "formula_updated": formula_was_provided,
+                    },
+                    created_by=_id(actor.id),
+                )
+            )
+            db.add(editing_session)
+            db.commit()
+            workbook = db.get(Workbook, editing_session.workbook_id)
+            if workbook is None:
+                raise WorkbookServiceError("WORKBOOK_NOT_FOUND", 404, "Workbook was not found.")
+            return _describe_session(editing_session, workbook.original_filename)
+        except WorkbookServiceError:
+            db.rollback()
+            raise
+        except WorkbookMutationError as exc:
+            db.rollback()
+            raise _translate_domain_error(exc) from exc
+        except Exception as exc:
+            db.rollback()
+            raise WorkbookServiceError(
+                "STORAGE_WRITE_FAILED", 500, "Workbook column could not be updated."
             ) from exc
 
 
@@ -1181,19 +1956,33 @@ def remove_session_column(
                     422,
                     "Columns from the uploaded workbook cannot be removed.",
                 )
-            if any(
-                item.get("formula")
-                and column_id
-                in {
-                    item["formula"].get("left_column_id"),
-                    item["formula"].get("right_column_id"),
-                }
-                for item in config
-            ):
+            dependents = dependent_formula_columns(config, column_id)
+            if dependents:
                 raise WorkbookServiceError(
-                    "COLUMN_IN_USE", 422, "Column is referenced by a formula and cannot be removed."
+                    "COLUMN_IN_USE",
+                    422,
+                    "Column is referenced by a formula and cannot be removed.",
+                    details={"dependent_column_ids": list(dependents)},
                 )
             column_number = int(target["column_number"])
+            next_config = [
+                {
+                    **item,
+                    "column_number": int(item["column_number"])
+                    - (1 if int(item["column_number"]) > column_number else 0),
+                }
+                for item in config
+                if item.get("id") != column_id
+            ]
+            try:
+                next_config, _formula_order = normalize_column_formulas(next_config)
+            except WorkbookFormulaError as exc:
+                raise WorkbookServiceError(
+                    exc.code,
+                    _error_status(exc.code),
+                    str(exc),
+                    details=exc.details,
+                ) from exc
             current = _get_version(
                 db, session_id=session_id, version_number=base_version
             )
@@ -1211,18 +2000,12 @@ def remove_session_column(
                     output_path,
                     sheet_name=editing_session.selected_sheet_name,
                     column_number=column_number,
+                    header_row_number=editing_session.header_row_number,
+                    column_config=next_config,
                 )
                 with output_path.open("rb") as generated:
                     stored = storage.put_immutable(key=key, source=generated)
-            editing_session.column_config = [
-                {
-                    **item,
-                    "column_number": int(item["column_number"])
-                    - (1 if int(item["column_number"]) > column_number else 0),
-                }
-                for item in config
-                if item.get("id") != column_id
-            ]
+            editing_session.column_config = next_config
             editing_session.column_mapping = {
                 field: int(number) - (1 if int(number) > column_number else 0)
                 for field, number in editing_session.column_mapping.items()
@@ -1271,6 +2054,10 @@ def update_session_column_configuration(
 ) -> EditingSessionDescriptor:
     """Persist display-only preferences without creating a workbook version."""
     editing_session = _get_session(db, session_id, actor)
+    if editing_session.status != WorkbookSessionStatus.DRAFT:
+        raise WorkbookServiceError(
+            "SESSION_NOT_ACTIVE", 409, "Editing session is not active."
+        )
     known = {str(item.get("id")) for item in editing_session.column_config}
     requested = set(hidden_column_ids) | set(sticky_column_ids)
     if requested - known:

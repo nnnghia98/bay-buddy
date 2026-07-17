@@ -5,7 +5,7 @@ vi.mock("@/lib/api-base", () => ({
   getServerApiBaseUrl: () => "http://api.internal/api/v1",
 }))
 
-import { GET, PATCH, POST } from "./route"
+import { DELETE, GET, PATCH, POST } from "./route"
 
 beforeEach(() => {
   vi.unstubAllGlobals()
@@ -96,6 +96,27 @@ describe("workbook same-origin proxy", () => {
       "http://api.internal/api/v1/workbooks/sessions/id/column-configuration",
     )
     expect(init.method).toBe("PATCH")
+    expect(response.status).toBe(200)
+  })
+
+  it("forwards session DELETE requests", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({ success: true, data: { id: "session", status: "DISCARDED" } }),
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    const response = await DELETE(
+      new Request("http://web.test/api/workbooks/sessions/id", {
+        method: "DELETE",
+        headers: { Authorization: "Bearer token" },
+      }),
+      { params: Promise.resolve({ path: ["sessions", "id"] }) },
+    )
+
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit]
+    expect(url.toString()).toBe("http://api.internal/api/v1/workbooks/sessions/id")
+    expect(init.method).toBe("DELETE")
+    expect((init.headers as Headers).get("authorization")).toBe("Bearer token")
     expect(response.status).toBe(200)
   })
 

@@ -71,3 +71,4 @@ export const dynamic = "force-dynamic"
 export const GET = proxyWorkbookRequest
 export const POST = proxyWorkbookRequest
 export const PATCH = proxyWorkbookRequest
+export const DELETE = proxyWorkbookRequest

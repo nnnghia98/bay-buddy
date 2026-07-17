@@ -14,12 +14,18 @@ from zipfile import BadZipFile, ZipFile
 from dataclasses import dataclass
 from datetime import date, datetime, time
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, Sequence
 
 from openpyxl import load_workbook
 from openpyxl.cell import Cell
 from openpyxl.utils.exceptions import InvalidFileException
 from openpyxl.utils.cell import range_boundaries
+
+from services.workbook_formula import (
+    WorkbookFormulaError,
+    evaluate_normalized_formula_columns,
+    normalize_column_formulas,
+)
 
 
 PRICE_FIELDS: Final = frozenset({"net_price", "selling_price"})
@@ -55,6 +61,7 @@ class WorkbookColumn:
     group_label: str | None = None
     header_row_span: int = 1
     formula: dict[str, Any] | None = None
+    number_format: str | None = None
 
 
 @dataclass(frozen=True)
@@ -64,6 +71,19 @@ class WorkbookRecord:
     row_number: int
     values: dict[str, Any]
     editable: dict[str, bool]
+
+
+@dataclass(frozen=True, slots=True)
+class WorkbookCellReference:
+    row_number: int
+    column_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class WorkbookCellValueResult:
+    row_number: int
+    column_id: str
+    value: Any
 
 
 @dataclass(frozen=True)
@@ -90,7 +110,7 @@ def _source_header_text(value: Any) -> str:
     return "" if value is None else str(value)
 
 
-def _read_header_structure(
+def read_header_structure(
     worksheet: Any,
     header_row_number: int,
 ) -> tuple[int, dict[int, tuple[str, str | None, int]]]:
@@ -230,10 +250,12 @@ def _validate_request(
             "AMBIGUOUS_MAPPING",
             "Each semantic field must map to a different Excel column.",
         )
-    if sort_by is not None and sort_by not in fields:
+    if sort_by is not None and (
+        not isinstance(sort_by, str) or not sort_by or len(sort_by) > 64
+    ):
         raise WorkbookReadError(
             "INVALID_SORT",
-            "Sort field must be one of the mapped semantic fields.",
+            "Sort column ID must be a non-empty string of at most 64 characters.",
         )
     if sort_direction not in SORT_DIRECTIONS:
         raise WorkbookReadError(
@@ -242,7 +264,7 @@ def _validate_request(
         )
 
 
-def _is_editable_price_cell(
+def _is_editable_cell(
     cell: Cell,
     *,
     row_number: int,
@@ -285,26 +307,28 @@ def _read_merged_cells(
     return merged_cells
 
 
-def _formula_value(
-    formula: dict[str, Any], values_by_id: dict[str, Any]
-) -> int | float | None:
-    """Evaluate the deliberately tiny, row-local formula language."""
-    left = values_by_id.get(str(formula.get("left_column_id")))
-    right = values_by_id.get(str(formula.get("right_column_id")))
-    if isinstance(left, bool) or isinstance(right, bool) or not isinstance(left, (int, float)) or not isinstance(right, (int, float)):
-        return None
-    operator = formula.get("operator")
-    if operator == "+":
-        return left + right
-    if operator == "-":
-        return left - right
-    if operator == "*":
-        return left * right
-    if operator == "/":
-        return None if right == 0 else left / right
-    if operator == "%":
-        return left * right / 100
-    return None
+def read_hidden_columns(path: str | Path, worksheet: Any) -> set[int]:
+    """Read hidden source columns without loading the worksheet into memory."""
+
+    worksheet_path = getattr(worksheet, "_worksheet_path", None)
+    if not worksheet_path:
+        return set()
+
+    hidden_columns: set[int] = set()
+    with ZipFile(Path(path)) as archive, archive.open(worksheet_path) as worksheet_xml:
+        for _event, element in ET.iterparse(worksheet_xml, events=("end",)):
+            if not element.tag.endswith("}col") and element.tag != "col":
+                element.clear()
+                continue
+            if element.attrib.get("hidden", "").casefold() not in {"1", "true"}:
+                element.clear()
+                continue
+            min_column = int(element.attrib.get("min", "0"))
+            max_column = int(element.attrib.get("max", "0"))
+            if min_column > 0 and max_column >= min_column:
+                hidden_columns.update(range(min_column, max_column + 1))
+            element.clear()
+    return hidden_columns
 
 
 def _sort_value(value: Any) -> tuple[int, int, Any]:
@@ -321,6 +345,155 @@ def _sort_value(value: Any) -> tuple[int, int, Any]:
     if isinstance(value, (datetime, date, time)):
         return (0, 1, value.isoformat())
     return (0, 1, _normalize_search_value(value))
+
+
+def read_workbook_cell_values(
+    path: str | Path,
+    *,
+    sheet_name: str,
+    header_row_number: int,
+    column_config: list[dict[str, Any]],
+    cells: Sequence[WorkbookCellReference],
+    max_cells: int = 500,
+) -> tuple[WorkbookCellValueResult, ...]:
+    """Read bounded sparse cell values using stable configured column IDs."""
+
+    if max_cells < 1 or not 1 <= len(cells) <= max_cells:
+        raise WorkbookReadError(
+            "INVALID_CELL_LOOKUP",
+            f"Cell lookup must contain between 1 and {max_cells} coordinates.",
+        )
+    references = [(cell.row_number, cell.column_id) for cell in cells]
+    if len(references) != len(set(references)):
+        raise WorkbookReadError(
+            "INVALID_CELL_LOOKUP",
+            "Workbook cell references must be unique.",
+        )
+    if header_row_number < 1 or any(
+        isinstance(row_number, bool) or row_number < 1
+        for row_number, _column_id in references
+    ):
+        raise WorkbookReadError("INVALID_ROW", "Workbook rows must be positive.")
+    if not isinstance(sheet_name, str) or not sheet_name.strip():
+        raise WorkbookReadError("SHEET_NOT_FOUND", "Worksheet was not found.")
+    if not isinstance(column_config, list) or not column_config:
+        raise WorkbookReadError("INVALID_MAPPING", "Column configuration is unavailable.")
+
+    config_by_id: dict[str, dict[str, Any]] = {}
+    column_numbers: set[int] = set()
+    for item in column_config:
+        if not isinstance(item, dict):
+            raise WorkbookReadError("INVALID_MAPPING", "Column configuration is invalid.")
+        column_id = item.get("id")
+        column_number = item.get("column_number")
+        if (
+            not isinstance(column_id, str)
+            or not column_id
+            or len(column_id) > 64
+            or column_id in config_by_id
+            or isinstance(column_number, bool)
+            or not isinstance(column_number, int)
+            or column_number < 1
+            or column_number in column_numbers
+        ):
+            raise WorkbookReadError("INVALID_MAPPING", "Column configuration is invalid.")
+        config_by_id[column_id] = item
+        column_numbers.add(column_number)
+
+    try:
+        normalized_config, formula_order = normalize_column_formulas(column_config)
+    except WorkbookFormulaError as exc:
+        raise WorkbookReadError(exc.code, str(exc)) from exc
+    config_by_id = {str(item["id"]): item for item in normalized_config}
+
+    unknown_ids = {column_id for _row_number, column_id in references} - set(config_by_id)
+    if unknown_ids:
+        raise WorkbookReadError(
+            "COLUMN_NOT_FOUND",
+            "A requested workbook column was not found.",
+        )
+
+    workbook = None
+    try:
+        workbook = load_workbook(filename=Path(path), read_only=True, data_only=False)
+        if sheet_name not in workbook.sheetnames:
+            raise WorkbookReadError("SHEET_NOT_FOUND", "Worksheet was not found.")
+        worksheet = workbook[sheet_name]
+        if header_row_number > worksheet.max_row:
+            raise WorkbookReadError(
+                "INVALID_ROW",
+                "Header row is outside the selected worksheet.",
+            )
+        if max(column_numbers) > worksheet.max_column:
+            raise WorkbookReadError(
+                "INVALID_MAPPING",
+                "A configured column is outside the selected worksheet.",
+            )
+        header_end_row, _header_structure = read_header_structure(
+            worksheet, header_row_number
+        )
+        requested_rows = {row_number for row_number, _column_id in references}
+        if any(
+            row_number <= header_end_row or row_number > worksheet.max_row
+            for row_number in requested_rows
+        ):
+            raise WorkbookReadError(
+                "INVALID_ROW",
+                "A requested workbook row is outside the data region.",
+            )
+
+        values_by_reference: dict[tuple[int, str], Any] = {}
+        found_rows: set[int] = set()
+        ordered_config = sorted(
+            config_by_id.items(), key=lambda item: int(item[1]["column_number"])
+        )
+        max_requested_row = max(requested_rows)
+        for row_number, row in enumerate(
+            worksheet.iter_rows(
+                min_row=header_end_row + 1,
+                max_row=max_requested_row,
+            ),
+            start=header_end_row + 1,
+        ):
+            if row_number not in requested_rows:
+                continue
+            if all(cell.value is None for cell in row):
+                continue
+            found_rows.add(row_number)
+            values_by_id = {
+                column_id: row[int(config["column_number"]) - 1].value
+                for column_id, config in ordered_config
+            }
+            values_by_id, _evaluations = evaluate_normalized_formula_columns(
+                normalized_config, formula_order, values_by_id
+            )
+            for requested_row, column_id in references:
+                if requested_row == row_number:
+                    values_by_reference[(requested_row, column_id)] = values_by_id[column_id]
+
+        if found_rows != requested_rows:
+            raise WorkbookReadError(
+                "INVALID_ROW",
+                "A requested workbook row is blank or unavailable.",
+            )
+        return tuple(
+            WorkbookCellValueResult(
+                row_number=row_number,
+                column_id=column_id,
+                value=values_by_reference[(row_number, column_id)],
+            )
+            for row_number, column_id in references
+        )
+    except WorkbookReadError:
+        raise
+    except (BadZipFile, InvalidFileException, OSError, ValueError, KeyError) as exc:
+        raise WorkbookReadError(
+            "INVALID_XLSX",
+            "Workbook could not be read as a valid .xlsx file.",
+        ) from exc
+    finally:
+        if workbook is not None:
+            workbook.close()
 
 
 def read_workbook_records(
@@ -375,17 +548,23 @@ def read_workbook_records(
         semantic_by_column = {
             column_number: field for field, column_number in column_mapping.items()
         }
+        try:
+            normalized_config, formula_order = normalize_column_formulas(
+                column_config or []
+            ) if column_config else ([], ())
+        except WorkbookFormulaError as exc:
+            raise WorkbookReadError(exc.code, str(exc)) from exc
         config_by_number = {
             int(item["column_number"]): item
-            for item in (column_config or [])
+            for item in normalized_config
             if isinstance(item, dict) and isinstance(item.get("column_number"), int)
         }
-        header_end_row, header_structure = _read_header_structure(
+        header_end_row, header_structure = read_header_structure(
             worksheet, header_row_number
         )
         ordered_column_numbers = tuple(
             int(item["column_number"])
-            for item in (column_config or [])
+            for item in normalized_config
             if isinstance(item, dict)
             and isinstance(item.get("column_number"), int)
             and 1 <= int(item["column_number"]) <= worksheet.max_column
@@ -413,24 +592,30 @@ def read_workbook_records(
                 group_label=header_structure[column_number][1],
                 header_row_span=header_structure[column_number][2],
                 formula=config_by_number.get(column_number, {}).get("formula"),
+                number_format=str(
+                    worksheet.cell(
+                        row=min(header_end_row + 1, worksheet.max_row),
+                        column=column_number,
+                    ).number_format
+                    or "General"
+                ),
             )
             for column_number in ordered_column_numbers
         )
         records: list[WorkbookRecord] = []
         visible_columns = ordered_column_numbers
-        identity_search_fields = tuple(
-            field for field in column_mapping if field not in PRICE_FIELDS
-        )
-        semantic_fields = {
-            column.semantic_field: column.field
+        sortable_fields = {
+            key: column.field
             for column in columns
-            if column.semantic_field is not None
+            for key in (column.id, column.field, column.semantic_field)
+            if key is not None
         }
-        search_fields = tuple(
-            semantic_fields[field]
-            for field in identity_search_fields
-            if field in semantic_fields
-        ) or tuple(column.field for column in columns)
+        if sort_by is not None and sort_by not in sortable_fields:
+            raise WorkbookReadError(
+                "INVALID_SORT",
+                "Sort column ID was not found in the worksheet configuration.",
+            )
+        search_fields = tuple(column.field for column in columns)
         normalized_search = _normalize_search_value(search)
         protection = getattr(worksheet, "protection", None)
         sheet_protected = bool(protection and protection.sheet)
@@ -455,17 +640,19 @@ def read_workbook_records(
                 for column in columns
             }
             values_by_id = {column.id: values[column.field] for column in columns}
+            values_by_id, _evaluations = evaluate_normalized_formula_columns(
+                normalized_config, formula_order, values_by_id
+            )
             for column in columns:
                 if column.formula:
-                    values[column.field] = _formula_value(column.formula, values_by_id)
-                    values_by_id[column.id] = values[column.field]
+                    values[column.field] = values_by_id[column.id]
             if normalized_search and not any(
                 normalized_search in _normalize_search_value(values[field])
                 for field in search_fields
             ):
                 continue
             editable = {
-                column.field: _is_editable_price_cell(
+                column.field: _is_editable_cell(
                     cell_by_column[column.column_number],
                     row_number=row_number,
                     column_number=column.column_number,
@@ -485,7 +672,7 @@ def read_workbook_records(
             )
 
         if sort_by is not None:
-            sort_field = semantic_fields[sort_by]
+            sort_field = sortable_fields[sort_by]
             records.sort(key=lambda record: record.row_number)
             populated_records = [
                 record

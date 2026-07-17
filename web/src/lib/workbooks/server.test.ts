@@ -18,6 +18,7 @@ vi.mock("@/lib/server-api", () => ({
 import {
   fetchWorkbookRecordsServer,
   fetchWorkbookSessionServer,
+  fetchWorkbookSessionsServer,
 } from "@/lib/workbooks/server"
 
 const session = {
@@ -40,6 +41,37 @@ beforeEach(() => {
 })
 
 describe("workbook RSC data helpers", () => {
+  it("fetches the initial paginated session library", async () => {
+    const list = {
+      items: [
+        {
+          id: session.id,
+          display_name: "July prices",
+          original_filename: session.original_filename,
+          selected_sheet_name: session.selected_sheet_name,
+          current_version: session.current_version,
+          status: session.status,
+          created_at: session.created_at,
+          updated_at: session.updated_at,
+        },
+      ],
+      pagination: { page: 1, page_size: 10, total: 1, total_pages: 1 },
+    }
+    fetchAuthenticatedApiPayload.mockResolvedValue({
+      success: true,
+      data: list,
+      error: null,
+    })
+
+    await expect(
+      fetchWorkbookSessionsServer({ page: 1, pageSize: 10 }),
+    ).resolves.toEqual(list)
+    expect(fetchAuthenticatedApiPayload).toHaveBeenCalledWith(
+      "/workbooks/sessions?page=1&page_size=10",
+      "Unable to load workbook sessions.",
+    )
+  })
+
   it("unwraps and validates session envelopes", async () => {
     fetchAuthenticatedApiPayload.mockResolvedValue({
       success: true,

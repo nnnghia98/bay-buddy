@@ -4,29 +4,28 @@ import {
   AlertTriangle,
   CheckCircle2,
   FileSpreadsheet,
-  History,
   LoaderCircle,
   ShieldCheck,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import * as React from "react"
 
+import { WorkbookSessionLibrary } from "@/components/workbook-editor/workbook-session-library"
 import { WorkbookUpload } from "@/components/workbook-editor/workbook-upload"
 import { Button } from "@/components/ui/button"
 import {
   createWorkbookSession,
-  fetchLatestWorkbookSession,
   toWorkbookClientError,
   uploadWorkbook,
 } from "@/lib/workbooks/client"
-import type { components } from "@/lib/api/generated"
-import type { WorkbookSession } from "@/schemas/workbook"
+import type {
+  WorkbookMappingStatus as MappingStatus,
+  WorkbookSessionList,
+  WorkbookUpload as WorkbookUploadData,
+  WorksheetInspection,
+} from "@/schemas/workbook"
 import { useI18n } from "@/locales/client"
 import { cn } from "@/lib/utils"
-
-type WorkbookUploadResponse = components["schemas"]["WorkbookUploadResponse"]
-type WorksheetInspection = components["schemas"]["WorksheetInspectionResponse"]
-type MappingStatus = components["schemas"]["WorkbookMappingStatus"]
 
 type PendingAction = "upload" | "session" | null
 
@@ -36,33 +35,23 @@ const statusTone: Record<MappingStatus, string> = {
   AMBIGUOUS_MAPPING: "border-rose-200 bg-rose-50 text-rose-700",
 }
 
-export function WorkbookStartClient() {
+export function WorkbookStartClient({
+  initialSessions,
+  userId,
+}: {
+  initialSessions: WorkbookSessionList
+  userId: string
+}) {
   const router = useRouter()
   const t = useI18n()
   const text = React.useCallback((key: string) => t(key as never), [t])
   const [file, setFile] = React.useState<File | null>(null)
-  const [uploaded, setUploaded] = React.useState<WorkbookUploadResponse | null>(null)
+  const [uploaded, setUploaded] = React.useState<WorkbookUploadData | null>(null)
   const [selectedSheet, setSelectedSheet] = React.useState<string | null>(null)
+  const [selectedHeaderRow, setSelectedHeaderRow] = React.useState<number | null>(null)
   const [pending, setPending] = React.useState<PendingAction>(null)
   const [error, setError] = React.useState<string | null>(null)
-  const [latestSession, setLatestSession] = React.useState<WorkbookSession | null>(null)
-  const [loadingLatest, setLoadingLatest] = React.useState(true)
   const sheetsRegionRef = React.useRef<HTMLDivElement>(null)
-
-  React.useEffect(() => {
-    let active = true
-    fetchLatestWorkbookSession()
-      .then((session) => {
-        if (active) setLatestSession(session)
-      })
-      .catch(() => undefined)
-      .finally(() => {
-        if (active) setLoadingLatest(false)
-      })
-    return () => {
-      active = false
-    }
-  }, [])
 
   const localizedError = React.useCallback(
     (requestError: unknown, fallbackKey: string) => {
@@ -87,6 +76,7 @@ export function WorkbookStartClient() {
     setFile(nextFile)
     setUploaded(null)
     setSelectedSheet(null)
+    setSelectedHeaderRow(null)
     setError(null)
   }, [])
 
@@ -97,9 +87,9 @@ export function WorkbookStartClient() {
     try {
       const result = await uploadWorkbook(file)
       setUploaded(result)
-      setSelectedSheet(
-        result.sheets.find((sheet) => sheet.mapping_status !== "AMBIGUOUS_MAPPING")?.name ?? null,
-      )
+      const defaultSheet = result.sheets[0]
+      setSelectedSheet(defaultSheet?.name ?? null)
+      setSelectedHeaderRow(defaultSheet?.header_row_number ?? defaultSheet?.header_candidates[0]?.row_number ?? null)
       window.requestAnimationFrame(() => sheetsRegionRef.current?.focus())
     } catch (uploadError) {
       setError(localizedError(uploadError, "workbookEditor.errors.uploadFailed"))
@@ -109,13 +99,14 @@ export function WorkbookStartClient() {
   }
 
   async function handleCreateSession() {
-    if (!uploaded || !selectedSheet || pending) return
+    if (!uploaded || !selectedSheet || selectedHeaderRow === null || pending) return
     setPending("session")
     setError(null)
     try {
       const session = await createWorkbookSession({
         workbook_id: uploaded.id,
         sheet_name: selectedSheet,
+        header_row_number: selectedHeaderRow,
       })
       router.push(`/workbook-editor-v2/sessions/${session.id}`)
     } catch (sessionError) {
@@ -127,10 +118,10 @@ export function WorkbookStartClient() {
   const busy = pending !== null
 
   return (
-    <div className="pb-12 text-foreground">
+    <div className="mx-auto max-w-5xl space-y-5 pb-12 text-foreground">
       <section
         aria-labelledby="workbook-start-title"
-        className="mx-auto max-w-5xl overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
+        className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
       >
         <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -146,34 +137,6 @@ export function WorkbookStartClient() {
             <span>{text("workbookEditor.start.originalProtected")}</span>
           </div>
         </div>
-
-        {latestSession ? (
-          <div className="flex flex-col gap-3 border-b border-border bg-blue-50/60 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-3">
-              <History aria-hidden="true" className="size-4 shrink-0 text-primary" />
-              <div className="min-w-0">
-                <p className="text-sm font-semibold">{text("workbookEditor.restore.title")}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {latestSession.original_filename} · {text("workbookEditor.restore.version").replace("{version}", String(latestSession.current_version))}
-                </p>
-              </div>
-            </div>
-            <Button
-              className="shrink-0"
-              onClick={() => router.push(`/workbook-editor-v2/sessions/${latestSession.id}`)}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              {text("workbookEditor.restore.action")}
-            </Button>
-          </div>
-        ) : loadingLatest ? (
-          <div className="flex items-center gap-2 border-b border-border bg-secondary/25 px-5 py-3 text-xs text-muted-foreground">
-            <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin motion-reduce:animate-none" />
-            {text("workbookEditor.restore.loading")}
-          </div>
-        ) : null}
 
         <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(19rem,4fr)]">
           <div className="border-b border-border p-5 lg:border-r lg:border-b-0">
@@ -195,6 +158,7 @@ export function WorkbookStartClient() {
                 setError(text("workbookEditor.errors.invalidFile"))
                 setUploaded(null)
                 setSelectedSheet(null)
+                setSelectedHeaderRow(null)
               }}
               onUpload={handleUpload}
               pending={pending === "upload"}
@@ -255,6 +219,10 @@ export function WorkbookStartClient() {
                         rowsColumns: text("workbookEditor.sheets.rowsColumns"),
                         missing: text("workbookEditor.sheets.missing"),
                         ambiguousFields: text("workbookEditor.sheets.ambiguousFields"),
+                        headerLabel: text("workbookEditor.sheets.headerLabel"),
+                        headerRow: text("workbookEditor.sheets.headerRow"),
+                        headerPreviewEmpty: text("workbookEditor.sheets.headerPreviewEmpty"),
+                        mappingNote: text("workbookEditor.sheets.mappingNote"),
                       }}
                       fieldLabels={{
                         net_price: text("workbookEditor.fields.netPrice"),
@@ -263,8 +231,15 @@ export function WorkbookStartClient() {
                         pnr: text("workbookEditor.fields.pnr"),
                         ticket_number: text("workbookEditor.fields.ticketNumber"),
                       }}
-                      onSelect={setSelectedSheet}
+                      onHeaderSelect={setSelectedHeaderRow}
+                      onSelect={(name) => {
+                        setSelectedSheet(name)
+                        setSelectedHeaderRow(
+                          sheet.header_row_number ?? sheet.header_candidates[0]?.row_number ?? null,
+                        )
+                      }}
                       selected={selectedSheet === sheet.name}
+                      selectedHeaderRow={selectedSheet === sheet.name ? selectedHeaderRow : null}
                       sheet={sheet}
                     />
                   ))}
@@ -273,7 +248,7 @@ export function WorkbookStartClient() {
                 <div className="mt-auto border-t border-border bg-white p-4">
                   <Button
                     className="w-full"
-                    disabled={!selectedSheet || busy}
+                    disabled={!selectedSheet || selectedHeaderRow === null || busy}
                     onClick={handleCreateSession}
                     type="button"
                   >
@@ -305,6 +280,7 @@ export function WorkbookStartClient() {
           </div>
         </div>
       </section>
+      <WorkbookSessionLibrary initialData={initialSessions} userId={userId} />
     </div>
   )
 }
@@ -312,13 +288,17 @@ export function WorkbookStartClient() {
 function SheetOption({
   sheet,
   selected,
+  selectedHeaderRow,
   onSelect,
+  onHeaderSelect,
   labels,
   fieldLabels,
 }: {
   sheet: WorksheetInspection
   selected: boolean
+  selectedHeaderRow: number | null
   onSelect: (name: string) => void
+  onHeaderSelect: (rowNumber: number) => void
   labels: {
     ready: string
     incomplete: string
@@ -326,23 +306,33 @@ function SheetOption({
     rowsColumns: string
     missing: string
     ambiguousFields: string
+    headerLabel: string
+    headerRow: string
+    headerPreviewEmpty: string
+    mappingNote: string
   }
   fieldLabels: Record<string, string>
 }) {
-  const selectable = sheet.mapping_status !== "AMBIGUOUS_MAPPING"
+  const selectable = sheet.header_candidates.length > 0
+  const activeCandidate = sheet.header_candidates.find(
+    (candidate) => candidate.row_number === selectedHeaderRow,
+  ) ?? sheet.header_candidates.find(
+    (candidate) => candidate.row_number === sheet.header_row_number,
+  ) ?? sheet.header_candidates[0]
+  const mappingStatus = activeCandidate?.mapping_status ?? sheet.mapping_status
   const statusLabel =
-    sheet.mapping_status === "READY"
+    mappingStatus === "READY"
       ? labels.ready
-      : sheet.mapping_status === "AMBIGUOUS_MAPPING"
+      : mappingStatus === "AMBIGUOUS_MAPPING"
         ? labels.ambiguous
         : labels.incomplete
   const detail =
-    sheet.mapping_status === "AMBIGUOUS_MAPPING"
-      ? `${labels.ambiguousFields}: ${Object.keys(sheet.ambiguous_fields)
+    mappingStatus === "AMBIGUOUS_MAPPING"
+      ? `${labels.ambiguousFields}: ${Object.keys(activeCandidate?.ambiguous_fields ?? sheet.ambiguous_fields)
           .map((field) => fieldLabels[field] ?? field)
           .join(", ")}`
-      : sheet.mapping_status === "MAPPING_INCOMPLETE"
-        ? `${labels.missing}: ${sheet.missing_required_fields
+      : mappingStatus === "MAPPING_INCOMPLETE"
+        ? `${labels.missing}: ${(activeCandidate?.missing_required_fields ?? sheet.missing_required_fields)
             .map((field) => fieldLabels[field] ?? field)
             .join(", ")}`
         : null
@@ -373,16 +363,37 @@ function SheetOption({
             <span
               className={cn(
                 "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold",
-                statusTone[sheet.mapping_status],
+                statusTone[mappingStatus],
               )}
             >
-              {sheet.mapping_status === "READY" ? <CheckCircle2 aria-hidden="true" className="size-3" /> : null}
+              {mappingStatus === "READY" ? <CheckCircle2 aria-hidden="true" className="size-3" /> : null}
               {statusLabel}
             </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {labels.rowsColumns}: {sheet.max_row} × {sheet.max_column}
           </p>
+          {selected ? (
+            <div className="mt-3 space-y-1.5" onClick={(event) => event.stopPropagation()}>
+              <span className="block text-xs font-medium text-foreground">{labels.headerLabel}</span>
+              <select
+                aria-label={labels.headerLabel}
+                className="h-9 w-full rounded-md border border-input bg-white px-3 text-sm"
+                onChange={(event) => onHeaderSelect(Number(event.target.value))}
+                value={selectedHeaderRow ?? ""}
+              >
+                {sheet.header_candidates.map((candidate) => {
+                  const preview = candidate.detected_headers.filter(Boolean).slice(0, 4).join(" · ")
+                  return (
+                    <option key={candidate.row_number} value={candidate.row_number}>
+                      {labels.headerRow.replace("{row}", String(candidate.row_number))}: {preview || labels.headerPreviewEmpty}
+                    </option>
+                  )
+                })}
+              </select>
+              <p className="text-xs leading-5 text-muted-foreground">{labels.mappingNote}</p>
+            </div>
+          ) : null}
           {detail ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</p> : null}
         </div>
       </div>

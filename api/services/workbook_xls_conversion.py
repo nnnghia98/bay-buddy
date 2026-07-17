@@ -105,8 +105,16 @@ def _copy_sheet(
         for column_index in range(column_count):
             cell = legacy_sheet.cell(row_index, column_index)
             value = _cell_value(legacy_workbook, cell)
-            if value is not None:
-                worksheet.cell(row=row_index + 1, column=column_index + 1, value=value)
+            number_format = _cell_number_format(legacy_workbook, cell)
+            if value is None and number_format in {None, "General"}:
+                continue
+            target_cell = worksheet.cell(
+                row=row_index + 1,
+                column=column_index + 1,
+                value=value,
+            )
+            if number_format:
+                target_cell.number_format = number_format
 
     for column_index, column_info in legacy_sheet.colinfo_map.items():
         if column_index >= column_count:
@@ -114,7 +122,27 @@ def _copy_sheet(
         # XLS stores widths in units of 1/256 of a character; openpyxl uses
         # character widths. The cap prevents pathological column dimensions.
         width = max(0.5, min(column_info.width / 256, 255))
-        worksheet.column_dimensions[get_column_letter(column_index + 1)].width = width
+        dimension = worksheet.column_dimensions[get_column_letter(column_index + 1)]
+        dimension.width = width
+        dimension.hidden = bool(column_info.hidden)
+        dimension.outline_level = min(
+            max(int(getattr(column_info, "outline_level", 0)), 0),
+            7,
+        )
+        dimension.collapsed = bool(getattr(column_info, "collapsed", False))
+
+    for row_index, row_info in legacy_sheet.rowinfo_map.items():
+        if row_index >= row_count:
+            continue
+        dimension = worksheet.row_dimensions[row_index + 1]
+        dimension.hidden = bool(row_info.hidden)
+        dimension.outline_level = min(
+            max(int(getattr(row_info, "outline_level", 0)), 0),
+            7,
+        )
+        dimension.collapsed = bool(getattr(row_info, "collapsed", False))
+        if getattr(row_info, "has_default_height", False) and row_info.height > 0:
+            dimension.height = row_info.height / 20
 
     for row_low, row_high, column_low, column_high in legacy_sheet.merged_cells:
         if row_low >= row_count or column_low >= column_count:
@@ -162,6 +190,21 @@ def _cell_value(legacy_workbook: xlrd.book.Book, cell: xlrd.sheet.Cell) -> Any:
     if cell.ctype == xlrd.XL_CELL_ERROR:
         return xlrd.error_text_from_code.get(cell.value, "#VALUE!")
     return cell.value
+
+
+def _cell_number_format(
+    legacy_workbook: xlrd.book.Book,
+    cell: xlrd.sheet.Cell,
+) -> str | None:
+    """Return the XLS display format without changing the stored cell value."""
+
+    if cell.xf_index < 0 or cell.xf_index >= len(legacy_workbook.xf_list):
+        return None
+    cell_format = legacy_workbook.xf_list[cell.xf_index]
+    number_format = legacy_workbook.format_map.get(cell_format.format_key)
+    if number_format is None or not number_format.format_str:
+        return None
+    return str(number_format.format_str)
 
 
 def _normalize_excel_date(value: datetime) -> date | datetime | time:

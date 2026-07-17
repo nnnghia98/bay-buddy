@@ -12,7 +12,12 @@ from pydantic import ValidationError
 from models.workbook import WorkbookSessionStatus
 from schemas.workbook import (
     SortDirection,
+    WorkbookCellValueLookupRequest,
+    WorkbookCellValueLookupResponse,
+    WorkbookColumnFormula,
     WorkbookErrorDetail,
+    WorkbookFormulaPreviewRequest,
+    WorkbookUpdateColumnRequest,
     WorkbookMappingStatus,
     WorkbookPagination,
     WorkbookPriceChange,
@@ -25,7 +30,11 @@ from schemas.workbook import (
     WorkbookSaveResponse,
     WorkbookSemanticField,
     WorkbookSessionCreateRequest,
+    WorkbookSessionListQuery,
+    WorkbookSessionListResponse,
+    WorkbookSessionRenameRequest,
     WorkbookSessionResponse,
+    WorkbookSessionSummary,
     WorkbookUploadResponse,
     WorksheetInspectionResponse,
 )
@@ -141,14 +150,28 @@ def test_sheet_mapping_column_numbers_are_strictly_positive() -> None:
 @pytest.mark.parametrize(
     "payload",
     [
-        {"workbook_id": uuid.uuid4(), "sheet_name": ""},
-        {"workbook_id": "not-a-uuid", "sheet_name": "Sheet1"},
-        {"workbook_id": uuid.uuid4(), "sheet_name": "Sheet1", "extra": True},
+        {"workbook_id": uuid.uuid4(), "sheet_name": "", "header_row_number": 1},
+        {"workbook_id": "not-a-uuid", "sheet_name": "Sheet1", "header_row_number": 1},
+        {"workbook_id": uuid.uuid4(), "sheet_name": "Sheet1", "header_row_number": 0},
+        {"workbook_id": uuid.uuid4(), "sheet_name": "Sheet1", "header_row_number": 1, "extra": True},
     ],
 )
 def test_create_session_rejects_invalid_boundary(payload: dict) -> None:
     with pytest.raises(ValidationError):
         WorkbookSessionCreateRequest.model_validate(payload)
+
+
+def test_create_session_requires_explicit_header_row() -> None:
+    request = WorkbookSessionCreateRequest(
+        workbook_id=uuid.uuid4(),
+        sheet_name="Sheet1",
+        header_row_number=3,
+    )
+    assert request.header_row_number == 3
+    with pytest.raises(ValidationError):
+        WorkbookSessionCreateRequest.model_validate(
+            {"workbook_id": uuid.uuid4(), "sheet_name": "Sheet1"}
+        )
 
 
 def test_session_response_uses_domain_status_and_positive_version() -> None:
@@ -171,6 +194,40 @@ def test_session_response_uses_domain_status_and_positive_version() -> None:
         WorkbookSessionResponse.model_validate(
             {**response.model_dump(), "current_version": 0}
         )
+
+
+def test_session_library_contracts_normalize_names_and_validate_pagination() -> None:
+    rename = WorkbookSessionRenameRequest(display_name="  July workbook  ")
+    assert rename.display_name == "July workbook"
+    with pytest.raises(ValidationError):
+        WorkbookSessionRenameRequest(display_name="   ")
+
+    query = WorkbookSessionListQuery(status=WorkbookSessionStatus.DRAFT)
+    assert query.page == 1
+    assert query.page_size == 10
+    with pytest.raises(ValidationError):
+        WorkbookSessionListQuery(page_size=101)
+
+    summary = WorkbookSessionSummary(
+        id=uuid.uuid4(),
+        display_name="July workbook",
+        original_filename="prices.xlsx",
+        selected_sheet_name="Tickets",
+        current_version=2,
+        status=WorkbookSessionStatus.DRAFT,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    response = WorkbookSessionListResponse(
+        items=[summary],
+        pagination=WorkbookPagination(
+            page=1,
+            page_size=10,
+            total=1,
+            total_pages=1,
+        ),
+    )
+    assert response.items[0].display_name == "July workbook"
 
 
 def test_records_query_defaults_and_bounds() -> None:
@@ -243,27 +300,63 @@ def test_record_editability_must_reference_a_returned_value() -> None:
     "values",
     [
         {},
-        {"net_price": -1},
-        {"net_price": 1.5},
-        {"net_price": True},
-        {"selling_price": 1_000_000_000_001},
-        {"net_price": float("nan")},
-        {"net_price": float("inf")},
-        {"unknown_price": 1},
+        {"source-a": float("nan")},
+        {"source-a": float("inf")},
+        {"source-a": object()},
+        {"": 1},
     ],
 )
-def test_price_values_require_supported_whole_bounded_vnd(values: dict) -> None:
+def test_cell_values_require_non_empty_keys_and_json_safe_scalars(values: dict) -> None:
     with pytest.raises(ValidationError):
         WorkbookPriceChangeValues.model_validate(values)
 
 
-def test_price_values_accept_either_or_both_supported_prices() -> None:
-    assert WorkbookPriceChangeValues(net_price=0).changed_cell_count == 1
-    assert WorkbookPriceChangeValues(selling_price=10).changed_cell_count == 1
-    assert (
-        WorkbookPriceChangeValues(net_price=10, selling_price=20).changed_cell_count
-        == 2
+def test_cell_values_accept_generic_types_null_and_legacy_price_keys() -> None:
+    values = WorkbookPriceChangeValues.model_validate(
+        {
+            "net_price": -12.5,
+            "source-text": "note",
+            "source-date": "2026-07-14",
+            "source-boolean": True,
+            "source-blank": None,
+        }
     )
+    assert values.changed_cell_count == 5
+    assert values.model_dump(exclude_unset=True)["source-blank"] is None
+
+
+def test_cell_value_lookup_is_bounded_unique_and_serializable() -> None:
+    cells = [
+        {"row_number": index + 1, "column_id": "source-1"}
+        for index in range(500)
+    ]
+    request = WorkbookCellValueLookupRequest(base_version=2, cells=cells)
+    assert len(request.cells) == 500
+
+    with pytest.raises(ValidationError):
+        WorkbookCellValueLookupRequest(base_version=2, cells=[])
+    with pytest.raises(ValidationError):
+        WorkbookCellValueLookupRequest(
+            base_version=2,
+            cells=cells + [{"row_number": 501, "column_id": "source-1"}],
+        )
+    with pytest.raises(ValidationError, match="unique"):
+        WorkbookCellValueLookupRequest(
+            base_version=2,
+            cells=[cells[0], cells[0]],
+        )
+
+    response = WorkbookCellValueLookupResponse(
+        session_id=uuid.uuid4(),
+        version=2,
+        cells=[
+            {"row_number": 2, "column_id": "source-1", "value": "text"},
+            {"row_number": 2, "column_id": "source-2", "value": 12.5},
+            {"row_number": 2, "column_id": "source-3", "value": True},
+            {"row_number": 2, "column_id": "source-4", "value": None},
+        ],
+    )
+    assert json.loads(response.model_dump_json())["cells"][-1]["value"] is None
 
 
 def test_save_request_requires_uuid_version_and_unique_rows() -> None:
@@ -373,3 +466,61 @@ def test_structured_error_detail_is_machine_readable_and_bounded() -> None:
 
     with pytest.raises(ValidationError):
         WorkbookErrorDetail(code="bad-code", message="Bad")
+
+
+def test_versioned_formula_preview_and_nullable_update_contracts() -> None:
+    formula = WorkbookColumnFormula.model_validate(
+        {
+            "schema_version": 1,
+            "expression": {
+                "type": "if",
+                "condition": {
+                    "type": "comparison",
+                    "operator": ">",
+                    "left": {"type": "column", "column_id": "sale"},
+                    "right": {"type": "column", "column_id": "fare"},
+                },
+                "when_true": {
+                    "type": "binary",
+                    "operator": "-",
+                    "left": {"type": "column", "column_id": "sale"},
+                    "right": {"type": "column", "column_id": "fare"},
+                },
+                "when_false": {"type": "constant", "value": "0"},
+            },
+        }
+    )
+    preview = WorkbookFormulaPreviewRequest(
+        base_version=2,
+        formula=formula,
+        output_type="currency",
+        sample_rows=[2, 4],
+    )
+    assert preview.formula.schema_version == 1
+    assert preview.sample_rows == [2, 4]
+
+    remove_formula = WorkbookUpdateColumnRequest(
+        base_version=2,
+        formula=None,
+    )
+    assert remove_formula.formula_was_provided is True
+    with pytest.raises(ValidationError):
+        WorkbookUpdateColumnRequest(base_version=2)
+
+
+def test_formula_schema_rejects_raw_excel_text_and_bad_round_arity() -> None:
+    with pytest.raises(ValidationError):
+        WorkbookColumnFormula.model_validate(
+            {"schema_version": 1, "expression": "=A2+B2"}
+        )
+    with pytest.raises(ValidationError):
+        WorkbookColumnFormula.model_validate(
+            {
+                "schema_version": 1,
+                "expression": {
+                    "type": "round",
+                    "value": {"type": "constant", "value": "1"},
+                    "digits": 16,
+                },
+            }
+        )

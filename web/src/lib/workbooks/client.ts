@@ -1,28 +1,46 @@
 import { ApiError } from "@/lib/api"
-import { expireStoredSession, getActiveStoredToken } from "@/lib/auth-storage"
 import type { components } from "@/lib/api/generated"
+import { expireStoredSession, getActiveStoredToken } from "@/lib/auth-storage"
 import {
+  workbookCellValueLookupRequestSchema,
+  workbookCellValueLookupResponseSchema,
+  workbookFormulaPreviewRequestSchema,
+  workbookFormulaPreviewResponseSchema,
   workbookRecordsPageSchema,
   workbookSaveRequestSchema,
   workbookSaveResponseSchema,
+  workbookSessionListSchema,
   workbookSessionSchema,
+  workbookSessionSummarySchema,
+  workbookUpdateColumnRequestSchema,
   workbookUploadSchema,
+  type WorkbookCellValueLookupRequest,
+  type WorkbookCellValueLookupResponse,
   type WorkbookRecordsPage,
   type WorkbookSaveRequest,
   type WorkbookSaveResponse,
   type WorkbookSession,
+  type WorkbookSessionList,
+  type WorkbookSessionSummary,
   type WorkbookUpload,
   type WorkbookColumnDataType,
   type WorkbookColumnFormula,
+  type WorkbookFormulaPreviewRequest,
+  type WorkbookFormulaPreviewResponse,
+  type WorkbookUpdateColumnRequest,
 } from "@/schemas/workbook"
 import { ZodError } from "zod"
 import {
   buildWorkbookRecordsPath,
+  buildWorkbookSessionsPath,
   type WorkbookRecordsRequestQuery,
+  type WorkbookSessionListQuery,
 } from "./query-keys"
 
 type WorkbookSessionCreateRequest =
   components["schemas"]["WorkbookSessionCreateRequest"]
+type WorkbookSessionRenameRequest =
+  components["schemas"]["WorkbookSessionRenameRequest"]
 
 export class WorkbookClientError extends Error {
   status: number
@@ -170,6 +188,40 @@ export async function addWorkbookColumn(
   return workbookSessionSchema.parse(payload)
 }
 
+export async function previewWorkbookFormula(
+  sessionId: string,
+  request: WorkbookFormulaPreviewRequest,
+): Promise<WorkbookFormulaPreviewResponse> {
+  const validated = workbookFormulaPreviewRequestSchema.parse(request)
+  const payload = await workbookJsonRequest(() =>
+    workbookApiFetchData<WorkbookFormulaPreviewResponse>(
+      `sessions/${sessionId}/formulas/preview`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validated),
+      },
+    ),
+  )
+  return workbookFormulaPreviewResponseSchema.parse(payload)
+}
+
+export async function updateWorkbookColumn(
+  sessionId: string,
+  columnId: string,
+  request: WorkbookUpdateColumnRequest,
+): Promise<WorkbookSession> {
+  const validated = workbookUpdateColumnRequestSchema.parse(request)
+  const payload = await workbookJsonRequest(() =>
+    workbookApiFetchData<WorkbookSession>(`sessions/${sessionId}/columns/${columnId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(validated),
+    }),
+  )
+  return workbookSessionSchema.parse(payload)
+}
+
 export async function removeWorkbookColumn(sessionId: string, columnId: string, baseVersion: number): Promise<WorkbookSession> {
   const payload = await workbookJsonRequest(() => workbookApiFetchData<WorkbookSession>(
     `sessions/${sessionId}/columns/${columnId}/remove`,
@@ -214,8 +266,44 @@ export async function fetchLatestWorkbookSession(): Promise<WorkbookSession | nu
   }
 }
 
+export async function fetchWorkbookSessions(
+  query: Partial<WorkbookSessionListQuery> = {},
+): Promise<WorkbookSessionList> {
+  const payload = await workbookJsonRequest(() =>
+    workbookApiFetchData<WorkbookSessionList>(
+      buildWorkbookSessionsPath(query).replace(/^\/workbooks\//, ""),
+    ),
+  )
+  return workbookSessionListSchema.parse(payload)
+}
+
+export async function renameWorkbookSession(
+  sessionId: string,
+  request: WorkbookSessionRenameRequest,
+): Promise<WorkbookSessionSummary> {
+  const payload = await workbookJsonRequest(() =>
+    workbookApiFetchData<WorkbookSessionSummary>(`sessions/${sessionId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    }),
+  )
+  return workbookSessionSummarySchema.parse(payload)
+}
+
+export async function discardWorkbookSession(
+  sessionId: string,
+): Promise<WorkbookSessionSummary> {
+  const payload = await workbookJsonRequest(() =>
+    workbookApiFetchData<WorkbookSessionSummary>(`sessions/${sessionId}`, {
+      method: "DELETE",
+    }),
+  )
+  return workbookSessionSummarySchema.parse(payload)
+}
+
 export type FetchWorkbookRecordsQuery = Partial<WorkbookRecordsRequestQuery>
-export { buildWorkbookRecordsPath }
+export { buildWorkbookRecordsPath, buildWorkbookSessionsPath }
 
 export async function fetchWorkbookRecords(
   sessionId: string,
@@ -227,6 +315,24 @@ export async function fetchWorkbookRecords(
     ),
   )
   return workbookRecordsPageSchema.parse(payload)
+}
+
+export async function lookupWorkbookCellValues(
+  sessionId: string,
+  request: WorkbookCellValueLookupRequest,
+): Promise<WorkbookCellValueLookupResponse> {
+  const validated = workbookCellValueLookupRequestSchema.parse(request)
+  const payload = await workbookJsonRequest(() =>
+    workbookApiFetchData<WorkbookCellValueLookupResponse>(
+      `sessions/${sessionId}/cell-values`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validated),
+      },
+    ),
+  )
+  return workbookCellValueLookupResponseSchema.parse(payload)
 }
 
 export async function saveWorkbookChanges(

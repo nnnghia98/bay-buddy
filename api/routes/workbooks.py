@@ -20,33 +20,50 @@ from core.settings import settings
 from database import SessionDep
 from models.enums import UserRole
 from schemas.workbook import (
+    MAX_CELL_VALUE_LOOKUPS,
     WorkbookAddColumnRequest,
+    WorkbookCellValueLookupRequest,
+    WorkbookCellValueLookupResponse,
     WorkbookRemoveColumnRequest,
     WorkbookColumnConfigurationRequest,
     WorkbookErrorDetail,
     WorkbookErrorResponse,
+    WorkbookFormulaPreviewRequest,
+    WorkbookFormulaPreviewResponse,
     WorkbookRecordsPage,
     WorkbookRecordsQuery,
     WorkbookSaveRequest,
     WorkbookSaveResponse,
     WorkbookSessionCreateRequest,
+    WorkbookSessionListQuery,
+    WorkbookSessionListResponse,
+    WorkbookSessionRenameRequest,
     WorkbookSessionResponse,
+    WorkbookSessionSummary,
     WorkbookUploadResponse,
     WorkbookSuccessResponse,
+    WorkbookUpdateColumnRequest,
     WorksheetInspectionResponse,
 )
 from services.workbook_mutation import PriceChange
+from services.workbook_reader import WorkbookCellReference
 from services.workbook_service import (
     WorkbookServiceError,
     add_session_column,
     remove_session_column,
     update_session_column_configuration,
     create_editing_session,
+    discard_editing_session,
     get_current_download,
     get_editing_session,
     get_latest_editing_session,
+    list_editing_sessions,
+    lookup_session_cell_values,
+    preview_session_formula,
     read_session_records,
+    rename_editing_session,
     save_session_changes,
+    update_session_column,
     upload_workbook,
 )
 from storage.workbooks import LocalWorkbookStorage, WorkbookStorage
@@ -170,6 +187,19 @@ def _session_response(result: Any) -> WorkbookSessionResponse:
     )
 
 
+def _session_summary_response(result: Any) -> WorkbookSessionSummary:
+    return WorkbookSessionSummary(
+        id=result.id,
+        display_name=result.display_name,
+        original_filename=result.original_filename,
+        selected_sheet_name=result.selected_sheet_name,
+        current_version=result.current_version,
+        status=result.status,
+        created_at=result.created_at,
+        updated_at=result.updated_at,
+    )
+
+
 @router.post(
     "/uploads",
     response_model=WorkbookSuccessResponse[WorkbookUploadResponse],
@@ -240,8 +270,41 @@ async def create_editing_session_route(
         actor=current_user,
         workbook_id=payload.workbook_id,
         sheet_name=payload.sheet_name,
+        header_row_number=payload.header_row_number,
     )
     return success_response(_session_response(result).model_dump(mode="json"))
+
+
+@router.get(
+    "/sessions",
+    response_model=WorkbookSuccessResponse[WorkbookSessionListResponse],
+    responses={422: _VALIDATION_RESPONSE, 500: _ERROR_RESPONSE},
+)
+async def list_editing_sessions_route(
+    query: Annotated[WorkbookSessionListQuery, Query()],
+    db: SessionDep,
+    current_user: CurrentUserDep,
+):
+    _authorize(current_user)
+    result = await _call_service(
+        list_editing_sessions,
+        db,
+        actor=current_user,
+        page=query.page,
+        page_size=query.page_size,
+        search=query.search,
+        session_status=query.status,
+    )
+    response = WorkbookSessionListResponse(
+        items=[_session_summary_response(item) for item in result.items],
+        pagination={
+            "page": result.page,
+            "page_size": result.page_size,
+            "total": result.total,
+            "total_pages": result.total_pages,
+        },
+    )
+    return success_response(response.model_dump(mode="json"))
 
 
 @router.get(
@@ -262,6 +325,58 @@ async def get_latest_editing_session_route(
     return success_response(_session_response(result).model_dump(mode="json"))
 
 
+@router.patch(
+    "/sessions/{session_id}",
+    response_model=WorkbookSuccessResponse[WorkbookSessionSummary],
+    responses={
+        404: _ERROR_RESPONSE,
+        409: _ERROR_RESPONSE,
+        422: _VALIDATION_RESPONSE,
+        500: _ERROR_RESPONSE,
+    },
+)
+async def rename_editing_session_route(
+    session_id: uuid.UUID,
+    payload: WorkbookSessionRenameRequest,
+    db: SessionDep,
+    current_user: CurrentUserDep,
+):
+    _authorize(current_user)
+    result = await _call_service(
+        rename_editing_session,
+        db,
+        actor=current_user,
+        session_id=session_id,
+        display_name=payload.display_name,
+    )
+    return success_response(_session_summary_response(result).model_dump(mode="json"))
+
+
+@router.delete(
+    "/sessions/{session_id}",
+    response_model=WorkbookSuccessResponse[WorkbookSessionSummary],
+    responses={
+        404: _ERROR_RESPONSE,
+        409: _ERROR_RESPONSE,
+        422: _VALIDATION_RESPONSE,
+        500: _ERROR_RESPONSE,
+    },
+)
+async def discard_editing_session_route(
+    session_id: uuid.UUID,
+    db: SessionDep,
+    current_user: CurrentUserDep,
+):
+    _authorize(current_user)
+    result = await _call_service(
+        discard_editing_session,
+        db,
+        actor=current_user,
+        session_id=session_id,
+    )
+    return success_response(_session_summary_response(result).model_dump(mode="json"))
+
+
 @router.get(
     "/sessions/{session_id}",
     response_model=WorkbookSuccessResponse[WorkbookSessionResponse],
@@ -278,6 +393,7 @@ async def get_editing_session_route(
         db,
         actor=current_user,
         session_id=session_id,
+        storage=_workbook_storage(),
     )
     return success_response(_session_response(result).model_dump(mode="json"))
 
@@ -304,7 +420,7 @@ async def read_session_records_route(
         page_size=query.page_size,
         max_page_size=settings.workbook_max_page_size,
         search=query.search,
-        sort_by=query.sort_by.value if query.sort_by is not None else None,
+        sort_by=query.sort_by,
         sort_direction=query.sort_direction.value,
     )
     response = WorkbookRecordsPage(
@@ -325,6 +441,7 @@ async def read_session_records_route(
                 "group_label": column.group_label,
                 "header_row_span": column.header_row_span,
                 "formula": column.formula,
+                "number_format": column.number_format,
             }
             for column in result.page.columns
         ],
@@ -343,6 +460,103 @@ async def read_session_records_route(
             "total": result.page.pagination.total,
             "total_pages": result.page.pagination.total_pages,
         },
+    )
+    return success_response(response.model_dump(mode="json"))
+
+
+@router.post(
+    "/sessions/{session_id}/cell-values",
+    response_model=WorkbookSuccessResponse[WorkbookCellValueLookupResponse],
+    responses={
+        404: _ERROR_RESPONSE,
+        409: _ERROR_RESPONSE,
+        422: _VALIDATION_RESPONSE,
+        500: _ERROR_RESPONSE,
+    },
+)
+async def lookup_session_cell_values_route(
+    session_id: uuid.UUID,
+    payload: WorkbookCellValueLookupRequest,
+    db: SessionDep,
+    current_user: CurrentUserDep,
+):
+    _authorize(current_user)
+    result = await _call_service(
+        lookup_session_cell_values,
+        db,
+        _workbook_storage(),
+        actor=current_user,
+        session_id=session_id,
+        base_version=payload.base_version,
+        cells=[
+            WorkbookCellReference(
+                row_number=cell.row_number,
+                column_id=cell.column_id,
+            )
+            for cell in payload.cells
+        ],
+        max_cells=MAX_CELL_VALUE_LOOKUPS,
+    )
+    response = WorkbookCellValueLookupResponse(
+        session_id=result.session_id,
+        version=result.version,
+        cells=[
+            {
+                "row_number": cell.row_number,
+                "column_id": cell.column_id,
+                "value": cell.value,
+            }
+            for cell in result.cells
+        ],
+    )
+    return success_response(response.model_dump(mode="json"))
+
+
+@router.post(
+    "/sessions/{session_id}/formulas/preview",
+    response_model=WorkbookSuccessResponse[WorkbookFormulaPreviewResponse],
+    responses={
+        404: _ERROR_RESPONSE,
+        409: _ERROR_RESPONSE,
+        422: _VALIDATION_RESPONSE,
+        500: _ERROR_RESPONSE,
+    },
+)
+async def preview_session_formula_route(
+    session_id: uuid.UUID,
+    payload: WorkbookFormulaPreviewRequest,
+    db: SessionDep,
+    current_user: CurrentUserDep,
+):
+    _authorize(current_user)
+    result = await _call_service(
+        preview_session_formula,
+        db,
+        _workbook_storage(),
+        actor=current_user,
+        session_id=session_id,
+        base_version=payload.base_version,
+        formula=payload.formula.model_dump(mode="json"),
+        output_type=payload.output_type.value,
+        output_column_id=payload.output_column_id,
+        sample_rows=payload.sample_rows,
+    )
+    response = WorkbookFormulaPreviewResponse(
+        valid=result.valid,
+        normalized_formula=result.normalized_formula,
+        readable_expression=result.readable_expression,
+        referenced_column_ids=list(result.referenced_column_ids),
+        results=[
+            {
+                "row_number": row.row_number,
+                "value": row.value,
+                "error_code": row.error_code,
+                "error_message": row.error_message,
+            }
+            for row in result.results
+        ],
+        errors=list(result.errors),
+        warnings=list(result.warnings),
     )
     return success_response(response.model_dump(mode="json"))
 
@@ -375,6 +589,40 @@ async def add_session_column_route(
         label=payload.label,
         data_type=payload.data_type.value,
         formula=(payload.formula.model_dump(mode="json") if payload.formula else None),
+    )
+    return success_response(_session_response(result).model_dump(mode="json"))
+
+
+@router.patch(
+    "/sessions/{session_id}/columns/{column_id}",
+    response_model=WorkbookSuccessResponse[WorkbookSessionResponse],
+    responses={
+        404: _ERROR_RESPONSE,
+        409: _ERROR_RESPONSE,
+        422: _VALIDATION_RESPONSE,
+        500: _ERROR_RESPONSE,
+    },
+)
+async def update_session_column_route(
+    session_id: uuid.UUID,
+    column_id: str,
+    payload: WorkbookUpdateColumnRequest,
+    db: SessionDep,
+    current_user: CurrentUserDep,
+):
+    _authorize(current_user)
+    result = await _call_service(
+        update_session_column,
+        db,
+        _workbook_storage(),
+        actor=current_user,
+        session_id=session_id,
+        column_id=column_id,
+        base_version=payload.base_version,
+        label=payload.label,
+        data_type=payload.data_type.value if payload.data_type else None,
+        formula=(payload.formula.model_dump(mode="json") if payload.formula else None),
+        formula_was_provided=payload.formula_was_provided,
     )
     return success_response(_session_response(result).model_dump(mode="json"))
 
@@ -458,9 +706,7 @@ async def save_session_changes_route(
     changes = [
         PriceChange(
             row_number=change.row_number,
-            net_price=change.values.net_price,
-            selling_price=change.values.selling_price,
-            values=dict(change.values.model_extra or {}),
+            values=change.values.model_dump(exclude_unset=True),
         )
         for change in payload.changes
     ]

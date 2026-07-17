@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -13,7 +14,10 @@ from services.workbook_mutation import (
     MAX_SAFE_VND,
     PriceChange,
     WorkbookMutationError,
+    add_workbook_column,
     apply_price_changes,
+    remove_workbook_column,
+    update_workbook_column,
 )
 
 
@@ -102,6 +106,121 @@ def test_preserves_other_sheets_formulas_and_styles(tmp_path: Path) -> None:
     assert generated["Tickets"]["E2"].fill.fgColor.rgb == "00FFF2CC"
     assert generated["Summary"]["A1"].value == "=Tickets!D2"
     generated.close()
+
+
+def test_generic_changes_validate_types_and_preserve_formats(tmp_path: Path) -> None:
+    source = tmp_path / "generic-source.xlsx"
+    output = tmp_path / "generic-output.xlsx"
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Data"
+    worksheet.append(["Text", "Number", "Currency", "Date", "Boolean", "Blank"])
+    worksheet.append(["old", 1, 12.5, date(2026, 1, 1), False, "clear me"])
+    worksheet["C2"].number_format = '$#,##0.00'
+    worksheet["D2"].number_format = "dd/mm/yyyy"
+    worksheet["A2"].fill = PatternFill(fill_type="solid", fgColor="FFF2CC")
+    workbook.save(source)
+    workbook.close()
+
+    column_config = [
+        {"id": "source-text", "column_number": 1, "data_type": "text"},
+        {"id": "source-number", "column_number": 2, "data_type": "number"},
+        {"id": "source-currency", "column_number": 3, "data_type": "currency"},
+        {"id": "source-date", "column_number": 4, "data_type": "date"},
+        {"id": "source-boolean", "column_number": 5, "data_type": "boolean"},
+        {"id": "source-blank", "column_number": 6, "data_type": "text"},
+    ]
+    result = apply_price_changes(
+        source,
+        output,
+        sheet_name="Data",
+        header_row_number=1,
+        column_mapping={},
+        column_config=column_config,
+        changes=[
+            PriceChange(
+                row_number=2,
+                values={
+                    "source-text": "updated",
+                    "source-number": -2.75,
+                    "source-currency": -1234.56,
+                    "source-date": "2026-07-14",
+                    "source-boolean": True,
+                    "source-blank": None,
+                },
+            )
+        ],
+    )
+
+    assert result.changed_cell_count == 6
+    generated = load_workbook(output, data_only=False)
+    row = generated["Data"]
+    assert row["A2"].value == "updated"
+    assert row["B2"].value == -2.75
+    assert row["C2"].value == -1234.56
+    assert row["D2"].value.date() == date(2026, 7, 14)
+    assert row["E2"].value is True
+    assert row["F2"].value is None
+    assert row["C2"].number_format == '$#,##0.00'
+    assert row["D2"].number_format == "dd/mm/yyyy"
+    assert row["A2"].fill.fgColor.rgb == "00FFF2CC"
+    generated.close()
+
+
+@pytest.mark.parametrize(
+    ("data_type", "value"),
+    [
+        ("date", "2026-07-14T10:00:00Z"),
+        ("text", "x" * 32_768),
+        ("number", 1.234567890123456),
+    ],
+)
+def test_generic_changes_reject_unrepresentable_excel_values(
+    tmp_path: Path,
+    data_type: str,
+    value: object,
+) -> None:
+    source = tmp_path / "generic-source.xlsx"
+    output = tmp_path / "generic-output.xlsx"
+    _make_workbook(source)
+
+    with pytest.raises(WorkbookMutationError) as raised:
+        apply_price_changes(
+            source,
+            output,
+            sheet_name="Tickets",
+            header_row_number=1,
+            column_mapping={},
+            column_config=[
+                {"id": "source-value", "column_number": 3, "data_type": data_type}
+            ],
+            changes=[PriceChange(row_number=2, values={"source-value": value})],
+        )
+
+    assert raised.value.code == "INVALID_CELL_VALUE"
+    assert not output.exists()
+
+
+def test_generic_changes_reject_type_mismatches(tmp_path: Path) -> None:
+    source = tmp_path / "generic-source.xlsx"
+    output = tmp_path / "generic-output.xlsx"
+    _make_workbook(source)
+
+    with pytest.raises(WorkbookMutationError) as raised:
+        apply_price_changes(
+            source,
+            output,
+            sheet_name="Tickets",
+            header_row_number=1,
+            column_mapping={},
+            column_config=[
+                {"id": "source-number", "column_number": 3, "data_type": "number"}
+            ],
+            changes=[PriceChange(row_number=2, values={"source-number": "not a number"})],
+        )
+
+    assert raised.value.code == "INVALID_CELL_VALUE"
+    assert not output.exists()
 
 
 @pytest.mark.parametrize("field", ["net_price", "selling_price"])
@@ -277,4 +396,91 @@ def test_output_directory_failure_uses_safe_domain_error(
 
     assert raised.value.code == "STORAGE_WRITE_FAILED"
     assert "private-customer" not in str(raised.value)
+
+
+def test_structural_changes_regenerate_formula_references_and_calc_flags(tmp_path: Path) -> None:
+    source = tmp_path / "source.xlsx"
+    with_formula = tmp_path / "with-formula.xlsx"
+    moved = tmp_path / "moved.xlsx"
+    updated = tmp_path / "updated.xlsx"
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Data"
+    worksheet.append(["Unused", "Fare", "Sale"])
+    worksheet.append(["x", 100, 150])
+    workbook.save(source)
+    workbook.close()
+
+    formula = {
+        "schema_version": 1,
+        "expression": {
+            "type": "binary",
+            "operator": "-",
+            "left": {"type": "column", "column_id": "sale"},
+            "right": {"type": "column", "column_id": "fare"},
+        },
+    }
+    before = [
+        {"id": "unused", "label": "Unused", "column_number": 1, "data_type": "text"},
+        {"id": "fare", "label": "Fare", "column_number": 2, "data_type": "currency"},
+        {"id": "sale", "label": "Sale", "column_number": 3, "data_type": "currency"},
+        {"id": "profit", "label": "Profit", "column_number": 4, "data_type": "currency", "formula": formula},
+    ]
+    add_workbook_column(
+        source,
+        with_formula,
+        sheet_name="Data",
+        header_row_number=1,
+        label="Profit",
+        column_config=before,
+    )
+    generated = load_workbook(with_formula, data_only=False)
+    assert generated["Data"]["D2"].value == "=(C2 - B2)"
+    assert generated.calculation.calcMode == "auto"
+    assert generated.calculation.fullCalcOnLoad is True
+    generated.close()
+
+    after_remove = [
+        {**item, "column_number": int(item["column_number"]) - 1}
+        for item in before
+        if item["id"] != "unused"
+    ]
+    remove_workbook_column(
+        with_formula,
+        moved,
+        sheet_name="Data",
+        column_number=1,
+        header_row_number=1,
+        column_config=after_remove,
+    )
+    generated = load_workbook(moved, data_only=False)
+    assert generated["Data"]["C2"].value == "=(B2 - A2)"
+    generated.close()
+
+    updated_formula = {
+        "schema_version": 1,
+        "expression": {
+            "type": "function",
+            "function": "MAX",
+            "arguments": [
+                {"type": "column", "column_id": "fare"},
+                {"type": "column", "column_id": "sale"},
+                {"type": "constant", "value": "0"},
+            ],
+        },
+    }
+    after_remove[-1] = {**after_remove[-1], "label": "Maximum", "formula": updated_formula}
+    update_workbook_column(
+        moved,
+        updated,
+        sheet_name="Data",
+        header_row_number=1,
+        column_number=3,
+        label="Maximum",
+        column_config=after_remove,
+    )
+    generated = load_workbook(updated, data_only=False)
+    assert generated["Data"]["C1"].value == "Maximum"
+    assert generated["Data"]["C2"].value == "=MAX(A2,B2,0)"
+    generated.close()
 

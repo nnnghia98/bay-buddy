@@ -48,6 +48,48 @@
         }
       }
     },
+    "/api/v1/auth/internal-login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Login With Internal Access Code",
+        "description": "Issue a JWT for the configured internal account after code verification.",
+        "operationId": "login_with_internal_access_code_api_v1_auth_internal_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InternalLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/me": {
       "get": {
         "tags": [
@@ -2618,15 +2660,20 @@
         ],
         "summary": "Create Editing Session Route",
         "operationId": "create_editing_session_route_api_v1_workbooks_sessions_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/WorkbookSessionCreateRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -2640,11 +2687,120 @@
             }
           },
           "404": {
-            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "List Editing Sessions Route",
+        "operationId": "list_editing_sessions_route_api_v1_workbooks_sessions_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 10,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkbookSessionStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookSessionListResponse_"
                 }
               }
             }
@@ -2667,21 +2823,16 @@
             }
           },
           "500": {
-            "description": "Internal Server Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WorkbookErrorResponse"
                 }
               }
-            }
+            },
+            "description": "Internal Server Error"
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/workbooks/sessions/latest": {
@@ -2748,6 +2899,182 @@
       }
     },
     "/api/v1/workbooks/sessions/{session_id}": {
+      "patch": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Rename Editing Session Route",
+        "operationId": "rename_editing_session_route_api_v1_workbooks_sessions__session_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbookSessionRenameRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookSessionSummary_"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Discard Editing Session Route",
+        "operationId": "discard_editing_session_route_api_v1_workbooks_sessions__session_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookSessionSummary_"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        }
+      },
       "get": {
         "tags": [
           "Workbooks"
@@ -2892,7 +3219,9 @@
             "schema": {
               "anyOf": [
                 {
-                  "$ref": "#/components/schemas/WorkbookSemanticField"
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
                 },
                 {
                   "type": "null"
@@ -2962,6 +3291,196 @@
         }
       }
     },
+    "/api/v1/workbooks/sessions/{session_id}/cell-values": {
+      "post": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Lookup Session Cell Values Route",
+        "operationId": "lookup_session_cell_values_route_api_v1_workbooks_sessions__session_id__cell_values_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbookCellValueLookupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookCellValueLookupResponse_"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/v1/workbooks/sessions/{session_id}/formulas/preview": {
+      "post": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Preview Session Formula Route",
+        "operationId": "preview_session_formula_route_api_v1_workbooks_sessions__session_id__formulas_preview_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbookFormulaPreviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookFormulaPreviewResponse_"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
     "/api/v1/workbooks/sessions/{session_id}/columns": {
       "post": {
         "tags": [
@@ -2998,6 +3517,110 @@
         },
         "responses": {
           "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookSuccessResponse_WorkbookSessionResponse_"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Workbook domain error or request validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/WorkbookErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HTTPValidationError"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbookErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/v1/workbooks/sessions/{session_id}/columns/{column_id}": {
+      "patch": {
+        "tags": [
+          "Workbooks"
+        ],
+        "summary": "Update Session Column Route",
+        "operationId": "update_session_column_route_api_v1_workbooks_sessions__session_id__columns__column_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "column_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Column Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkbookUpdateColumnRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
@@ -3818,6 +4441,20 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "InternalLoginRequest": {
+        "properties": {
+          "access_code": {
+            "type": "string",
+            "title": "Access Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_code"
+        ],
+        "title": "InternalLoginRequest",
+        "description": "Payload accepted by the internal shared access-code login."
       },
       "InvoiceCreate": {
         "properties": {
@@ -5455,12 +6092,16 @@
           "formula": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/WorkbookColumnFormula"
+                "$ref": "#/components/schemas/WorkbookColumnFormula-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookLegacyColumnFormula"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Formula"
           }
         },
         "additionalProperties": false,
@@ -5470,6 +6111,135 @@
           "label"
         ],
         "title": "WorkbookAddColumnRequest"
+      },
+      "WorkbookCellReference": {
+        "properties": {
+          "row_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Row Number"
+          },
+          "column_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Column Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "row_number",
+          "column_id"
+        ],
+        "title": "WorkbookCellReference"
+      },
+      "WorkbookCellValueItem": {
+        "properties": {
+          "row_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Row Number"
+          },
+          "column_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Column Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "row_number",
+          "column_id",
+          "value"
+        ],
+        "title": "WorkbookCellValueItem"
+      },
+      "WorkbookCellValueLookupRequest": {
+        "properties": {
+          "base_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Base Version"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbookCellReference"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Cells"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "base_version",
+          "cells"
+        ],
+        "title": "WorkbookCellValueLookupRequest"
+      },
+      "WorkbookCellValueLookupResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbookCellValueItem"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Cells"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "session_id",
+          "version",
+          "cells"
+        ],
+        "title": "WorkbookCellValueLookupResponse"
       },
       "WorkbookColumnConfiguration": {
         "properties": {
@@ -5518,7 +6288,7 @@
           "formula": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/WorkbookColumnFormula"
+                "$ref": "#/components/schemas/WorkbookColumnFormula-Output"
               },
               {
                 "type": "null"
@@ -5566,34 +6336,116 @@
           "text",
           "number",
           "date",
-          "currency"
+          "currency",
+          "boolean"
         ],
         "title": "WorkbookColumnDataType"
       },
-      "WorkbookColumnFormula": {
+      "WorkbookColumnFormula-Input": {
         "properties": {
-          "left_column_id": {
-            "type": "string",
-            "maxLength": 64,
-            "minLength": 1,
-            "title": "Left Column Id"
+          "schema_version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Schema Version",
+            "default": 1
           },
-          "operator": {
-            "$ref": "#/components/schemas/WorkbookFormulaOperator"
-          },
-          "right_column_id": {
-            "type": "string",
-            "maxLength": 64,
-            "minLength": 1,
-            "title": "Right Column Id"
+          "expression": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Input"
+              }
+            ],
+            "title": "Expression",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Input",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Input",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Input",
+                "if": "#/components/schemas/WorkbookFormulaIf-Input",
+                "round": "#/components/schemas/WorkbookFormulaRound-Input"
+              }
+            }
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "left_column_id",
-          "operator",
-          "right_column_id"
+          "expression"
+        ],
+        "title": "WorkbookColumnFormula"
+      },
+      "WorkbookColumnFormula-Output": {
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Schema Version",
+            "default": 1
+          },
+          "expression": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Output"
+              }
+            ],
+            "title": "Expression",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Output",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Output",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Output",
+                "if": "#/components/schemas/WorkbookFormulaIf-Output",
+                "round": "#/components/schemas/WorkbookFormulaRound-Output"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expression"
         ],
         "title": "WorkbookColumnFormula"
       },
@@ -5604,6 +6456,18 @@
           "user"
         ],
         "title": "WorkbookColumnOrigin"
+      },
+      "WorkbookComparisonOperator": {
+        "type": "string",
+        "enum": [
+          "=",
+          "<>",
+          "<",
+          "<=",
+          ">",
+          ">="
+        ],
+        "title": "WorkbookComparisonOperator"
       },
       "WorkbookErrorDetail": {
         "properties": {
@@ -5647,7 +6511,1169 @@
         ],
         "title": "WorkbookErrorResponse"
       },
+      "WorkbookFormulaBinary-Input": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "binary",
+            "title": "Type",
+            "default": "binary"
+          },
+          "operator": {
+            "$ref": "#/components/schemas/WorkbookFormulaOperator"
+          },
+          "left": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Input"
+              }
+            ],
+            "title": "Left",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Input",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Input",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Input",
+                "if": "#/components/schemas/WorkbookFormulaIf-Input",
+                "round": "#/components/schemas/WorkbookFormulaRound-Input"
+              }
+            }
+          },
+          "right": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Input"
+              }
+            ],
+            "title": "Right",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Input",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Input",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Input",
+                "if": "#/components/schemas/WorkbookFormulaIf-Input",
+                "round": "#/components/schemas/WorkbookFormulaRound-Input"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operator",
+          "left",
+          "right"
+        ],
+        "title": "WorkbookFormulaBinary"
+      },
+      "WorkbookFormulaBinary-Output": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "binary",
+            "title": "Type",
+            "default": "binary"
+          },
+          "operator": {
+            "$ref": "#/components/schemas/WorkbookFormulaOperator"
+          },
+          "left": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Output"
+              }
+            ],
+            "title": "Left",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Output",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Output",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Output",
+                "if": "#/components/schemas/WorkbookFormulaIf-Output",
+                "round": "#/components/schemas/WorkbookFormulaRound-Output"
+              }
+            }
+          },
+          "right": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Output"
+              }
+            ],
+            "title": "Right",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Output",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Output",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Output",
+                "if": "#/components/schemas/WorkbookFormulaIf-Output",
+                "round": "#/components/schemas/WorkbookFormulaRound-Output"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operator",
+          "left",
+          "right"
+        ],
+        "title": "WorkbookFormulaBinary"
+      },
+      "WorkbookFormulaColumnReference": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "column",
+            "title": "Type",
+            "default": "column"
+          },
+          "column_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Column Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "column_id"
+        ],
+        "title": "WorkbookFormulaColumnReference"
+      },
+      "WorkbookFormulaComparison-Input": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "comparison",
+            "title": "Type",
+            "default": "comparison"
+          },
+          "operator": {
+            "$ref": "#/components/schemas/WorkbookComparisonOperator"
+          },
+          "left": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Input"
+              }
+            ],
+            "title": "Left",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Input",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Input",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Input",
+                "if": "#/components/schemas/WorkbookFormulaIf-Input",
+                "round": "#/components/schemas/WorkbookFormulaRound-Input"
+              }
+            }
+          },
+          "right": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Input"
+              }
+            ],
+            "title": "Right",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Input",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Input",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Input",
+                "if": "#/components/schemas/WorkbookFormulaIf-Input",
+                "round": "#/components/schemas/WorkbookFormulaRound-Input"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operator",
+          "left",
+          "right"
+        ],
+        "title": "WorkbookFormulaComparison"
+      },
+      "WorkbookFormulaComparison-Output": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "comparison",
+            "title": "Type",
+            "default": "comparison"
+          },
+          "operator": {
+            "$ref": "#/components/schemas/WorkbookComparisonOperator"
+          },
+          "left": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Output"
+              }
+            ],
+            "title": "Left",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Output",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Output",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Output",
+                "if": "#/components/schemas/WorkbookFormulaIf-Output",
+                "round": "#/components/schemas/WorkbookFormulaRound-Output"
+              }
+            }
+          },
+          "right": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Output"
+              }
+            ],
+            "title": "Right",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Output",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Output",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Output",
+                "if": "#/components/schemas/WorkbookFormulaIf-Output",
+                "round": "#/components/schemas/WorkbookFormulaRound-Output"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operator",
+          "left",
+          "right"
+        ],
+        "title": "WorkbookFormulaComparison"
+      },
+      "WorkbookFormulaConstant": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "constant",
+            "title": "Type",
+            "default": "constant"
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Value"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "WorkbookFormulaConstant"
+      },
+      "WorkbookFormulaFunction-Input": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "function",
+            "title": "Type",
+            "default": "function"
+          },
+          "function": {
+            "$ref": "#/components/schemas/WorkbookVariadicFunction"
+          },
+          "arguments": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/WorkbookFormulaConstant"
+                },
+                {
+                  "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+                },
+                {
+                  "$ref": "#/components/schemas/WorkbookFormulaBinary-Input"
+                },
+                {
+                  "$ref": "#/components/schemas/WorkbookFormulaComparison-Input"
+                },
+                {
+                  "$ref": "#/components/schemas/WorkbookFormulaIf-Input"
+                },
+                {
+                  "$ref": "#/components/schemas/WorkbookFormulaRound-Input"
+                },
+                {
+                  "$ref": "#/components/schemas/WorkbookFormulaFunction-Input"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "type",
+                "mapping": {
+                  "binary": "#/components/schemas/WorkbookFormulaBinary-Input",
+                  "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                  "comparison": "#/components/schemas/WorkbookFormulaComparison-Input",
+                  "constant": "#/components/schemas/WorkbookFormulaConstant",
+                  "function": "#/components/schemas/WorkbookFormulaFunction-Input",
+                  "if": "#/components/schemas/WorkbookFormulaIf-Input",
+                  "round": "#/components/schemas/WorkbookFormulaRound-Input"
+                }
+              }
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Arguments"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "function",
+          "arguments"
+        ],
+        "title": "WorkbookFormulaFunction"
+      },
+      "WorkbookFormulaFunction-Output": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "function",
+            "title": "Type",
+            "default": "function"
+          },
+          "function": {
+            "$ref": "#/components/schemas/WorkbookVariadicFunction"
+          },
+          "arguments": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/WorkbookFormulaConstant"
+                },
+                {
+                  "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+                },
+                {
+                  "$ref": "#/components/schemas/WorkbookFormulaBinary-Output"
+                },
+                {
+                  "$ref": "#/components/schemas/WorkbookFormulaComparison-Output"
+                },
+                {
+                  "$ref": "#/components/schemas/WorkbookFormulaIf-Output"
+                },
+                {
+                  "$ref": "#/components/schemas/WorkbookFormulaRound-Output"
+                },
+                {
+                  "$ref": "#/components/schemas/WorkbookFormulaFunction-Output"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "type",
+                "mapping": {
+                  "binary": "#/components/schemas/WorkbookFormulaBinary-Output",
+                  "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                  "comparison": "#/components/schemas/WorkbookFormulaComparison-Output",
+                  "constant": "#/components/schemas/WorkbookFormulaConstant",
+                  "function": "#/components/schemas/WorkbookFormulaFunction-Output",
+                  "if": "#/components/schemas/WorkbookFormulaIf-Output",
+                  "round": "#/components/schemas/WorkbookFormulaRound-Output"
+                }
+              }
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Arguments"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "function",
+          "arguments"
+        ],
+        "title": "WorkbookFormulaFunction"
+      },
+      "WorkbookFormulaIf-Input": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "if",
+            "title": "Type",
+            "default": "if"
+          },
+          "condition": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Input"
+              }
+            ],
+            "title": "Condition",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Input",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Input",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Input",
+                "if": "#/components/schemas/WorkbookFormulaIf-Input",
+                "round": "#/components/schemas/WorkbookFormulaRound-Input"
+              }
+            }
+          },
+          "when_true": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Input"
+              }
+            ],
+            "title": "When True",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Input",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Input",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Input",
+                "if": "#/components/schemas/WorkbookFormulaIf-Input",
+                "round": "#/components/schemas/WorkbookFormulaRound-Input"
+              }
+            }
+          },
+          "when_false": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Input"
+              }
+            ],
+            "title": "When False",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Input",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Input",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Input",
+                "if": "#/components/schemas/WorkbookFormulaIf-Input",
+                "round": "#/components/schemas/WorkbookFormulaRound-Input"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "condition",
+          "when_true",
+          "when_false"
+        ],
+        "title": "WorkbookFormulaIf"
+      },
+      "WorkbookFormulaIf-Output": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "if",
+            "title": "Type",
+            "default": "if"
+          },
+          "condition": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Output"
+              }
+            ],
+            "title": "Condition",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Output",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Output",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Output",
+                "if": "#/components/schemas/WorkbookFormulaIf-Output",
+                "round": "#/components/schemas/WorkbookFormulaRound-Output"
+              }
+            }
+          },
+          "when_true": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Output"
+              }
+            ],
+            "title": "When True",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Output",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Output",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Output",
+                "if": "#/components/schemas/WorkbookFormulaIf-Output",
+                "round": "#/components/schemas/WorkbookFormulaRound-Output"
+              }
+            }
+          },
+          "when_false": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Output"
+              }
+            ],
+            "title": "When False",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Output",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Output",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Output",
+                "if": "#/components/schemas/WorkbookFormulaIf-Output",
+                "round": "#/components/schemas/WorkbookFormulaRound-Output"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "condition",
+          "when_true",
+          "when_false"
+        ],
+        "title": "WorkbookFormulaIf"
+      },
       "WorkbookFormulaOperator": {
+        "type": "string",
+        "enum": [
+          "+",
+          "-",
+          "*",
+          "/"
+        ],
+        "title": "WorkbookFormulaOperator"
+      },
+      "WorkbookFormulaPreviewRequest": {
+        "properties": {
+          "base_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Base Version"
+          },
+          "formula": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookColumnFormula-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookLegacyColumnFormula"
+              }
+            ],
+            "title": "Formula"
+          },
+          "output_type": {
+            "$ref": "#/components/schemas/WorkbookColumnDataType"
+          },
+          "output_column_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Column Id"
+          },
+          "sample_rows": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array",
+                "maxItems": 10,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Rows"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "base_version",
+          "formula",
+          "output_type"
+        ],
+        "title": "WorkbookFormulaPreviewRequest"
+      },
+      "WorkbookFormulaPreviewResponse": {
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "title": "Valid"
+          },
+          "normalized_formula": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookColumnFormula-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "readable_expression": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readable Expression"
+          },
+          "referenced_column_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 128,
+            "title": "Referenced Column Ids"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbookFormulaPreviewResult"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Results"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbookErrorDetail"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Errors"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbookErrorDetail"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Warnings"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "valid"
+        ],
+        "title": "WorkbookFormulaPreviewResponse"
+      },
+      "WorkbookFormulaPreviewResult": {
+        "properties": {
+          "row_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Row Number"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "row_number"
+        ],
+        "title": "WorkbookFormulaPreviewResult"
+      },
+      "WorkbookFormulaRound-Input": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "round",
+            "title": "Type",
+            "default": "round"
+          },
+          "value": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Input"
+              }
+            ],
+            "title": "Value",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Input",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Input",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Input",
+                "if": "#/components/schemas/WorkbookFormulaIf-Input",
+                "round": "#/components/schemas/WorkbookFormulaRound-Input"
+              }
+            }
+          },
+          "digits": {
+            "type": "integer",
+            "maximum": 15.0,
+            "minimum": -15.0,
+            "title": "Digits"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "value",
+          "digits"
+        ],
+        "title": "WorkbookFormulaRound"
+      },
+      "WorkbookFormulaRound-Output": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "round",
+            "title": "Type",
+            "default": "round"
+          },
+          "value": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaConstant"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaColumnReference"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaBinary-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaComparison-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaIf-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaRound-Output"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookFormulaFunction-Output"
+              }
+            ],
+            "title": "Value",
+            "discriminator": {
+              "propertyName": "type",
+              "mapping": {
+                "binary": "#/components/schemas/WorkbookFormulaBinary-Output",
+                "column": "#/components/schemas/WorkbookFormulaColumnReference",
+                "comparison": "#/components/schemas/WorkbookFormulaComparison-Output",
+                "constant": "#/components/schemas/WorkbookFormulaConstant",
+                "function": "#/components/schemas/WorkbookFormulaFunction-Output",
+                "if": "#/components/schemas/WorkbookFormulaIf-Output",
+                "round": "#/components/schemas/WorkbookFormulaRound-Output"
+              }
+            }
+          },
+          "digits": {
+            "type": "integer",
+            "maximum": 15.0,
+            "minimum": -15.0,
+            "title": "Digits"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "value",
+          "digits"
+        ],
+        "title": "WorkbookFormulaRound"
+      },
+      "WorkbookLegacyColumnFormula": {
+        "properties": {
+          "left_column_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Left Column Id"
+          },
+          "operator": {
+            "$ref": "#/components/schemas/WorkbookLegacyFormulaOperator"
+          },
+          "right_column_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Right Column Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "left_column_id",
+          "operator",
+          "right_column_id"
+        ],
+        "title": "WorkbookLegacyColumnFormula"
+      },
+      "WorkbookLegacyFormulaOperator": {
         "type": "string",
         "enum": [
           "+",
@@ -5656,7 +7682,7 @@
           "/",
           "%"
         ],
-        "title": "WorkbookFormulaOperator"
+        "title": "WorkbookLegacyFormulaOperator"
       },
       "WorkbookMappingStatus": {
         "type": "string",
@@ -5725,9 +7751,24 @@
           "net_price": {
             "anyOf": [
               {
-                "type": "integer",
-                "maximum": 1000000000000.0,
-                "minimum": 0.0
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "string",
+                "format": "date-time"
               },
               {
                 "type": "null"
@@ -5738,9 +7779,24 @@
           "selling_price": {
             "anyOf": [
               {
-                "type": "integer",
-                "maximum": 1000000000000.0,
-                "minimum": 0.0
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "string",
+                "format": "date-time"
               },
               {
                 "type": "null"
@@ -5749,9 +7805,36 @@
             "title": "Selling Price"
           }
         },
-        "additionalProperties": true,
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "type": "object",
-        "title": "WorkbookPriceChangeValues"
+        "title": "WorkbookPriceChangeValues",
+        "description": "Generic cell values with legacy semantic price keys still accepted."
       },
       "WorkbookRecordColumn": {
         "properties": {
@@ -5827,7 +7910,7 @@
           "formula": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/WorkbookColumnFormula"
+                "$ref": "#/components/schemas/WorkbookColumnFormula-Output"
               },
               {
                 "type": "null"
@@ -6069,15 +8152,58 @@
             "maxLength": 255,
             "minLength": 1,
             "title": "Sheet Name"
+          },
+          "header_row_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Header Row Number"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
           "workbook_id",
-          "sheet_name"
+          "sheet_name",
+          "header_row_number"
         ],
         "title": "WorkbookSessionCreateRequest"
+      },
+      "WorkbookSessionListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbookSessionSummary"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/WorkbookPagination"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "title": "WorkbookSessionListResponse"
+      },
+      "WorkbookSessionRenameRequest": {
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Display Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "display_name"
+        ],
+        "title": "WorkbookSessionRenameRequest"
       },
       "WorkbookSessionResponse": {
         "properties": {
@@ -6172,6 +8298,110 @@
         "title": "WorkbookSessionStatus",
         "description": "Lifecycle state of an independent workbook editing branch."
       },
+      "WorkbookSessionSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Display Name"
+          },
+          "original_filename": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Original Filename"
+          },
+          "selected_sheet_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Selected Sheet Name"
+          },
+          "current_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Current Version"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WorkbookSessionStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "display_name",
+          "original_filename",
+          "selected_sheet_name",
+          "current_version",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "WorkbookSessionSummary"
+      },
+      "WorkbookSuccessResponse_WorkbookCellValueLookupResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true,
+            "title": "Success",
+            "default": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/WorkbookCellValueLookupResponse"
+          },
+          "error": {
+            "type": "null",
+            "title": "Error"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "WorkbookSuccessResponse[WorkbookCellValueLookupResponse]"
+      },
+      "WorkbookSuccessResponse_WorkbookFormulaPreviewResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true,
+            "title": "Success",
+            "default": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/WorkbookFormulaPreviewResponse"
+          },
+          "error": {
+            "type": "null",
+            "title": "Error"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "WorkbookSuccessResponse[WorkbookFormulaPreviewResponse]"
+      },
       "WorkbookSuccessResponse_WorkbookRecordsPage_": {
         "properties": {
           "success": {
@@ -6218,6 +8448,29 @@
         ],
         "title": "WorkbookSuccessResponse[WorkbookSaveResponse]"
       },
+      "WorkbookSuccessResponse_WorkbookSessionListResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true,
+            "title": "Success",
+            "default": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/WorkbookSessionListResponse"
+          },
+          "error": {
+            "type": "null",
+            "title": "Error"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "WorkbookSuccessResponse[WorkbookSessionListResponse]"
+      },
       "WorkbookSuccessResponse_WorkbookSessionResponse_": {
         "properties": {
           "success": {
@@ -6241,6 +8494,29 @@
         ],
         "title": "WorkbookSuccessResponse[WorkbookSessionResponse]"
       },
+      "WorkbookSuccessResponse_WorkbookSessionSummary_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true,
+            "title": "Success",
+            "default": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/WorkbookSessionSummary"
+          },
+          "error": {
+            "type": "null",
+            "title": "Error"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "WorkbookSuccessResponse[WorkbookSessionSummary]"
+      },
       "WorkbookSuccessResponse_WorkbookUploadResponse_": {
         "properties": {
           "success": {
@@ -6263,6 +8539,58 @@
           "data"
         ],
         "title": "WorkbookSuccessResponse[WorkbookUploadResponse]"
+      },
+      "WorkbookUpdateColumnRequest": {
+        "properties": {
+          "base_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Base Version"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "data_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookColumnDataType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "formula": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkbookColumnFormula-Input"
+              },
+              {
+                "$ref": "#/components/schemas/WorkbookLegacyColumnFormula"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formula"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "base_version"
+        ],
+        "title": "WorkbookUpdateColumnRequest"
       },
       "WorkbookUploadResponse": {
         "properties": {
@@ -6325,6 +8653,77 @@
           "created_at"
         ],
         "title": "WorkbookUploadResponse"
+      },
+      "WorkbookVariadicFunction": {
+        "type": "string",
+        "enum": [
+          "SUM",
+          "MIN",
+          "MAX"
+        ],
+        "title": "WorkbookVariadicFunction"
+      },
+      "WorksheetHeaderCandidateResponse": {
+        "properties": {
+          "row_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Row Number"
+          },
+          "detected_headers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Detected Headers"
+          },
+          "column_mapping": {
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 1.0
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/WorkbookSemanticField"
+            },
+            "type": "object",
+            "title": "Column Mapping"
+          },
+          "mapping_status": {
+            "$ref": "#/components/schemas/WorkbookMappingStatus"
+          },
+          "missing_required_fields": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbookSemanticField"
+            },
+            "type": "array",
+            "title": "Missing Required Fields"
+          },
+          "ambiguous_fields": {
+            "additionalProperties": {
+              "items": {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              "type": "array"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/WorkbookSemanticField"
+            },
+            "type": "object",
+            "title": "Ambiguous Fields"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "row_number",
+          "detected_headers",
+          "column_mapping",
+          "mapping_status",
+          "missing_required_fields",
+          "ambiguous_fields"
+        ],
+        "title": "WorksheetHeaderCandidateResponse"
       },
       "WorksheetInspectionResponse": {
         "properties": {
@@ -6397,6 +8796,14 @@
             },
             "type": "object",
             "title": "Ambiguous Fields"
+          },
+          "header_candidates": {
+            "items": {
+              "$ref": "#/components/schemas/WorksheetHeaderCandidateResponse"
+            },
+            "type": "array",
+            "maxItems": 25,
+            "title": "Header Candidates"
           }
         },
         "additionalProperties": false,

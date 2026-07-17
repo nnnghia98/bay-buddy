@@ -26,13 +26,36 @@ vi.mock("@/lib/auth-storage", () => ({
 import { ApiError } from "@/lib/api"
 import {
   addWorkbookColumn,
+  createWorkbookSession,
+  discardWorkbookSession,
   downloadCurrentWorkbook,
   fetchLatestWorkbookSession,
   fetchWorkbookSession,
+  lookupWorkbookCellValues,
+  fetchWorkbookSessions,
+  previewWorkbookFormula,
   parseDownloadFilename,
+  renameWorkbookSession,
   saveWorkbookChanges,
   toWorkbookClientError,
+  updateWorkbookColumn,
 } from "@/lib/workbooks/client"
+
+const sessionSummary = {
+  id: "b128452e-c49f-4be8-9794-bb399c1fd050",
+  display_name: "July prices",
+  original_filename: "prices.xlsx",
+  selected_sheet_name: "Tickets",
+  current_version: 1,
+  status: "DRAFT" as const,
+  created_at: "2026-07-12T00:00:00Z",
+  updated_at: "2026-07-12T00:00:00Z",
+}
+
+const sessionList = {
+  items: [sessionSummary],
+  pagination: { page: 1, page_size: 10, total: 1, total_pages: 1 },
+}
 
 const session = {
   id: "b128452e-c49f-4be8-9794-bb399c1fd050",
@@ -54,27 +77,112 @@ beforeEach(() => {
 })
 
 describe("workbook client", () => {
+  it("sends the selected header row when creating a session", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true, data: session, error: null })),
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    await createWorkbookSession({
+      workbook_id: session.workbook_id,
+      sheet_name: session.selected_sheet_name,
+      header_row_number: 4,
+    })
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      workbook_id: session.workbook_id,
+      sheet_name: session.selected_sheet_name,
+      header_row_number: 4,
+    })
+  })
+
   it("sends the safe formula AST when adding a derived column", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ success: true, data: session, error: null })),
     )
     vi.stubGlobal("fetch", fetchMock)
 
-    await addWorkbookColumn(session.id, 1, "Commission", "currency", {
-      left_column_id: "source-fare",
-      operator: "%",
-      right_column_id: "source-rate",
-    })
+    const formula = {
+      schema_version: 1 as const,
+      expression: {
+        type: "binary" as const,
+        operator: "-" as const,
+        left: { type: "column" as const, column_id: "source-sale" },
+        right: { type: "column" as const, column_id: "source-fare" },
+      },
+    }
+    await addWorkbookColumn(session.id, 1, "Commission", "currency", formula)
 
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
       base_version: 1,
       label: "Commission",
       data_type: "currency",
-      formula: {
-        left_column_id: "source-fare",
-        operator: "%",
-        right_column_id: "source-rate",
+      formula,
+    })
+  })
+
+  it("previews and updates a versioned formula column", async () => {
+    const formula = {
+      schema_version: 1 as const,
+      expression: {
+        type: "round" as const,
+        value: { type: "column" as const, column_id: "source-profit" },
+        digits: 0,
       },
+    }
+    const preview = {
+      valid: true,
+      normalized_formula: formula,
+      readable_expression: "ROUND(Profit,0)",
+      referenced_column_ids: ["source-profit"],
+      results: [{ row_number: 2, value: 100 }],
+      errors: [],
+      warnings: [],
+    }
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: preview, error: null })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: session, error: null })))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(previewWorkbookFormula(session.id, {
+      base_version: 1,
+      formula,
+      output_type: "currency",
+      output_column_id: "user-profit",
+    })).resolves.toEqual(preview)
+    await updateWorkbookColumn(session.id, "user-profit", {
+      base_version: 1,
+      label: "Rounded profit",
+      data_type: "currency",
+      formula,
+    })
+
+    expect(fetchMock.mock.calls[0][0]).toBe(`/api/workbooks/sessions/${session.id}/formulas/preview`)
+    expect(fetchMock.mock.calls[1][0]).toBe(`/api/workbooks/sessions/${session.id}/columns/user-profit`)
+    expect(fetchMock.mock.calls[1][1]).toEqual(expect.objectContaining({ method: "PATCH" }))
+  })
+
+  it("looks up bounded cell values for draft reconciliation", async () => {
+    const data = {
+      session_id: session.id,
+      version: 3,
+      cells: [{ row_number: 2, column_id: "source-price", value: 1_200_000 }],
+    }
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true, data, error: null })),
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(lookupWorkbookCellValues(session.id, {
+      base_version: 3,
+      cells: [{ row_number: 2, column_id: "source-price" }],
+    })).resolves.toEqual(data)
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `/api/workbooks/sessions/${session.id}/cell-values`,
+    )
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      base_version: 3,
+      cells: [{ row_number: 2, column_id: "source-price" }],
     })
   })
 
@@ -84,6 +192,52 @@ describe("workbook client", () => {
     ))
 
     await expect(fetchLatestWorkbookSession()).resolves.toEqual(session)
+  })
+
+  it("lists workbook sessions with encoded filters", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true, data: sessionList, error: null })),
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(
+      fetchWorkbookSessions({
+        page: 1,
+        pageSize: 10,
+        search: " July ",
+        status: "DRAFT",
+      }),
+    ).resolves.toEqual(sessionList)
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "/api/workbooks/sessions?page=1&page_size=10&search=July&status=DRAFT",
+    )
+  })
+
+  it("renames and discards workbook sessions", async () => {
+    const fetchMock = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({ success: true, data: sessionSummary, error: null }),
+        ),
+      ),
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    await renameWorkbookSession(sessionSummary.id, { display_name: "July prices" })
+    await discardWorkbookSession(sessionSummary.id)
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `/api/workbooks/sessions/${sessionSummary.id}`,
+    )
+    expect(fetchMock.mock.calls[0][1]).toEqual(
+      expect.objectContaining({ method: "PATCH" }),
+    )
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      display_name: "July prices",
+    })
+    expect(fetchMock.mock.calls[1][1]).toEqual(
+      expect.objectContaining({ method: "DELETE" }),
+    )
   })
 
   it("uses the unwrapped data returned by the shared envelope client", async () => {
@@ -109,7 +263,7 @@ describe("workbook client", () => {
       saveWorkbookChanges(session.id, {
         request_id: "08cd65a5-5464-43f6-a65f-51e73ac86942",
         base_version: 1,
-        changes: [{ row_number: 2, values: { net_price: -1 } }],
+        changes: [{ row_number: 2, values: { "source-number": Number.NaN } }],
       }),
     ).rejects.toThrow()
     expect(fetchMock).not.toHaveBeenCalled()

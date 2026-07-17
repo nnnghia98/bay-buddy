@@ -1,7 +1,7 @@
-# Workbook Editor V2 MVP Architecture
+# Workbook Editor V2 Architecture
 
-Status: Proposed for review  
-Scope: Phase 1 architecture only  
+Status: Implemented locally
+Scope: Current authenticated workbook workflow
 Target: Local development
 
 ## 1. Outcome
@@ -12,9 +12,12 @@ Workbook Editor V2 gives authenticated Bay Buddy staff one safe workflow:
 2. Select a supported worksheet.
 3. Create an independent editing session.
 4. Find business rows through a paginated table.
-5. Edit only `net_price` (`Giá gốc`) and `selling_price` (`Giá bán`).
-6. Explicitly save changes as a new immutable version.
-7. Download the current edited workbook.
+5. Edit supported source cells and typed user columns.
+6. Add, rename, configure, or remove user columns and create safe row-local formulas.
+7. Recover browser-local drafts and resolve version conflicts explicitly.
+8. Explicitly save changes as a new immutable version.
+9. Reopen, rename, or discard saved sessions from the session library.
+10. Download the current edited workbook.
 
 The uploaded original and every previous version remain unchanged. The existing
 workbook-related surfaces remain untouched.
@@ -35,7 +38,13 @@ workbook-related surfaces remain untouched.
 - Staff can append typed user columns as new immutable versions.
 - Per-session column visibility and sticky-column choices persist independently
   from workbook content versions.
-- Inline drafts for `net_price` and `selling_price` only.
+- Inline drafts for editable source and user-column cells, persisted locally in
+  IndexedDB and isolated by authenticated user and session.
+- Guided formula builder with versioned row-local expressions, server preview,
+  dependency-cycle checks, and generated Excel formulas.
+- Session library with search, status filters, rename, soft discard, and local
+  draft status.
+- Explicit header-row selection from inspected candidates.
 - Explicit Save action with validation, idempotency, and version conflicts.
 - Current-version download.
 - Vietnamese-first UI and explicit loading, dirty, saving, failure, and conflict states.
@@ -44,18 +53,14 @@ workbook-related surfaces remain untouched.
 
 - Autosave, debounce, optimistic version advancement, bulk paste, and spreadsheet
   keyboard navigation.
-- Manual field mapping, column chooser, saved preferences, and named presets.
+- Manual semantic-field mapping and named column presets.
 - Row detail drawer.
-- Add Field and Formula Builder.
-- Formula calculation or editing.
 - Multi-sheet editing within one session.
-- Version-history UI, restore, historical downloads, and discard workflow.
+- Version-history UI, restore, and historical downloads.
 - `.xlsm`, CSV, encrypted workbooks, macros, and advanced spreadsheet mode.
 - Cloud storage, Railway Volume, deployment, CI/CD, and production rollout.
 - Importing workbook records into Bay Buddy ticket, customer, or ledger tables.
 - Very-large-workbook indexing, background processing, and collaboration.
-- Browsing and reopening a library of previously uploaded workbooks. The first
-  release starts from a new upload; persisted session URLs remain reopenable.
 
 ## 3. Repository fit
 
@@ -73,8 +78,8 @@ workbook-related surfaces remain untouched.
 - Interactive table reads use TanStack Query and the existing authenticated
   client fetch helper.
 - UI text is added to both Vietnamese and English locale files.
-- `openpyxl` and `@tanstack/react-table` are required by this design but are not
-  currently declared dependencies. They are implementation-phase additions.
+- `openpyxl`, `@tanstack/react-table`, and `idb` provide workbook processing,
+  the controlled data table, and browser-local draft persistence.
 - OpenAPI produces checked-in TypeScript types, not a runtime client. Runtime
   calls continue through Bay Buddy's fetch helpers.
 
@@ -110,7 +115,7 @@ Rules:
 - Database records contain relative storage keys, never absolute paths.
 - Workbook business logic depends on the storage interface, not local paths.
 
-## 5. Proposed directory structure
+## 5. Directory structure
 
 ```text
 api/
@@ -287,17 +292,17 @@ Optional identity mappings:
 | `pnr` | Mã chỗ, Mã đặt chỗ, PNR, Booking Code, Booking Reference |
 | `ticket_number` | Số vé, Ticket Number, Ticket No |
 
-Both price fields must map exactly once before price edits can be saved. Missing
-fields are reported as a warning and staff may still open the selected sheet.
+Price-field mappings are optional business metadata. Missing or ambiguous fields
+are reported as guidance, and staff may still open the selected header candidate.
 The editor can show every source column and append typed user columns as new
 immutable versions. Source columns are never removable, but may be hidden while
 working. User-added columns may be removed by creating another immutable
-version. Ambiguous mappings are rejected with detected headers and
-machine-readable reasons. Manual semantic mapping is deferred.
+version. Candidate inspection returns detected headers and machine-readable
+mapping details. Manual semantic mapping is deferred.
 
 Physical Excel row number is the stable edit identity. Fully blank rows are
-excluded. Formula, merged, or protected cells in editable price columns are
-read-only and rejected on save.
+excluded. Formula, merged, or protected cells in editable columns are read-only
+and rejected on save.
 
 ## 9. API contract
 
@@ -319,11 +324,13 @@ standard success envelope, and enforce ownership.
 ```json
 {
   "workbook_id": "uuid",
-  "sheet_name": "Tickets"
+  "sheet_name": "Tickets",
+  "header_row_number": 2
 }
 ```
 
-- Requires a READY, unambiguous mapping.
+- Requires one inspected header candidate; business-field mapping may remain
+  incomplete or ambiguous.
 - Creates immutable version 1.
 - Multiple sessions from one workbook are supported by the data model, even if
   the initial UI normally creates one session after upload.
@@ -334,6 +341,14 @@ standard success envelope, and enforce ownership.
 
 - Returns selected sheet, mapping, status, current version, and timestamps.
 
+### Session library
+
+- `GET /api/v1/workbooks/sessions` lists active sessions with pagination,
+  search, and optional status filtering. STAFF sees owned sessions; ADMIN sees all.
+- `PATCH /api/v1/workbooks/sessions/{session_id}` renames an active session.
+- `DELETE /api/v1/workbooks/sessions/{session_id}` soft-discards an active session
+  while preserving versions and audit history.
+
 ### Read records
 
 `GET /api/v1/workbooks/sessions/{session_id}/records`
@@ -343,7 +358,7 @@ Query:
 - `page`, default `1`
 - `page_size`, default `50`, maximum `200`
 - `search`, optional
-- `sort_by`, restricted to returned semantic fields
+- `sort_by`, restricted to returned stable column IDs
 - `sort_direction`, `asc | desc`
 
 Returns columns, physical row identifiers, values, cell editability, current
@@ -351,6 +366,15 @@ version, and `{ page, page_size, total, total_pages }`.
 
 The MVP scans the current immutable workbook for each request. Search and sort
 are O(rows), which is acceptable only because upload complexity is capped.
+
+### Column and formula operations
+
+- Column endpoints add, rename, retype, remove, hide, and pin user columns while
+  protecting source columns and formula dependencies.
+- `POST /api/v1/workbooks/sessions/{session_id}/formulas/preview` validates and
+  evaluates a guided formula against sample rows without mutating the workbook.
+- `POST /api/v1/workbooks/sessions/{session_id}/cell-values` reads a bounded set
+  of current cells for safe local-draft reconciliation.
 
 ### Explicit save
 
@@ -374,8 +398,10 @@ are O(rows), which is acceptable only because upload complexity is capped.
 
 Rules:
 
-- Only `net_price` and `selling_price` are accepted.
-- Values are finite, non-negative whole VND amounts within a configured maximum.
+- Only configured editable, non-formula columns are accepted.
+- Values are validated by column type. Currency and numeric values must be
+  finite and within the supported range; text, date, and boolean columns use
+  their typed validation rules.
 - At least one real change is required.
 - Duplicate rows or fields are rejected.
 - `base_version` must equal the locked session current version.
@@ -419,7 +445,8 @@ State ownership:
 
 - URL: page, page size, search, sort field, sort direction.
 - Server state: session and records keyed by session/version/query parameters.
-- Local draft state: map of row number to edited price values.
+- Local draft state: an IndexedDB record keyed by authenticated user and session,
+  containing sparse edited cells, base version, pending request, and conflict data.
 - Save state: `idle | dirty | saving | saved | error | conflict`.
 - Concurrency: current `baseVersion` plus a client-generated request ID.
 
@@ -558,5 +585,5 @@ Parallel work is allowed only where file ownership and contracts do not overlap.
   without coupling services to filesystem paths.
 - **Moderate workbook caps:** accepted trade-off for O(rows) server-side reads
   without premature indexing infrastructure.
-- **Upload-first landing:** avoids building a workbook library before the safe
-  editing loop is validated; direct persisted session URLs can still be reopened.
+- **Upload-and-library landing:** keeps new upload and persisted-session recovery
+  together without mixing workbook data into Bay Buddy finance tables.

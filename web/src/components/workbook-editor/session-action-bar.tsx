@@ -1,6 +1,6 @@
 "use client"
 
-import { Download, LockKeyhole, Save } from "lucide-react"
+import { Download, Loader2, LockKeyhole, Save, Trash2 } from "lucide-react"
 
 import { StatusChip } from "@/components/command-center"
 import { Button } from "@/components/ui/button"
@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button"
 export function SessionActionBar({
   dirtyCount,
   dirtyLabel,
+  clearDraftLabel,
   downloadLabel,
   filename,
   isDownloading,
   isSaving,
+  onClearDraft,
   onDownload,
   onSave,
   protectedLabel,
@@ -22,10 +24,12 @@ export function SessionActionBar({
 }: {
   dirtyCount: number
   dirtyLabel: string
+  clearDraftLabel: string
   downloadLabel: string
   filename: string
   isDownloading: boolean
   isSaving: boolean
+  onClearDraft: () => void
   onDownload: () => void
   onSave: () => void
   protectedLabel: string
@@ -47,13 +51,25 @@ export function SessionActionBar({
           {dirtyCount > 0 ? <StatusChip tone="warning">{dirtyLabel}</StatusChip> : null}
         </div>
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <Button disabled={dirtyCount === 0 || isSaving} onClick={onClearDraft} type="button" variant="ghost">
+          <Trash2 aria-hidden="true" className="h-4 w-4" />
+          {clearDraftLabel}
+        </Button>
         <Button disabled={isDownloading || isSaving || dirtyCount > 0} onClick={onDownload} type="button" variant="outline">
-          <Download aria-hidden="true" className="h-4 w-4" />
+          {isDownloading ? (
+            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin motion-reduce:animate-none" />
+          ) : (
+            <Download aria-hidden="true" className="h-4 w-4" />
+          )}
           {downloadLabel}
         </Button>
         <Button disabled={!editingAvailable || dirtyCount === 0 || isSaving} onClick={onSave} type="button">
-          <Save aria-hidden="true" className="h-4 w-4" />
+          {isSaving ? (
+            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin motion-reduce:animate-none" />
+          ) : (
+            <Save aria-hidden="true" className="h-4 w-4" />
+          )}
           {isSaving ? savingLabel : saveLabel}
         </Button>
       </div>

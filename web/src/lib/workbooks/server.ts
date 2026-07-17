@@ -6,14 +6,28 @@ import {
 } from "@/lib/server-api"
 import {
   workbookRecordsPageSchema,
+  workbookSessionListSchema,
   workbookSessionSchema,
   type WorkbookRecordsPage,
   type WorkbookSession,
+  type WorkbookSessionList,
 } from "@/schemas/workbook"
 import {
   buildWorkbookRecordsPath,
+  buildWorkbookSessionsPath,
   type WorkbookRecordsRequestQuery,
+  type WorkbookSessionListQuery,
 } from "./query-keys"
+
+export async function fetchWorkbookSessionsServer(
+  query: Partial<WorkbookSessionListQuery> = {},
+): Promise<WorkbookSessionList> {
+  const payload = await fetchAuthenticatedApiPayload(
+    buildWorkbookSessionsPath(query),
+    "Unable to load workbook sessions.",
+  )
+  return workbookSessionListSchema.parse(getEnvelopeData(payload))
+}
 
 export async function fetchWorkbookSessionServer(
   sessionId: string,

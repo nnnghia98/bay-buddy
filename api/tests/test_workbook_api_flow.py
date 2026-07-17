@@ -98,7 +98,11 @@ def test_authenticated_upload_edit_and_download_flow(
 
     create_session = client.post(
         "/api/v1/workbooks/sessions",
-        json={"workbook_id": uploaded["id"], "sheet_name": "Tickets"},
+        json={
+            "workbook_id": uploaded["id"],
+            "sheet_name": "Tickets",
+            "header_row_number": 1,
+        },
     )
     assert create_session.status_code == 201
     session_data = create_session.json()["data"]

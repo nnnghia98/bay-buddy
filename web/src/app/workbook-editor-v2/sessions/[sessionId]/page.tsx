@@ -1,4 +1,5 @@
 import { EditorWorkbench } from "@/components/workbook-editor/editor-workbench"
+import { fetchCurrentUser } from "@/lib/server-users"
 import {
   fetchWorkbookRecordsServer,
   fetchWorkbookSessionServer,
@@ -12,14 +13,6 @@ type WorkbookSessionPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-const sortableFields = new Set([
-  "passenger_name",
-  "pnr",
-  "ticket_number",
-  "net_price",
-  "selling_price",
-])
-
 export default async function WorkbookSessionPage({ params, searchParams }: WorkbookSessionPageProps) {
   const { sessionId } = await params
   const rawQuery = await searchParams
@@ -31,20 +24,30 @@ export default async function WorkbookSessionPage({ params, searchParams }: Work
     : rawQuery.sort_direction
   const page = rawPage && /^\d+$/.test(rawPage) ? Math.max(1, Number(rawPage)) : 1
   const search = rawSearch?.trim().slice(0, 255) ?? ""
-  const sortBy = rawSortBy && sortableFields.has(rawSortBy)
-    ? rawSortBy as "passenger_name" | "pnr" | "ticket_number" | "net_price" | "selling_price"
-    : undefined
+  const requestedSortBy = rawSortBy && rawSortBy.length <= 64 ? rawSortBy : undefined
   const sortDirection = rawDirection === "desc" ? "desc" : "asc"
-  const [session, records] = await Promise.all([
+  const [currentUser, session] = await Promise.all([
+    fetchCurrentUser(),
     fetchWorkbookSessionServer(sessionId),
-    fetchWorkbookRecordsServer(sessionId, { page, pageSize: 50, search, sortBy, sortDirection }),
   ])
+  const sortableColumnIds = new Set(session.column_config.map((column) => column.id))
+  const sortBy = requestedSortBy && sortableColumnIds.has(requestedSortBy)
+    ? requestedSortBy
+    : undefined
+  const records = await fetchWorkbookRecordsServer(sessionId, {
+    page,
+    pageSize: 50,
+    search,
+    sortBy,
+    sortDirection,
+  })
 
   return (
     <EditorWorkbench
       initialQuery={{ page, search, sortBy, sortDirection }}
       initialRecords={records}
       initialSession={session}
+      userId={currentUser.id}
     />
   )
 }

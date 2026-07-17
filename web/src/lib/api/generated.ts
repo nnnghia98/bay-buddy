@@ -39,6 +39,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/internal-login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Login With Internal Access Code
+         * @description Issue a JWT for the configured internal account after code verification.
+         */
+        post: operations["login_with_internal_access_code_api_v1_auth_internal_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -749,7 +769,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Editing Sessions Route */
+        get: operations["list_editing_sessions_route_api_v1_workbooks_sessions_get"];
         put?: never;
         /** Create Editing Session Route */
         post: operations["create_editing_session_route_api_v1_workbooks_sessions_post"];
@@ -770,6 +791,25 @@ export interface paths {
         get: operations["get_editing_session_route_api_v1_workbooks_sessions__session_id__get"];
         put?: never;
         post?: never;
+        /** Discard Editing Session Route */
+        delete: operations["discard_editing_session_route_api_v1_workbooks_sessions__session_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename Editing Session Route */
+        patch: operations["rename_editing_session_route_api_v1_workbooks_sessions__session_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workbooks/sessions/{session_id}/cell-values": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Lookup Session Cell Values Route */
+        post: operations["lookup_session_cell_values_route_api_v1_workbooks_sessions__session_id__cell_values_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -810,6 +850,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workbooks/sessions/{session_id}/columns/{column_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Session Column Route */
+        patch: operations["update_session_column_route_api_v1_workbooks_sessions__session_id__columns__column_id__patch"];
+        trace?: never;
+    };
     "/api/v1/workbooks/sessions/{session_id}/columns/{column_id}/remove": {
         parameters: {
             query?: never;
@@ -838,6 +895,23 @@ export interface paths {
         get: operations["download_current_workbook_route_api_v1_workbooks_sessions__session_id__download_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbooks/sessions/{session_id}/formulas/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Session Formula Route */
+        post: operations["preview_session_formula_route_api_v1_workbooks_sessions__session_id__formulas_preview_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1083,6 +1157,14 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * InternalLoginRequest
+         * @description Payload accepted by the internal shared access-code login.
+         */
+        InternalLoginRequest: {
+            /** Access Code */
+            access_code: string;
         };
         /**
          * InvoiceCreate
@@ -1839,16 +1921,52 @@ export interface components {
             base_version: number;
             /** @default text */
             data_type: components["schemas"]["WorkbookColumnDataType"];
-            formula?: components["schemas"]["WorkbookColumnFormula"] | null;
+            /** Formula */
+            formula?: components["schemas"]["WorkbookColumnFormula-Input"] | components["schemas"]["WorkbookLegacyColumnFormula"] | null;
             /** Label */
             label: string;
+        };
+        /** WorkbookCellReference */
+        WorkbookCellReference: {
+            /** Column Id */
+            column_id: string;
+            /** Row Number */
+            row_number: number;
+        };
+        /** WorkbookCellValueItem */
+        WorkbookCellValueItem: {
+            /** Column Id */
+            column_id: string;
+            /** Row Number */
+            row_number: number;
+            /** Value */
+            value: string | number | boolean | null;
+        };
+        /** WorkbookCellValueLookupRequest */
+        WorkbookCellValueLookupRequest: {
+            /** Base Version */
+            base_version: number;
+            /** Cells */
+            cells: components["schemas"]["WorkbookCellReference"][];
+        };
+        /** WorkbookCellValueLookupResponse */
+        WorkbookCellValueLookupResponse: {
+            /** Cells */
+            cells: components["schemas"]["WorkbookCellValueItem"][];
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Version */
+            version: number;
         };
         /** WorkbookColumnConfiguration */
         WorkbookColumnConfiguration: {
             /** Column Number */
             column_number: number;
             data_type: components["schemas"]["WorkbookColumnDataType"];
-            formula?: components["schemas"]["WorkbookColumnFormula"] | null;
+            formula?: components["schemas"]["WorkbookColumnFormula-Output"] | null;
             /**
              * Hidden
              * @default false
@@ -1877,20 +1995,39 @@ export interface components {
          * WorkbookColumnDataType
          * @enum {string}
          */
-        WorkbookColumnDataType: "text" | "number" | "date" | "currency";
+        WorkbookColumnDataType: "text" | "number" | "date" | "currency" | "boolean";
         /** WorkbookColumnFormula */
-        WorkbookColumnFormula: {
-            /** Left Column Id */
-            left_column_id: string;
-            operator: components["schemas"]["WorkbookFormulaOperator"];
-            /** Right Column Id */
-            right_column_id: string;
+        "WorkbookColumnFormula-Input": {
+            /** Expression */
+            expression: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Input"] | components["schemas"]["WorkbookFormulaComparison-Input"] | components["schemas"]["WorkbookFormulaIf-Input"] | components["schemas"]["WorkbookFormulaRound-Input"] | components["schemas"]["WorkbookFormulaFunction-Input"];
+            /**
+             * Schema Version
+             * @default 1
+             * @constant
+             */
+            schema_version: 1;
+        };
+        /** WorkbookColumnFormula */
+        "WorkbookColumnFormula-Output": {
+            /** Expression */
+            expression: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Output"] | components["schemas"]["WorkbookFormulaComparison-Output"] | components["schemas"]["WorkbookFormulaIf-Output"] | components["schemas"]["WorkbookFormulaRound-Output"] | components["schemas"]["WorkbookFormulaFunction-Output"];
+            /**
+             * Schema Version
+             * @default 1
+             * @constant
+             */
+            schema_version: 1;
         };
         /**
          * WorkbookColumnOrigin
          * @enum {string}
          */
         WorkbookColumnOrigin: "source" | "user";
+        /**
+         * WorkbookComparisonOperator
+         * @enum {string}
+         */
+        WorkbookComparisonOperator: "=" | "<>" | "<" | "<=" | ">" | ">=";
         /** WorkbookErrorDetail */
         WorkbookErrorDetail: {
             /** Code */
@@ -1906,11 +2043,209 @@ export interface components {
         WorkbookErrorResponse: {
             detail: components["schemas"]["WorkbookErrorDetail"];
         };
+        /** WorkbookFormulaBinary */
+        "WorkbookFormulaBinary-Input": {
+            /** Left */
+            left: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Input"] | components["schemas"]["WorkbookFormulaComparison-Input"] | components["schemas"]["WorkbookFormulaIf-Input"] | components["schemas"]["WorkbookFormulaRound-Input"] | components["schemas"]["WorkbookFormulaFunction-Input"];
+            operator: components["schemas"]["WorkbookFormulaOperator"];
+            /** Right */
+            right: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Input"] | components["schemas"]["WorkbookFormulaComparison-Input"] | components["schemas"]["WorkbookFormulaIf-Input"] | components["schemas"]["WorkbookFormulaRound-Input"] | components["schemas"]["WorkbookFormulaFunction-Input"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "binary";
+        };
+        /** WorkbookFormulaBinary */
+        "WorkbookFormulaBinary-Output": {
+            /** Left */
+            left: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Output"] | components["schemas"]["WorkbookFormulaComparison-Output"] | components["schemas"]["WorkbookFormulaIf-Output"] | components["schemas"]["WorkbookFormulaRound-Output"] | components["schemas"]["WorkbookFormulaFunction-Output"];
+            operator: components["schemas"]["WorkbookFormulaOperator"];
+            /** Right */
+            right: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Output"] | components["schemas"]["WorkbookFormulaComparison-Output"] | components["schemas"]["WorkbookFormulaIf-Output"] | components["schemas"]["WorkbookFormulaRound-Output"] | components["schemas"]["WorkbookFormulaFunction-Output"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "binary";
+        };
+        /** WorkbookFormulaColumnReference */
+        WorkbookFormulaColumnReference: {
+            /** Column Id */
+            column_id: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "column";
+        };
+        /** WorkbookFormulaComparison */
+        "WorkbookFormulaComparison-Input": {
+            /** Left */
+            left: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Input"] | components["schemas"]["WorkbookFormulaComparison-Input"] | components["schemas"]["WorkbookFormulaIf-Input"] | components["schemas"]["WorkbookFormulaRound-Input"] | components["schemas"]["WorkbookFormulaFunction-Input"];
+            operator: components["schemas"]["WorkbookComparisonOperator"];
+            /** Right */
+            right: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Input"] | components["schemas"]["WorkbookFormulaComparison-Input"] | components["schemas"]["WorkbookFormulaIf-Input"] | components["schemas"]["WorkbookFormulaRound-Input"] | components["schemas"]["WorkbookFormulaFunction-Input"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "comparison";
+        };
+        /** WorkbookFormulaComparison */
+        "WorkbookFormulaComparison-Output": {
+            /** Left */
+            left: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Output"] | components["schemas"]["WorkbookFormulaComparison-Output"] | components["schemas"]["WorkbookFormulaIf-Output"] | components["schemas"]["WorkbookFormulaRound-Output"] | components["schemas"]["WorkbookFormulaFunction-Output"];
+            operator: components["schemas"]["WorkbookComparisonOperator"];
+            /** Right */
+            right: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Output"] | components["schemas"]["WorkbookFormulaComparison-Output"] | components["schemas"]["WorkbookFormulaIf-Output"] | components["schemas"]["WorkbookFormulaRound-Output"] | components["schemas"]["WorkbookFormulaFunction-Output"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "comparison";
+        };
+        /** WorkbookFormulaConstant */
+        WorkbookFormulaConstant: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "constant";
+            /** Value */
+            value: string;
+        };
+        /** WorkbookFormulaFunction */
+        "WorkbookFormulaFunction-Input": {
+            /** Arguments */
+            arguments: (components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Input"] | components["schemas"]["WorkbookFormulaComparison-Input"] | components["schemas"]["WorkbookFormulaIf-Input"] | components["schemas"]["WorkbookFormulaRound-Input"] | components["schemas"]["WorkbookFormulaFunction-Input"])[];
+            function: components["schemas"]["WorkbookVariadicFunction"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "function";
+        };
+        /** WorkbookFormulaFunction */
+        "WorkbookFormulaFunction-Output": {
+            /** Arguments */
+            arguments: (components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Output"] | components["schemas"]["WorkbookFormulaComparison-Output"] | components["schemas"]["WorkbookFormulaIf-Output"] | components["schemas"]["WorkbookFormulaRound-Output"] | components["schemas"]["WorkbookFormulaFunction-Output"])[];
+            function: components["schemas"]["WorkbookVariadicFunction"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "function";
+        };
+        /** WorkbookFormulaIf */
+        "WorkbookFormulaIf-Input": {
+            /** Condition */
+            condition: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Input"] | components["schemas"]["WorkbookFormulaComparison-Input"] | components["schemas"]["WorkbookFormulaIf-Input"] | components["schemas"]["WorkbookFormulaRound-Input"] | components["schemas"]["WorkbookFormulaFunction-Input"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "if";
+            /** When False */
+            when_false: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Input"] | components["schemas"]["WorkbookFormulaComparison-Input"] | components["schemas"]["WorkbookFormulaIf-Input"] | components["schemas"]["WorkbookFormulaRound-Input"] | components["schemas"]["WorkbookFormulaFunction-Input"];
+            /** When True */
+            when_true: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Input"] | components["schemas"]["WorkbookFormulaComparison-Input"] | components["schemas"]["WorkbookFormulaIf-Input"] | components["schemas"]["WorkbookFormulaRound-Input"] | components["schemas"]["WorkbookFormulaFunction-Input"];
+        };
+        /** WorkbookFormulaIf */
+        "WorkbookFormulaIf-Output": {
+            /** Condition */
+            condition: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Output"] | components["schemas"]["WorkbookFormulaComparison-Output"] | components["schemas"]["WorkbookFormulaIf-Output"] | components["schemas"]["WorkbookFormulaRound-Output"] | components["schemas"]["WorkbookFormulaFunction-Output"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "if";
+            /** When False */
+            when_false: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Output"] | components["schemas"]["WorkbookFormulaComparison-Output"] | components["schemas"]["WorkbookFormulaIf-Output"] | components["schemas"]["WorkbookFormulaRound-Output"] | components["schemas"]["WorkbookFormulaFunction-Output"];
+            /** When True */
+            when_true: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Output"] | components["schemas"]["WorkbookFormulaComparison-Output"] | components["schemas"]["WorkbookFormulaIf-Output"] | components["schemas"]["WorkbookFormulaRound-Output"] | components["schemas"]["WorkbookFormulaFunction-Output"];
+        };
         /**
          * WorkbookFormulaOperator
          * @enum {string}
          */
-        WorkbookFormulaOperator: "+" | "-" | "*" | "/" | "%";
+        WorkbookFormulaOperator: "+" | "-" | "*" | "/";
+        /** WorkbookFormulaPreviewRequest */
+        WorkbookFormulaPreviewRequest: {
+            /** Base Version */
+            base_version: number;
+            /** Formula */
+            formula: components["schemas"]["WorkbookColumnFormula-Input"] | components["schemas"]["WorkbookLegacyColumnFormula"];
+            /** Output Column Id */
+            output_column_id?: string | null;
+            output_type: components["schemas"]["WorkbookColumnDataType"];
+            /** Sample Rows */
+            sample_rows?: number[] | null;
+        };
+        /** WorkbookFormulaPreviewResponse */
+        WorkbookFormulaPreviewResponse: {
+            /** Errors */
+            errors?: components["schemas"]["WorkbookErrorDetail"][];
+            normalized_formula?: components["schemas"]["WorkbookColumnFormula-Output"] | null;
+            /** Readable Expression */
+            readable_expression?: string | null;
+            /** Referenced Column Ids */
+            referenced_column_ids?: string[];
+            /** Results */
+            results?: components["schemas"]["WorkbookFormulaPreviewResult"][];
+            /** Valid */
+            valid: boolean;
+            /** Warnings */
+            warnings?: components["schemas"]["WorkbookErrorDetail"][];
+        };
+        /** WorkbookFormulaPreviewResult */
+        WorkbookFormulaPreviewResult: {
+            /** Error Code */
+            error_code?: string | null;
+            /** Error Message */
+            error_message?: string | null;
+            /** Row Number */
+            row_number: number;
+            /** Value */
+            value?: number | null;
+        };
+        /** WorkbookFormulaRound */
+        "WorkbookFormulaRound-Input": {
+            /** Digits */
+            digits: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "round";
+            /** Value */
+            value: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Input"] | components["schemas"]["WorkbookFormulaComparison-Input"] | components["schemas"]["WorkbookFormulaIf-Input"] | components["schemas"]["WorkbookFormulaRound-Input"] | components["schemas"]["WorkbookFormulaFunction-Input"];
+        };
+        /** WorkbookFormulaRound */
+        "WorkbookFormulaRound-Output": {
+            /** Digits */
+            digits: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "round";
+            /** Value */
+            value: components["schemas"]["WorkbookFormulaConstant"] | components["schemas"]["WorkbookFormulaColumnReference"] | components["schemas"]["WorkbookFormulaBinary-Output"] | components["schemas"]["WorkbookFormulaComparison-Output"] | components["schemas"]["WorkbookFormulaIf-Output"] | components["schemas"]["WorkbookFormulaRound-Output"] | components["schemas"]["WorkbookFormulaFunction-Output"];
+        };
+        /** WorkbookLegacyColumnFormula */
+        WorkbookLegacyColumnFormula: {
+            /** Left Column Id */
+            left_column_id: string;
+            operator: components["schemas"]["WorkbookLegacyFormulaOperator"];
+            /** Right Column Id */
+            right_column_id: string;
+        };
+        /**
+         * WorkbookLegacyFormulaOperator
+         * @enum {string}
+         */
+        WorkbookLegacyFormulaOperator: "+" | "-" | "*" | "/" | "%";
         /**
          * WorkbookMappingStatus
          * @enum {string}
@@ -1933,14 +2268,17 @@ export interface components {
             row_number: number;
             values: components["schemas"]["WorkbookPriceChangeValues"];
         };
-        /** WorkbookPriceChangeValues */
+        /**
+         * WorkbookPriceChangeValues
+         * @description Generic cell values with legacy semantic price keys still accepted.
+         */
         WorkbookPriceChangeValues: {
             /** Net Price */
-            net_price?: number | null;
+            net_price?: string | number | boolean | null;
             /** Selling Price */
-            selling_price?: number | null;
+            selling_price?: string | number | boolean | null;
         } & {
-            [key: string]: unknown;
+            [key: string]: string | number | boolean | null;
         };
         /** WorkbookRecordColumn */
         WorkbookRecordColumn: {
@@ -1950,7 +2288,7 @@ export interface components {
             editable: boolean;
             /** Field */
             field: string;
-            formula?: components["schemas"]["WorkbookColumnFormula"] | null;
+            formula?: components["schemas"]["WorkbookColumnFormula-Output"] | null;
             /** Group Label */
             group_label?: string | null;
             /**
@@ -2062,6 +2400,8 @@ export interface components {
         WorkbookSemanticField: "passenger_name" | "pnr" | "ticket_number" | "net_price" | "selling_price";
         /** WorkbookSessionCreateRequest */
         WorkbookSessionCreateRequest: {
+            /** Header Row Number */
+            header_row_number: number;
             /** Sheet Name */
             sheet_name: string;
             /**
@@ -2069,6 +2409,17 @@ export interface components {
              * Format: uuid
              */
             workbook_id: string;
+        };
+        /** WorkbookSessionListResponse */
+        WorkbookSessionListResponse: {
+            /** Items */
+            items: components["schemas"]["WorkbookSessionSummary"][];
+            pagination: components["schemas"]["WorkbookPagination"];
+        };
+        /** WorkbookSessionRenameRequest */
+        WorkbookSessionRenameRequest: {
+            /** Display Name */
+            display_name: string;
         };
         /** WorkbookSessionResponse */
         WorkbookSessionResponse: {
@@ -2114,6 +2465,57 @@ export interface components {
          * @enum {string}
          */
         WorkbookSessionStatus: "DRAFT" | "COMPLETED" | "DISCARDED" | "FAILED";
+        /** WorkbookSessionSummary */
+        WorkbookSessionSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Current Version */
+            current_version: number;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Original Filename */
+            original_filename: string;
+            /** Selected Sheet Name */
+            selected_sheet_name: string;
+            status: components["schemas"]["WorkbookSessionStatus"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** WorkbookSuccessResponse[WorkbookCellValueLookupResponse] */
+        WorkbookSuccessResponse_WorkbookCellValueLookupResponse_: {
+            data: components["schemas"]["WorkbookCellValueLookupResponse"];
+            /** Error */
+            error?: null;
+            /**
+             * Success
+             * @default true
+             * @constant
+             */
+            success: true;
+        };
+        /** WorkbookSuccessResponse[WorkbookFormulaPreviewResponse] */
+        WorkbookSuccessResponse_WorkbookFormulaPreviewResponse_: {
+            data: components["schemas"]["WorkbookFormulaPreviewResponse"];
+            /** Error */
+            error?: null;
+            /**
+             * Success
+             * @default true
+             * @constant
+             */
+            success: true;
+        };
         /** WorkbookSuccessResponse[WorkbookRecordsPage] */
         WorkbookSuccessResponse_WorkbookRecordsPage_: {
             data: components["schemas"]["WorkbookRecordsPage"];
@@ -2138,9 +2540,33 @@ export interface components {
              */
             success: true;
         };
+        /** WorkbookSuccessResponse[WorkbookSessionListResponse] */
+        WorkbookSuccessResponse_WorkbookSessionListResponse_: {
+            data: components["schemas"]["WorkbookSessionListResponse"];
+            /** Error */
+            error?: null;
+            /**
+             * Success
+             * @default true
+             * @constant
+             */
+            success: true;
+        };
         /** WorkbookSuccessResponse[WorkbookSessionResponse] */
         WorkbookSuccessResponse_WorkbookSessionResponse_: {
             data: components["schemas"]["WorkbookSessionResponse"];
+            /** Error */
+            error?: null;
+            /**
+             * Success
+             * @default true
+             * @constant
+             */
+            success: true;
+        };
+        /** WorkbookSuccessResponse[WorkbookSessionSummary] */
+        WorkbookSuccessResponse_WorkbookSessionSummary_: {
+            data: components["schemas"]["WorkbookSessionSummary"];
             /** Error */
             error?: null;
             /**
@@ -2161,6 +2587,16 @@ export interface components {
              * @constant
              */
             success: true;
+        };
+        /** WorkbookUpdateColumnRequest */
+        WorkbookUpdateColumnRequest: {
+            /** Base Version */
+            base_version: number;
+            data_type?: components["schemas"]["WorkbookColumnDataType"] | null;
+            /** Formula */
+            formula?: components["schemas"]["WorkbookColumnFormula-Input"] | components["schemas"]["WorkbookLegacyColumnFormula"] | null;
+            /** Label */
+            label?: string | null;
         };
         /** WorkbookUploadResponse */
         WorkbookUploadResponse: {
@@ -2187,6 +2623,29 @@ export interface components {
             /** Sheets */
             sheets: components["schemas"]["WorksheetInspectionResponse"][];
         };
+        /**
+         * WorkbookVariadicFunction
+         * @enum {string}
+         */
+        WorkbookVariadicFunction: "SUM" | "MIN" | "MAX";
+        /** WorksheetHeaderCandidateResponse */
+        WorksheetHeaderCandidateResponse: {
+            /** Ambiguous Fields */
+            ambiguous_fields: {
+                [key: string]: number[];
+            };
+            /** Column Mapping */
+            column_mapping: {
+                [key: string]: number;
+            };
+            /** Detected Headers */
+            detected_headers: string[];
+            mapping_status: components["schemas"]["WorkbookMappingStatus"];
+            /** Missing Required Fields */
+            missing_required_fields: components["schemas"]["WorkbookSemanticField"][];
+            /** Row Number */
+            row_number: number;
+        };
         /** WorksheetInspectionResponse */
         WorksheetInspectionResponse: {
             /** Ambiguous Fields */
@@ -2199,6 +2658,8 @@ export interface components {
             };
             /** Detected Headers */
             detected_headers: string[];
+            /** Header Candidates */
+            header_candidates?: components["schemas"]["WorksheetHeaderCandidateResponse"][];
             /** Header Row Number */
             header_row_number?: number | null;
             mapping_status: components["schemas"]["WorkbookMappingStatus"];
@@ -2262,6 +2723,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ParseFlightResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    login_with_internal_access_code_api_v1_auth_internal_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InternalLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
                 };
             };
             /** @description Validation Error */
@@ -3795,6 +4289,49 @@ export interface operations {
             };
         };
     };
+    list_editing_sessions_route_api_v1_workbooks_sessions_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+                search?: string | null;
+                status?: components["schemas"]["WorkbookSessionStatus"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookSessionListResponse_"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
     create_editing_session_route_api_v1_workbooks_sessions_post: {
         parameters: {
             query?: never;
@@ -3895,6 +4432,188 @@ export interface operations {
             };
         };
     };
+    discard_editing_session_route_api_v1_workbooks_sessions__session_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookSessionSummary_"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
+    rename_editing_session_route_api_v1_workbooks_sessions__session_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbookSessionRenameRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookSessionSummary_"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
+    lookup_session_cell_values_route_api_v1_workbooks_sessions__session_id__cell_values_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbookCellValueLookupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookCellValueLookupResponse_"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
     update_session_column_configuration_route_api_v1_workbooks_sessions__session_id__column_configuration_patch: {
         parameters: {
             query?: never;
@@ -3965,6 +4684,69 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookSessionResponse_"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
+    update_session_column_route_api_v1_workbooks_sessions__session_id__columns__column_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                column_id: string;
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbookUpdateColumnRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4122,13 +4904,75 @@ export interface operations {
             };
         };
     };
+    preview_session_formula_route_api_v1_workbooks_sessions__session_id__formulas_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkbookFormulaPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookSuccessResponse_WorkbookFormulaPreviewResponse_"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+            /** @description Workbook domain error or request validation error. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"] | components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkbookErrorResponse"];
+                };
+            };
+        };
+    };
     read_session_records_route_api_v1_workbooks_sessions__session_id__records_get: {
         parameters: {
             query?: {
                 page?: number;
                 page_size?: number;
                 search?: string | null;
-                sort_by?: components["schemas"]["WorkbookSemanticField"] | null;
+                sort_by?: string | null;
                 sort_direction?: components["schemas"]["SortDirection"];
             };
             header?: never;

@@ -2,8 +2,35 @@ import { describe, expect, it } from "vitest"
 
 import {
   buildWorkbookRecordsPath,
+  buildWorkbookSessionsPath,
   workbookQueryKeys,
 } from "@/lib/workbooks/query-keys"
+
+describe("workbook session queries", () => {
+  it("encodes pagination, normalized search, and status", () => {
+    expect(
+      buildWorkbookSessionsPath({
+        page: 2,
+        pageSize: 10,
+        search: " July prices ",
+        status: "DRAFT",
+      }),
+    ).toBe(
+      "/workbooks/sessions?page=2&page_size=10&search=July+prices&status=DRAFT",
+    )
+  })
+
+  it("keys the library by every server query value", () => {
+    expect(
+      workbookQueryKeys.sessions({
+        page: 2,
+        pageSize: 10,
+        search: " July prices ",
+        status: "DRAFT",
+      }),
+    ).toEqual(["workbooks", "sessions", 2, 10, "July prices", "DRAFT"])
+  })
+})
 
 describe("workbook record queries", () => {
   it("encodes search and supported sort parameters", () => {
@@ -12,11 +39,11 @@ describe("workbook record queries", () => {
         page: 2,
         pageSize: 50,
         search: " Nguyễn & An ",
-        sortBy: "selling_price",
+        sortBy: "source-8a7f",
         sortDirection: "desc",
       }),
     ).toBe(
-      "/workbooks/sessions/session-id/records?page=2&page_size=50&search=Nguy%E1%BB%85n+%26+An&sort_by=selling_price&sort_direction=desc",
+      "/workbooks/sessions/session-id/records?page=2&page_size=50&search=Nguy%E1%BB%85n+%26+An&sort_by=source-8a7f&sort_direction=desc",
     )
   })
 
@@ -27,7 +54,7 @@ describe("workbook record queries", () => {
         page: 2,
         pageSize: 25,
         search: " ABC ",
-        sortBy: "pnr",
+        sortBy: "source-pnr",
         sortDirection: "asc",
       }),
     ).toEqual([
@@ -40,7 +67,7 @@ describe("workbook record queries", () => {
       2,
       25,
       "ABC",
-      "pnr",
+      "source-pnr",
       "asc",
     ])
   })

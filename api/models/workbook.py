@@ -7,7 +7,15 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from sqlalchemy import CheckConstraint, Column, DateTime, Enum, JSON, UniqueConstraint
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    DateTime,
+    Enum,
+    Index,
+    JSON,
+    UniqueConstraint,
+)
 from sqlmodel import Field, SQLModel
 
 
@@ -95,6 +103,12 @@ class WorkbookSession(SQLModel, table=True):
             "current_version > 0",
             name="ck_workbook_editor_session_current_version_positive",
         ),
+        Index(
+            "ix_workbook_editor_session_owner_status_updated_at",
+            "created_by",
+            "status",
+            "updated_at",
+        ),
     )
 
     id: Optional[uuid.UUID] = Field(
@@ -108,6 +122,7 @@ class WorkbookSession(SQLModel, table=True):
         index=True,
         nullable=False,
     )
+    display_name: str | None = Field(default=None, max_length=255)
     selected_sheet_name: str = Field(max_length=255)
     header_row_number: int
     column_mapping: dict[str, Any] = Field(
@@ -147,6 +162,10 @@ class WorkbookSession(SQLModel, table=True):
             default=utc_now,
             index=True,
         )
+    )
+    discarded_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
     )
 
 

@@ -115,8 +115,13 @@ def test_model_defaults_and_json_round_trip(engine) -> None:
         assert workbook.created_at.tzinfo is None  # SQLite drops timezone metadata.
         assert workbook_session.current_version == 1
         assert workbook_session.status == WorkbookSessionStatus.DRAFT
+        assert workbook_session.display_name is None
+        assert workbook_session.discarded_at is None
         assert workbook_session.column_mapping["net_price"] == 8
-        assert workbook_session.created_at.replace(tzinfo=timezone.utc).tzinfo is timezone.utc
+        assert (
+            workbook_session.created_at.replace(tzinfo=timezone.utc).tzinfo
+            is timezone.utc
+        )
 
 
 def test_version_number_is_unique_within_session(engine) -> None:
@@ -186,6 +191,19 @@ def test_immutable_storage_paths_are_globally_unique(engine) -> None:
             session.commit()
 
 
+def test_session_library_index_matches_recent_owner_queries() -> None:
+    index = next(
+        index
+        for index in WorkbookSession.__table__.indexes
+        if index.name == "ix_workbook_editor_session_owner_status_updated_at"
+    )
+    assert [column.name for column in index.columns] == [
+        "created_by",
+        "status",
+        "updated_at",
+    ]
+
+
 def test_audit_columns_are_declared_timezone_aware() -> None:
     for model in (Workbook, WorkbookSession, WorkbookVersion, WorkbookOperation):
         for column_name in ("created_at",):
@@ -193,9 +211,10 @@ def test_audit_columns_are_declared_timezone_aware() -> None:
             assert isinstance(column_type, DateTime)
             assert column_type.timezone is True
 
-    updated_type = WorkbookSession.__table__.c.updated_at.type
-    assert isinstance(updated_type, DateTime)
-    assert updated_type.timezone is True
+    for column_name in ("updated_at", "discarded_at"):
+        column_type = WorkbookSession.__table__.c[column_name].type
+        assert isinstance(column_type, DateTime)
+        assert column_type.timezone is True
 
 
 def test_operation_request_is_idempotent_per_session(engine) -> None:

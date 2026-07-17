@@ -6,6 +6,7 @@ import hashlib
 import io
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -19,20 +20,30 @@ from models import (
     Workbook,
     WorkbookOperation,
     WorkbookSession,
+    WorkbookSessionStatus,
     WorkbookVersion,
 )
 from services.workbook_mutation import PriceChange
+from services.workbook_reader import WorkbookCellReference
 import services.workbook_service as workbook_service
 from services.workbook_service import (
     XLS_MIME_TYPE,
     XLSX_MIME_TYPE,
     WorkbookServiceError,
+    add_session_column,
     create_editing_session,
+    discard_editing_session,
     get_current_download,
     get_editing_session,
     get_latest_editing_session,
+    list_editing_sessions,
+    lookup_session_cell_values,
+    preview_session_formula,
     read_session_records,
+    rename_editing_session,
+    remove_session_column,
     save_session_changes,
+    update_session_column,
     upload_workbook,
 )
 from services.workbook_validation import MappingStatus
@@ -84,6 +95,65 @@ def workbook_bytes(*, mapped: bool = True) -> bytes:
     else:
         worksheet.append(["Passenger Name", "PNR"])
         worksheet.append(["Nguyễn An", "ABC123"])
+    workbook.save(stream)
+    workbook.close()
+    return stream.getvalue()
+
+
+def generic_workbook_bytes() -> bytes:
+    stream = io.BytesIO()
+    workbook = OpenpyxlWorkbook()
+    worksheet = workbook.active
+    worksheet.title = "Inventory"
+    worksheet.append(["Quarterly inventory"])
+    worksheet.append(["Item", "Quantity", "Active", "Date"])
+    worksheet.append(["A-100", 12.5, True, date(2026, 1, 1)])
+    workbook.save(stream)
+    workbook.close()
+    return stream.getvalue()
+
+
+def grouped_header_workbook_bytes() -> bytes:
+    stream = io.BytesIO()
+    workbook = OpenpyxlWorkbook()
+    worksheet = workbook.active
+    worksheet.title = "Metrics"
+    worksheet.append(["Carrier", "Metrics", None])
+    worksheet.append([None, "Quantity", "Active"])
+    worksheet.append(["VN", 12.5, True])
+    worksheet.merge_cells("B1:C1")
+    workbook.save(stream)
+    workbook.close()
+    return stream.getvalue()
+
+
+def legacy_grouped_workbook_bytes(*, hidden_tail: bool = True) -> bytes:
+    stream = io.BytesIO()
+    workbook = OpenpyxlWorkbook()
+    worksheet = workbook.active
+    worksheet.title = "Legacy invoice"
+    headers = [f"Column {column}" for column in range(1, 38)]
+    headers[0] = "No."
+    headers[15] = "ICT2"
+    headers[16] = None
+    headers[17] = "ICT3"
+    headers[18] = None
+    worksheet.append(headers)
+    child_headers = [None] * 37
+    child_headers[15:19] = ["%", "Comm", "%", "Comm"]
+    worksheet.append(child_headers)
+    worksheet.append([1, "01/06/2026", "Passenger", *range(4, 38)])
+    worksheet.merge_cells("A1:A2")
+    for column in range(2, 16):
+        worksheet.merge_cells(start_row=1, start_column=column, end_row=2, end_column=column)
+    worksheet.merge_cells("P1:Q1")
+    worksheet.merge_cells("R1:S1")
+    for column in range(20, 38):
+        worksheet.merge_cells(start_row=1, start_column=column, end_row=2, end_column=column)
+    if hidden_tail:
+        for column in range(20, 33):
+            worksheet.column_dimensions[worksheet.cell(1, column).column_letter].hidden = True
+    worksheet["I3"].number_format = "#,##0.00"
     workbook.save(stream)
     workbook.close()
     return stream.getvalue()
@@ -182,6 +252,167 @@ def test_upload_normalizes_legacy_xls_before_publishing(
             assert stored.read() == converted
 
 
+def test_legacy_grouped_session_uses_main_header_band(
+    engine,
+    storage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    converted = legacy_grouped_workbook_bytes()
+
+    def convert(
+        _source: Path,
+        target: Path,
+        *,
+        max_rows: int,
+        max_columns: int,
+    ) -> None:
+        assert (max_rows, max_columns) == (100, 50)
+        target.write_bytes(converted)
+
+    monkeypatch.setattr(workbook_service, "convert_xls_to_xlsx", convert)
+
+    with Session(engine) as db:
+        actor = make_user(db)
+        uploaded = upload_workbook(
+            db,
+            storage,
+            actor=actor,
+            filename="legacy-invoice.xls",
+            mime_type=XLS_MIME_TYPE,
+            source=io.BytesIO(b"legacy"),
+            max_upload_bytes=5 * 1024 * 1024,
+            max_rows=100,
+            max_columns=50,
+        )
+        session = create_editing_session(
+            db,
+            storage,
+            actor=actor,
+            workbook_id=uploaded.id,
+            sheet_name="Legacy invoice",
+            header_row_number=1,
+        )
+        records = read_session_records(
+            db,
+            storage,
+            actor=actor,
+            session_id=session.id,
+        )
+
+        visible = [column for column in records.page.columns if not column.hidden]
+        top_level_headers = []
+        for column in visible:
+            label = column.group_label or column.header
+            if not top_level_headers or top_level_headers[-1] != label:
+                top_level_headers.append(label)
+
+        assert len(visible) == 19
+        assert len(top_level_headers) == 17
+        assert visible[0].header == "No."
+        assert visible[0].hidden is False
+        assert [column.group_label for column in visible[15:19]] == [
+            "ICT2",
+            "ICT2",
+            "ICT3",
+            "ICT3",
+        ]
+        assert all(column.hidden for column in records.page.columns[19:])
+
+        persisted = db.get(WorkbookSession, session.id)
+        assert persisted is not None
+        persisted.column_config = [
+            {
+                **column,
+                "hidden": str(column.get("label", "")).strip().casefold()
+                == "no.",
+            }
+            for column in persisted.column_config
+        ]
+        db.add(persisted)
+        db.commit()
+
+        reopened = get_editing_session(
+            db,
+            actor=actor,
+            session_id=session.id,
+            storage=storage,
+        )
+
+        assert reopened.column_config[0]["hidden"] is False
+        assert all(
+            column["hidden"] for column in reopened.column_config[19:]
+        )
+
+
+def test_legacy_session_created_before_visibility_preservation_is_repaired(
+    engine,
+    storage,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    converted = legacy_grouped_workbook_bytes(hidden_tail=False)
+
+    def convert(
+        _source: Path,
+        target: Path,
+        *,
+        max_rows: int,
+        max_columns: int,
+    ) -> None:
+        assert (max_rows, max_columns) == (100, 50)
+        target.write_bytes(converted)
+
+    monkeypatch.setattr(workbook_service, "convert_xls_to_xlsx", convert)
+
+    with Session(engine) as db:
+        actor = make_user(db)
+        uploaded = upload_workbook(
+            db,
+            storage,
+            actor=actor,
+            filename="legacy-before-fix.xls",
+            mime_type=XLS_MIME_TYPE,
+            source=io.BytesIO(b"legacy"),
+            max_upload_bytes=5 * 1024 * 1024,
+            max_rows=100,
+            max_columns=50,
+        )
+        session = create_editing_session(
+            db,
+            storage,
+            actor=actor,
+            workbook_id=uploaded.id,
+            sheet_name="Legacy invoice",
+            header_row_number=1,
+        )
+        persisted = db.get(WorkbookSession, session.id)
+        assert persisted is not None
+        persisted.column_config = [
+            {
+                **column,
+                "hidden": str(column.get("label", "")).strip().casefold()
+                == "no.",
+                "sticky": column.get("column_number") == 2,
+            }
+            for column in persisted.column_config
+        ]
+        db.add(persisted)
+        db.commit()
+
+        reopened = get_editing_session(
+            db,
+            actor=actor,
+            session_id=session.id,
+            storage=storage,
+        )
+
+        assert reopened.column_config[0]["hidden"] is False
+        assert all(
+            not column["hidden"] for column in reopened.column_config[:19]
+        )
+        assert all(column["hidden"] for column in reopened.column_config[19:])
+        assert reopened.column_config[1]["sticky"] is True
+
+
 @pytest.mark.parametrize(
     ("filename", "mime_type", "limit", "code", "status"),
     [
@@ -246,6 +477,96 @@ def test_incomplete_mapping_warns_but_can_create_session(engine, storage) -> Non
         ]
 
 
+def test_explicit_header_candidate_creates_generic_session(engine, storage) -> None:
+    with Session(engine) as db:
+        actor = make_user(db)
+        result = upload(db, storage, actor, content=generic_workbook_bytes())
+        sheet = result.sheets[0]
+        assert [candidate.row_number for candidate in sheet.header_candidates] == [1, 2]
+
+        session = create_editing_session(
+            db,
+            storage,
+            actor=actor,
+            workbook_id=result.id,
+            sheet_name="Inventory",
+            header_row_number=2,
+        )
+
+        assert session.header_row_number == 2
+        assert session.column_mapping == {}
+        assert [column["label"] for column in session.column_config] == [
+            "Item",
+            "Quantity",
+            "Active",
+            "Date",
+        ]
+        assert [column["data_type"] for column in session.column_config] == [
+            "text",
+            "number",
+            "boolean",
+            "date",
+        ]
+        records = read_session_records(
+            db,
+            storage,
+            actor=actor,
+            session_id=session.id,
+        )
+        assert [record.row_number for record in records.page.records] == [3]
+
+        config_by_label = {
+            column["label"]: column["id"] for column in session.column_config
+        }
+        saved = save_session_changes(
+            db,
+            storage,
+            actor=actor,
+            session_id=session.id,
+            request_id=uuid.uuid4(),
+            base_version=1,
+            changes=[
+                PriceChange(
+                    row_number=3,
+                    values={
+                        config_by_label["Item"]: "A-101",
+                        config_by_label["Quantity"]: -2.75,
+                        config_by_label["Active"]: False,
+                        config_by_label["Date"]: "2026-07-14",
+                    },
+                )
+            ],
+        )
+        assert saved.changed_cells == 4
+        operation = db.exec(
+            select(WorkbookOperation).where(
+                WorkbookOperation.session_id == session.id
+            )
+        ).one()
+        assert operation.operation_payload["changes"][3]["new_value"] == "2026-07-14"
+
+
+def test_type_inference_starts_after_grouped_header_band(engine, storage) -> None:
+    with Session(engine) as db:
+        actor = make_user(db)
+        result = upload(db, storage, actor, content=grouped_header_workbook_bytes())
+
+        session = create_editing_session(
+            db,
+            storage,
+            actor=actor,
+            workbook_id=result.id,
+            sheet_name="Metrics",
+            header_row_number=1,
+        )
+
+        assert [column["data_type"] for column in session.column_config] == [
+            "text",
+            "number",
+            "boolean",
+        ]
+
+
 def test_staff_ownership_is_hidden_while_admin_can_access(engine, storage) -> None:
     with Session(engine) as db:
         owner = make_user(db)
@@ -276,6 +597,159 @@ def test_staff_ownership_is_hidden_while_admin_can_access(engine, storage) -> No
                 sheet_name="Tickets",
             )
         assert workbook_error.value.code == "WORKBOOK_NOT_FOUND"
+
+
+def test_session_library_is_owner_scoped_paginated_and_searchable(
+    engine, storage
+) -> None:
+    with Session(engine) as db:
+        owner = make_user(db)
+        other = make_user(db)
+        admin = make_user(db, UserRole.ADMIN)
+        uploaded = upload(db, storage, owner)
+        first = create_editing_session(
+            db, storage, actor=owner, workbook_id=uploaded.id, sheet_name="Tickets"
+        )
+        second = create_editing_session(
+            db, storage, actor=owner, workbook_id=uploaded.id, sheet_name="Tickets"
+        )
+        other_upload = upload(db, storage, other)
+        create_editing_session(
+            db,
+            storage,
+            actor=other,
+            workbook_id=other_upload.id,
+            sheet_name="Tickets",
+        )
+        admin_upload = upload(db, storage, admin)
+        admin_session = create_editing_session(
+            db,
+            storage,
+            actor=admin,
+            workbook_id=admin_upload.id,
+            sheet_name="Tickets",
+        )
+
+        rename_editing_session(
+            db,
+            actor=owner,
+            session_id=first.id,
+            display_name="  July supplier prices  ",
+        )
+        completed = db.get(WorkbookSession, second.id)
+        assert completed is not None
+        completed.status = WorkbookSessionStatus.COMPLETED
+        db.add(completed)
+        db.commit()
+
+        page = list_editing_sessions(db, actor=owner, page=1, page_size=1)
+        assert page.total == 2
+        assert page.total_pages == 2
+        assert len(page.items) == 1
+
+        search = list_editing_sessions(
+            db,
+            actor=owner,
+            search="supplier",
+        )
+        assert [item.id for item in search.items] == [first.id]
+        assert search.items[0].display_name == "July supplier prices"
+
+        completed_only = list_editing_sessions(
+            db,
+            actor=owner,
+            session_status=WorkbookSessionStatus.COMPLETED,
+        )
+        assert [item.id for item in completed_only.items] == [second.id]
+
+        assert list_editing_sessions(db, actor=other).total == 1
+        admin_list = list_editing_sessions(db, actor=admin)
+        assert admin_list.total == 4
+        assert {item.id for item in admin_list.items} == {
+            first.id,
+            second.id,
+            admin_session.id,
+            db.exec(
+                select(WorkbookSession).where(
+                    WorkbookSession.created_by == other.id
+                )
+            ).one().id,
+        }
+
+
+def test_rename_requires_owner_and_active_session(engine, storage) -> None:
+    with Session(engine) as db:
+        owner = make_user(db)
+        other = make_user(db)
+        uploaded = upload(db, storage, owner)
+        editing = create_editing_session(
+            db, storage, actor=owner, workbook_id=uploaded.id, sheet_name="Tickets"
+        )
+
+        with pytest.raises(WorkbookServiceError) as hidden:
+            rename_editing_session(
+                db,
+                actor=other,
+                session_id=editing.id,
+                display_name="Not allowed",
+            )
+        assert hidden.value.code == "SESSION_NOT_FOUND"
+
+        renamed = rename_editing_session(
+            db,
+            actor=owner,
+            session_id=editing.id,
+            display_name="  Agency July workbook  ",
+        )
+        assert renamed.display_name == "Agency July workbook"
+
+        persisted = db.get(WorkbookSession, editing.id)
+        assert persisted is not None
+        persisted.status = WorkbookSessionStatus.COMPLETED
+        db.add(persisted)
+        db.commit()
+        with pytest.raises(WorkbookServiceError) as inactive:
+            rename_editing_session(
+                db,
+                actor=owner,
+                session_id=editing.id,
+                display_name="Too late",
+            )
+        assert inactive.value.code == "SESSION_NOT_ACTIVE"
+
+
+def test_soft_discard_marks_timestamp_and_hides_session_by_default(
+    engine, storage
+) -> None:
+    with Session(engine) as db:
+        actor = make_user(db)
+        uploaded = upload(db, storage, actor)
+        editing = create_editing_session(
+            db, storage, actor=actor, workbook_id=uploaded.id, sheet_name="Tickets"
+        )
+
+        discarded = discard_editing_session(
+            db,
+            actor=actor,
+            session_id=editing.id,
+        )
+
+        assert discarded.status == WorkbookSessionStatus.DISCARDED
+        persisted = db.get(WorkbookSession, editing.id)
+        assert persisted is not None
+        assert persisted.discarded_at is not None
+        assert persisted.updated_at == persisted.discarded_at
+        assert list_editing_sessions(db, actor=actor).total == 0
+        discarded_list = list_editing_sessions(
+            db,
+            actor=actor,
+            session_status=WorkbookSessionStatus.DISCARDED,
+        )
+        assert [item.id for item in discarded_list.items] == [editing.id]
+
+        with pytest.raises(WorkbookServiceError) as inactive:
+            discard_editing_session(db, actor=actor, session_id=editing.id)
+        assert inactive.value.code == "SESSION_NOT_ACTIVE"
 
 
 def test_latest_session_restores_most_recent_active_session(engine, storage) -> None:
@@ -371,6 +845,91 @@ def test_sessions_are_independent_and_records_read_server_side(engine, storage) 
             if column.semantic_field == "selling_price"
         )
         assert untouched.page.records[0].values[selling_column.field] == 1_200_000
+
+
+def test_cell_value_lookup_enforces_owner_version_and_does_not_mutate(
+    engine, storage
+) -> None:
+    with Session(engine) as db:
+        actor = make_user(db)
+        other = make_user(db)
+        admin = make_user(db, UserRole.ADMIN)
+        uploaded = upload(db, storage, actor)
+        editing = create_editing_session(
+            db,
+            storage,
+            actor=actor,
+            workbook_id=uploaded.id,
+            sheet_name="Tickets",
+        )
+        selling_id = next(
+            column["id"]
+            for column in editing.column_config
+            if column.get("semantic_field") == "selling_price"
+        )
+        versions_before = len(db.exec(select(WorkbookVersion)).all())
+        operations_before = len(db.exec(select(WorkbookOperation)).all())
+
+        owner_result = lookup_session_cell_values(
+            db,
+            storage,
+            actor=actor,
+            session_id=editing.id,
+            base_version=1,
+            cells=[WorkbookCellReference(2, selling_id)],
+        )
+        assert owner_result.cells[0].value == 1_200_000
+        admin_result = lookup_session_cell_values(
+            db,
+            storage,
+            actor=admin,
+            session_id=editing.id,
+            base_version=1,
+            cells=[WorkbookCellReference(2, selling_id)],
+        )
+        assert admin_result.cells[0].value == 1_200_000
+        with pytest.raises(WorkbookServiceError) as hidden:
+            lookup_session_cell_values(
+                db,
+                storage,
+                actor=other,
+                session_id=editing.id,
+                base_version=1,
+                cells=[WorkbookCellReference(2, selling_id)],
+            )
+        assert hidden.value.code == "SESSION_NOT_FOUND"
+        assert len(db.exec(select(WorkbookVersion)).all()) == versions_before
+        assert len(db.exec(select(WorkbookOperation)).all()) == operations_before
+
+        save_session_changes(
+            db,
+            storage,
+            actor=actor,
+            session_id=editing.id,
+            request_id=uuid.uuid4(),
+            base_version=1,
+            changes=[PriceChange(row_number=2, selling_price=1_300_000)],
+        )
+        with pytest.raises(WorkbookServiceError) as stale:
+            lookup_session_cell_values(
+                db,
+                storage,
+                actor=actor,
+                session_id=editing.id,
+                base_version=1,
+                cells=[WorkbookCellReference(2, selling_id)],
+            )
+        assert stale.value.code == "VERSION_CONFLICT"
+        assert stale.value.details == {"current_version": 2}
+        current = lookup_session_cell_values(
+            db,
+            storage,
+            actor=actor,
+            session_id=editing.id,
+            base_version=2,
+            cells=[WorkbookCellReference(2, selling_id)],
+        )
+        assert current.cells[0].value == 1_300_000
 
 
 def test_save_versions_audits_replays_conflicts_and_downloads(engine, storage) -> None:
@@ -495,7 +1054,7 @@ def test_failed_save_rolls_back_version_operation_and_session(engine, storage) -
                 session_id=editing.id,
                 request_id=uuid.uuid4(),
                 base_version=1,
-                changes=[PriceChange(row_number=2, net_price=-1)],
+                changes=[PriceChange(row_number=2, values={"net_price": "invalid"})],
             )
 
         assert captured.value.code == "INVALID_CELL_VALUE"
@@ -580,3 +1139,156 @@ def test_sqlite_concurrent_replay_creates_one_version(
     with Session(database) as check_db:
         assert len(check_db.exec(select(WorkbookOperation)).all()) == 1
         assert len(check_db.exec(select(WorkbookVersion)).all()) == 2
+
+
+def test_formula_preview_add_update_and_dependency_removal(engine, storage) -> None:
+    with Session(engine) as db:
+        actor = make_user(db)
+        uploaded = upload(db, storage, actor)
+        editing = create_editing_session(
+            db,
+            storage,
+            actor=actor,
+            workbook_id=uploaded.id,
+            sheet_name="Tickets",
+        )
+        by_semantic = {
+            column.get("semantic_field"): column["id"]
+            for column in editing.column_config
+            if column.get("semantic_field")
+        }
+        profit_formula = {
+            "schema_version": 1,
+            "expression": {
+                "type": "binary",
+                "operator": "-",
+                "left": {"type": "column", "column_id": by_semantic["selling_price"]},
+                "right": {"type": "column", "column_id": by_semantic["net_price"]},
+            },
+        }
+
+        preview = preview_session_formula(
+            db,
+            storage,
+            actor=actor,
+            session_id=editing.id,
+            base_version=1,
+            formula=profit_formula,
+            output_type="currency",
+        )
+        assert preview.valid is True
+        assert [row.value for row in preview.results] == [200_000, 300_000]
+        assert preview.readable_expression == "(Selling Price - Cost Price)"
+
+        added = add_session_column(
+            db,
+            storage,
+            actor=actor,
+            session_id=editing.id,
+            base_version=1,
+            label="Profit",
+            data_type="currency",
+            formula=profit_formula,
+        )
+        formula_column = next(column for column in added.column_config if column["label"] == "Profit")
+        assert added.current_version == 2
+        assert formula_column["formula"]["schema_version"] == 1
+
+        rounded_formula = {
+            "schema_version": 1,
+            "expression": {
+                "type": "round",
+                "value": {"type": "column", "column_id": formula_column["id"]},
+                "digits": 0,
+            },
+        }
+        rounded = add_session_column(
+            db,
+            storage,
+            actor=actor,
+            session_id=editing.id,
+            base_version=2,
+            label="Rounded profit",
+            data_type="currency",
+            formula=rounded_formula,
+        )
+        rounded_column = next(column for column in rounded.column_config if column["label"] == "Rounded profit")
+        assert rounded.current_version == 3
+
+        with pytest.raises(WorkbookServiceError) as in_use:
+            remove_session_column(
+                db,
+                storage,
+                actor=actor,
+                session_id=editing.id,
+                column_id=formula_column["id"],
+                base_version=3,
+            )
+        assert in_use.value.code == "COLUMN_IN_USE"
+        assert in_use.value.details["dependent_column_ids"] == [rounded_column["id"]]
+
+        updated = update_session_column(
+            db,
+            storage,
+            actor=actor,
+            session_id=editing.id,
+            column_id=rounded_column["id"],
+            base_version=3,
+            label="Rounded margin",
+            formula=None,
+            formula_was_provided=True,
+        )
+        assert updated.current_version == 4
+        updated_column = next(column for column in updated.column_config if column["id"] == rounded_column["id"])
+        assert updated_column["label"] == "Rounded margin"
+        assert updated_column["formula"] is None
+        assert len(db.exec(select(WorkbookVersion)).all()) == 4
+
+
+def test_formula_preview_and_update_enforce_base_version(engine, storage) -> None:
+    with Session(engine) as db:
+        actor = make_user(db)
+        uploaded = upload(db, storage, actor)
+        editing = create_editing_session(
+            db,
+            storage,
+            actor=actor,
+            workbook_id=uploaded.id,
+            sheet_name="Tickets",
+        )
+        formula = {
+            "schema_version": 1,
+            "expression": {"type": "constant", "value": "1"},
+        }
+        with pytest.raises(WorkbookServiceError) as preview_conflict:
+            preview_session_formula(
+                db,
+                storage,
+                actor=actor,
+                session_id=editing.id,
+                base_version=2,
+                formula=formula,
+                output_type="number",
+            )
+        assert preview_conflict.value.code == "VERSION_CONFLICT"
+
+        user_column = add_session_column(
+            db,
+            storage,
+            actor=actor,
+            session_id=editing.id,
+            base_version=1,
+            label="Manual",
+            data_type="number",
+        ).column_config[-1]
+        with pytest.raises(WorkbookServiceError) as update_conflict:
+            update_session_column(
+                db,
+                storage,
+                actor=actor,
+                session_id=editing.id,
+                column_id=user_column["id"],
+                base_version=1,
+                label="Stale rename",
+            )
+        assert update_conflict.value.code == "VERSION_CONFLICT"

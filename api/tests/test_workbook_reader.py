@@ -7,7 +7,12 @@ from pathlib import Path
 import pytest
 from openpyxl import Workbook
 
-from services.workbook_reader import WorkbookReadError, read_workbook_records
+from services.workbook_reader import (
+    WorkbookCellReference,
+    WorkbookReadError,
+    read_workbook_cell_values,
+    read_workbook_records,
+)
 
 
 MAPPING = {
@@ -236,6 +241,32 @@ def test_sort_is_stable_by_physical_row_then_paginated(workbook_path: Path) -> N
     assert [record.row_number for record in second_page.records] == [3, 8]
 
 
+def test_sort_accepts_stable_column_id(workbook_path: Path) -> None:
+    column_config = [
+        {
+            "id": f"source-{column_number}",
+            "column_number": column_number,
+            "origin": "source",
+            "data_type": "number" if column_number >= 4 else "text",
+        }
+        for column_number in range(1, 6)
+    ]
+    result = read(
+        workbook_path,
+        column_config=column_config,
+        sort_by="source-2",
+        sort_direction="asc",
+    )
+
+    assert [record.values["source-2"] for record in result.records] == [
+        "AAA111",
+        "ABC123",
+        "CCC222",
+        "DEF456",
+        "ZZZ999",
+    ]
+
+
 def test_descending_sort_keeps_equal_values_in_physical_order(
     workbook_path: Path,
 ) -> None:
@@ -314,6 +345,69 @@ def test_rejects_bad_inputs(
 
     assert error.value.code == code
     assert str(workbook_path) not in str(error.value)
+
+
+def test_reads_bounded_sparse_cell_values_and_projected_formulas(tmp_path: Path) -> None:
+    path = tmp_path / "lookup.xlsx"
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Lookup"
+    worksheet.append(["Cost", "Rate", "Total"])
+    worksheet.append([100, 20, None])
+    worksheet.append([200, 10, None])
+    workbook.save(path)
+    workbook.close()
+    config = [
+        {"id": "cost", "column_number": 1},
+        {"id": "rate", "column_number": 2},
+        {
+            "id": "total",
+            "column_number": 3,
+            "formula": {
+                "left_column_id": "cost",
+                "operator": "%",
+                "right_column_id": "rate",
+            },
+        },
+    ]
+
+    result = read_workbook_cell_values(
+        path,
+        sheet_name="Lookup",
+        header_row_number=1,
+        column_config=config,
+        cells=[
+            WorkbookCellReference(3, "total"),
+            WorkbookCellReference(2, "cost"),
+            WorkbookCellReference(2, "total"),
+        ],
+    )
+
+    assert [(cell.row_number, cell.column_id, cell.value) for cell in result] == [
+        (3, "total", 20),
+        (2, "cost", 100),
+        (2, "total", 20),
+    ]
+
+    with pytest.raises(WorkbookReadError, match="column") as unknown:
+        read_workbook_cell_values(
+            path,
+            sheet_name="Lookup",
+            header_row_number=1,
+            column_config=config,
+            cells=[WorkbookCellReference(2, "missing")],
+        )
+    assert unknown.value.code == "COLUMN_NOT_FOUND"
+
+    with pytest.raises(WorkbookReadError) as header:
+        read_workbook_cell_values(
+            path,
+            sheet_name="Lookup",
+            header_row_number=1,
+            column_config=config,
+            cells=[WorkbookCellReference(1, "cost")],
+        )
+    assert header.value.code == "INVALID_ROW"
 
 
 def test_rejects_invalid_workbook_without_exposing_path(tmp_path: Path) -> None:

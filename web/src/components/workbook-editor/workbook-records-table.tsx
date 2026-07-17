@@ -8,40 +8,81 @@ import {
   useReactTable,
   type ColumnDef,
 } from "@tanstack/react-table"
-import { ArrowDown, ArrowUp, ChevronsUpDown, FunctionSquare } from "lucide-react"
+import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff, FunctionSquare, Pin, Trash2 } from "lucide-react"
 
 import { EmptyState } from "@/components/command-center"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { formatCurrency } from "@/lib/formatters"
-import type { WorkbookRecordsPage, WorkbookSemanticField } from "@/schemas/workbook"
+import type { WorkbookRecordsPage } from "@/schemas/workbook"
 
 type WorkbookRow = WorkbookRecordsPage["items"][number]
 type DraftMap = Map<number, Partial<Record<string, string>>>
 type ErrorMap = Map<string, string>
 
 const helper = createColumnHelper<WorkbookRow>()
+function numberFormatOptions(numberFormat?: string | null): {
+  maximumFractionDigits: number
+  minimumFractionDigits: number
+  useGrouping: boolean
+} {
+  const section = numberFormat?.split(";")[0] ?? ""
+  const decimalPart = section.match(/\.([0#]+)/)?.[1] ?? ""
+  return {
+    maximumFractionDigits: decimalPart.length || 20,
+    minimumFractionDigits: (decimalPart.match(/0/g) ?? []).length,
+    useGrouping: section.includes(","),
+  }
+}
+
+export function formatWorkbookValue(value: number, numberFormat?: string | null): string {
+  const options = numberFormatOptions(numberFormat)
+  if (!numberFormat?.includes("%")) {
+    return new Intl.NumberFormat("vi-VN", options).format(value)
+  }
+  return new Intl.NumberFormat("vi-VN", {
+    style: "percent",
+    ...options,
+  }).format(value)
+}
 
 export function WorkbookRecordsTable({
+  booleanLabels,
   drafts,
   emptyLabel,
   errors,
+  headerActionLabels,
+  isConfiguringColumns,
   onDraftChange,
+  onHideColumn,
+  onRemoveColumn,
   onSort,
+  onToggleSticky,
   records,
   rowLabel,
   sortBy,
   sortDirection,
 }: {
+  booleanLabels: { blank: string; true: string; false: string }
   drafts: DraftMap
   emptyLabel: string
   errors: ErrorMap
+  headerActionLabels: {
+    hide: string
+    pin: string
+    unpin: string
+    remove: string
+    removeConfirm: string
+  }
+  isConfiguringColumns: boolean
   onDraftChange: (rowNumber: number, field: string, value: string) => void
-  onSort: (field: WorkbookSemanticField) => void
+  onHideColumn: (columnId: string) => void
+  onRemoveColumn: (columnId: string) => void
+  onSort: (columnId: string) => void
+  onToggleSticky: (columnId: string, sticky: boolean) => void
   records: WorkbookRecordsPage
   rowLabel: string
-  sortBy?: WorkbookSemanticField
+  sortBy?: string
   sortDirection: "asc" | "desc"
 }) {
   const visibleColumns = records.columns.filter((column) => !column.hidden)
@@ -51,22 +92,74 @@ export function WorkbookRecordsTable({
     stickyOffsets.set(column.field, offset)
     offset += 176
   }
-  const renderColumnHeader = (column: (typeof visibleColumns)[number]) => {
-    const active = sortBy === column.field
+  const renderColumnHeader = React.useCallback((column: WorkbookRecordsPage["columns"][number]) => {
+    const active = sortBy === column.id
     const Icon = active ? (sortDirection === "asc" ? ArrowUp : ArrowDown) : ChevronsUpDown
     return (
-      <button
-        aria-label={column.label || `Column ${column.field}`}
-        className="inline-flex w-full items-center justify-between gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        disabled={!column.semantic_field}
-        onClick={() => column.semantic_field && onSort(column.semantic_field)}
-        type="button"
-      >
-        <span className="flex items-center gap-1.5 whitespace-pre-line normal-case tracking-normal">{column.formula ? <FunctionSquare aria-hidden="true" className="size-3.5 text-primary" /> : null}{column.label}</span>
-        {column.semantic_field ? <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 opacity-60" /> : null}
-      </button>
+      <div className="group/header flex min-w-36 items-center gap-1">
+        <button
+          aria-label={column.label || column.id}
+          className="inline-flex min-w-0 flex-1 items-center justify-between gap-2 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          onClick={() => onSort(column.id)}
+          type="button"
+        >
+          <span className="flex min-w-0 items-center gap-1.5 whitespace-pre-line normal-case tracking-normal">{column.formula ? <FunctionSquare aria-hidden="true" className="size-3.5 shrink-0 text-primary" /> : null}<span className="truncate">{column.label}</span></span>
+          <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 opacity-50" />
+        </button>
+        <div className="flex shrink-0 items-center rounded-md border border-border/70 bg-white/80 p-0.5 opacity-70 shadow-sm transition-opacity group-hover/header:opacity-100 group-focus-within/header:opacity-100">
+          <button
+            aria-label={column.sticky ? headerActionLabels.unpin : headerActionLabels.pin}
+            aria-pressed={column.sticky}
+            className={cn(
+              "grid size-7 place-items-center rounded-sm text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+              column.sticky && "bg-primary/10 text-primary",
+            )}
+            disabled={isConfiguringColumns}
+            onClick={() => onToggleSticky(column.id, !column.sticky)}
+            title={column.sticky ? headerActionLabels.unpin : headerActionLabels.pin}
+            type="button"
+          >
+            <Pin aria-hidden="true" className={cn("size-3.5", column.sticky && "fill-current")} />
+          </button>
+          {column.origin === "user" ? <button
+            aria-label={headerActionLabels.remove}
+            className="grid size-7 place-items-center rounded-sm text-muted-foreground hover:bg-red-50 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            disabled={isConfiguringColumns}
+            onClick={() => {
+              if (window.confirm(headerActionLabels.removeConfirm.replace("{column}", column.label))) onRemoveColumn(column.id)
+            }}
+            title={headerActionLabels.remove}
+            type="button"
+          >
+            <Trash2 aria-hidden="true" className="size-3.5" />
+          </button> : null}
+          <button
+            aria-label={headerActionLabels.hide}
+            className="grid size-7 place-items-center rounded-sm text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            disabled={isConfiguringColumns}
+            onClick={() => onHideColumn(column.id)}
+            title={headerActionLabels.hide}
+            type="button"
+          >
+            <EyeOff aria-hidden="true" className="size-3.5" />
+          </button>
+        </div>
+      </div>
     )
-  }
+  }, [
+    headerActionLabels.hide,
+    headerActionLabels.pin,
+    headerActionLabels.unpin,
+    headerActionLabels.remove,
+    headerActionLabels.removeConfirm,
+    isConfiguringColumns,
+    onHideColumn,
+    onRemoveColumn,
+    onSort,
+    onToggleSticky,
+    sortBy,
+    sortDirection,
+  ])
   const groupedHeaderRuns: Array<{
     columns: typeof visibleColumns
     groupLabel: string | null
@@ -89,55 +182,70 @@ export function WorkbookRecordsTable({
       visibleColumns.map((column) =>
         helper.accessor((row) => row.values[column.field], {
           id: column.field,
-          header: () => {
-            const active = sortBy === column.field
-            const Icon = active ? (sortDirection === "asc" ? ArrowUp : ArrowDown) : ChevronsUpDown
-            return (
-              <button
-                aria-label={column.label}
-                className="inline-flex w-full items-center justify-between gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                disabled={!column.semantic_field}
-                onClick={() => column.semantic_field && onSort(column.semantic_field)}
-                type="button"
-              >
-                <span className="flex items-center gap-1.5">{column.formula ? <FunctionSquare aria-hidden="true" className="size-3.5 text-primary" /> : null}{column.label}</span>
-                {column.semantic_field ? <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 opacity-60" /> : null}
-              </button>
-            )
-          },
+          header: () => renderColumnHeader(column),
           cell: ({ row }) => {
             const record = row.original
             const field = column.field
             if (column.editable) {
               const rawValue = record.values[field]
               const error = errors.get(`${record.row_number}:${field}`)
-              let inputValue = rawValue == null ? "" : String(rawValue)
-              if (column.data_type === "currency" && typeof rawValue === "number") inputValue = formatCurrency(rawValue)
+              let inputValue = rawValue == null
+                ? ""
+                : (column.data_type === "currency" || column.data_type === "number")
+                    && typeof rawValue === "number"
+                  ? formatWorkbookValue(rawValue, column.number_format)
+                  : String(rawValue)
               if (column.data_type === "date" && rawValue) inputValue = String(rawValue).slice(0, 10)
+              const draftValue = drafts.get(record.row_number)?.[field] ?? inputValue
+              const ariaLabel = `${column.label}, ${rowLabel.replace("{row}", String(record.row_number))}`
               return (
-                <div className="min-w-40 px-2 py-1.5"><Input
-                  aria-invalid={Boolean(error)}
-                  aria-label={`${column.label}, ${rowLabel.replace("{row}", String(record.row_number))}`}
-                  className={cn("h-9", (column.data_type === "currency" || column.data_type === "number") && "text-right tabular-nums", error && "border-destructive")}
-                  disabled={record.editable[field] === false}
-                  inputMode={column.data_type === "currency" || column.data_type === "number" ? "numeric" : undefined}
-                  onChange={(event) => onDraftChange(record.row_number, field, event.target.value)}
-                  type={column.data_type === "date" ? "date" : "text"}
-                  value={drafts.get(record.row_number)?.[field] ?? inputValue}
-                />{error ? <p className="mt-1 text-xs text-destructive" role="alert">{error}</p> : null}</div>
+                <div className="min-w-40 px-2 py-1.5">
+                  {column.data_type === "boolean" ? (
+                    <select
+                      aria-invalid={Boolean(error)}
+                      aria-label={ariaLabel}
+                      className={cn("h-9 w-full rounded-md border border-input bg-white px-3 text-sm", error && "border-destructive")}
+                      disabled={record.editable[field] === false}
+                      onChange={(event) => onDraftChange(record.row_number, field, event.target.value)}
+                      value={draftValue}
+                    >
+                      <option value="">{booleanLabels.blank}</option>
+                      <option value="true">{booleanLabels.true}</option>
+                      <option value="false">{booleanLabels.false}</option>
+                    </select>
+                  ) : (
+                    <Input
+                      aria-invalid={Boolean(error)}
+                      aria-label={ariaLabel}
+                      className={cn("h-9", (column.data_type === "currency" || column.data_type === "number") && "text-right tabular-nums", error && "border-destructive")}
+                      disabled={record.editable[field] === false}
+                      inputMode={column.data_type === "currency" || column.data_type === "number" ? "decimal" : undefined}
+                      onChange={(event) => onDraftChange(record.row_number, field, event.target.value)}
+                      type={column.data_type === "date" ? "date" : "text"}
+                      value={draftValue}
+                    />
+                  )}
+                  {error ? <p className="mt-1 text-xs text-destructive" role="alert">{error}</p> : null}
+                </div>
               )
             }
             const value = record.values[field]
             let display = value == null || value === "" ? "—" : String(value)
-            if (column.data_type === "currency" && typeof value === "number") display = formatCurrency(value)
+            if ((column.data_type === "currency" || column.data_type === "number") && typeof value === "number") {
+              display = formatWorkbookValue(value, column.number_format)
+            }
             if (column.data_type === "date" && value) {
-              const date = new Date(String(value)); if (!Number.isNaN(date.getTime())) display = new Intl.DateTimeFormat("en-GB").format(date)
+              const [year, month, day] = String(value).slice(0, 10).split("-")
+              if (year && month && day) display = `${day}/${month}/${year}`
+            }
+            if (column.data_type === "boolean" && typeof value === "boolean") {
+              display = value ? booleanLabels.true : booleanLabels.false
             }
             return <span className={cn("block min-w-32 px-4 py-3 text-sm", (column.data_type === "currency" || column.data_type === "number") && "text-right tabular-nums", column.formula && "bg-primary/[0.035] font-medium text-foreground/80")}>{display}</span>
           },
         }),
       ),
-    [drafts, errors, onDraftChange, onSort, visibleColumns, rowLabel, sortBy, sortDirection],
+    [booleanLabels, drafts, errors, onDraftChange, renderColumnHeader, visibleColumns, rowLabel],
   )
   // TanStack Table intentionally exposes mutable table callbacks; React Compiler
   // skips this hook, while React rendering remains supported by the library.
