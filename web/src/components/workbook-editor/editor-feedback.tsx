@@ -31,7 +31,7 @@ export function EditorFeedback({
     <div
       aria-live="polite"
       className={cn(
-        "flex items-center gap-2 border-t px-4 py-2 text-sm",
+        "flex items-center gap-2 border-b px-4 py-2.5 text-sm lg:px-5",
         (state === "idle" || state === "dirty") && "border-blue-100 bg-blue-50 text-blue-700",
         state === "saving" && "border-blue-100 bg-blue-50 text-blue-700",
         state === "saved" && "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -42,9 +42,12 @@ export function EditorFeedback({
     >
       <Icon
         aria-hidden="true"
-        className={cn("h-4 w-4 shrink-0", state === "saving" && "animate-spin")}
+        className={cn(
+          "h-4 w-4 shrink-0",
+          state === "saving" && "animate-spin motion-reduce:animate-none",
+        )}
       />
-      <span>{message}</span>
+      <span className="min-w-0">{message}</span>
       {action ? <div className="ml-auto shrink-0">{action}</div> : null}
     </div>
   )

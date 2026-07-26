@@ -47,9 +47,9 @@ export function WorkbookColumnControls({
   const sticky = columns.filter((column) => column.sticky).map((column) => column.id)
 
   return (
-    <div className="flex shrink-0 gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogTrigger asChild><Button size="sm" type="button" variant="outline"><Plus />{t("workbookEditor.editor.columns.add")}</Button></DialogTrigger>
+        <DialogTrigger asChild><Button className="whitespace-nowrap" size="sm" type="button" variant="outline"><Plus />{t("workbookEditor.editor.columns.add")}</Button></DialogTrigger>
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>{t("workbookEditor.editor.columns.addTitle")}</DialogTitle><DialogDescription>{t("workbookEditor.editor.columns.addDescription")}</DialogDescription></DialogHeader>
           <div className="grid gap-4 py-2">
@@ -60,12 +60,12 @@ export function WorkbookColumnControls({
         </DialogContent>
       </Dialog>
 
-      <Button disabled={numericColumns.length === 0 || busy} onClick={() => { setFormulaTarget(null); setFormulaOpen(true) }} size="sm" title={numericColumns.length === 0 ? t("workbookEditor.editor.columns.formulaNeedsColumns") : undefined} type="button" variant="outline"><FunctionSquare />{t("workbookEditor.editor.columns.formula")}</Button>
+      <Button className="whitespace-nowrap" disabled={numericColumns.length === 0 || busy} onClick={() => { setFormulaTarget(null); setFormulaOpen(true) }} size="sm" title={numericColumns.length === 0 ? t("workbookEditor.editor.columns.formulaNeedsColumns") : undefined} type="button" variant="outline"><FunctionSquare />{t("workbookEditor.editor.columns.formula")}</Button>
 
       {formulaColumns.length ? (
         <select
           aria-label={t("workbookEditor.editor.columns.editFormula")}
-          className="h-9 max-w-40 rounded-md border border-input bg-white px-2 text-sm"
+          className="h-9 max-w-40 rounded-md border border-input bg-white px-2 text-xs font-medium"
           disabled={busy}
           onChange={(event) => {
             const target = formulaColumns.find((column) => column.id === event.target.value)
@@ -83,7 +83,7 @@ export function WorkbookColumnControls({
 
       {hiddenColumns.length > 0 ? <Sheet>
         <SheetTrigger asChild>
-          <Button disabled={busy} size="sm" type="button" variant="outline">
+          <Button className="whitespace-nowrap" disabled={busy} size="sm" type="button" variant="outline">
             <Eye />
             {t("workbookEditor.editor.columns.hiddenColumns", { count: hiddenColumns.length })}
           </Button>

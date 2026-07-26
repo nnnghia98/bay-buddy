@@ -8,19 +8,48 @@ import {
   useReactTable,
   type ColumnDef,
 } from "@tanstack/react-table"
-import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff, FunctionSquare, Pin, Trash2 } from "lucide-react"
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronsUpDown,
+  EyeOff,
+  FunctionSquare,
+  Pin,
+  Trash2,
+} from "lucide-react"
 
 import { EmptyState } from "@/components/command-center"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { EditablePriceCell } from "@/components/workbook-editor/editable-price-cell"
 import { Input } from "@/components/ui/input"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import type { WorkbookRecordsPage } from "@/schemas/workbook"
 
 type WorkbookRow = WorkbookRecordsPage["items"][number]
+type WorkbookColumn = WorkbookRecordsPage["columns"][number]
 type DraftMap = Map<number, Partial<Record<string, string>>>
 type ErrorMap = Map<string, string>
 
 const helper = createColumnHelper<WorkbookRow>()
+const ROW_GUTTER_WIDTH = 48
+const DATA_COLUMN_WIDTH = 192
+const PRICE_FIELD_ORDER = new Map([
+  ["net_price", 0],
+  ["selling_price", 1],
+])
+
+function isPricingColumn(column: WorkbookColumn): boolean {
+  const businessField = column.semantic_field ?? column.field
+  return businessField === "net_price" || businessField === "selling_price"
+}
+
 function numberFormatOptions(numberFormat?: string | null): {
   maximumFractionDigits: number
   minimumFractionDigits: number
@@ -87,66 +116,147 @@ export function WorkbookRecordsTable({
   sortBy?: string
   sortDirection: "asc" | "desc"
 }) {
-  const visibleColumns = records.columns.filter((column) => !column.hidden)
-  const stickyOffsets = new Map<string, number>()
-  let offset = 0
-  for (const column of visibleColumns.filter((item) => item.sticky)) {
-    stickyOffsets.set(column.field, offset)
-    offset += 176
-  }
-  const renderColumnHeader = React.useCallback((column: WorkbookRecordsPage["columns"][number]) => {
+  const visibleColumns = React.useMemo(() => {
+    const visible = records.columns.filter((column) => !column.hidden)
+    const dataColumns = visible.filter((column) => !isPricingColumn(column))
+    const priceColumns = visible
+      .filter(isPricingColumn)
+      .sort((left, right) =>
+        (PRICE_FIELD_ORDER.get(left.semantic_field ?? left.field) ?? 99)
+        - (PRICE_FIELD_ORDER.get(right.semantic_field ?? right.field) ?? 99),
+      )
+    return [...dataColumns, ...priceColumns]
+  }, [records.columns])
+
+  const pricingColumns = React.useMemo(
+    () => visibleColumns.filter(isPricingColumn),
+    [visibleColumns],
+  )
+  const firstPricingField = pricingColumns[0]?.field
+
+  const stickyOffsets = React.useMemo(() => {
+    const offsets = new Map<string, number>()
+    let offset = ROW_GUTTER_WIDTH
+    for (const column of visibleColumns.filter(
+      (item) => item.sticky && !isPricingColumn(item),
+    )) {
+      offsets.set(column.field, offset)
+      offset += DATA_COLUMN_WIDTH
+    }
+    return offsets
+  }, [visibleColumns])
+
+  const pricingOffsets = React.useMemo(() => {
+    const offsets = new Map<string, number>()
+    pricingColumns
+      .slice()
+      .reverse()
+      .forEach((column, index) => {
+        offsets.set(column.field, index * DATA_COLUMN_WIDTH)
+      })
+    return offsets
+  }, [pricingColumns])
+
+  const placementStyle = React.useCallback(
+    (field: string): React.CSSProperties | undefined => {
+      const left = stickyOffsets.get(field)
+      if (left !== undefined) return { left }
+      const right = pricingOffsets.get(field)
+      if (right !== undefined) return { right }
+      return undefined
+    },
+    [pricingOffsets, stickyOffsets],
+  )
+
+  const renderColumnHeader = React.useCallback((column: WorkbookColumn) => {
     const active = sortBy === column.id
-    const Icon = active ? (sortDirection === "asc" ? ArrowUp : ArrowDown) : ChevronsUpDown
+    const pricing = isPricingColumn(column)
+    const Icon = active
+      ? (sortDirection === "asc" ? ArrowUp : ArrowDown)
+      : ChevronsUpDown
+    const disabledTitle = isConfiguringColumns && structuralActionDisabledReason
+      ? structuralActionDisabledReason
+      : undefined
+
     return (
-      <div className="group/header flex min-w-36 items-center gap-1">
+      <div className="group/header relative flex min-w-0 items-center">
         <button
           aria-label={column.label || column.id}
-          className="inline-flex min-w-0 flex-1 items-center justify-between gap-2 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className={cn(
+            "inline-flex min-w-0 flex-1 items-center gap-1.5 rounded-sm pr-16 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+            column.origin === "user" && "pr-24",
+            pricing && column.origin !== "user" && "pr-10",
+          )}
           onClick={() => onSort(column.id)}
           type="button"
         >
-          <span className="flex min-w-0 items-center gap-1.5 whitespace-pre-line normal-case tracking-normal">{column.formula ? <FunctionSquare aria-hidden="true" className="size-3.5 shrink-0 text-primary" /> : null}<span className="truncate">{column.label}</span></span>
-          <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0 opacity-50" />
-        </button>
-        <div className="flex shrink-0 items-center rounded-md border border-border/70 bg-white/80 p-0.5 opacity-70 shadow-sm transition-opacity group-hover/header:opacity-100 group-focus-within/header:opacity-100">
-          <button
-            aria-label={column.sticky ? headerActionLabels.unpin : headerActionLabels.pin}
-            aria-pressed={column.sticky}
+          {column.formula ? (
+            <FunctionSquare aria-hidden="true" className="size-3.5 shrink-0 text-primary" />
+          ) : null}
+          <span className="min-w-0 truncate whitespace-pre-line normal-case tracking-normal">
+            {column.label}
+          </span>
+          <Icon
+            aria-hidden="true"
             className={cn(
-              "grid size-7 place-items-center rounded-sm text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-              column.sticky && "bg-primary/10 text-primary",
+              "size-3.5 shrink-0 opacity-45",
+              active && "text-primary opacity-100",
             )}
-            disabled={isConfiguringColumns}
-            onClick={() => onToggleSticky(column.id, !column.sticky)}
-            title={isConfiguringColumns && structuralActionDisabledReason
-              ? structuralActionDisabledReason
-              : column.sticky ? headerActionLabels.unpin : headerActionLabels.pin}
-            type="button"
-          >
-            <Pin aria-hidden="true" className={cn("size-3.5", column.sticky && "fill-current")} />
-          </button>
-          {column.origin === "user" ? <button
-            aria-label={headerActionLabels.remove}
-            className="grid size-7 place-items-center rounded-sm text-muted-foreground hover:bg-red-50 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            disabled={isConfiguringColumns}
-            onClick={() => {
-              if (window.confirm(headerActionLabels.removeConfirm.replace("{column}", column.label))) onRemoveColumn(column.id)
-            }}
-            title={isConfiguringColumns && structuralActionDisabledReason
-              ? structuralActionDisabledReason
-              : headerActionLabels.remove}
-            type="button"
-          >
-            <Trash2 aria-hidden="true" className="size-3.5" />
-          </button> : null}
+          />
+        </button>
+
+        <div
+          className={cn(
+            "absolute right-0 top-1/2 flex -translate-y-1/2 items-center rounded-sm border border-border/80 bg-white/95 p-0.5 opacity-100 shadow-sm transition-opacity md:opacity-0 md:group-hover/header:opacity-100 md:group-focus-within/header:opacity-100",
+            pricing && "border-blue-200 bg-blue-50/95",
+          )}
+        >
+          {!pricing ? (
+            <button
+              aria-label={column.sticky ? headerActionLabels.unpin : headerActionLabels.pin}
+              aria-pressed={column.sticky}
+              className={cn(
+                "grid size-7 place-items-center rounded-sm text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                column.sticky && "bg-primary/10 text-primary",
+              )}
+              disabled={isConfiguringColumns}
+              onClick={() => onToggleSticky(column.id, !column.sticky)}
+              title={disabledTitle
+                ?? (column.sticky ? headerActionLabels.unpin : headerActionLabels.pin)}
+              type="button"
+            >
+              <Pin
+                aria-hidden="true"
+                className={cn("size-3.5", column.sticky && "fill-current")}
+              />
+            </button>
+          ) : null}
+          {column.origin === "user" ? (
+            <button
+              aria-label={headerActionLabels.remove}
+              className="grid size-7 place-items-center rounded-sm text-muted-foreground hover:bg-red-50 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              disabled={isConfiguringColumns}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    headerActionLabels.removeConfirm.replace("{column}", column.label),
+                  )
+                ) {
+                  onRemoveColumn(column.id)
+                }
+              }}
+              title={disabledTitle ?? headerActionLabels.remove}
+              type="button"
+            >
+              <Trash2 aria-hidden="true" className="size-3.5" />
+            </button>
+          ) : null}
           <button
             aria-label={headerActionLabels.hide}
             className="grid size-7 place-items-center rounded-sm text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             disabled={isConfiguringColumns}
             onClick={() => onHideColumn(column.id)}
-            title={isConfiguringColumns && structuralActionDisabledReason
-              ? structuralActionDisabledReason
-              : headerActionLabels.hide}
+            title={disabledTitle ?? headerActionLabels.hide}
             type="button"
           >
             <EyeOff aria-hidden="true" className="size-3.5" />
@@ -157,9 +267,9 @@ export function WorkbookRecordsTable({
   }, [
     headerActionLabels.hide,
     headerActionLabels.pin,
-    headerActionLabels.unpin,
     headerActionLabels.remove,
     headerActionLabels.removeConfirm,
+    headerActionLabels.unpin,
     isConfiguringColumns,
     onHideColumn,
     onRemoveColumn,
@@ -169,8 +279,9 @@ export function WorkbookRecordsTable({
     sortDirection,
     structuralActionDisabledReason,
   ])
+
   const groupedHeaderRuns: Array<{
-    columns: typeof visibleColumns
+    columns: WorkbookColumn[]
     groupLabel: string | null
   }> = []
   if (records.header_row_count === 2) {
@@ -186,6 +297,7 @@ export function WorkbookRecordsTable({
       }
     }
   }
+
   const columns = React.useMemo<ColumnDef<WorkbookRow, WorkbookRow["values"][string]>[]>(
     () =>
       visibleColumns.map((column) =>
@@ -195,27 +307,52 @@ export function WorkbookRecordsTable({
           cell: ({ row }) => {
             const record = row.original
             const field = column.field
+            const rawValue = record.values[field]
+            const error = errors.get(`${record.row_number}:${field}`)
+            const storedDraft = drafts.get(record.row_number)?.[field]
+            const ariaLabel =
+              `${column.label}, ${rowLabel.replace("{row}", String(record.row_number))}`
+
+            if (isPricingColumn(column)) {
+              return (
+                <EditablePriceCell
+                  ariaLabel={ariaLabel}
+                  draft={storedDraft}
+                  editable={column.editable && record.editable[field] !== false}
+                  error={error}
+                  onChange={(value) => onDraftChange(record.row_number, field, value)}
+                  value={rawValue}
+                />
+              )
+            }
+
             if (column.editable) {
-              const rawValue = record.values[field]
-              const error = errors.get(`${record.row_number}:${field}`)
               let inputValue = rawValue == null
                 ? ""
                 : (column.data_type === "currency" || column.data_type === "number")
                     && typeof rawValue === "number"
                   ? formatWorkbookValue(rawValue, column.number_format)
                   : String(rawValue)
-              if (column.data_type === "date" && rawValue) inputValue = String(rawValue).slice(0, 10)
-              const draftValue = drafts.get(record.row_number)?.[field] ?? inputValue
-              const ariaLabel = `${column.label}, ${rowLabel.replace("{row}", String(record.row_number))}`
+              if (column.data_type === "date" && rawValue) {
+                inputValue = String(rawValue).slice(0, 10)
+              }
+              const draftValue = storedDraft ?? inputValue
+              const drafted = storedDraft !== undefined
+
               return (
-                <div className="min-w-40 px-2 py-1.5">
+                <div className="w-48 px-2 py-1.5">
                   {column.data_type === "boolean" ? (
                     <select
                       aria-invalid={Boolean(error)}
                       aria-label={ariaLabel}
-                      className={cn("h-9 w-full rounded-md border border-input bg-white px-3 text-sm", error && "border-destructive")}
+                      className={cn(
+                        "h-9 w-full rounded-md border border-input bg-white px-3 text-sm font-medium shadow-none focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
+                        drafted && "border-primary/45 bg-primary/[0.055] ring-1 ring-primary/10",
+                        error && "border-destructive",
+                      )}
                       disabled={record.editable[field] === false}
-                      onChange={(event) => onDraftChange(record.row_number, field, event.target.value)}
+                      onChange={(event) =>
+                        onDraftChange(record.row_number, field, event.target.value)}
                       value={draftValue}
                     >
                       <option value="">{booleanLabels.blank}</option>
@@ -226,21 +363,42 @@ export function WorkbookRecordsTable({
                     <Input
                       aria-invalid={Boolean(error)}
                       aria-label={ariaLabel}
-                      className={cn("h-9", (column.data_type === "currency" || column.data_type === "number") && "text-right tabular-nums", error && "border-destructive")}
+                      className={cn(
+                        "h-9 shadow-none",
+                        (column.data_type === "currency"
+                          || column.data_type === "number")
+                          && "text-right font-mono text-sm tabular-nums",
+                        drafted && "border-primary/45 bg-primary/[0.055] ring-1 ring-primary/10",
+                        error && "border-destructive",
+                      )}
                       disabled={record.editable[field] === false}
-                      inputMode={column.data_type === "currency" || column.data_type === "number" ? "decimal" : undefined}
-                      onChange={(event) => onDraftChange(record.row_number, field, event.target.value)}
+                      inputMode={
+                        column.data_type === "currency"
+                          || column.data_type === "number"
+                          ? "decimal"
+                          : undefined
+                      }
+                      onChange={(event) =>
+                        onDraftChange(record.row_number, field, event.target.value)}
                       type={column.data_type === "date" ? "date" : "text"}
                       value={draftValue}
                     />
                   )}
-                  {error ? <p className="mt-1 text-xs text-destructive" role="alert">{error}</p> : null}
+                  {error ? (
+                    <p className="mt-1 text-xs text-destructive" role="alert">
+                      {error}
+                    </p>
+                  ) : null}
                 </div>
               )
             }
-            const value = record.values[field]
-            let display = value == null || value === "" ? "—" : String(value)
-            if ((column.data_type === "currency" || column.data_type === "number") && typeof value === "number") {
+
+            const value = rawValue
+            let display = value == null || value === "" ? "-" : String(value)
+            if (
+              (column.data_type === "currency" || column.data_type === "number")
+              && typeof value === "number"
+            ) {
               display = formatWorkbookValue(value, column.number_format)
             }
             if (column.data_type === "date" && value) {
@@ -250,41 +408,89 @@ export function WorkbookRecordsTable({
             if (column.data_type === "boolean" && typeof value === "boolean") {
               display = value ? booleanLabels.true : booleanLabels.false
             }
-            return <span className={cn("block min-w-32 px-4 py-3 text-sm", (column.data_type === "currency" || column.data_type === "number") && "text-right tabular-nums", column.formula && "bg-primary/[0.035] font-medium text-foreground/80")}>{display}</span>
+            return (
+              <span
+                className={cn(
+                  "block w-48 truncate px-4 py-3 text-sm",
+                  (column.data_type === "currency" || column.data_type === "number")
+                    && "text-right font-mono tabular-nums",
+                  column.formula && "font-medium text-foreground/80",
+                )}
+                title={display === "-" ? undefined : display}
+              >
+                {display}
+              </span>
+            )
           },
         }),
       ),
-    [booleanLabels, drafts, errors, onDraftChange, renderColumnHeader, visibleColumns, rowLabel],
+    [
+      booleanLabels,
+      drafts,
+      errors,
+      onDraftChange,
+      renderColumnHeader,
+      rowLabel,
+      visibleColumns,
+    ],
   )
+
   // TanStack Table intentionally exposes mutable table callbacks; React Compiler
   // skips this hook, while React rendering remains supported by the library.
   // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({ data: records.items, columns, getCoreRowModel: getCoreRowModel() })
+  const table = useReactTable({
+    data: records.items,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  })
 
   return (
-    <div className="max-h-[calc(100dvh-19rem)] min-h-80 w-full overflow-auto">
+    <div
+      aria-label={records.sheet_name}
+      className="max-h-[calc(100dvh-17.5rem)] min-h-[26rem] w-full overflow-auto bg-secondary/10 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30 [&>div]:overflow-visible"
+      role="region"
+      tabIndex={0}
+    >
       <Table className="min-w-max border-separate border-spacing-0">
-        <TableHeader className="sticky top-0 z-30 bg-secondary">
+        <TableHeader className="sticky top-0 z-40 bg-secondary">
           {records.header_row_count === 2 ? (
             <>
               <TableRow>
+                <TableHead
+                  className="sticky left-0 z-[60] w-12 min-w-12 max-w-12 border-r border-border bg-secondary px-0 text-center font-mono tracking-normal text-muted-foreground"
+                  rowSpan={2}
+                  scope="col"
+                >
+                  #
+                </TableHead>
                 {groupedHeaderRuns.map((run) => {
                   const column = run.columns[0]
                   const field = column.field
-                  const stickyLeft = stickyOffsets.get(field)
+                  const pricing = run.columns.every(isPricingColumn)
+                  const positioned = !run.groupLabel
+                  const stickyLeft = positioned ? stickyOffsets.get(field) : undefined
+                  const stickyRight = positioned ? pricingOffsets.get(field) : undefined
                   return (
                     <TableHead
                       className={cn(
-                        "border-b border-r border-border bg-secondary px-4 py-2.5 text-center text-xs font-semibold text-foreground",
-                        stickyLeft !== undefined && "sticky z-40 min-w-44 shadow-[8px_0_14px_rgba(24,29,38,0.04)]",
+                        "w-48 min-w-48 max-w-48 border-b border-r border-border bg-secondary px-3 py-2.5 text-center text-xs font-semibold text-foreground",
+                        pricing && "bg-blue-50 text-primary",
+                        stickyLeft !== undefined
+                          && "sticky z-50 shadow-[8px_0_14px_rgba(24,29,38,0.05)]",
+                        stickyRight !== undefined
+                          && "md:sticky md:z-50 md:shadow-[-8px_0_14px_rgba(24,29,38,0.05)]",
+                        field === firstPricingField
+                          && "border-l-2 border-l-primary/25",
                       )}
                       colSpan={run.columns.length}
                       key={`${run.groupLabel ?? field}-${field}`}
                       rowSpan={run.groupLabel ? 1 : 2}
-                      style={stickyLeft === undefined ? undefined : { left: stickyLeft }}
+                      style={positioned ? placementStyle(field) : undefined}
                     >
                       {run.groupLabel ? (
-                        <span className="whitespace-pre-line">{run.groupLabel}</span>
+                        <span className="whitespace-pre-line normal-case tracking-normal">
+                          {run.groupLabel}
+                        </span>
                       ) : renderColumnHeader(column)}
                     </TableHead>
                   )
@@ -292,15 +498,23 @@ export function WorkbookRecordsTable({
               </TableRow>
               <TableRow>
                 {visibleColumns.filter((column) => column.group_label).map((column) => {
+                  const pricing = isPricingColumn(column)
                   const stickyLeft = stickyOffsets.get(column.field)
+                  const stickyRight = pricingOffsets.get(column.field)
                   return (
                     <TableHead
                       className={cn(
-                        "border-b border-r border-border bg-secondary px-4 py-2.5 text-xs font-semibold text-foreground",
-                        stickyLeft !== undefined && "sticky z-40 min-w-44 shadow-[8px_0_14px_rgba(24,29,38,0.04)]",
+                        "w-48 min-w-48 max-w-48 border-b border-r border-border bg-secondary px-3 py-2.5 text-xs font-semibold text-foreground",
+                        pricing && "bg-blue-50 text-primary",
+                        stickyLeft !== undefined
+                          && "sticky z-50 shadow-[8px_0_14px_rgba(24,29,38,0.05)]",
+                        stickyRight !== undefined
+                          && "md:sticky md:z-50 md:shadow-[-8px_0_14px_rgba(24,29,38,0.05)]",
+                        column.field === firstPricingField
+                          && "border-l-2 border-l-primary/25",
                       )}
                       key={column.field}
-                      style={stickyLeft === undefined ? undefined : { left: stickyLeft }}
+                      style={placementStyle(column.field)}
                     >
                       {renderColumnHeader(column)}
                     </TableHead>
@@ -310,17 +524,31 @@ export function WorkbookRecordsTable({
             </>
           ) : table.getHeaderGroups().map((group) => (
             <TableRow key={group.id}>
+              <TableHead
+                className="sticky left-0 z-[60] w-12 min-w-12 max-w-12 border-r border-border bg-secondary px-0 text-center font-mono tracking-normal text-muted-foreground"
+                scope="col"
+              >
+                #
+              </TableHead>
               {group.headers.map((header) => {
                 const field = header.column.id
+                const column = visibleColumns.find((item) => item.field === field)
+                const pricing = column ? isPricingColumn(column) : false
                 const stickyLeft = stickyOffsets.get(field)
+                const stickyRight = pricingOffsets.get(field)
                 return (
                   <TableHead
                     className={cn(
-                      "border-b border-r border-border bg-secondary px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-foreground",
-                      stickyLeft !== undefined && "sticky z-40 min-w-44 shadow-[8px_0_14px_rgba(24,29,38,0.04)]",
+                      "w-48 min-w-48 max-w-48 border-b border-r border-border bg-secondary px-3 py-3 text-xs font-semibold text-foreground",
+                      pricing && "bg-blue-50 text-primary",
+                      stickyLeft !== undefined
+                        && "sticky z-50 shadow-[8px_0_14px_rgba(24,29,38,0.05)]",
+                      stickyRight !== undefined
+                        && "md:sticky md:z-50 md:shadow-[-8px_0_14px_rgba(24,29,38,0.05)]",
+                      field === firstPricingField && "border-l-2 border-l-primary/25",
                     )}
                     key={header.id}
-                    style={stickyLeft === undefined ? undefined : { left: stickyLeft }}
+                    style={placementStyle(field)}
                   >
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
@@ -332,24 +560,46 @@ export function WorkbookRecordsTable({
         <TableBody>
           {table.getRowModel().rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={Math.max(columns.length, 1)}>
-                <EmptyState icon={ChevronsUpDown} message={emptyLabel} />
+              <TableCell colSpan={Math.max(columns.length + 1, 1)}>
+                <EmptyState
+                  className="py-20"
+                  icon={ChevronsUpDown}
+                  message={emptyLabel}
+                />
               </TableCell>
             </TableRow>
           ) : (
             table.getRowModel().rows.map((row) => (
               <TableRow className="group" key={row.original.row_number}>
+                <TableCell className="sticky left-0 z-30 w-12 min-w-12 max-w-12 border-r border-border bg-secondary/80 px-0 py-0 text-center font-mono text-[11px] font-medium text-muted-foreground group-hover:bg-secondary">
+                  {row.original.row_number}
+                </TableCell>
                 {row.getVisibleCells().map((cell) => {
                   const field = cell.column.id
+                  const column = visibleColumns.find((item) => item.field === field)
+                  const pricing = column ? isPricingColumn(column) : false
                   const stickyLeft = stickyOffsets.get(field)
+                  const stickyRight = pricingOffsets.get(field)
+                  const drafted =
+                    drafts.get(row.original.row_number)?.[field] !== undefined
                   return (
                     <TableCell
                       className={cn(
-                        "border-b border-r border-border bg-white p-0 group-hover:bg-secondary/30",
-                        stickyLeft !== undefined && "sticky z-20 min-w-44 bg-white shadow-[8px_0_14px_rgba(24,29,38,0.04)] group-hover:bg-secondary",
+                        "w-48 min-w-48 max-w-48 border-b border-r border-border bg-white p-0 group-hover:bg-secondary/30",
+                        column?.formula && "bg-primary/[0.025]",
+                        drafted && !pricing
+                          && "bg-blue-50/65 group-hover:bg-blue-50/80",
+                        pricing
+                          && "bg-blue-50/75 group-hover:bg-blue-50 md:sticky md:z-20",
+                        stickyLeft !== undefined
+                          && "sticky z-30 bg-white shadow-[8px_0_14px_rgba(24,29,38,0.05)] group-hover:bg-secondary",
+                        stickyRight !== undefined
+                          && "md:shadow-[-8px_0_14px_rgba(24,29,38,0.05)]",
+                        field === firstPricingField
+                          && "border-l-2 border-l-primary/25",
                       )}
                       key={cell.id}
-                      style={stickyLeft === undefined ? undefined : { left: stickyLeft }}
+                      style={placementStyle(field)}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>

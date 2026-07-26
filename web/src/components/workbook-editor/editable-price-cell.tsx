@@ -37,8 +37,8 @@ export function EditablePriceCell({
 }) {
   if (!editable) {
     return (
-      <span className="block min-w-32 px-3 py-2 text-right font-semibold tabular-nums text-foreground/70">
-        {formatVnd(value) || "—"}
+      <span className="block min-w-40 px-3 py-3 text-right font-mono text-sm font-semibold tabular-nums text-foreground/75">
+        {formatVnd(value) || "-"}
       </span>
     )
   }
@@ -49,7 +49,8 @@ export function EditablePriceCell({
         aria-invalid={Boolean(error)}
         aria-label={ariaLabel}
         className={cn(
-          "h-9 border-primary/20 bg-white text-right font-semibold tabular-nums shadow-none focus-visible:border-primary",
+          "h-9 border-primary/25 bg-white text-right font-mono text-sm font-semibold tabular-nums shadow-none focus-visible:border-primary",
+          draft !== undefined && "border-primary/45 bg-primary/[0.055] ring-1 ring-primary/10",
           error && "border-red-400 focus-visible:border-red-500 focus-visible:ring-red-200",
         )}
         inputMode="numeric"

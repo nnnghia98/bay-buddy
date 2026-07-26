@@ -116,7 +116,7 @@ export function MetricCard({
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-secondary text-primary transition-colors group-hover:border-primary/20 group-hover:bg-accent/60">
+        <div className="flex h-9 w-9 items-center justify-center rounded-sm border border-border bg-secondary text-primary transition-colors group-hover:border-primary/20 group-hover:bg-accent/60">
           <Icon className="h-4 w-4" aria-hidden="true" />
         </div>
         {action}
@@ -147,7 +147,7 @@ export function EmptyState({
 }) {
   return (
     <div className={cn("flex flex-col items-center gap-3 px-6 py-16 text-center", className)}>
-      <div className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-secondary text-muted-foreground">
+      <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-border bg-secondary text-muted-foreground">
         <Icon className="h-4 w-4" aria-hidden="true" />
       </div>
       <p className="max-w-md text-sm leading-6 text-muted-foreground">{message}</p>
@@ -202,7 +202,7 @@ export function CommandActionLink({
       href={href}
       {...props}
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-secondary text-primary transition-colors group-hover:border-primary/20 group-hover:bg-white">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-border bg-secondary text-primary transition-colors group-hover:border-primary/20 group-hover:bg-white">
         <Icon className="h-4 w-4" aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1">

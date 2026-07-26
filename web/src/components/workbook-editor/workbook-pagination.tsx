@@ -24,8 +24,10 @@ export function WorkbookPagination({
   totalPages: number
 }) {
   return (
-    <div className="flex flex-col gap-3 border-t border-border bg-white px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-muted-foreground">{totalLabel.replace("{total}", String(total))}</p>
+    <div className="flex flex-col gap-3 border-t border-border bg-secondary/15 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between lg:px-5">
+      <p className="font-mono text-xs font-medium text-muted-foreground">
+        {totalLabel.replace("{total}", String(total))}
+      </p>
       <div className="flex items-center justify-end gap-2">
         <Button
           aria-label={previousLabel}
@@ -36,9 +38,9 @@ export function WorkbookPagination({
           variant="outline"
         >
           <ChevronLeft aria-hidden="true" className="h-4 w-4" />
-          <span className="hidden sm:inline">{previousLabel}</span>
+          <span className="hidden md:inline">{previousLabel}</span>
         </Button>
-        <span className="min-w-24 text-center font-medium tabular-nums text-foreground">
+        <span className="min-w-24 text-center font-mono text-xs font-medium text-foreground">
           {pageLabel.replace("{page}", String(page)).replace("{total}", String(totalPages || 1))}
         </span>
         <Button
@@ -49,7 +51,7 @@ export function WorkbookPagination({
           type="button"
           variant="outline"
         >
-          <span className="hidden sm:inline">{nextLabel}</span>
+          <span className="hidden md:inline">{nextLabel}</span>
           <ChevronRight aria-hidden="true" className="h-4 w-4" />
         </Button>
       </div>

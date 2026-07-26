@@ -104,28 +104,28 @@ export function WorkbookStartClient({
   const busy = pending !== null
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5 pb-12 text-foreground">
+    <div className="grid gap-4 pb-12 text-foreground xl:grid-cols-[minmax(20rem,5fr)_minmax(0,8fr)] xl:items-start">
       <section
         aria-labelledby="workbook-start-title"
-        className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
+        className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] xl:sticky xl:top-5"
       >
-        <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-              {text("workbookEditor.start.eyebrow")}
-            </p>
-            <h1 className="mt-1 text-xl font-semibold tracking-[-0.02em]" id="workbook-start-title">
+        <div className="flex flex-col gap-3 border-b border-border bg-secondary/20 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid size-9 shrink-0 place-items-center rounded-sm border border-blue-200 bg-blue-50 text-primary">
+              <FileSpreadsheet aria-hidden="true" className="size-4" />
+            </span>
+            <h1 className="min-w-0 text-base font-semibold tracking-[-0.01em]" id="workbook-start-title">
               {text("workbookEditor.start.title")}
             </h1>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex shrink-0 items-center gap-2 text-xs font-medium text-emerald-700">
             <ShieldCheck aria-hidden="true" className="size-4 text-emerald-700" />
             <span>{text("workbookEditor.start.originalProtected")}</span>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[minmax(0,5fr)_minmax(19rem,4fr)]">
-          <div className="border-b border-border p-5 lg:border-r lg:border-b-0">
+        <div className="flex min-h-0 flex-col">
+          <div className="p-4">
             <WorkbookUpload
               disabled={busy}
               file={file}
@@ -163,22 +163,29 @@ export function WorkbookStartClient({
 
           <div
             aria-busy={busy}
-            className="flex min-h-72 flex-col bg-secondary/25 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30"
+            className="flex min-h-64 flex-col border-t border-border bg-secondary/20 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30"
             ref={sheetsRegionRef}
             tabIndex={-1}
           >
-            <div className="border-b border-border px-5 py-3.5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                {text("workbookEditor.sheets.eyebrow")}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
+            <div className="border-b border-border px-4 py-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-sm font-semibold text-foreground">
+                  {text("workbookEditor.sheets.eyebrow")}
+                </p>
+                {uploaded ? (
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {uploaded.sheets.length}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
                 {text("workbookEditor.sheets.description")}
               </p>
             </div>
 
             {uploaded ? (
               <div className="flex flex-1 flex-col">
-                <div className="border-b border-border bg-blue-50/60 px-5 py-3">
+                <div className="border-b border-blue-100 bg-blue-50/65 px-4 py-3">
                   <div className="flex min-w-0 items-center gap-3">
                     <FileSpreadsheet aria-hidden="true" className="size-4 shrink-0 text-primary" />
                     <div className="min-w-0">
@@ -192,7 +199,7 @@ export function WorkbookStartClient({
                   </div>
                 </div>
 
-                <fieldset className="space-y-2 p-4" disabled={busy}>
+                <fieldset className="max-h-64 divide-y divide-border overflow-y-auto" disabled={busy}>
                   <legend className="sr-only">{text("workbookEditor.sheets.selectLabel")}</legend>
                   {uploaded.sheets.map((sheet) => (
                     <SheetOption
@@ -207,7 +214,7 @@ export function WorkbookStartClient({
                   ))}
                 </fieldset>
 
-                <div className="mt-auto border-t border-border bg-white p-4">
+                <div className="mt-auto border-t border-border bg-white p-3">
                   <Button
                     className="w-full"
                     disabled={!selectedSheet || busy}
@@ -227,9 +234,11 @@ export function WorkbookStartClient({
                 </div>
               </div>
             ) : (
-              <div className="grid flex-1 place-items-center px-6 py-12 text-center">
+              <div className="grid flex-1 place-items-center px-6 py-9 text-center">
                 <div className="max-w-xs">
-                  <FileSpreadsheet aria-hidden="true" className="mx-auto size-7 text-muted-foreground/60" />
+                  <span className="mx-auto grid size-10 place-items-center rounded-sm border border-border bg-white text-muted-foreground">
+                    <FileSpreadsheet aria-hidden="true" className="size-4" />
+                  </span>
                   <p className="mt-3 text-sm font-medium text-foreground">
                     {text("workbookEditor.sheets.emptyTitle")}
                   </p>
@@ -265,11 +274,14 @@ function SheetOption({
   return (
     <label
       className={cn(
-        "block rounded-lg border bg-white p-3 transition-colors",
-        selectable ? "cursor-pointer hover:border-primary/50" : "cursor-not-allowed opacity-70",
-        selected ? "border-primary ring-2 ring-primary/10" : "border-border",
+        "relative block bg-white px-4 py-3 transition-colors",
+        selectable ? "cursor-pointer hover:bg-primary/[0.035]" : "cursor-not-allowed opacity-60",
+        selected && "bg-blue-50/80",
       )}
     >
+      {selected ? (
+        <span aria-hidden="true" className="absolute inset-y-2 left-0 w-1 rounded-r-full bg-primary" />
+      ) : null}
       <div className="flex items-start gap-3">
         <input
           checked={selected}
@@ -281,10 +293,10 @@ function SheetOption({
           value={sheet.name}
         />
         <div className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold" title={sheet.name}>
+          <span className={cn("block truncate text-sm font-semibold", selected && "text-primary")} title={sheet.name}>
             {sheet.name}
           </span>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
             {labels.rowsColumns}: {sheet.max_row} × {sheet.max_column}
           </p>
         </div>

@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Eraser,
+  FileSpreadsheet,
   History,
   LoaderCircle,
   Pencil,
@@ -14,6 +15,7 @@ import { useRouter } from "next/navigation"
 import * as React from "react"
 
 import { SessionRenameDialog } from "@/components/workbook-editor/session-rename-dialog"
+import { StatusChip } from "@/components/command-center"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -171,10 +173,29 @@ export function WorkbookSessionLibrary({
   return (
     <section
       aria-label={text("workbookEditor.library.title")}
-      className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
+      aria-busy={sessionsQuery.isFetching}
+      className="min-w-0 overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
     >
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-secondary/20 px-5 py-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-sm border border-border bg-white text-primary">
+            <History aria-hidden="true" className="size-4" />
+          </span>
+          <h2 className="truncate text-base font-semibold tracking-[-0.01em] text-foreground">
+            {text("workbookEditor.library.title")}
+          </h2>
+        </div>
+        <span className="shrink-0 font-mono text-xs font-medium text-muted-foreground">
+          {replaceToken(
+            text("workbookEditor.library.pagination.total"),
+            "total",
+            String(data.pagination.total),
+          )}
+        </span>
+      </div>
+
       {feedback ? (
-        <div aria-live="polite" className="border-b border-border bg-secondary/30 px-5 py-2 text-sm">
+        <div aria-live="polite" className="border-b border-blue-100 bg-blue-50 px-5 py-2.5 text-sm text-blue-700">
           {feedback}
         </div>
       ) : null}
@@ -191,10 +212,12 @@ export function WorkbookSessionLibrary({
         </div>
       ) : data.items.length === 0 ? (
         <>
-          <div className="px-6 py-12 text-center">
-            <History aria-hidden="true" className="mx-auto size-7 text-muted-foreground/60" />
+          <div className="px-6 py-14 text-center">
+            <span className="mx-auto grid size-10 place-items-center rounded-sm border border-border bg-secondary text-muted-foreground">
+              <FileSpreadsheet aria-hidden="true" className="size-4" />
+            </span>
             <p className="mt-3 text-sm font-medium">{text("workbookEditor.library.emptyTitle")}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
               {text("workbookEditor.library.emptyDescription")}
             </p>
           </div>
@@ -222,7 +245,7 @@ export function WorkbookSessionLibrary({
       ) : (
         <>
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-secondary/55">
               <TableRow>
                 <TableHead>{text("workbookEditor.library.columns.name")}</TableHead>
                 <TableHead>{text("workbookEditor.library.columns.updated")}</TableHead>
@@ -236,18 +259,35 @@ export function WorkbookSessionLibrary({
                 return (
                   <TableRow key={session.id}>
                     <TableCell className="min-w-56">
-                      <p className="font-semibold" title={session.display_name}>
-                        {session.display_name}
-                      </p>
+                      <div className="flex min-w-0 items-start gap-3">
+                        <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-sm border border-border bg-secondary text-primary">
+                          <FileSpreadsheet aria-hidden="true" className="size-3.5" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold" title={session.display_name}>
+                            {session.display_name}
+                          </p>
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {session.original_filename} / {session.selected_sheet_name}
+                          </p>
+                          {localState ? (
+                            <div className="mt-2">
+                              <StatusChip tone={localState === "conflict" ? "danger" : "warning"}>
+                                {text(`workbookEditor.library.localStatuses.${localState}`)}
+                              </StatusChip>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
                     </TableCell>
-                    <TableCell className="min-w-44 text-muted-foreground">
+                    <TableCell className="min-w-44 font-mono text-xs text-muted-foreground">
                       {updatedAtFormatter.format(new Date(session.updated_at))}
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1.5">
                         <Button
                           aria-label={text("workbookEditor.library.actions.open")}
-                          className="h-8 w-8"
+                          className="h-8 w-8 text-primary"
                           onClick={() => router.push(`/workbook-editor-v2/sessions/${session.id}`)}
                           size="icon"
                           title={text("workbookEditor.library.actions.open")}
@@ -335,7 +375,7 @@ export function WorkbookSessionLibrary({
               })}
             </TableBody>
           </Table>
-          <div className="flex flex-col gap-3 border-t border-border px-5 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-border bg-secondary/15 px-5 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
             <span>
               {replaceToken(
                 text("workbookEditor.library.pagination.total"),
@@ -379,7 +419,7 @@ export function WorkbookSessionLibrary({
       )}
 
       {sessionsQuery.isFetching && !sessionsQuery.isError ? (
-        <div className="flex items-center gap-2 border-t border-border px-5 py-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 border-t border-border bg-secondary/20 px-5 py-2 text-xs text-muted-foreground">
           <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin motion-reduce:animate-none" />
           {text("workbookEditor.library.loading")}
         </div>

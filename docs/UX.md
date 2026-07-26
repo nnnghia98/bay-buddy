@@ -45,7 +45,7 @@ Add these UX-specific visual rules:
 
 - Use compact working surfaces for dashboards, ledgers, invoices, and ticket capture.
 - Avoid giant hero cards inside authenticated app pages.
-- Use `8px` radius for interactive controls, icon badges, and compact avatars; use `16px` for structural panels and standard dialogs.
+- Use `4px` radius for icon badges and micro-actions, `8px` for interactive controls and nested blocks, and `12px` for structural panels and standard dialogs.
 - Use status chips with text and color together; never rely on color alone.
 - Make primary actions visually persistent near the data they affect.
 - Prefer tables for financial records on desktop and mobile-safe stacked rows or horizontal scroll on narrow screens.

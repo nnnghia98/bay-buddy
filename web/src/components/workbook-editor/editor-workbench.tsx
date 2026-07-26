@@ -660,29 +660,47 @@ export function EditorWorkbench({
   )
 
   return (
-    <div className="space-y-4 pb-12 text-foreground">
-      <SessionActionBar
-        clearDraftLabel={t("workbookEditor.editor.actions.clearLocal")}
-        dirtyCount={dirtyCount}
-        dirtyLabel={t("workbookEditor.editor.unsavedCount", { count: dirtyCount })}
-        downloadLabel={t("workbookEditor.editor.actions.download")}
-        filename={initialSession.original_filename}
-        isDownloading={isDownloading}
-        isSaving={saveMutation.isPending || reconciliationMutation.isPending}
-        onClearDraft={() => void handleClearLocalDraft()}
-        onDownload={handleDownload}
-        onSave={handleSave}
-        editingAvailable={
-          records.columns.some((column) => column.editable)
-          && !hasUnresolvedConflicts
-        }
-        protectedLabel={t("workbookEditor.editor.originalProtected")}
-        saveLabel={t("workbookEditor.editor.actions.save")}
-        savingLabel={t("workbookEditor.editor.actions.saving")}
-        versionLabel={t("workbookEditor.editor.version", { version: baseVersion })}
-      />
-
-      <Panel className={cn(recordsQuery.isFetching && "opacity-80")}>
+    <div className="pb-12 text-foreground">
+      <Panel aria-busy={recordsQuery.isFetching} className="min-w-0">
+        <SessionActionBar
+          clearDraftLabel={t("workbookEditor.editor.actions.clearLocal")}
+          dirtyCount={dirtyCount}
+          dirtyLabel={t("workbookEditor.editor.unsavedCount", { count: dirtyCount })}
+          downloadLabel={t("workbookEditor.editor.actions.download")}
+          filename={initialSession.original_filename}
+          isDownloading={isDownloading}
+          isSaving={saveMutation.isPending || reconciliationMutation.isPending}
+          onClearDraft={() => void handleClearLocalDraft()}
+          onDownload={handleDownload}
+          onSave={handleSave}
+          editingAvailable={
+            records.columns.some((column) => column.editable)
+            && !hasUnresolvedConflicts
+          }
+          protectedLabel={t("workbookEditor.editor.originalProtected")}
+          saveLabel={t("workbookEditor.editor.actions.save")}
+          savingLabel={t("workbookEditor.editor.actions.saving")}
+          versionLabel={t("workbookEditor.editor.version", { version: baseVersion })}
+        />
+        <EditorFeedback
+          action={
+            saveState === "conflict" ? (
+              <div className="flex gap-2">
+                {hasUnresolvedConflicts ? (
+                  <Button onClick={() => setConflictDialogOpen(true)} size="sm" type="button" variant="outline">
+                    {t("workbookEditor.editor.actions.resolveConflicts")}
+                  </Button>
+                ) : (
+                  <Button onClick={reloadLatestVersion} size="sm" type="button" variant="outline">
+                    {t("workbookEditor.editor.actions.reloadLatest")}
+                  </Button>
+                )}
+              </div>
+            ) : undefined
+          }
+          message={feedback}
+          state={saveState}
+        />
         <WorkbookTableToolbar
           columnControls={<WorkbookColumnControls
             baseVersion={baseVersion}
@@ -713,37 +731,44 @@ export function EditorWorkbench({
             </Button>
           </div>
         ) : null}
-        <WorkbookRecordsTable
-          booleanLabels={{
-            blank: t("workbookEditor.editor.boolean.blank"),
-            true: t("workbookEditor.editor.boolean.true"),
-            false: t("workbookEditor.editor.boolean.false"),
-          }}
-          drafts={drafts}
-          emptyLabel={t("workbookEditor.editor.empty")}
-          errors={cellErrors}
-          headerActionLabels={{
-            hide: t("workbookEditor.editor.columns.hideColumn"),
-            pin: t("workbookEditor.editor.columns.pinColumn"),
-            unpin: t("workbookEditor.editor.columns.unpinColumn"),
-            remove: t("workbookEditor.editor.columns.removeColumn"),
-            removeConfirm: t("workbookEditor.editor.columns.removeColumnConfirm"),
-          }}
-          isConfiguringColumns={structuralActionsDisabled}
-          structuralActionDisabledReason={structuralActionDisabledReason}
-          onDraftChange={handleDraftChange}
-          onHideColumn={hideColumn}
-          onRemoveColumn={(columnId) => {
-            if (structuralActionsDisabled || localDraft.draft?.cells.some((cell) => cell.columnId === columnId)) return
-            removeColumnMutation.mutate(columnId)
-          }}
-          onSort={handleSort}
-          onToggleSticky={toggleStickyColumn}
-          records={records}
-          rowLabel={t("workbookEditor.editor.rowLabel")}
-          sortBy={sortBy}
-          sortDirection={sortDirection}
-        />
+        <div
+          className={cn(
+            "transition-opacity motion-reduce:transition-none",
+            recordsQuery.isFetching && "opacity-70",
+          )}
+        >
+          <WorkbookRecordsTable
+            booleanLabels={{
+              blank: t("workbookEditor.editor.boolean.blank"),
+              true: t("workbookEditor.editor.boolean.true"),
+              false: t("workbookEditor.editor.boolean.false"),
+            }}
+            drafts={drafts}
+            emptyLabel={t("workbookEditor.editor.empty")}
+            errors={cellErrors}
+            headerActionLabels={{
+              hide: t("workbookEditor.editor.columns.hideColumn"),
+              pin: t("workbookEditor.editor.columns.pinColumn"),
+              unpin: t("workbookEditor.editor.columns.unpinColumn"),
+              remove: t("workbookEditor.editor.columns.removeColumn"),
+              removeConfirm: t("workbookEditor.editor.columns.removeColumnConfirm"),
+            }}
+            isConfiguringColumns={structuralActionsDisabled}
+            structuralActionDisabledReason={structuralActionDisabledReason}
+            onDraftChange={handleDraftChange}
+            onHideColumn={hideColumn}
+            onRemoveColumn={(columnId) => {
+              if (structuralActionsDisabled || localDraft.draft?.cells.some((cell) => cell.columnId === columnId)) return
+              removeColumnMutation.mutate(columnId)
+            }}
+            onSort={handleSort}
+            onToggleSticky={toggleStickyColumn}
+            records={records}
+            rowLabel={t("workbookEditor.editor.rowLabel")}
+            sortBy={sortBy}
+            sortDirection={sortDirection}
+          />
+        </div>
         <WorkbookPagination
           nextLabel={t("workbookEditor.editor.pagination.next")}
           onPageChange={(nextPage) => {
@@ -756,25 +781,6 @@ export function EditorWorkbench({
           total={records.pagination.total}
           totalLabel={t("workbookEditor.editor.pagination.total")}
           totalPages={records.pagination.total_pages}
-        />
-        <EditorFeedback
-          action={
-            saveState === "conflict" ? (
-              <div className="flex gap-2">
-                {hasUnresolvedConflicts ? (
-                  <Button onClick={() => setConflictDialogOpen(true)} size="sm" type="button" variant="outline">
-                    {t("workbookEditor.editor.actions.resolveConflicts")}
-                  </Button>
-                ) : (
-                  <Button onClick={reloadLatestVersion} size="sm" type="button" variant="outline">
-                    {t("workbookEditor.editor.actions.reloadLatest")}
-                  </Button>
-                )}
-              </div>
-            ) : undefined
-          }
-          message={feedback}
-          state={saveState}
         />
       </Panel>
       <WorkbookDraftConflictDialog

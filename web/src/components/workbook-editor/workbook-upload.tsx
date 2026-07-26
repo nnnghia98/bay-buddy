@@ -58,10 +58,10 @@ export function WorkbookUpload({
   )
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <label
         className={cn(
-          "group flex min-h-52 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed px-6 py-8 text-center transition-colors",
+          "group flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed px-5 py-6 text-center transition-colors",
           "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20",
           isDragging
             ? "border-primary bg-primary/5"
@@ -97,20 +97,20 @@ export function WorkbookUpload({
           }}
           type="file"
         />
-        <span className="mb-4 grid size-11 place-items-center rounded-md border border-blue-200 bg-blue-50 text-primary shadow-sm">
-          <Upload aria-hidden="true" className="size-5" />
+        <span className="mb-3 grid size-10 place-items-center rounded-sm border border-blue-200 bg-blue-50 text-primary">
+          <Upload aria-hidden="true" className="size-4" />
         </span>
         <span className="text-sm font-semibold text-foreground">{labels.choose}</span>
         <span className="mt-1 text-sm text-muted-foreground">{labels.drop}</span>
-        <span className="mt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+        <span className="mt-3 font-mono text-[11px] text-muted-foreground">
           {labels.supported}
         </span>
       </label>
 
       {file ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-border bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-lg border border-primary/20 bg-primary/[0.035] p-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+            <span className="grid size-9 shrink-0 place-items-center rounded-sm border border-blue-200 bg-white text-primary">
               <FileSpreadsheet aria-hidden="true" className="size-4" />
             </span>
             <div className="min-w-0">

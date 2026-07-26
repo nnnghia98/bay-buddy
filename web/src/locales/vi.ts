@@ -70,7 +70,7 @@ export default {
       loadError: "Không thể tải các phiên bảng tính.",
       retry: "Thử lại",
       emptyTitle: "Không tìm thấy phiên đã lưu",
-      emptyDescription: "Tải bảng tính bên dưới để tạo phiên chỉnh sửa đầu tiên.",
+      emptyDescription: "Tải một bảng tính để tạo phiên chỉnh sửa đầu tiên.",
       columns: {
         name: "Tên tệp",
         file: "Tệp gốc",
@@ -209,13 +209,13 @@ export default {
       boolean: { blank: "Để trống", true: "Đúng", false: "Sai" },
       rowLabel: "dòng {row}",
       actions: {
-        download: "Tải tệp đã chỉnh sửa",
+        download: "Tải tệp",
         save: "Lưu thay đổi",
         saving: "Đang lưu...",
         search: "Tìm kiếm",
         retry: "Thử lại",
         reloadLatest: "Tải phiên bản mới nhất",
-        clearLocal: "Xóa thay đổi cục bộ",
+        clearLocal: "Bỏ thay đổi",
         resolveConflicts: "Xử lý xung đột",
       },
       feedback: {

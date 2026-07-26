@@ -70,7 +70,7 @@ export default {
       loadError: "Workbook sessions could not be loaded.",
       retry: "Try again",
       emptyTitle: "No saved sessions found",
-      emptyDescription: "Upload a workbook below to create your first editing session.",
+      emptyDescription: "Upload a workbook to create your first editing session.",
       columns: {
         name: "File name",
         file: "Original file",
@@ -209,13 +209,13 @@ export default {
       boolean: { blank: "Blank", true: "True", false: "False" },
       rowLabel: "row {row}",
       actions: {
-        download: "Download edited file",
+        download: "Download",
         save: "Save changes",
         saving: "Saving...",
         search: "Search",
         retry: "Retry",
         reloadLatest: "Load latest version",
-        clearLocal: "Clear local changes",
+        clearLocal: "Discard changes",
         resolveConflicts: "Resolve conflicts",
       },
       feedback: {
