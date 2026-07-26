@@ -304,20 +304,6 @@ def _sheet_metadata(sheet: WorksheetInspection) -> dict[str, Any]:
         "ambiguous_fields": {
             field: list(columns) for field, columns in sheet.ambiguous_fields.items()
         },
-        "header_candidates": [
-            {
-                "row_number": candidate.row_number,
-                "detected_headers": list(candidate.detected_headers),
-                "column_mapping": dict(candidate.column_mapping),
-                "mapping_status": candidate.mapping_status.value,
-                "missing_required_fields": list(candidate.missing_required_fields),
-                "ambiguous_fields": {
-                    field: list(columns)
-                    for field, columns in candidate.ambiguous_fields.items()
-                },
-            }
-            for candidate in sheet.header_candidates
-        ],
     }
 
 
@@ -662,40 +648,15 @@ def create_editing_session(
     actor: User,
     workbook_id: uuid.UUID,
     sheet_name: str,
-    header_row_number: int | None = None,
 ) -> EditingSessionDescriptor:
-    """Create an independent editing branch from an explicit header candidate."""
+    """Create an editing branch using the automatically detected header."""
 
     try:
         workbook = _get_workbook(db, workbook_id, actor)
         sheet = _metadata_sheet(workbook, sheet_name)
-        requested_header = header_row_number or sheet.get("header_row_number")
-        candidates = sheet.get("header_candidates", [])
-        selected_candidate = next(
-            (
-                candidate
-                for candidate in candidates
-                if candidate.get("row_number") == requested_header
-            ),
-            None,
-        )
-        if selected_candidate is None:
-            if requested_header == sheet.get("header_row_number"):
-                selected_candidate = sheet
-            else:
-                raise WorkbookServiceError(
-                    "INVALID_ROW",
-                    422,
-                    "Header row must be one of the inspected worksheet candidates.",
-                    details={
-                        "header_row_numbers": [
-                            candidate.get("row_number") for candidate in candidates
-                        ]
-                    },
-                )
-        header_row = selected_candidate.get("row_number", requested_header)
-        mapping = selected_candidate.get("column_mapping", {})
-        headers = selected_candidate.get("detected_headers", [])
+        header_row = sheet.get("header_row_number")
+        mapping = sheet.get("column_mapping", {})
+        headers = sheet.get("detected_headers", [])
         if not isinstance(header_row, int) or not isinstance(mapping, dict):
             raise WorkbookServiceError(
                 "INVALID_ROW", 422, "Worksheet header row is unavailable."

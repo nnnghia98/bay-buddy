@@ -305,7 +305,6 @@ async def create_editing_session_route(
         actor=current_user,
         workbook_id=payload.workbook_id,
         sheet_name=payload.sheet_name,
-        header_row_number=payload.header_row_number,
     )
     return success_response(_session_response(result).model_dump(mode="json"))
 

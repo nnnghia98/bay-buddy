@@ -291,7 +291,6 @@ def test_legacy_grouped_session_uses_main_header_band(
             actor=actor,
             workbook_id=uploaded.id,
             sheet_name="Legacy invoice",
-            header_row_number=1,
         )
         records = read_session_records(
             db,
@@ -383,7 +382,6 @@ def test_legacy_session_created_before_visibility_preservation_is_repaired(
             actor=actor,
             workbook_id=uploaded.id,
             sheet_name="Legacy invoice",
-            header_row_number=1,
         )
         persisted = db.get(WorkbookSession, session.id)
         assert persisted is not None
@@ -478,12 +476,10 @@ def test_incomplete_mapping_warns_but_can_create_session(engine, storage) -> Non
         ]
 
 
-def test_explicit_header_candidate_creates_generic_session(engine, storage) -> None:
+def test_automatic_header_detection_creates_generic_session(engine, storage) -> None:
     with Session(engine) as db:
         actor = make_user(db)
         result = upload(db, storage, actor, content=generic_workbook_bytes())
-        sheet = result.sheets[0]
-        assert [candidate.row_number for candidate in sheet.header_candidates] == [1, 2]
 
         session = create_editing_session(
             db,
@@ -491,7 +487,6 @@ def test_explicit_header_candidate_creates_generic_session(engine, storage) -> N
             actor=actor,
             workbook_id=result.id,
             sheet_name="Inventory",
-            header_row_number=2,
         )
 
         assert session.header_row_number == 2
@@ -558,7 +553,6 @@ def test_type_inference_starts_after_grouped_header_band(engine, storage) -> Non
             actor=actor,
             workbook_id=result.id,
             sheet_name="Metrics",
-            header_row_number=1,
         )
 
         assert [column["data_type"] for column in session.column_config] == [

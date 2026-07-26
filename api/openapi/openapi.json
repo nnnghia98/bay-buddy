@@ -8186,19 +8186,13 @@
             "maxLength": 255,
             "minLength": 1,
             "title": "Sheet Name"
-          },
-          "header_row_number": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Header Row Number"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
           "workbook_id",
-          "sheet_name",
-          "header_row_number"
+          "sheet_name"
         ],
         "title": "WorkbookSessionCreateRequest"
       },
@@ -8697,68 +8691,6 @@
         ],
         "title": "WorkbookVariadicFunction"
       },
-      "WorksheetHeaderCandidateResponse": {
-        "properties": {
-          "row_number": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Row Number"
-          },
-          "detected_headers": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Detected Headers"
-          },
-          "column_mapping": {
-            "additionalProperties": {
-              "type": "integer",
-              "minimum": 1.0
-            },
-            "propertyNames": {
-              "$ref": "#/components/schemas/WorkbookSemanticField"
-            },
-            "type": "object",
-            "title": "Column Mapping"
-          },
-          "mapping_status": {
-            "$ref": "#/components/schemas/WorkbookMappingStatus"
-          },
-          "missing_required_fields": {
-            "items": {
-              "$ref": "#/components/schemas/WorkbookSemanticField"
-            },
-            "type": "array",
-            "title": "Missing Required Fields"
-          },
-          "ambiguous_fields": {
-            "additionalProperties": {
-              "items": {
-                "type": "integer",
-                "minimum": 1.0
-              },
-              "type": "array"
-            },
-            "propertyNames": {
-              "$ref": "#/components/schemas/WorkbookSemanticField"
-            },
-            "type": "object",
-            "title": "Ambiguous Fields"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "row_number",
-          "detected_headers",
-          "column_mapping",
-          "mapping_status",
-          "missing_required_fields",
-          "ambiguous_fields"
-        ],
-        "title": "WorksheetHeaderCandidateResponse"
-      },
       "WorksheetInspectionResponse": {
         "properties": {
           "name": {
@@ -8830,14 +8762,6 @@
             },
             "type": "object",
             "title": "Ambiguous Fields"
-          },
-          "header_candidates": {
-            "items": {
-              "$ref": "#/components/schemas/WorksheetHeaderCandidateResponse"
-            },
-            "type": "array",
-            "maxItems": 25,
-            "title": "Header Candidates"
           }
         },
         "additionalProperties": false,

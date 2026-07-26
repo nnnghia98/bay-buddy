@@ -4,11 +4,7 @@ import type { components } from "@/lib/api/generated"
 
 export type WorkbookSemanticField = components["schemas"]["WorkbookSemanticField"]
 export type WorkbookMappingStatus = components["schemas"]["WorkbookMappingStatus"]
-export type WorksheetHeaderCandidate = components["schemas"]["WorksheetHeaderCandidateResponse"]
-export type WorksheetInspection = Omit<
-  components["schemas"]["WorksheetInspectionResponse"],
-  "header_candidates"
-> & { header_candidates: WorksheetHeaderCandidate[] }
+export type WorksheetInspection = components["schemas"]["WorksheetInspectionResponse"]
 export type WorkbookUpload = Omit<
   components["schemas"]["WorkbookUploadResponse"],
   "sheets"
@@ -287,15 +283,6 @@ const semanticFieldSchema = z.enum([
   "selling_price",
 ])
 
-const headerCandidateSchema = z.object({
-  row_number: z.number().int().positive(),
-  detected_headers: z.array(z.string()),
-  column_mapping: z.partialRecord(semanticFieldSchema, z.number().int().positive()),
-  mapping_status: z.enum(["READY", "MAPPING_INCOMPLETE", "AMBIGUOUS_MAPPING"]),
-  missing_required_fields: z.array(semanticFieldSchema),
-  ambiguous_fields: z.partialRecord(semanticFieldSchema, z.array(z.number().int().positive())),
-})
-
 const worksheetInspectionSchema = z.object({
   name: z.string(),
   max_row: z.number().int().nonnegative(),
@@ -306,7 +293,6 @@ const worksheetInspectionSchema = z.object({
   mapping_status: z.enum(["READY", "MAPPING_INCOMPLETE", "AMBIGUOUS_MAPPING"]),
   missing_required_fields: z.array(semanticFieldSchema),
   ambiguous_fields: z.partialRecord(semanticFieldSchema, z.array(z.number().int().positive())),
-  header_candidates: z.array(headerCandidateSchema).max(25),
 })
 
 export const workbookUploadSchema = z.object({

@@ -2404,8 +2404,6 @@ export interface components {
         WorkbookSemanticField: "passenger_name" | "pnr" | "ticket_number" | "net_price" | "selling_price";
         /** WorkbookSessionCreateRequest */
         WorkbookSessionCreateRequest: {
-            /** Header Row Number */
-            header_row_number: number;
             /** Sheet Name */
             sheet_name: string;
             /**
@@ -2632,24 +2630,6 @@ export interface components {
          * @enum {string}
          */
         WorkbookVariadicFunction: "SUM" | "MIN" | "MAX";
-        /** WorksheetHeaderCandidateResponse */
-        WorksheetHeaderCandidateResponse: {
-            /** Ambiguous Fields */
-            ambiguous_fields: {
-                [key: string]: number[];
-            };
-            /** Column Mapping */
-            column_mapping: {
-                [key: string]: number;
-            };
-            /** Detected Headers */
-            detected_headers: string[];
-            mapping_status: components["schemas"]["WorkbookMappingStatus"];
-            /** Missing Required Fields */
-            missing_required_fields: components["schemas"]["WorkbookSemanticField"][];
-            /** Row Number */
-            row_number: number;
-        };
         /** WorksheetInspectionResponse */
         WorksheetInspectionResponse: {
             /** Ambiguous Fields */
@@ -2662,8 +2642,6 @@ export interface components {
             };
             /** Detected Headers */
             detected_headers: string[];
-            /** Header Candidates */
-            header_candidates?: components["schemas"]["WorksheetHeaderCandidateResponse"][];
             /** Header Row Number */
             header_row_number?: number | null;
             mapping_status: components["schemas"]["WorkbookMappingStatus"];

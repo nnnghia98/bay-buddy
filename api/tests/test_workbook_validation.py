@@ -65,8 +65,6 @@ def test_maps_approved_vietnamese_headers_and_returns_safe_metadata(
     }
     assert sheet.missing_required_fields == ()
     assert sheet.ambiguous_fields == {}
-    assert [candidate.row_number for candidate in sheet.header_candidates] == [1, 2]
-    assert sheet.header_candidates[1].column_mapping == sheet.column_mapping
 
 
 def test_normalizes_accents_case_whitespace_and_punctuation() -> None:
@@ -95,7 +93,23 @@ def test_chooses_earliest_highest_scoring_unambiguous_non_empty_row(
     assert sheet.column_mapping["pnr"] == 2
 
 
-def test_only_first_twenty_five_non_empty_rows_are_header_candidates(
+def test_chooses_densest_text_row_when_no_known_aliases(tmp_path: Path) -> None:
+    path = save_workbook(
+        tmp_path / "generic.xlsx",
+        [
+            ["Quarterly inventory"],
+            ["Item", "Quantity", "Active", "Date"],
+            ["A-100", 12.5, True, "2026-01-01"],
+        ],
+    )
+
+    sheet = inspect(path).sheets[0]
+
+    assert sheet.header_row_number == 2
+    assert sheet.detected_headers == ("Item", "Quantity", "Active", "Date")
+
+
+def test_only_first_twenty_five_non_empty_rows_are_inspected_for_headers(
     tmp_path: Path,
 ) -> None:
     rows = [[f"unrelated {number}"] for number in range(25)]
@@ -105,8 +119,6 @@ def test_only_first_twenty_five_non_empty_rows_are_header_candidates(
     sheet = inspect(path).sheets[0]
 
     assert sheet.header_row_number == 1
-    assert len(sheet.header_candidates) <= 25
-    assert [candidate.row_number for candidate in sheet.header_candidates] == [1]
     assert sheet.mapping_status is MappingStatus.MAPPING_INCOMPLETE
     assert sheet.missing_required_fields == ("net_price", "selling_price")
 

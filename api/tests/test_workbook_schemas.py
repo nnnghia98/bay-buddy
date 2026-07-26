@@ -150,10 +150,13 @@ def test_sheet_mapping_column_numbers_are_strictly_positive() -> None:
 @pytest.mark.parametrize(
     "payload",
     [
-        {"workbook_id": uuid.uuid4(), "sheet_name": "", "header_row_number": 1},
-        {"workbook_id": "not-a-uuid", "sheet_name": "Sheet1", "header_row_number": 1},
-        {"workbook_id": uuid.uuid4(), "sheet_name": "Sheet1", "header_row_number": 0},
-        {"workbook_id": uuid.uuid4(), "sheet_name": "Sheet1", "header_row_number": 1, "extra": True},
+        {"workbook_id": uuid.uuid4(), "sheet_name": ""},
+        {"workbook_id": "not-a-uuid", "sheet_name": "Sheet1"},
+        {
+            "workbook_id": uuid.uuid4(),
+            "sheet_name": "Sheet1",
+            "header_row_number": 1,
+        },
     ],
 )
 def test_create_session_rejects_invalid_boundary(payload: dict) -> None:
@@ -161,17 +164,12 @@ def test_create_session_rejects_invalid_boundary(payload: dict) -> None:
         WorkbookSessionCreateRequest.model_validate(payload)
 
 
-def test_create_session_requires_explicit_header_row() -> None:
+def test_create_session_uses_workbook_and_sheet_only() -> None:
     request = WorkbookSessionCreateRequest(
         workbook_id=uuid.uuid4(),
         sheet_name="Sheet1",
-        header_row_number=3,
     )
-    assert request.header_row_number == 3
-    with pytest.raises(ValidationError):
-        WorkbookSessionCreateRequest.model_validate(
-            {"workbook_id": uuid.uuid4(), "sheet_name": "Sheet1"}
-        )
+    assert request.sheet_name == "Sheet1"
 
 
 def test_session_response_uses_domain_status_and_positive_version() -> None:

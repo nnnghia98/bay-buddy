@@ -85,8 +85,8 @@ class WorkbookValidationError(ValueError):
 
 
 @dataclass(frozen=True, slots=True)
-class HeaderCandidateInspection:
-    """One bounded non-empty row that can be selected as a worksheet header."""
+class _DetectedHeader:
+    """The worksheet header selected by bounded automatic inspection."""
 
     row_number: int
     detected_headers: tuple[str, ...]
@@ -109,7 +109,6 @@ class WorksheetInspection:
     mapping_status: MappingStatus
     missing_required_fields: tuple[str, ...]
     ambiguous_fields: dict[str, tuple[int, ...]]
-    header_candidates: tuple[HeaderCandidateInspection, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -126,6 +125,8 @@ class _HeaderCandidate:
     headers: tuple[str, ...]
     mapping: dict[str, int]
     ambiguous: dict[str, tuple[int, ...]]
+    text_cell_count: int
+    non_empty_cell_count: int
 
     @property
     def score(self) -> int:
@@ -446,7 +447,7 @@ def _first_non_empty_rows(
     return rows
 
 
-def _candidate_inspection(candidate: _HeaderCandidate) -> HeaderCandidateInspection:
+def _candidate_inspection(candidate: _HeaderCandidate) -> _DetectedHeader:
     mapping = dict(candidate.mapping)
     ambiguous = dict(candidate.ambiguous)
     missing = tuple(
@@ -460,7 +461,7 @@ def _candidate_inspection(candidate: _HeaderCandidate) -> HeaderCandidateInspect
         status = MappingStatus.MAPPING_INCOMPLETE
     else:
         status = MappingStatus.READY
-    return HeaderCandidateInspection(
+    return _DetectedHeader(
         row_number=candidate.row_number,
         detected_headers=candidate.headers,
         column_mapping=mapping,
@@ -481,29 +482,29 @@ def _inspect_sheet(
         _header_candidate(row_number, values)
         for row_number, values in non_empty_rows
     ]
-    mapped_candidates = [candidate for candidate in candidates if candidate.score > 0]
-    ready_candidates = [candidate for candidate in mapped_candidates if candidate.ready]
-    selectable = ready_candidates or mapped_candidates or candidates
-    exposed_candidates: list[_HeaderCandidate] = []
-    if candidates:
-        non_empty_counts = [
-            sum(bool(header) for header in candidate.headers)
-            for candidate in candidates
-        ]
-        densest_index = non_empty_counts.index(max(non_empty_counts))
-        exposed_candidates.extend(candidates[: densest_index + 1])
-    exposed_row_numbers = {candidate.row_number for candidate in exposed_candidates}
-    exposed_candidates.extend(
-        candidate
-        for candidate in mapped_candidates
-        if candidate.row_number not in exposed_row_numbers
-    )
-    exposed_candidates.sort(key=lambda candidate: candidate.row_number)
-    selected = (
-        min(selectable, key=lambda item: (-item.score, item.row_number))
-        if selectable
-        else None
-    )
+    mapped_candidates = [
+        candidate for candidate in candidates if candidate.score > 0
+    ]
+    ready_candidates = [
+        candidate for candidate in mapped_candidates if candidate.ready
+    ]
+    mapped_selection = ready_candidates or mapped_candidates
+    if mapped_selection:
+        selected = min(
+            mapped_selection,
+            key=lambda item: (-item.score, item.row_number),
+        )
+    elif candidates:
+        selected = max(
+            candidates,
+            key=lambda item: (
+                item.text_cell_count,
+                item.non_empty_cell_count,
+                -item.row_number,
+            ),
+        )
+    else:
+        selected = None
     selected_inspection = _candidate_inspection(selected) if selected else None
 
     return WorksheetInspection(
@@ -532,14 +533,17 @@ def _inspect_sheet(
         ambiguous_fields=(
             selected_inspection.ambiguous_fields if selected_inspection else {}
         ),
-        header_candidates=tuple(
-            _candidate_inspection(candidate) for candidate in exposed_candidates
-        ),
     )
 
 
-def _header_candidate(row_number: int, values: tuple[object, ...]) -> _HeaderCandidate:
+def _header_candidate(
+    row_number: int,
+    values: tuple[object, ...],
+) -> _HeaderCandidate:
     headers = tuple("" if value is None else str(value).strip() for value in values)
+    non_empty_values = tuple(
+        value for value in values if value is not None and str(value).strip()
+    )
     matches: dict[str, list[int]] = {}
     for column_number, header in enumerate(headers, start=1):
         normalized = normalize_header(header)
@@ -549,8 +553,19 @@ def _header_candidate(row_number: int, values: tuple[object, ...]) -> _HeaderCan
             if normalized in aliases:
                 matches.setdefault(field, []).append(column_number)
 
-    mapping = {field: columns[0] for field, columns in matches.items() if len(columns) == 1}
+    mapping = {
+        field: columns[0]
+        for field, columns in matches.items()
+        if len(columns) == 1
+    }
     ambiguous = {
         field: tuple(columns) for field, columns in matches.items() if len(columns) > 1
     }
-    return _HeaderCandidate(row_number, headers, mapping, ambiguous)
+    return _HeaderCandidate(
+        row_number,
+        headers,
+        mapping,
+        ambiguous,
+        sum(isinstance(value, str) for value in non_empty_values),
+        len(non_empty_values),
+    )

@@ -22,7 +22,6 @@ from pydantic import (
 
 from models.workbook import WorkbookSessionStatus
 from services.workbook_validation import (
-    HeaderCandidateInspection,
     MappingStatus,
     WorksheetInspection,
 )
@@ -71,29 +70,6 @@ class SortDirection(str, Enum):
 PositiveColumnNumber = Annotated[int, Field(strict=True, ge=1)]
 
 
-class WorksheetHeaderCandidateResponse(_WorkbookSchema):
-    row_number: int = Field(ge=1)
-    detected_headers: list[str]
-    column_mapping: dict[WorkbookSemanticField, PositiveColumnNumber]
-    mapping_status: WorkbookMappingStatus
-    missing_required_fields: list[WorkbookSemanticField]
-    ambiguous_fields: dict[WorkbookSemanticField, list[PositiveColumnNumber]]
-
-    @classmethod
-    def from_domain(cls, candidate: HeaderCandidateInspection) -> Self:
-        return cls(
-            row_number=candidate.row_number,
-            detected_headers=list(candidate.detected_headers),
-            column_mapping=candidate.column_mapping,
-            mapping_status=WorkbookMappingStatus(candidate.mapping_status.value),
-            missing_required_fields=list(candidate.missing_required_fields),
-            ambiguous_fields={
-                field: list(columns)
-                for field, columns in candidate.ambiguous_fields.items()
-            },
-        )
-
-
 class WorksheetInspectionResponse(_WorkbookSchema):
     name: str = Field(min_length=1, max_length=255)
     max_row: int = Field(ge=0)
@@ -104,10 +80,6 @@ class WorksheetInspectionResponse(_WorkbookSchema):
     mapping_status: WorkbookMappingStatus
     missing_required_fields: list[WorkbookSemanticField]
     ambiguous_fields: dict[WorkbookSemanticField, list[PositiveColumnNumber]]
-    header_candidates: list[WorksheetHeaderCandidateResponse] = Field(
-        default_factory=list,
-        max_length=25,
-    )
 
     @classmethod
     def from_domain(cls, inspection: WorksheetInspection) -> Self:
@@ -126,10 +98,6 @@ class WorksheetInspectionResponse(_WorkbookSchema):
                 field: list(columns)
                 for field, columns in inspection.ambiguous_fields.items()
             },
-            header_candidates=[
-                WorksheetHeaderCandidateResponse.from_domain(candidate)
-                for candidate in inspection.header_candidates
-            ],
         )
 
 
@@ -153,7 +121,6 @@ class WorkbookUploadResponse(_WorkbookSchema):
 class WorkbookSessionCreateRequest(_WorkbookSchema):
     workbook_id: uuid.UUID
     sheet_name: str = Field(min_length=1, max_length=255)
-    header_row_number: int = Field(ge=1)
 
 
 class WorkbookSessionRenameRequest(_WorkbookSchema):

@@ -30,7 +30,6 @@ from .workbook import (
     WorkbookSessionSummary,
     WorkbookUploadResponse,
     WorkbookUpdateColumnRequest,
-    WorksheetHeaderCandidateResponse,
     WorksheetInspectionResponse,
 )
 
@@ -64,6 +63,5 @@ __all__ = [
     "WorkbookSessionSummary",
     "WorkbookUploadResponse",
     "WorkbookUpdateColumnRequest",
-    "WorksheetHeaderCandidateResponse",
     "WorksheetInspectionResponse",
 ]

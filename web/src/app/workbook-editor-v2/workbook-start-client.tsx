@@ -40,7 +40,6 @@ export function WorkbookStartClient({
   const [file, setFile] = React.useState<File | null>(null)
   const [uploaded, setUploaded] = React.useState<WorkbookUploadData | null>(null)
   const [selectedSheet, setSelectedSheet] = React.useState<string | null>(null)
-  const [selectedHeaderRow, setSelectedHeaderRow] = React.useState<number | null>(null)
   const [pending, setPending] = React.useState<PendingAction>(null)
   const [error, setError] = React.useState<string | null>(null)
   const sheetsRegionRef = React.useRef<HTMLDivElement>(null)
@@ -66,7 +65,6 @@ export function WorkbookStartClient({
     setFile(nextFile)
     setUploaded(null)
     setSelectedSheet(null)
-    setSelectedHeaderRow(null)
     setError(null)
   }, [])
 
@@ -77,9 +75,8 @@ export function WorkbookStartClient({
     try {
       const result = await uploadWorkbook(file)
       setUploaded(result)
-      const defaultSheet = result.sheets[0]
+      const defaultSheet = result.sheets.find((sheet) => sheet.header_row_number != null)
       setSelectedSheet(defaultSheet?.name ?? null)
-      setSelectedHeaderRow(defaultSheet?.header_row_number ?? defaultSheet?.header_candidates[0]?.row_number ?? null)
       window.requestAnimationFrame(() => sheetsRegionRef.current?.focus())
     } catch (uploadError) {
       setError(localizedError(uploadError, "workbookEditor.errors.uploadFailed"))
@@ -89,14 +86,13 @@ export function WorkbookStartClient({
   }
 
   async function handleCreateSession() {
-    if (!uploaded || !selectedSheet || selectedHeaderRow === null || pending) return
+    if (!uploaded || !selectedSheet || pending) return
     setPending("session")
     setError(null)
     try {
       const session = await createWorkbookSession({
         workbook_id: uploaded.id,
         sheet_name: selectedSheet,
-        header_row_number: selectedHeaderRow,
       })
       router.push(`/workbook-editor-v2/sessions/${session.id}`)
     } catch (sessionError) {
@@ -148,7 +144,6 @@ export function WorkbookStartClient({
                 setError(text("workbookEditor.errors.invalidFile"))
                 setUploaded(null)
                 setSelectedSheet(null)
-                setSelectedHeaderRow(null)
               }}
               onUpload={handleUpload}
               pending={pending === "upload"}
@@ -204,19 +199,9 @@ export function WorkbookStartClient({
                       key={sheet.name}
                       labels={{
                         rowsColumns: text("workbookEditor.sheets.rowsColumns"),
-                        headerLabel: text("workbookEditor.sheets.headerLabel"),
-                        headerRow: text("workbookEditor.sheets.headerRow"),
-                        headerPreviewEmpty: text("workbookEditor.sheets.headerPreviewEmpty"),
                       }}
-                      onHeaderSelect={setSelectedHeaderRow}
-                      onSelect={(name) => {
-                        setSelectedSheet(name)
-                        setSelectedHeaderRow(
-                          sheet.header_row_number ?? sheet.header_candidates[0]?.row_number ?? null,
-                        )
-                      }}
+                      onSelect={setSelectedSheet}
                       selected={selectedSheet === sheet.name}
-                      selectedHeaderRow={selectedSheet === sheet.name ? selectedHeaderRow : null}
                       sheet={sheet}
                     />
                   ))}
@@ -225,7 +210,7 @@ export function WorkbookStartClient({
                 <div className="mt-auto border-t border-border bg-white p-4">
                   <Button
                     className="w-full"
-                    disabled={!selectedSheet || selectedHeaderRow === null || busy}
+                    disabled={!selectedSheet || busy}
                     onClick={handleCreateSession}
                     type="button"
                   >
@@ -265,24 +250,17 @@ export function WorkbookStartClient({
 function SheetOption({
   sheet,
   selected,
-  selectedHeaderRow,
   onSelect,
-  onHeaderSelect,
   labels,
 }: {
   sheet: WorksheetInspection
   selected: boolean
-  selectedHeaderRow: number | null
   onSelect: (name: string) => void
-  onHeaderSelect: (rowNumber: number) => void
   labels: {
     rowsColumns: string
-    headerLabel: string
-    headerRow: string
-    headerPreviewEmpty: string
   }
 }) {
-  const selectable = sheet.header_candidates.length > 0
+  const selectable = sheet.header_row_number != null
 
   return (
     <label
@@ -309,26 +287,6 @@ function SheetOption({
           <p className="mt-1 text-xs text-muted-foreground">
             {labels.rowsColumns}: {sheet.max_row} × {sheet.max_column}
           </p>
-          {selected ? (
-            <div className="mt-3 space-y-1.5" onClick={(event) => event.stopPropagation()}>
-              <span className="block text-xs font-medium text-foreground">{labels.headerLabel}</span>
-              <select
-                aria-label={labels.headerLabel}
-                className="h-9 w-full rounded-md border border-input bg-white px-3 text-sm"
-                onChange={(event) => onHeaderSelect(Number(event.target.value))}
-                value={selectedHeaderRow ?? ""}
-              >
-                {sheet.header_candidates.map((candidate) => {
-                  const preview = candidate.detected_headers.filter(Boolean).slice(0, 4).join(" · ")
-                  return (
-                    <option key={candidate.row_number} value={candidate.row_number}>
-                      {labels.headerRow.replace("{row}", String(candidate.row_number))}: {preview || labels.headerPreviewEmpty}
-                    </option>
-                  )
-                })}
-              </select>
-            </div>
-          ) : null}
         </div>
       </div>
     </label>

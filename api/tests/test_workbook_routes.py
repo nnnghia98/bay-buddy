@@ -200,7 +200,6 @@ def test_create_session_returns_201_success_envelope(
         json={
             "workbook_id": str(WORKBOOK_ID),
             "sheet_name": "Tickets",
-            "header_row_number": 2,
         },
     )
 
@@ -210,7 +209,7 @@ def test_create_session_returns_201_success_envelope(
     assert payload["error"] is None
     assert payload["data"]["id"] == str(SESSION_ID)
     assert payload["data"]["current_version"] == 1
-    assert captured["header_row_number"] == 2
+    assert "header_row_number" not in captured
 
 
 def test_list_sessions_forwards_filters_and_returns_pagination(

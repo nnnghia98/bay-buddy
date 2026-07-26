@@ -77,7 +77,7 @@ beforeEach(() => {
 })
 
 describe("workbook client", () => {
-  it("sends the selected header row when creating a session", async () => {
+  it("lets the server use the detected header when creating a session", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ success: true, data: session, error: null })),
     )
@@ -86,13 +86,11 @@ describe("workbook client", () => {
     await createWorkbookSession({
       workbook_id: session.workbook_id,
       sheet_name: session.selected_sheet_name,
-      header_row_number: 4,
     })
 
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
       workbook_id: session.workbook_id,
       sheet_name: session.selected_sheet_name,
-      header_row_number: 4,
     })
   })
 

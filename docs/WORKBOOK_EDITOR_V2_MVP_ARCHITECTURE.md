@@ -44,7 +44,7 @@ workbook-related surfaces remain untouched.
   dependency-cycle checks, and generated Excel formulas.
 - Session library with search, status filters, rename, soft discard, and local
   draft status.
-- Explicit header-row selection from inspected candidates.
+- Automatic bounded header-row detection without a staff-facing setup control.
 - Explicit Save action with validation, idempotency, and version conflicts.
 - Current-version download.
 - Vietnamese-first UI and explicit loading, dirty, saving, failure, and conflict states.
@@ -274,8 +274,10 @@ as their stored values. `.xlsm`, malformed, encrypted, empty, unsafe, and
 oversized workbooks are rejected.
 
 Header detection scans the first 25 non-empty rows and selects the earliest
-highest-scoring unambiguous match. Normalization removes accents, lowercases,
-trims, collapses whitespace, and treats punctuation as separators.
+highest-scoring unambiguous semantic match. When no approved alias is found, it
+uses the earliest row with the strongest text density. Normalization removes
+accents, lowercases, trims, collapses whitespace, and treats punctuation as
+separators.
 
 Required mappings:
 
@@ -293,12 +295,13 @@ Optional identity mappings:
 | `ticket_number` | Số vé, Ticket Number, Ticket No |
 
 Price-field mappings are optional business metadata. Missing or ambiguous fields
-are reported as guidance, and staff may still open the selected header candidate.
+are reported as guidance, and staff may still open the automatically detected
+table.
 The editor can show every source column and append typed user columns as new
 immutable versions. Source columns are never removable, but may be hidden while
 working. User-added columns may be removed by creating another immutable
-version. Candidate inspection returns detected headers and machine-readable
-mapping details. Manual semantic mapping is deferred.
+version. Inspection returns the detected header and machine-readable mapping
+details. Manual semantic mapping is deferred.
 
 Physical Excel row number is the stable edit identity. Fully blank rows are
 excluded. Formula, merged, or protected cells in editable columns are read-only
@@ -314,7 +317,7 @@ standard success envelope, and enforce ownership.
 `POST /api/v1/workbooks/uploads`
 
 - Multipart `file`.
-- Returns `201` with workbook metadata, worksheet candidates, detected header
+- Returns `201` with workbook metadata, worksheets, detected header
   row, mapping, and mapping status.
 
 ### Create session
@@ -324,13 +327,12 @@ standard success envelope, and enforce ownership.
 ```json
 {
   "workbook_id": "uuid",
-  "sheet_name": "Tickets",
-  "header_row_number": 2
+  "sheet_name": "Tickets"
 }
 ```
 
-- Requires one inspected header candidate; business-field mapping may remain
-  incomplete or ambiguous.
+- Uses the selected worksheet's automatically detected header; business-field
+  mapping may remain incomplete or ambiguous.
 - Creates immutable version 1.
 - Multiple sessions from one workbook are supported by the data model, even if
   the initial UI normally creates one session after upload.
