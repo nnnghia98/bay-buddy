@@ -10,7 +10,7 @@ def test_build_runtime_environment_summary_redacts_sensitive_values() -> None:
             "FRONTEND_URL": "http://localhost:6769",
             "SECRET_KEY": "very-secret-key",
             "SQL_ECHO": "true",
-            "GEMINI_API_KEY": "AIzaSyBLjd_PsGylgnTBrnDSFGFAIqh5xZWWNYI",
+            "GEMINI_API_KEY": "fake-gemini-key-for-redaction-test",
         }
     )
 

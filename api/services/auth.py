@@ -17,11 +17,26 @@ from jose import JWTError, jwt
 
 load_dotenv()
 
-SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-change-in-production")
 ALGORITHM: str = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES: int = int(
     os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "2880")
 )
+
+
+def _get_secret_key() -> str:
+    """Return the environment-backed JWT key and reject unsafe configuration."""
+    secret_key = os.getenv("SECRET_KEY")
+    if not secret_key:
+        raise RuntimeError("SECRET_KEY is not configured.")
+    if len(secret_key) < 32:
+        raise RuntimeError("SECRET_KEY must contain at least 32 characters.")
+    return secret_key
+
+
+def validate_auth_configuration() -> None:
+    """Fail application startup when the JWT signing key is missing or weak."""
+    _get_secret_key()
+
 
 def hash_password(plain_password: str) -> str:
     """Hash a plain-text password using bcrypt."""
@@ -53,13 +68,13 @@ def create_access_token(
         else timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, _get_secret_key(), algorithm=ALGORITHM)
 
 
 def decode_access_token(token: str) -> Optional[str]:
     """Decode a JWT access token and return the username stored in `sub`."""
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, _get_secret_key(), algorithms=[ALGORITHM])
     except JWTError:
         return None
 

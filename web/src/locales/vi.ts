@@ -1,21 +1,15 @@
 export default {
   login: {
-    title: "Đăng nhập",
-    subtitle: "Vui lòng đăng nhập để tiếp tục.",
-    usernameLabel: "Tên đăng nhập",
-    usernamePlaceholder: "Tên đăng nhập",
-    passwordLabel: "Mật khẩu",
-    passwordRequired: "Vui lòng nhập mật khẩu.",
-    usernameRequired: "Vui lòng nhập tên đăng nhập.",
-    accessCodeLabel: "Mã truy cập nội bộ",
-    accessCodePlaceholder: "Nhập mã truy cập",
-    accessCodeRequired: "Vui lòng nhập mã truy cập.",
+    title: "Đăng nhập bằng mã truy cập",
+    subtitle: "Nhập mã truy cập để tiếp tục.",
+    passcodeLabel: "Mã truy cập",
+    passcodePlaceholder: "Nhập mã truy cập",
+    passcodeRequired: "Vui lòng nhập mã truy cập.",
     submit: "Đăng nhập",
     submitting: "Đang đăng nhập...",
     successToast: "Đăng nhập thành công.",
+    invalidPasscode: "Mã truy cập không đúng.",
     error: "Không thể đăng nhập. Vui lòng thử lại.",
-    useAccessCode: "Dùng mã truy cập nội bộ",
-    usePassword: "Dùng tên đăng nhập và mật khẩu",
   },
   appShell: {
     home: "Trang chủ",
@@ -794,9 +788,10 @@ export default {
       fields: {
         username: "Tên đăng nhập",
         usernamePlaceholder: "vd: admin.finance",
-        password: "Mật khẩu",
-        passwordPlaceholder: "Nhập mật khẩu",
-        passwordHint: "Để trống nếu bạn không muốn thay đổi mật khẩu hiện tại.",
+        password: "Mã truy cập",
+        passwordPlaceholder: "Nhập mã truy cập",
+        passwordHint:
+          "Để trống nếu bạn không muốn thay đổi mã truy cập hiện tại.",
         role: "Vai trò",
         status: "Trạng thái tài khoản",
       },
@@ -804,13 +799,15 @@ export default {
         cancel: "Đóng",
         create: {
           title: "Thêm tài khoản nội bộ",
-          description: "Tạo nhanh tài khoản mới và gán quyền truy cập phù hợp.",
+          description:
+            "Tạo tài khoản, mã truy cập riêng và gán quyền phù hợp.",
           submit: "Tạo tài khoản",
           submitting: "Đang tạo...",
         },
         edit: {
           title: "Cập nhật tài khoản",
-          description: "Điều chỉnh tên đăng nhập, vai trò, mật khẩu hoặc trạng thái sử dụng.",
+          description:
+            "Điều chỉnh tên, vai trò, mã truy cập hoặc trạng thái sử dụng.",
           submit: "Lưu thay đổi",
           submitting: "Đang lưu...",
         },
@@ -826,7 +823,8 @@ export default {
       validation: {
         usernameMin: "Tên đăng nhập phải có ít nhất 3 ký tự.",
         usernameMax: "Tên đăng nhập không được vượt quá 50 ký tự.",
-        passwordRequired: "Vui lòng nhập mật khẩu.",
+        passwordRequired: "Vui lòng nhập mã truy cập.",
+        passwordMax: "Mã truy cập không được vượt quá 64 ký tự.",
         roleRequired: "Vui lòng chọn vai trò.",
         userIdInvalid: "Mã tài khoản không hợp lệ.",
         statusRequired: "Vui lòng chọn trạng thái tài khoản.",

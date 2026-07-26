@@ -3,23 +3,21 @@ routes/auth.py – Authentication endpoints for Bay Buddy API.
 
 Endpoints:
     POST /api/v1/auth/login  – Exchange username & password for a JWT access token.
-    POST /api/v1/auth/internal-login – Exchange a shared internal access code for a JWT.
+    POST /api/v1/auth/internal-login – Exchange a user passcode for a JWT.
     GET  /api/v1/auth/me     – Retrieve the currently authenticated user profile.
 """
 
 from __future__ import annotations
 
-import os
-import secrets
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlmodel import select
 
 from core.auth import CurrentUserDep, create_access_token, verify_password
 from database import SessionDep
 from models import User, UserRead
+from services.passcode_auth_service import find_active_user_by_passcode
 
 router = APIRouter()
 
@@ -32,9 +30,9 @@ class TokenResponse(BaseModel):
 
 
 class InternalLoginRequest(BaseModel):
-    """Payload accepted by the internal shared access-code login."""
+    """Passcode-only payload used to identify one active database user."""
 
-    access_code: str
+    access_code: str = Field(min_length=1, max_length=64)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -64,31 +62,16 @@ async def login(
 
 
 @router.post("/internal-login", response_model=TokenResponse)
-async def login_with_internal_access_code(
+async def login_with_passcode(
     payload: InternalLoginRequest,
     session: SessionDep,
 ) -> TokenResponse:
-    """Issue a JWT for the configured internal account after code verification."""
-    configured_access_code = os.getenv("INTERNAL_ACCESS_CODE")
-    configured_username = os.getenv("INTERNAL_ACCESS_USERNAME")
-
-    if not configured_access_code or not configured_username:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Internal access login is not enabled",
-        )
-
-    if not secrets.compare_digest(payload.access_code, configured_access_code):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid access code",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    statement = select(User).where(User.username == configured_username)
-    user = session.exec(statement).first()
-
-    if user is None or not user.is_active:
+    """Issue a JWT after matching the passcode to one active database user."""
+    user = find_active_user_by_passcode(
+        session=session,
+        passcode=payload.access_code,
+    )
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid access code",

@@ -55,7 +55,7 @@ class User(UserBase, table=True):
         nullable=False,
     )
     hashed_password: str = Field(
-        description="bcrypt-hashed password. Never store or return plain-text passwords.",
+        description="bcrypt-hashed passcode. Never store or return the plain passcode.",
     )
 
 
@@ -64,9 +64,13 @@ class User(UserBase, table=True):
 # ---------------------------------------------------------------------------
 
 class UserCreate(UserBase):
-    """Payload accepted by POST /users. The plain-text password is hashed before storage."""
+    """Payload accepted by POST /users. The plain passcode is hashed before storage."""
 
-    password: str = Field(min_length=1, description="Plain-text password (hashed before storage).")
+    password: str = Field(
+        min_length=1,
+        max_length=64,
+        description="Plain passcode accepted for hashing.",
+    )
 
 
 class UserRead(UserBase):
@@ -81,4 +85,4 @@ class UserUpdate(SQLModel):
     username: Optional[str] = Field(default=None, min_length=3, max_length=50)
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
-    password: Optional[str] = Field(default=None, min_length=1)
+    password: Optional[str] = Field(default=None, min_length=1, max_length=64)

@@ -51,12 +51,13 @@ def seed_user(
     session: Session,
     *,
     username: str,
+    passcode: str = "correct-password",
     role: UserRole = UserRole.STAFF,
     is_active: bool = True,
 ) -> User:
     user = User(
         username=username,
-        hashed_password=hash_password("correct-password"),
+        hashed_password=hash_password(passcode),
         role=role,
         is_active=is_active,
     )
@@ -86,6 +87,30 @@ def test_admin_can_update_user_role_and_status() -> None:
     assert payload["data"]["id"] == str(user.id)
     assert payload["data"]["role"] == "ADMIN"
     assert payload["data"]["is_active"] is False
+
+
+def test_admin_cannot_create_user_with_duplicate_passcode() -> None:
+    client, session = create_test_client(role=UserRole.ADMIN)
+    seed_user(
+        session,
+        username="existing-user",
+        passcode="duplicate-passcode",
+    )
+
+    response = client.post(
+        "/api/v1/users/",
+        json={
+            "username": "new-user",
+            "password": "duplicate-passcode",
+            "role": "STAFF",
+            "is_active": True,
+        },
+    )
+
+    clear_overrides()
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Passcode already registered"
 
 
 def test_staff_cannot_update_users() -> None:
@@ -121,3 +146,27 @@ def test_admin_cannot_update_user_to_duplicate_username() -> None:
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Username already registered"
+
+
+def test_admin_cannot_update_user_to_duplicate_passcode() -> None:
+    client, session = create_test_client(role=UserRole.ADMIN)
+    first_user = seed_user(
+        session,
+        username="first-user",
+        passcode="first-passcode",
+    )
+    seed_user(
+        session,
+        username="second-user",
+        passcode="second-passcode",
+    )
+
+    response = client.patch(
+        f"/api/v1/users/{first_user.id}",
+        json={"password": "second-passcode"},
+    )
+
+    clear_overrides()
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Passcode already registered"

@@ -5,5 +5,10 @@ export default async function SettingsPage() {
   const currentUser = await fetchCurrentUser()
   const users = currentUser.role === "ADMIN" ? await fetchUsers() : []
 
-  return <SettingsUsersClient currentUser={currentUser} users={users} />
+  return (
+    <SettingsUsersClient
+      currentUser={currentUser}
+      users={users}
+    />
+  )
 }

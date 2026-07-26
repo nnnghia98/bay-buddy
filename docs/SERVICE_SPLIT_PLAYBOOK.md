@@ -20,6 +20,7 @@ Last updated: May 1, 2026
 - API-owned: `DATABASE_URL`, `SECRET_KEY`, `GEMINI_API_KEY`, `FRONTEND_URL`.
 - Web-owned: `NEXT_PUBLIC_API_BASE_URL`, optional `INTERNAL_API_BASE_URL`, auth/session envs.
 - Do not share a root `.env` as runtime source for both services in production.
+- Passcode login is database-backed through each user's bcrypt hash. Passcodes and usernames are not API or Web environment variables.
 
 ## Phased Cutover
 

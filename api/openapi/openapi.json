@@ -53,9 +53,9 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Login With Internal Access Code",
-        "description": "Issue a JWT for the configured internal account after code verification.",
-        "operationId": "login_with_internal_access_code_api_v1_auth_internal_login_post",
+        "summary": "Login With Passcode",
+        "description": "Issue a JWT after matching the passcode to one active database user.",
+        "operationId": "login_with_passcode_api_v1_auth_internal_login_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -4456,6 +4456,8 @@
         "properties": {
           "access_code": {
             "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
             "title": "Access Code"
           }
         },
@@ -4464,7 +4466,7 @@
           "access_code"
         ],
         "title": "InternalLoginRequest",
-        "description": "Payload accepted by the internal shared access-code login."
+        "description": "Passcode-only payload used to identify one active database user."
       },
       "InvoiceCreate": {
         "properties": {
@@ -5940,9 +5942,10 @@
           },
           "password": {
             "type": "string",
+            "maxLength": 64,
             "minLength": 1,
             "title": "Password",
-            "description": "Plain-text password (hashed before storage)."
+            "description": "Plain passcode accepted for hashing."
           }
         },
         "type": "object",
@@ -5951,7 +5954,7 @@
           "password"
         ],
         "title": "UserCreate",
-        "description": "Payload accepted by POST /users. The plain-text password is hashed before storage."
+        "description": "Payload accepted by POST /users. The plain passcode is hashed before storage."
       },
       "UserRead": {
         "properties": {
@@ -6036,6 +6039,7 @@
             "anyOf": [
               {
                 "type": "string",
+                "maxLength": 64,
                 "minLength": 1
               },
               {

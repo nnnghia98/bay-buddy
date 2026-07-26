@@ -49,10 +49,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Login With Internal Access Code
-         * @description Issue a JWT for the configured internal account after code verification.
+         * Login With Passcode
+         * @description Issue a JWT after matching the passcode to one active database user.
          */
-        post: operations["login_with_internal_access_code_api_v1_auth_internal_login_post"];
+        post: operations["login_with_passcode_api_v1_auth_internal_login_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1160,7 +1160,7 @@ export interface components {
         };
         /**
          * InternalLoginRequest
-         * @description Payload accepted by the internal shared access-code login.
+         * @description Passcode-only payload used to identify one active database user.
          */
         InternalLoginRequest: {
             /** Access Code */
@@ -1835,7 +1835,7 @@ export interface components {
         };
         /**
          * UserCreate
-         * @description Payload accepted by POST /users. The plain-text password is hashed before storage.
+         * @description Payload accepted by POST /users. The plain passcode is hashed before storage.
          */
         UserCreate: {
             /**
@@ -1846,7 +1846,7 @@ export interface components {
             is_active: boolean;
             /**
              * Password
-             * @description Plain-text password (hashed before storage).
+             * @description Plain passcode accepted for hashing.
              */
             password: string;
             /**
@@ -2740,7 +2740,7 @@ export interface operations {
             };
         };
     };
-    login_with_internal_access_code_api_v1_auth_internal_login_post: {
+    login_with_passcode_api_v1_auth_internal_login_post: {
         parameters: {
             query?: never;
             header?: never;

@@ -6,6 +6,7 @@ export type SettingsUserValidationMessages = {
   usernameMin: string
   usernameMax: string
   passwordRequired: string
+  passwordMax: string
   roleRequired: string
   userIdInvalid: string
   statusRequired: string
@@ -14,7 +15,8 @@ export type SettingsUserValidationMessages = {
 const defaultSettingsUserValidationMessages: SettingsUserValidationMessages = {
   usernameMin: "Tên đăng nhập phải có ít nhất 3 ký tự.",
   usernameMax: "Tên đăng nhập không được vượt quá 50 ký tự.",
-  passwordRequired: "Vui lòng nhập mật khẩu.",
+  passwordRequired: "Vui lòng nhập mã truy cập.",
+  passwordMax: "Mã truy cập không được vượt quá 64 ký tự.",
   roleRequired: "Vui lòng chọn vai trò.",
   userIdInvalid: "Mã tài khoản không hợp lệ.",
   statusRequired: "Vui lòng chọn trạng thái tài khoản.",
@@ -57,6 +59,7 @@ export function getSettingsUserValidationMessages(
     usernameMin: t("settings.users.validation.usernameMin"),
     usernameMax: t("settings.users.validation.usernameMax"),
     passwordRequired: t("settings.users.validation.passwordRequired"),
+    passwordMax: t("settings.users.validation.passwordMax"),
     roleRequired: t("settings.users.validation.roleRequired"),
     userIdInvalid: t("settings.users.validation.userIdInvalid"),
     statusRequired: t("settings.users.validation.statusRequired"),
@@ -72,7 +75,10 @@ export function createCreateUserFormSchema(
       .trim()
       .min(3, messages.usernameMin)
       .max(50, messages.usernameMax),
-    password: z.string().min(1, messages.passwordRequired),
+    password: z
+      .string()
+      .min(1, messages.passwordRequired)
+      .max(64, messages.passwordMax),
     role: z.enum(userRoles, {
       message: messages.roleRequired,
     }),
@@ -95,7 +101,11 @@ export function createUpdateUserFormSchema(
       .max(50, messages.usernameMax),
     password: z.preprocess(
       normalizeOptionalString,
-      z.string().min(1, messages.passwordRequired).optional(),
+      z
+        .string()
+        .min(1, messages.passwordRequired)
+        .max(64, messages.passwordMax)
+        .optional(),
     ),
     role: z.enum(userRoles, {
       message: messages.roleRequired,

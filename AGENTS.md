@@ -12,6 +12,7 @@ Infrastructure, Database, and Stage 4 Financial Core are complete. The system no
 - **Ticket Schema:** Tickets now store explicit route metadata with `ticket_number`, `departure_place`, `arrival_place`, `departure_code`, and `arrival_code`. `itinerary` remains available for compatibility and display, but the richer route fields are the source of truth for new writes.
 - **Ticket Time Semantics:** `flight_date` is the scheduled flight datetime and may be in the past. App base date-time filters apply to ticket `updated_at` rather than `flight_date`, and history/log views must show audit timestamps rather than flight datetime.
 - **Authentication Standard:** All write operations to tickets, transactions, invoices, quotes, customers, and related financial records MUST be authenticated.
+- **Passcode Login Standard:** The browser login page accepts only a passcode and never requests or verifies a username. Match the passcode against active users' bcrypt hashes in the `user` table; require passcodes to be unique so one passcode resolves to exactly one user. Never store a plain passcode in source, environment variables, logs, or API responses.
 - **Next Focus:** Continue the authenticated App Router UI integration on top of the completed backend finance APIs.
 
 ## 📁 Project Structure & Context (The "Bay Buddy DNA")
@@ -113,6 +114,7 @@ Removed/stale skills that must not be referenced as project standards: `ui-ux-pr
 ## 🔐 Authentication & Security
 
 - **JWT**: Use JWT for session management. Store tokens securely (HttpOnly Cookies preferred).
+- **Passcode Identity**: Each active user's `hashed_password` is the database-backed passcode credential. The passcode identifies the user without a username, while the matched user row supplies JWT identity, RBAC, and audit ownership.
 - **RBAC**: Implement Role-Based Access Control.
   - `ADMIN`: Full system access, user management, and financial reporting.
   - `STAFF`: Ticket entry, customer management, and debt tracking.

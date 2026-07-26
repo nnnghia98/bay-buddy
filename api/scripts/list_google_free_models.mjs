@@ -10,6 +10,12 @@
  *   GEMINI_API_KEY in the environment.
  */
 
+import { existsSync } from "node:fs";
+
+if (existsSync(".env")) {
+  process.loadEnvFile(".env");
+}
+
 const FREE_TIER_MODEL_PREFIXES = [
   "gemini-3.1-pro-preview",
   "gemini-3.1-flash-preview",
@@ -89,7 +95,7 @@ async function listModels(apiKey) {
 }
 
 async function main() {
-  const apiKey = "AIzaSyBLjd_PsGylgnTBrnDSFGFAIqh5xZWWNYI";
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     console.error("GEMINI_API_KEY is not set.");
     process.exit(1);

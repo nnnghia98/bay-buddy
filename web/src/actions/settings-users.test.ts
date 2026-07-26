@@ -41,7 +41,9 @@ vi.mock("@/locales/server", () => ({
       "settings.users.validation.usernameMax":
         "Tên đăng nhập không được vượt quá 50 ký tự.",
       "settings.users.validation.passwordRequired":
-        "Vui lòng nhập mật khẩu.",
+        "Vui lòng nhập mã truy cập.",
+      "settings.users.validation.passwordMax":
+        "Mã truy cập không được vượt quá 64 ký tự.",
       "settings.users.validation.roleRequired":
         "Vui lòng chọn vai trò.",
       "settings.users.validation.userIdInvalid":

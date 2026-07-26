@@ -1,21 +1,15 @@
 export default {
   login: {
-    title: "Sign in",
-    subtitle: "Please sign in to continue.",
-    usernameLabel: "Username",
-    usernamePlaceholder: "Username",
-    passwordLabel: "Password",
-    passwordRequired: "Please enter your password.",
-    usernameRequired: "Please enter your username.",
-    accessCodeLabel: "Internal access code",
-    accessCodePlaceholder: "Enter access code",
-    accessCodeRequired: "Please enter the access code.",
+    title: "Sign in with passcode",
+    subtitle: "Enter the passcode to continue.",
+    passcodeLabel: "Passcode",
+    passcodePlaceholder: "Enter passcode",
+    passcodeRequired: "Please enter the passcode.",
     submit: "Sign in",
     submitting: "Signing in...",
     successToast: "Signed in successfully.",
+    invalidPasscode: "The passcode is incorrect.",
     error: "Unable to sign in. Please try again.",
-    useAccessCode: "Use internal access code",
-    usePassword: "Use username and password",
   },
   appShell: {
     home: "Home",
@@ -794,9 +788,10 @@ export default {
       fields: {
         username: "Username",
         usernamePlaceholder: "e.g. admin.finance",
-        password: "Password",
-        passwordPlaceholder: "Enter a password",
-        passwordHint: "Leave blank if you do not want to change the current password.",
+        password: "Passcode",
+        passwordPlaceholder: "Enter a passcode",
+        passwordHint:
+          "Leave blank if you do not want to change the current passcode.",
         role: "Role",
         status: "Account status",
       },
@@ -804,13 +799,14 @@ export default {
         cancel: "Close",
         create: {
           title: "Add internal account",
-          description: "Create a new account quickly and assign the right access level.",
+          description:
+            "Create an account with its own passcode and access level.",
           submit: "Create account",
           submitting: "Creating...",
         },
         edit: {
           title: "Update account",
-          description: "Adjust the username, role, password, or active status.",
+          description: "Adjust the name, role, passcode, or active status.",
           submit: "Save changes",
           submitting: "Saving...",
         },
@@ -826,7 +822,8 @@ export default {
       validation: {
         usernameMin: "Username must be at least 3 characters.",
         usernameMax: "Username must be at most 50 characters.",
-        passwordRequired: "Please enter a password.",
+        passwordRequired: "Please enter a passcode.",
+        passwordMax: "The passcode cannot exceed 64 characters.",
         roleRequired: "Please choose a role.",
         userIdInvalid: "User id is invalid.",
         statusRequired: "Please choose an account status.",

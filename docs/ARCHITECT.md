@@ -19,15 +19,17 @@
 
 ### Internal Access-Code Login
 
-- Internal deployments may enable `POST /api/v1/auth/internal-login` with both `INTERNAL_ACCESS_CODE` and `INTERNAL_ACCESS_USERNAME`.
-- The access code is compared in constant time and is never stored in the database or returned by the API.
-- `INTERNAL_ACCESS_USERNAME` must identify an active user. The resulting JWT is issued for that account, so RBAC and `created_by` audit records remain intact.
-- If either setting is absent, the endpoint is disabled. The normal OAuth2 username/password endpoint remains available for administration and Swagger UI.
+- The browser submits only a passcode to `POST /api/v1/auth/internal-login`; it never asks for or verifies a username.
+- Each user passcode is stored only as bcrypt in `user.hashed_password`. No passcode or username is stored in environment variables.
+- The API compares the submitted passcode with active user hashes and succeeds only when exactly one active user matches.
+- User create and update operations reject duplicate passcodes because username is not available to resolve an ambiguous match.
+- The matched user row supplies JWT identity, RBAC, and audit ownership. Inactive users cannot log in.
+- The OAuth2 username/password endpoint remains available to API clients and Swagger UI, but it is not shown on the browser login page.
 
 ### Model: User
 - `id`: UUID (PK)
 - `username`: String (Unique)
-- `hashed_password`: String
+- `hashed_password`: String (bcrypt passcode hash; never returned)
 - `role`: Enum (ADMIN, STAFF)
 - `is_active`: Boolean (Default: True)
 

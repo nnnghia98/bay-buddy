@@ -8,8 +8,9 @@ Environment variables (see .env.example):
     DATABASE_URL   SQLAlchemy connection string
     SECRET_KEY     JWT signing secret  (min 32 chars)
     FRONTEND_URL   Allowed CORS origin (e.g. http://localhost:6769)
-    INTERNAL_ACCESS_CODE     Optional shared code for internal access login
-    INTERNAL_ACCESS_USERNAME Active account used by internal access login
+
+Passcode login uses bcrypt hashes stored on active user rows. It does not use
+an environment-backed access code or username.
 """
 
 import os
@@ -22,6 +23,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from core.settings import settings as runtime_settings
 from database import create_db_and_tables
 from runtime_env_logging import log_runtime_environment_summary
+from services.auth import validate_auth_configuration
 
 load_dotenv()
 
@@ -101,6 +103,7 @@ async def on_startup() -> None:
     # Import models so SQLModel collects table metadata before create_all.
     import models  # noqa: F401
 
+    validate_auth_configuration()
     log_runtime_environment_summary(os.environ)
 
     if os.getenv("DATABASE_URL", "").startswith("sqlite") or not os.getenv(
