@@ -40,8 +40,9 @@ workbook-related surfaces remain untouched.
   from workbook content versions.
 - Inline drafts for editable source and user-column cells, persisted locally in
   IndexedDB and isolated by authenticated user and session.
-- Guided formula builder with versioned row-local expressions, server preview,
-  dependency-cycle checks, and generated Excel formulas.
+- Guided 2–3 column formula builder with arithmetic operations between columns,
+  versioned row-local expressions, server preview, dependency-cycle checks, and
+  generated Excel formulas.
 - Session library with search, status filters, rename, soft discard, and local
   draft status.
 - Automatic bounded header-row detection without a staff-facing setup control.
@@ -421,8 +422,16 @@ version and operation, and advances `current_version`.
 
 `GET /api/v1/workbooks/sessions/{session_id}/download`
 
-- Returns the current `.xlsx` as an authenticated attachment.
+- Returns a presentation-formatted copy of the current `.xlsx` as an authenticated attachment.
+- Fits populated columns across every detected worksheet. Very long text columns
+  use a bounded width with wrapping so one note cannot make the workbook
+  excessively wide.
+- Applies Bay Buddy header styling, readable typed alignment and number formats,
+  alternating data rows, hidden gridlines, and frozen header rows while
+  preserving values, formulas, existing semantic colors, hidden columns, and
+  the immutable stored workbook version.
 - Uses a sanitized original basename plus `-edited-v{version}.xlsx`.
+- Calculates the download checksum and content length from the formatted bytes.
 - Includes checksum-based `ETag`, content length, and workbook version header.
 
 ## 10. Error contract

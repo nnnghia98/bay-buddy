@@ -10,7 +10,7 @@ from datetime import date
 from pathlib import Path
 
 import pytest
-from openpyxl import Workbook as OpenpyxlWorkbook
+from openpyxl import Workbook as OpenpyxlWorkbook, load_workbook
 from sqlalchemy import event
 from sqlmodel import Session, SQLModel, create_engine, select
 
@@ -1022,6 +1022,12 @@ def test_save_versions_audits_replays_conflicts_and_downloads(engine, storage) -
         assert descriptor.version == 2
         assert descriptor.file_size == len(downloaded)
         assert descriptor.checksum == hashlib.sha256(downloaded).hexdigest()
+        exported_workbook = load_workbook(io.BytesIO(downloaded))
+        exported_sheet = exported_workbook["Tickets"]
+        assert exported_sheet["A1"].fill.fgColor.rgb == "001B61C9"
+        assert exported_sheet.freeze_panes == "A2"
+        assert exported_sheet.sheet_view.showGridLines is False
+        exported_workbook.close()
         assert hashlib.sha256(original).hexdigest() == uploaded.checksum
         workbook_row = db.get(Workbook, uploaded.id)
         assert workbook_row is not None

@@ -3,7 +3,7 @@
 import { AlertCircle, CheckCircle2, LoaderCircle } from "lucide-react"
 
 import type { WorkbookFormulaPreviewResponse } from "@/schemas/workbook"
-import type { FormulaTranslator } from "./formula-expression-node"
+import type { FormulaTranslator } from "./simple-formula-builder"
 
 function formulaMessage(t: FormulaTranslator, code?: string | null): string {
   const knownCodes = new Set([

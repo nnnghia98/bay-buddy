@@ -507,17 +507,27 @@ export function EditorWorkbench({
     }
     setFeedback(t(fallbackKey))
   }
-  const addColumnsMutation = useMutation({
-    mutationFn: ({ label, dataType }: { label: string; dataType: WorkbookColumnDataType }) => addWorkbookColumn(initialSession.id, baseVersion, label, dataType),
-    onSuccess: refreshColumns,
-    onError: (error) => structuralError(error, "workbookEditor.editor.feedback.addColumnsFailed"),
-  })
-  const updateColumnMutation = useMutation({
-    mutationFn: ({ columnId, label, dataType, formula }: { columnId?: string; label: string; dataType: "number" | "currency"; formula: WorkbookColumnFormula | null }) => columnId
+  const columnMutation = useMutation({
+    mutationFn: ({
+      columnId,
+      label,
+      dataType,
+      formula,
+    }: {
+      columnId?: string
+      label: string
+      dataType: WorkbookColumnDataType
+      formula: WorkbookColumnFormula | null
+    }) => columnId
       ? updateWorkbookColumn(initialSession.id, columnId, { base_version: baseVersion, label, data_type: dataType, formula })
       : addWorkbookColumn(initialSession.id, baseVersion, label, dataType, formula ?? undefined),
     onSuccess: refreshColumns,
-    onError: (error) => structuralError(error, "workbookEditor.editor.feedback.formulaUpdateFailed"),
+    onError: (error, variables) => structuralError(
+      error,
+      variables.columnId
+        ? "workbookEditor.editor.feedback.formulaUpdateFailed"
+        : "workbookEditor.editor.feedback.addColumnsFailed",
+    ),
   })
   const removeColumnMutation = useMutation({
     mutationFn: (columnId: string) => removeWorkbookColumn(initialSession.id, columnId, baseVersion),
@@ -535,8 +545,7 @@ export function EditorWorkbench({
     || reconciliationMutation.isPending
     || configurationMutation.isPending
     || removeColumnMutation.isPending
-    || addColumnsMutation.isPending
-    || updateColumnMutation.isPending
+    || columnMutation.isPending
   const structuralActionDisabledReason = dirtyCount > 0
     ? t("workbookEditor.editor.unsavedCount", { count: dirtyCount })
     : saveMutation.isPending
@@ -704,11 +713,15 @@ export function EditorWorkbench({
         <WorkbookTableToolbar
           columnControls={<WorkbookColumnControls
             baseVersion={baseVersion}
-            busy={structuralActionsDisabled || addColumnsMutation.isPending || updateColumnMutation.isPending}
+            busy={structuralActionsDisabled || columnMutation.isPending}
             columns={records.columns}
-            onAdd={(label, dataType) => addColumnsMutation.mutate({ label, dataType })}
             onConfigurationChange={(hidden, sticky) => configurationMutation.mutate({ hidden, sticky })}
-            onUpdateFormula={(columnId, nextLabel, nextDataType, formula) => updateColumnMutation.mutate({ columnId, label: nextLabel, dataType: nextDataType, formula })}
+            onSubmitColumn={(columnId, nextLabel, nextDataType, formula) => columnMutation.mutate({
+              columnId,
+              label: nextLabel,
+              dataType: nextDataType,
+              formula,
+            })}
             sessionId={initialSession.id}
             t={t}
           />}

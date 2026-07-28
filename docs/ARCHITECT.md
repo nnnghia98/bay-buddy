@@ -226,6 +226,7 @@ Bay Buddy follows the project's Next.js App Router patterns, Bay Buddy DNA, and 
 ### Workbook Editor v2 integrity rules
 
 - Workbook sessions persist the selected sheet's meaningful row and column bounds. Formatting-only Excel dimensions must not expand later reads, saves, previews, or structural mutations.
+- Workbook downloads are presentation copies. Export formatting may fit columns, wrap long text, style detected header bands, freeze data headers, and improve typed number alignment across detected worksheets, but it must not modify the immutable stored workbook version.
 - Ordinary text edits cannot begin with `=`. Excel formulas are created only through the validated managed-formula AST and server preview workflow.
 - Semantic `net_price` and `selling_price` cells use whole, non-negative VND values up to `1,000,000,000,000`; generic currency columns keep their configured numeric behavior.
 - Time-only Excel cells are returned as ISO local-time strings. Durations are returned as ISO-8601 duration strings. Date-time cells with a non-midnight time remain read-only until date-time editing is supported.

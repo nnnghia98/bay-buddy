@@ -6,6 +6,7 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  type CellContext,
   type ColumnDef,
 } from "@tanstack/react-table"
 import {
@@ -36,6 +37,16 @@ type WorkbookRow = WorkbookRecordsPage["items"][number]
 type WorkbookColumn = WorkbookRecordsPage["columns"][number]
 type DraftMap = Map<number, Partial<Record<string, string>>>
 type ErrorMap = Map<string, string>
+type WorkbookCellMeta = {
+  workbookColumn: WorkbookColumn
+}
+type WorkbookTableMeta = {
+  booleanLabels: { blank: string; true: string; false: string }
+  drafts: DraftMap
+  errors: ErrorMap
+  onDraftChange: (rowNumber: number, field: string, value: string) => void
+  rowLabel: string
+}
 
 const helper = createColumnHelper<WorkbookRow>()
 const ROW_GUTTER_WIDTH = 48
@@ -73,6 +84,153 @@ export function formatWorkbookValue(value: number, numberFormat?: string | null)
     style: "percent",
     ...options,
   }).format(value)
+}
+
+/**
+ * Keep the cell renderer identity stable while draft values change. TanStack
+ * treats a column's `cell` function as a React component; recreating that
+ * function on every keystroke remounts the input and drops its focus.
+ */
+function WorkbookDataCell({
+  column,
+  row,
+  table,
+}: CellContext<WorkbookRow, WorkbookRow["values"][string]>) {
+  const cellMeta = column.columnDef.meta as WorkbookCellMeta | undefined
+  const tableMeta = table.options.meta as WorkbookTableMeta | undefined
+  if (!cellMeta || !tableMeta) return null
+
+  const workbookColumn = cellMeta.workbookColumn
+  const record = row.original
+  const field = workbookColumn.field
+  const rawValue = record.values[field]
+  const error = tableMeta.errors.get(`${record.row_number}:${field}`)
+  const storedDraft = tableMeta.drafts.get(record.row_number)?.[field]
+  const ariaLabel =
+    `${workbookColumn.label}, ${tableMeta.rowLabel.replace("{row}", String(record.row_number))}`
+
+  if (isPricingColumn(workbookColumn)) {
+    return (
+      <EditablePriceCell
+        ariaLabel={ariaLabel}
+        draft={storedDraft}
+        editable={workbookColumn.editable && record.editable[field] !== false}
+        error={error}
+        onChange={(value) =>
+          tableMeta.onDraftChange(record.row_number, field, value)}
+        value={rawValue}
+      />
+    )
+  }
+
+  if (workbookColumn.editable) {
+    let inputValue = rawValue == null
+      ? ""
+      : (workbookColumn.data_type === "currency"
+          || workbookColumn.data_type === "number")
+          && typeof rawValue === "number"
+        ? formatWorkbookValue(rawValue, workbookColumn.number_format)
+        : String(rawValue)
+    if (workbookColumn.data_type === "date" && rawValue) {
+      inputValue = String(rawValue).slice(0, 10)
+    }
+    const draftValue = storedDraft ?? inputValue
+    const drafted = storedDraft !== undefined
+
+    return (
+      <div className="w-48 px-2 py-1.5">
+        {workbookColumn.data_type === "boolean" ? (
+          <select
+            aria-invalid={Boolean(error)}
+            aria-label={ariaLabel}
+            className={cn(
+              "h-9 w-full rounded-md border border-input bg-white px-3 text-sm font-medium shadow-none focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
+              drafted && "border-primary/45 bg-primary/[0.055] ring-1 ring-primary/10",
+              error && "border-destructive",
+            )}
+            disabled={record.editable[field] === false}
+            onChange={(event) =>
+              tableMeta.onDraftChange(
+                record.row_number,
+                field,
+                event.target.value,
+              )}
+            value={draftValue}
+          >
+            <option value="">{tableMeta.booleanLabels.blank}</option>
+            <option value="true">{tableMeta.booleanLabels.true}</option>
+            <option value="false">{tableMeta.booleanLabels.false}</option>
+          </select>
+        ) : (
+          <Input
+            aria-invalid={Boolean(error)}
+            aria-label={ariaLabel}
+            className={cn(
+              "h-9 shadow-none",
+              (workbookColumn.data_type === "currency"
+                || workbookColumn.data_type === "number")
+                && "text-right font-mono text-sm tabular-nums",
+              drafted && "border-primary/45 bg-primary/[0.055] ring-1 ring-primary/10",
+              error && "border-destructive",
+            )}
+            disabled={record.editable[field] === false}
+            inputMode={
+              workbookColumn.data_type === "currency"
+                || workbookColumn.data_type === "number"
+                ? "decimal"
+                : undefined
+            }
+            onChange={(event) =>
+              tableMeta.onDraftChange(
+                record.row_number,
+                field,
+                event.target.value,
+              )}
+            type={workbookColumn.data_type === "date" ? "date" : "text"}
+            value={draftValue}
+          />
+        )}
+        {error ? (
+          <p className="mt-1 text-xs text-destructive" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </div>
+    )
+  }
+
+  const value = rawValue
+  let display = value == null || value === "" ? "-" : String(value)
+  if (
+    (workbookColumn.data_type === "currency"
+      || workbookColumn.data_type === "number")
+    && typeof value === "number"
+  ) {
+    display = formatWorkbookValue(value, workbookColumn.number_format)
+  }
+  if (workbookColumn.data_type === "date" && value) {
+    const [year, month, day] = String(value).slice(0, 10).split("-")
+    if (year && month && day) display = `${day}/${month}/${year}`
+  }
+  if (workbookColumn.data_type === "boolean" && typeof value === "boolean") {
+    display = value
+      ? tableMeta.booleanLabels.true
+      : tableMeta.booleanLabels.false
+  }
+  return (
+    <span
+      className={cn(
+        "block w-48 truncate px-4 py-3 text-sm",
+        (workbookColumn.data_type === "currency"
+          || workbookColumn.data_type === "number")
+          && "text-right font-mono tabular-nums",
+        workbookColumn.formula && "font-medium text-foreground/80",
+      )}
+      title={display === "-" ? undefined : display}
+    >
+      {display}
+    </span>
+  )
 }
 
 export function WorkbookRecordsTable({
@@ -303,136 +461,12 @@ export function WorkbookRecordsTable({
       visibleColumns.map((column) =>
         helper.accessor((row) => row.values[column.field], {
           id: column.field,
+          meta: { workbookColumn: column } satisfies WorkbookCellMeta,
           header: () => renderColumnHeader(column),
-          cell: ({ row }) => {
-            const record = row.original
-            const field = column.field
-            const rawValue = record.values[field]
-            const error = errors.get(`${record.row_number}:${field}`)
-            const storedDraft = drafts.get(record.row_number)?.[field]
-            const ariaLabel =
-              `${column.label}, ${rowLabel.replace("{row}", String(record.row_number))}`
-
-            if (isPricingColumn(column)) {
-              return (
-                <EditablePriceCell
-                  ariaLabel={ariaLabel}
-                  draft={storedDraft}
-                  editable={column.editable && record.editable[field] !== false}
-                  error={error}
-                  onChange={(value) => onDraftChange(record.row_number, field, value)}
-                  value={rawValue}
-                />
-              )
-            }
-
-            if (column.editable) {
-              let inputValue = rawValue == null
-                ? ""
-                : (column.data_type === "currency" || column.data_type === "number")
-                    && typeof rawValue === "number"
-                  ? formatWorkbookValue(rawValue, column.number_format)
-                  : String(rawValue)
-              if (column.data_type === "date" && rawValue) {
-                inputValue = String(rawValue).slice(0, 10)
-              }
-              const draftValue = storedDraft ?? inputValue
-              const drafted = storedDraft !== undefined
-
-              return (
-                <div className="w-48 px-2 py-1.5">
-                  {column.data_type === "boolean" ? (
-                    <select
-                      aria-invalid={Boolean(error)}
-                      aria-label={ariaLabel}
-                      className={cn(
-                        "h-9 w-full rounded-md border border-input bg-white px-3 text-sm font-medium shadow-none focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
-                        drafted && "border-primary/45 bg-primary/[0.055] ring-1 ring-primary/10",
-                        error && "border-destructive",
-                      )}
-                      disabled={record.editable[field] === false}
-                      onChange={(event) =>
-                        onDraftChange(record.row_number, field, event.target.value)}
-                      value={draftValue}
-                    >
-                      <option value="">{booleanLabels.blank}</option>
-                      <option value="true">{booleanLabels.true}</option>
-                      <option value="false">{booleanLabels.false}</option>
-                    </select>
-                  ) : (
-                    <Input
-                      aria-invalid={Boolean(error)}
-                      aria-label={ariaLabel}
-                      className={cn(
-                        "h-9 shadow-none",
-                        (column.data_type === "currency"
-                          || column.data_type === "number")
-                          && "text-right font-mono text-sm tabular-nums",
-                        drafted && "border-primary/45 bg-primary/[0.055] ring-1 ring-primary/10",
-                        error && "border-destructive",
-                      )}
-                      disabled={record.editable[field] === false}
-                      inputMode={
-                        column.data_type === "currency"
-                          || column.data_type === "number"
-                          ? "decimal"
-                          : undefined
-                      }
-                      onChange={(event) =>
-                        onDraftChange(record.row_number, field, event.target.value)}
-                      type={column.data_type === "date" ? "date" : "text"}
-                      value={draftValue}
-                    />
-                  )}
-                  {error ? (
-                    <p className="mt-1 text-xs text-destructive" role="alert">
-                      {error}
-                    </p>
-                  ) : null}
-                </div>
-              )
-            }
-
-            const value = rawValue
-            let display = value == null || value === "" ? "-" : String(value)
-            if (
-              (column.data_type === "currency" || column.data_type === "number")
-              && typeof value === "number"
-            ) {
-              display = formatWorkbookValue(value, column.number_format)
-            }
-            if (column.data_type === "date" && value) {
-              const [year, month, day] = String(value).slice(0, 10).split("-")
-              if (year && month && day) display = `${day}/${month}/${year}`
-            }
-            if (column.data_type === "boolean" && typeof value === "boolean") {
-              display = value ? booleanLabels.true : booleanLabels.false
-            }
-            return (
-              <span
-                className={cn(
-                  "block w-48 truncate px-4 py-3 text-sm",
-                  (column.data_type === "currency" || column.data_type === "number")
-                    && "text-right font-mono tabular-nums",
-                  column.formula && "font-medium text-foreground/80",
-                )}
-                title={display === "-" ? undefined : display}
-              >
-                {display}
-              </span>
-            )
-          },
+          cell: WorkbookDataCell,
         }),
       ),
-    [
-      booleanLabels,
-      drafts,
-      errors,
-      onDraftChange,
-      renderColumnHeader,
-      rowLabel,
-      visibleColumns,
-    ],
+    [renderColumnHeader, visibleColumns],
   )
 
   // TanStack Table intentionally exposes mutable table callbacks; React Compiler
@@ -442,6 +476,13 @@ export function WorkbookRecordsTable({
     data: records.items,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    meta: {
+      booleanLabels,
+      drafts,
+      errors,
+      onDraftChange,
+      rowLabel,
+    } satisfies WorkbookTableMeta,
   })
 
   return (

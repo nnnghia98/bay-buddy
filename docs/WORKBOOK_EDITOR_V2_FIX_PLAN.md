@@ -347,7 +347,7 @@ Upload validation computes meaningful bounds that exclude formatting-only dimens
 
 - `web/src/components/workbook-editor/workbook-column-controls.tsx`
 - `web/src/components/workbook-editor/formula-builder-dialog.tsx`
-- `web/src/components/workbook-editor/formula-expression-node.tsx`
+- `web/src/components/workbook-editor/simple-formula-builder.tsx`
 - `web/src/components/workbook-editor/formula-preview.tsx`
 - `web/src/components/workbook-editor/editor-workbench.tsx`
 - `web/src/lib/workbooks/client.ts`
@@ -361,13 +361,18 @@ Every formula submission passes an undefined column ID, so it always creates a n
 
 1. Add explicit create and edit modes to the formula dialog.
 2. Allow selecting an existing user-owned formula column for editing.
-3. Initialize the expression editor from the existing formula AST.
-4. Use `FormulaExpressionNode` as the canonical editor rather than the limited fixed binary form.
+3. Let staff select two columns, one operation between them, and an optional
+   third column with a second operation.
+4. Convert the compact selection into the validated formula AST while following
+   normal arithmetic precedence.
 5. Call `previewWorkbookFormula` before enabling final Apply.
 6. Show normalized expression, sample results, warnings, and row-level errors through `FormulaPreview`.
-7. Send the existing column ID to `updateWorkbookColumn` in edit mode.
-8. Preserve output type selection for both `number` and `currency`.
-9. Invalidate records, session, and library caches after successful formula updates.
+7. Parse compatible stored formulas back into the compact editor. Require an
+   explicit reset before replacing an older advanced formula that cannot be
+   represented safely.
+8. Send the existing column ID to `updateWorkbookColumn` in edit mode.
+9. Preserve output type selection for both `number` and `currency`.
+10. Invalidate records, session, and library caches after successful formula updates.
 
 **Regression tests**
 
@@ -377,10 +382,13 @@ Every formula submission passes an undefined column ID, so it always creates a n
 - Invalid or cyclic formula cannot be applied.
 - Division-by-zero sample errors appear before mutation.
 - Currency formula output remains currency.
+- Two- and three-column selections produce the expected arithmetic AST.
+- Older advanced formulas are never flattened or overwritten silently.
 
 **Acceptance criteria**
 
-- Users can create, preview, and edit managed formulas without duplicating columns.
+- Users can create, preview, and edit managed 2–3 column formulas without
+  duplicating columns.
 
 ---
 

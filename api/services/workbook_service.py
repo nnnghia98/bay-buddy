@@ -31,6 +31,10 @@ from models import (
     WorkbookSessionStatus,
     WorkbookVersion,
 )
+from services.workbook_export import (
+    WorkbookExportError,
+    format_workbook_for_export,
+)
 from services.workbook_formula import (
     WorkbookFormulaError,
     dependent_formula_columns,
@@ -2262,22 +2266,56 @@ def get_current_download(
     version = _get_version(
         db, session_id=session_id, version_number=editing_session.current_version
     )
-    temporary_path = _materialize_verified_object(
+    source_path = _materialize_verified_object(
         storage,
         key=version.relative_path,
         checksum=version.checksum,
         expected_size=version.file_size,
     )
+    export_path: Path | None = None
     try:
-        stream = _DeletingBinaryStream(temporary_path)
-    except OSError as exc:
+        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as temporary:
+            export_path = Path(temporary.name)
+        meaningful_max_row, meaningful_max_column = _session_meaningful_bounds(
+            editing_session,
+            workbook,
+        )
+        format_workbook_for_export(
+            source_path,
+            export_path,
+            sheet_name=editing_session.selected_sheet_name,
+            header_row_number=editing_session.header_row_number,
+            column_config=_normalized_column_config(editing_session),
+            meaningful_max_row=meaningful_max_row,
+            meaningful_max_column=meaningful_max_column,
+            sheet_metadata=[
+                dict(sheet) for sheet in workbook.sheet_metadata
+            ],
+        )
+        digest = hashlib.sha256()
+        file_size = 0
+        with export_path.open("rb") as generated:
+            while chunk := generated.read(_COPY_CHUNK_SIZE):
+                digest.update(chunk)
+                file_size += len(chunk)
+        stream = _DeletingBinaryStream(export_path)
+        export_path = None
+    except (OSError, WorkbookExportError) as exc:
+        raise WorkbookServiceError(
+            "STORAGE_WRITE_FAILED",
+            500,
+            "Workbook export could not be prepared.",
+        ) from exc
+    finally:
         try:
-            temporary_path.unlink(missing_ok=True)
+            source_path.unlink(missing_ok=True)
         except OSError:
             pass
-        raise WorkbookServiceError(
-            "STORAGE_OBJECT_MISSING", 500, "Workbook file is unavailable."
-        ) from exc
+        if export_path is not None:
+            try:
+                export_path.unlink(missing_ok=True)
+            except OSError:
+                pass
 
     stem = Path(workbook.original_filename).stem
     safe_stem = re.sub(r"[^\w.-]+", "-", stem, flags=re.UNICODE).strip("-._")
@@ -2286,7 +2324,7 @@ def get_current_download(
         stream=stream,
         filename=f"{safe_stem}-edited-v{version.version_number}.xlsx",
         mime_type=XLSX_MIME_TYPE,
-        checksum=version.checksum,
-        file_size=version.file_size,
+        checksum=digest.hexdigest(),
+        file_size=file_size,
         version=version.version_number,
     )
