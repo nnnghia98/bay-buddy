@@ -640,7 +640,7 @@ export interface paths {
         put?: never;
         /**
          * Confirm & save an AI-parsed ticket
-         * @description Accepts the user-reviewed ticket data from the frontend. Automatically resolves or creates the customer record by name, saves the ticket as CONFIRMED, creates a CHARGE transaction for the debt, and updates the customer balance. All changes are committed atomically. Business rule: true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price) (BUSINESS.md §2).
+         * @description Accepts the user-reviewed ticket data from the frontend. Automatically resolves or creates the customer record by name, saves the ticket as CONFIRMED, creates a CHARGE transaction for the debt, optionally records a linked customer payment, and updates the customer balance. All changes are committed atomically. Business rule: true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price) (BUSINESS.md §2).
          */
         post: operations["confirm_ticket_api_v1_tickets_confirm_post"];
         delete?: never;
@@ -1459,6 +1459,8 @@ export interface components {
              * @description List of passenger full names (UPPERCASE).
              */
             passengers?: string[];
+            /** @description Optional customer payment saved atomically with the ticket and linked to the new ticket. */
+            payment?: components["schemas"]["TicketPaymentPayload"] | null;
             /**
              * Pnr
              * @description Optional 6-character PNR booking reference code.
@@ -1633,6 +1635,27 @@ export interface components {
              * @default 0
              */
             web_price: number;
+        };
+        /**
+         * TicketPaymentPayload
+         * @description Optional payment recorded together with a confirmed ticket.
+         */
+        TicketPaymentPayload: {
+            /**
+             * Amount
+             * @description Customer payment amount in VND.
+             */
+            amount: number;
+            /**
+             * Method
+             * @description Payment method label.
+             */
+            method: string;
+            /**
+             * Note
+             * @description Audit note for the payment.
+             */
+            note: string;
         };
         /**
          * TicketReassignPayload

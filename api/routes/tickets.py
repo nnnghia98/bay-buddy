@@ -58,7 +58,8 @@ router = APIRouter()
         "Accepts the user-reviewed ticket data from the frontend. "
         "Automatically resolves or creates the customer record by name, "
         "saves the ticket as CONFIRMED, creates a CHARGE transaction for the debt, "
-        "and updates the customer balance. All changes are committed atomically. "
+        "optionally records a linked customer payment, and updates the customer "
+        "balance. All changes are committed atomically. "
         "Business rule: true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price) "
         "(BUSINESS.md §2)."
     ),
@@ -76,7 +77,8 @@ async def confirm_ticket(
     2. Compute income from selling price, discount, EV/AST/THF/WEB host net prices, and insurance.
     3. Persist Ticket with status = CONFIRMED.
     4. Persist CHARGE Transaction (auto-debt) linked to the customer.
-    5. Increment customer.balance by selling_price.
+    5. Optionally persist a linked PAYMENT Transaction.
+    6. Apply both transaction effects to customer.balance.
     """
     require_user_roles(current_user, UserRole.ADMIN, UserRole.STAFF)
     result: TicketConfirmResponse = create_ticket_with_transaction(
@@ -89,6 +91,11 @@ async def confirm_ticket(
         {
             "ticket": result.ticket.model_dump(),
             "transaction_id": str(result.transaction_id),
+            "payment_transaction_id": (
+                str(result.payment_transaction_id)
+                if result.payment_transaction_id is not None
+                else None
+            ),
             "customer": {
                 "id": str(result.customer_id),
                 "name": result.customer_name,

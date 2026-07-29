@@ -7,13 +7,13 @@ import { usePathname, useRouter } from "next/navigation"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Activity,
+  ChartColumn,
   ChevronDown,
   ChevronRight,
+  CircleDollarSign,
   Database,
   FileSpreadsheet,
-  FileText,
   Menu,
-  ReceiptText,
   Settings,
   Ticket,
   Users,
@@ -78,8 +78,8 @@ type NavItem = {
 }
 
 const navItems: NavItem[] = [
-  { labelKey: "manualDebts", href: "/debts/input", icon: ReceiptText },
-  { labelKey: "reports", href: "/report", icon: FileText },
+  { labelKey: "manualDebts", href: "/debts/input", icon: CircleDollarSign },
+  { labelKey: "reports", href: "/report", icon: ChartColumn },
   { labelKey: "workbookEditor", href: "/workbook-editor-v2", icon: FileSpreadsheet },
   { labelKey: "tickets", href: "/tickets/input", icon: Ticket },
   { labelKey: "activities", href: "/activities", icon: Activity },

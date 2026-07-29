@@ -13,8 +13,9 @@ Flow of create_ticket_with_transaction:
   3. Persist Ticket with status = CONFIRMED inside a DB transaction.
      Multiple tickets may share the same PNR in group bookings.
   4. Create a CHARGE Transaction linked to the customer AND the ticket.
-  5. Increment customer.balance by selling_price.
-  All three mutations are committed atomically; any failure triggers a full rollback.
+  5. Optionally create a PAYMENT Transaction from the manual debt workbench.
+  6. Apply both transaction effects to customer.balance.
+  All mutations are committed atomically; any failure triggers a full rollback.
 """
 
 from __future__ import annotations
@@ -46,6 +47,34 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Request schema – what the frontend POSTs after AI parsing + user review
 # ---------------------------------------------------------------------------
+
+class TicketPaymentPayload(BaseModel):
+    """Optional payment recorded together with a confirmed ticket."""
+
+    amount: float = Field(gt=0, description="Customer payment amount in VND.")
+    method: str = Field(
+        min_length=1,
+        max_length=100,
+        description="Payment method label.",
+    )
+    note: str = Field(
+        min_length=1,
+        max_length=2000,
+        description="Audit note for the payment.",
+    )
+
+    @model_validator(mode="after")
+    def normalize_payment_text(self) -> "TicketPaymentPayload":
+        """Reject whitespace-only payment labels and notes."""
+
+        self.method = self.method.strip()
+        self.note = self.note.strip()
+        if not self.method:
+            raise ValueError("Payment method is required.")
+        if not self.note:
+            raise ValueError("Payment note is required.")
+        return self
+
 
 class TicketConfirmPayload(BaseModel):
     """
@@ -186,6 +215,13 @@ class TicketConfirmPayload(BaseModel):
         default=None,
         description="Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price).",
     )
+    payment: Optional[TicketPaymentPayload] = Field(
+        default=None,
+        description=(
+            "Optional customer payment saved atomically with the ticket and "
+            "linked to the new ticket."
+        ),
+    )
 
     @model_validator(mode="after")
     def validate_and_compute_selling_price(self) -> "TicketConfirmPayload":
@@ -286,6 +322,7 @@ class TicketConfirmResponse(BaseModel):
     customer_name: str
     customer_new_balance: float
     is_new_customer: bool
+    payment_transaction_id: Optional[uuid.UUID] = None
 
 
 class TicketVoidResponse(BaseModel):
@@ -603,8 +640,9 @@ def create_ticket_with_transaction(
     2. Persist the Ticket with status = CONFIRMED. PNRs may repeat for grouped passengers.
     3. Flush so ticket.id is populated, then persist a CHARGE Transaction linked to
        both the customer and the ticket.
-    4. Increment customer.balance by selling_price.
-    5. Single atomic commit; refresh and return a structured response.
+    4. Optionally persist a PAYMENT Transaction linked to the new ticket.
+    5. Apply the charge and payment to customer.balance.
+    6. Single atomic commit; refresh and return a structured response.
     """
 
     customer_name_normalised = payload.customer_name.strip()
@@ -679,6 +717,28 @@ def create_ticket_with_transaction(
         amount=selling_price,
         transaction_category=new_transaction.category,
     )
+
+    payment_transaction: Optional[Transaction] = None
+    if payload.payment is not None:
+        payment_transaction = Transaction(
+            amount=payload.payment.amount,
+            type=TransactionType.PAYMENT,
+            category=TransactionCategory.PAYMENT,
+            method=payload.payment.method,
+            note=(
+                f"{payload.payment.note} - "
+                f"ticket {payload.pnr or ticket.id}"
+            ),
+            customer_id=customer.id,
+            linked_ticket_id=ticket.id,
+            created_by=actor_user_id,
+        )
+        session.add(payment_transaction)
+        customer.balance += get_transaction_balance_delta(
+            amount=payment_transaction.amount,
+            transaction_category=payment_transaction.category,
+        )
+
     session.add(customer)
 
     try:
@@ -689,6 +749,8 @@ def create_ticket_with_transaction(
 
     session.refresh(ticket)
     session.refresh(new_transaction)
+    if payment_transaction is not None:
+        session.refresh(payment_transaction)
     session.refresh(customer)
 
     return TicketConfirmResponse(
@@ -698,6 +760,9 @@ def create_ticket_with_transaction(
         customer_name=customer.name,
         customer_new_balance=customer.balance,
         is_new_customer=is_new_customer,
+        payment_transaction_id=(
+            payment_transaction.id if payment_transaction is not None else None
+        ),
     )
 
 

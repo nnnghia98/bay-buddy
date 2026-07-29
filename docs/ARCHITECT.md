@@ -83,7 +83,7 @@
 - `amount`: Float
 - `type`: Enum (PAYMENT, CHARGE, REFUND)
 - `category`: Enum (TICKET_PURCHASE, PAYMENT, DISCOUNT, ADDITIONAL_FEE, REFUND)
-- `method`: String (Bank Transfer, Cash)
+- `method`: String (`Chuyển khoản`, `Tiền mặt`, `AST`, `THF`)
 - `note`: Text Nullable (Required for manual payments and manual adjustments)
 - `evidence_url`: String Nullable (Receipt / payment proof URL)
 - `customer_id`: UUID (FK to Customer)
@@ -222,6 +222,10 @@ Bay Buddy follows the project's Next.js App Router patterns, Bay Buddy DNA, and 
 6. The ledger applies `useOptimistic` so the new payment row appears immediately in the table.
 7. `recordPaymentAction` must call `revalidatePath('/customers/[id]')` so the RSC ledger refreshes after a successful mutation, instead of manually refetching on the client.
 8. After the Server Action completes, the optimistic row is reconciled with the persisted transaction or rolled back if validation/authentication fails.
+
+The `/debts/input` workbench may include an optional payment amount and method.
+When supplied, the ticket charge and linked payment must be committed atomically by
+the ticket confirmation flow so a partial save cannot create only one side.
 
 ### Workbook Editor v2 integrity rules
 

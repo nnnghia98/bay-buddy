@@ -32,10 +32,10 @@ export default {
       activities: "Activities",
       customers: "Customers",
       invoices: "Invoices",
-      reports: "Reports",
+      reports: "Debt reports",
       settings: "Settings",
       dataCenter: "Data center",
-      workbookEditor: "Workbook editor",
+      workbookEditor: "Debt workbook",
     },
     breadcrumbs: {
       aiTicketInput: "Ticket input",
@@ -47,7 +47,7 @@ export default {
       ticketActivity: "Ticket input history",
       ticketDetail: "Ticket detail",
       tickets: "Flight tickets",
-      workbookEditor: "Workbook editor",
+      workbookEditor: "Debt workbook",
     },
   },
   workbookEditor: {
@@ -469,6 +469,11 @@ export default {
       customerNoResults: "No matching customer found.",
       routeGroup: "Route",
       pricingGroup: "Price and income",
+      paymentGroup: "Payment (optional)",
+      paymentAmountPlaceholder: "Leave blank when unpaid",
+      paymentHint:
+        "When an amount is entered, the payment is linked to the new ticket and saved with the debt.",
+      paymentNote: "Payment recorded with manual debt",
       fields: {
         customer: "Customer",
         pnr: "PNR",
@@ -492,6 +497,8 @@ export default {
         discount: "Airline discount",
         serviceFee: "Service fee",
         trueIncome: "True income",
+        paymentAmount: "Payment amount",
+        paymentMethod: "Payment type",
       },
     },
     filters: {
@@ -543,6 +550,8 @@ export default {
       invalidInput: "Please review the debt details.",
       missingAuth: "Your session has expired. Please sign in again.",
       success: "Debt recorded and confirmed ticket created.",
+      successWithPayment:
+        "Debt, confirmed ticket, and payment recorded.",
       failure: "Unable to record this debt right now.",
     },
     validation: {
@@ -563,6 +572,8 @@ export default {
       insurancePriceMin: "Insurance must be at least 0.",
       sellingPriceMin: "Selling price must be at least 0.",
       discountMin: "Discount must be at least 0.",
+      paymentAmountMin: "Payment must be at least 0.",
+      paymentMethodRequired: "Please choose a valid payment type.",
       sellingPriceFormula: "Selling price must be greater than or equal to net price.",
     },
   },
@@ -1044,6 +1055,8 @@ export default {
           methodOptions: {
             bankTransfer: "Bank transfer",
             cash: "Cash",
+            ast: "AST",
+            thf: "THF",
           },
           note: "Note",
           notePlaceholder: "Example: Customer transferred via BIDV at 09:15",

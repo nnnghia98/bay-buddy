@@ -13,6 +13,7 @@ import {
   ReceiptText,
   Route,
   Trash2,
+  Wallet,
 } from "lucide-react"
 
 import {
@@ -46,10 +47,12 @@ import { cn } from "@/lib/utils"
 import {
   AIRLINE_LABELS,
   initialManualDebtActionState,
+  paymentMethodOptions,
   type Airline,
   type CustomerDirectoryItem,
   type ManualDebtActionState,
   type ManualDebtFormValues,
+  type PaymentMethod,
 } from "@/schemas"
 import { useI18n } from "@/locales/client"
 
@@ -881,7 +884,16 @@ export function ManualDebtInputClient({
   const [thfPrice, setThfPrice] = React.useState(0)
   const [webPrice, setWebPrice] = React.useState(0)
   const [insurancePrice, setInsurancePrice] = React.useState(0)
+  const [paymentAmount, setPaymentAmount] = React.useState(0)
   const [formResetKey, setFormResetKey] = React.useState(0)
+  const paymentMethodLabels: Record<PaymentMethod, string> = {
+    "Chuyển khoản": t(
+      "customers.ledger.paymentDialog.fields.methodOptions.bankTransfer",
+    ),
+    "Tiền mặt": t("customers.ledger.paymentDialog.fields.methodOptions.cash"),
+    AST: t("customers.ledger.paymentDialog.fields.methodOptions.ast"),
+    THF: t("customers.ledger.paymentDialog.fields.methodOptions.thf"),
+  }
 
   React.useEffect(() => {
     if (actionState.status !== "success") {
@@ -895,6 +907,7 @@ export function ManualDebtInputClient({
     setThfPrice(0)
     setWebPrice(0)
     setInsurancePrice(0)
+    setPaymentAmount(0)
     setFormResetKey((current) => current + 1)
     router.refresh()
   }, [actionState.status, actionState.submittedAt, router])
@@ -1173,6 +1186,59 @@ export function ManualDebtInputClient({
                       </p>
                     </div>
                   </div>
+                </FormSection>
+
+                <FormSection
+                  icon={Wallet}
+                  title={t("manualDebts.form.paymentGroup")}
+                >
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      error={getFieldError(fieldErrors, "payment_amount")}
+                      htmlFor="manual-debt-payment-amount"
+                      label={t("manualDebts.form.fields.paymentAmount")}
+                    >
+                      <Input
+                        id="manual-debt-payment-amount"
+                        inputMode="numeric"
+                        min={0}
+                        name="payment_amount"
+                        onChange={(event) =>
+                          setPaymentAmount(parseCurrencyInput(event.target.value))
+                        }
+                        placeholder={t(
+                          "manualDebts.form.paymentAmountPlaceholder",
+                        )}
+                        type="text"
+                        value={
+                          paymentAmount > 0
+                            ? formatCurrencyInput(paymentAmount)
+                            : ""
+                        }
+                      />
+                    </FormField>
+                    <FormField
+                      error={getFieldError(fieldErrors, "payment_method")}
+                      htmlFor="manual-debt-payment-method"
+                      label={t("manualDebts.form.fields.paymentMethod")}
+                    >
+                      <select
+                        className="flex h-11 w-full rounded-md border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                        defaultValue={paymentMethodOptions[0]}
+                        id="manual-debt-payment-method"
+                        name="payment_method"
+                      >
+                        {paymentMethodOptions.map((method) => (
+                          <option key={method} value={method}>
+                            {paymentMethodLabels[method]}
+                          </option>
+                        ))}
+                      </select>
+                    </FormField>
+                  </div>
+                  <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                    {t("manualDebts.form.paymentHint")}
+                  </p>
                 </FormSection>
 
                 <FormSection icon={Route} title={t("manualDebts.form.routeGroup")}>

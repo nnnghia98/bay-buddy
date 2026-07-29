@@ -32,10 +32,10 @@ export default {
       activities: "Hoạt động",
       customers: "Khách hàng",
       invoices: "Hóa đơn",
-      reports: "Báo cáo",
+      reports: "Báo cáo công nợ",
       settings: "Thiết lập",
       dataCenter: "Trung tâm dữ liệu",
-      workbookEditor: "Chỉnh sửa bảng giá",
+      workbookEditor: "Excel công nợ",
     },
     breadcrumbs: {
       aiTicketInput: "Nhập vé",
@@ -47,7 +47,7 @@ export default {
       ticketActivity: "Lịch sử nhập vé",
       ticketDetail: "Chi tiết vé",
       tickets: "Vé máy bay",
-      workbookEditor: "Chỉnh sửa bảng giá",
+      workbookEditor: "Excel công nợ",
     },
   },
   workbookEditor: {
@@ -469,6 +469,11 @@ export default {
       customerNoResults: "Không tìm thấy khách hàng phù hợp.",
       routeGroup: "Hành trình",
       pricingGroup: "Giá và thu nhập",
+      paymentGroup: "Thanh toán (tùy chọn)",
+      paymentAmountPlaceholder: "Để trống nếu chưa thanh toán",
+      paymentHint:
+        "Khi nhập số tiền, thanh toán sẽ được liên kết với vé mới và lưu cùng công nợ.",
+      paymentNote: "Thanh toán khi ghi nhận công nợ",
       fields: {
         customer: "Khách hàng",
         pnr: "Mã chỗ",
@@ -492,6 +497,8 @@ export default {
         discount: "Chiết khấu hãng",
         serviceFee: "Phí dịch vụ",
         trueIncome: "Thu nhập thực",
+        paymentAmount: "Số tiền thanh toán",
+        paymentMethod: "Loại thanh toán",
       },
     },
     filters: {
@@ -543,6 +550,8 @@ export default {
       invalidInput: "Vui lòng kiểm tra lại thông tin công nợ.",
       missingAuth: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
       success: "Đã ghi nhận công nợ và tạo vé xác nhận.",
+      successWithPayment:
+        "Đã ghi nhận công nợ, tạo vé và lưu thanh toán.",
       failure: "Không thể ghi nhận công nợ lúc này.",
     },
     validation: {
@@ -563,6 +572,8 @@ export default {
       insurancePriceMin: "Bảo hiểm phải lớn hơn hoặc bằng 0.",
       sellingPriceMin: "Giá bán phải lớn hơn hoặc bằng 0.",
       discountMin: "Chiết khấu phải lớn hơn hoặc bằng 0.",
+      paymentAmountMin: "Số tiền thanh toán phải lớn hơn hoặc bằng 0.",
+      paymentMethodRequired: "Vui lòng chọn loại thanh toán hợp lệ.",
       sellingPriceFormula: "Giá bán phải lớn hơn hoặc bằng giá gốc.",
     },
   },
@@ -1045,6 +1056,8 @@ export default {
           methodOptions: {
             bankTransfer: "Chuyển khoản",
             cash: "Tiền mặt",
+            ast: "AST",
+            thf: "THF",
           },
           note: "Ghi chú",
           notePlaceholder: "Ví dụ: Khách chuyển khoản BIDV lúc 09:15",

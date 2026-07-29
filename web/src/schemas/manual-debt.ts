@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { paymentMethodOptions } from "@/schemas/finance"
+
 const defaultManualDebtValidationMessages: ManualDebtValidationMessages = {
   customerNameRequired: "Customer is required.",
   pnrRequired: "PNR is required.",
@@ -18,6 +20,8 @@ const defaultManualDebtValidationMessages: ManualDebtValidationMessages = {
   insurancePriceMin: "Insurance price must be at least 0.",
   sellingPriceMin: "Selling price must be at least 0.",
   discountMin: "Discount must be at least 0.",
+  paymentAmountMin: "Payment must be at least 0.",
+  paymentMethodRequired: "Please choose a valid payment type.",
   sellingPriceFormula: "Selling price must be greater than or equal to net price.",
 }
 
@@ -39,6 +43,8 @@ export type ManualDebtValidationMessages = {
   insurancePriceMin: string
   sellingPriceMin: string
   discountMin: string
+  paymentAmountMin: string
+  paymentMethodRequired: string
   sellingPriceFormula: string
 }
 
@@ -60,6 +66,8 @@ type ManualDebtValidationKey =
   | "manualDebts.validation.insurancePriceMin"
   | "manualDebts.validation.sellingPriceMin"
   | "manualDebts.validation.discountMin"
+  | "manualDebts.validation.paymentAmountMin"
+  | "manualDebts.validation.paymentMethodRequired"
   | "manualDebts.validation.sellingPriceFormula"
 
 function normalizeRequiredString(value: unknown): string {
@@ -98,6 +106,10 @@ function normalizeAmount(value: unknown): number {
 
   const digitsOnly = value.replace(/[^\d]/g, "")
   return Number(digitsOnly)
+}
+
+function normalizePaymentMethod(value: unknown): string {
+  return normalizeOptionalString(value) ?? paymentMethodOptions[0]
 }
 
 function normalizeOptionalDate(value: unknown): unknown {
@@ -145,6 +157,8 @@ export function getManualDebtValidationMessages(
     insurancePriceMin: t("manualDebts.validation.insurancePriceMin"),
     sellingPriceMin: t("manualDebts.validation.sellingPriceMin"),
     discountMin: t("manualDebts.validation.discountMin"),
+    paymentAmountMin: t("manualDebts.validation.paymentAmountMin"),
+    paymentMethodRequired: t("manualDebts.validation.paymentMethodRequired"),
     sellingPriceFormula: t("manualDebts.validation.sellingPriceFormula"),
   }
 }
@@ -224,6 +238,16 @@ export function createManualDebtFormSchema(
       discount: z.preprocess(
         normalizeAmount,
         z.number().min(0, messages.discountMin),
+      ),
+      payment_amount: z.preprocess(
+        normalizeAmount,
+        z.number().min(0, messages.paymentAmountMin),
+      ),
+      payment_method: z.preprocess(
+        normalizePaymentMethod,
+        z.enum(paymentMethodOptions, {
+          message: messages.paymentMethodRequired,
+        }),
       ),
     })
 }

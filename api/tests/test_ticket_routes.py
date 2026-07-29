@@ -218,6 +218,47 @@ def test_confirm_ticket_allows_null_pnr(
         assert f"ticket {ticket.id}" in transaction.note
 
 
+def test_confirm_ticket_records_optional_payment_atomically(
+    test_client,
+    test_engine,
+):
+    response = test_client.post(
+        "/api/v1/tickets/confirm",
+        json=_confirm_payload()
+        | {
+            "payment": {
+                "amount": 500000,
+                "method": "AST",
+                "note": "Payment recorded with manual debt",
+            }
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()["data"]
+    assert payload["payment_transaction_id"] is not None
+    assert payload["customer"]["balance"] == pytest.approx(700000)
+
+    with Session(test_engine) as session:
+        ticket = session.get(Ticket, uuid.UUID(payload["ticket"]["id"]))
+        assert ticket is not None
+
+        transactions = session.exec(
+            select(Transaction).where(Transaction.linked_ticket_id == ticket.id)
+        ).all()
+        assert len(transactions) == 2
+
+        payment = next(
+            transaction
+            for transaction in transactions
+            if transaction.category == TransactionCategory.PAYMENT
+        )
+        assert payment.id == uuid.UUID(payload["payment_transaction_id"])
+        assert payment.amount == pytest.approx(500000)
+        assert payment.method == "AST"
+        assert payment.note == "Payment recorded with manual debt - ticket ABC123"
+
+
 def test_confirm_ticket_allows_shared_ticket_numbers_for_return_flights(
     test_client,
     test_engine,

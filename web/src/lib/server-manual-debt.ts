@@ -20,6 +20,7 @@ const confirmTicketResponseSchema = z.object({
   ticket: z.object({
     id: z.string().uuid(),
   }),
+  payment_transaction_id: z.string().uuid().nullable().optional(),
   customer: z.object({
     id: z.string().uuid(),
   }),
@@ -96,6 +97,8 @@ export async function createManualDebtFromFormData(
     insurance_price: formData.get("insurance_price"),
     selling_price: formData.get("selling_price"),
     discount: formData.get("discount"),
+    payment_amount: formData.get("payment_amount"),
+    payment_method: formData.get("payment_method"),
   })
 
   if (!parsedInput.success) {
@@ -130,6 +133,14 @@ export async function createManualDebtFromFormData(
       ? `${values.departure_code}-${values.arrival_code}`
       : null
   const route = values.itinerary ?? derivedRoute
+  const payment =
+    values.payment_amount > 0
+      ? {
+          amount: values.payment_amount,
+          method: values.payment_method,
+          note: t("manualDebts.form.paymentNote"),
+        }
+      : null
   const response = await fetch(buildUrl("/tickets/confirm"), {
     method: "POST",
     headers: {
@@ -167,6 +178,7 @@ export async function createManualDebtFromFormData(
         values.web_price,
         values.insurance_price,
       ),
+      payment,
     }),
     cache: "no-store",
   })
@@ -203,11 +215,14 @@ export async function createManualDebtFromFormData(
 
   revalidatePath("/debts/input")
   revalidatePath("/report")
+  revalidatePath("/")
   revalidatePath(`/customers/${apiResponseResult.data.customer.id}`)
 
   return {
     status: "success",
-    message: t("manualDebts.actions.success"),
+    message: apiResponseResult.data.payment_transaction_id
+      ? t("manualDebts.actions.successWithPayment")
+      : t("manualDebts.actions.success"),
     fieldErrors: {},
     submittedAt: Date.now(),
     ticketId: apiResponseResult.data.ticket.id,

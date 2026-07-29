@@ -1,6 +1,14 @@
 import { z } from "zod"
 
-const paymentMethods = ["Chuyển khoản", "Tiền mặt"] as const
+export const paymentMethodOptions = [
+  "Chuyển khoản",
+  "Tiền mặt",
+  "AST",
+  "THF",
+] as const
+
+export type PaymentMethod = (typeof paymentMethodOptions)[number]
+
 const defaultRecordPaymentValidationMessages: RecordPaymentValidationMessages = {
   customerIdInvalid: "Mã khách hàng không hợp lệ.",
   amountPositive: "Số tiền phải lớn hơn 0.",
@@ -76,7 +84,7 @@ export function createRecordPaymentFormSchema(
       normalizeAmount,
       z.number().positive(messages.amountPositive),
     ),
-    method: z.enum(paymentMethods, {
+    method: z.enum(paymentMethodOptions, {
       message: messages.methodRequired,
     }),
     note: z
@@ -120,5 +128,3 @@ export const initialRecordPaymentActionState: RecordPaymentActionState = {
   submittedAt: null,
   transactionId: null,
 }
-
-export const paymentMethodOptions = paymentMethods

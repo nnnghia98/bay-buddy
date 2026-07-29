@@ -21,6 +21,8 @@ const validManualDebtInput = {
   insurance_price: "0",
   selling_price: "1200000",
   discount: "0",
+  payment_amount: "",
+  payment_method: "Chuyển khoản",
 }
 
 describe("manualDebtFormSchema", () => {
@@ -88,5 +90,41 @@ describe("manualDebtFormSchema", () => {
     expect(parsed.flight_date).toBeUndefined()
     expect(parsed.booked_at).toBeUndefined()
     expect(parsed.selling_price).toBe(0)
+    expect(parsed.payment_amount).toBe(0)
+  })
+
+  it.each(["Chuyển khoản", "Tiền mặt", "AST", "THF"] as const)(
+    "accepts %s for an optional payment",
+    (paymentMethod) => {
+      const parsed = manualDebtFormSchema.parse({
+        ...validManualDebtInput,
+        payment_amount: "500000",
+        payment_method: paymentMethod,
+      })
+
+      expect(parsed.payment_amount).toBe(500000)
+      expect(parsed.payment_method).toBe(paymentMethod)
+    },
+  )
+
+  it("uses bank transfer when the optional payment type is blank", () => {
+    const parsed = manualDebtFormSchema.parse({
+      ...validManualDebtInput,
+      payment_amount: "",
+      payment_method: "",
+    })
+
+    expect(parsed.payment_amount).toBe(0)
+    expect(parsed.payment_method).toBe("Chuyển khoản")
+  })
+
+  it("rejects unsupported payment types", () => {
+    const result = manualDebtFormSchema.safeParse({
+      ...validManualDebtInput,
+      payment_amount: "500000",
+      payment_method: "Momo",
+    })
+
+    expect(result.success).toBe(false)
   })
 })

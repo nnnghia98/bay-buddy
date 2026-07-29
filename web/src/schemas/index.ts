@@ -147,6 +147,7 @@ export {
   recordPaymentFormSchema,
 } from "./finance";
 export type {
+  PaymentMethod,
   RecordPaymentActionState,
   RecordPaymentFormValues,
 } from "./finance";
