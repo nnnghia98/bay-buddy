@@ -1,0 +1,55 @@
+.scopeEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-4);
+  padding: var(--spacing-12) var(--spacing-6);
+  text-align: center;
+}
+
+.scopeIcon {
+  display: flex;
+  width: var(--spacing-12);
+  height: var(--spacing-12);
+  align-items: center;
+  justify-content: center;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-element);
+  background: var(--color-background-muted);
+  color: var(--color-icon-accent);
+}
+
+.scopeDescription {
+  max-width: 24rem;
+  color: var(--color-text-secondary);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  border-block-end: var(--border-width) solid var(--color-border);
+  padding: var(--spacing-3) var(--spacing-5);
+}
+
+.invoiceNumber {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-code);
+  font-weight: var(--font-weight-medium);
+}
+
+.mutedCell {
+  color: var(--color-text-secondary);
+}
+
+.numberCell,
+.actionsCell {
+  text-align: end;
+  white-space: nowrap;
+}
+
+.numberCell {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}

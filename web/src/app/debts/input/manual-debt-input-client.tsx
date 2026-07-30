@@ -1,12 +1,14 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
 import * as React from "react"
+import { Banner } from "@astryxdesign/core/Banner"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   ArrowRight,
   ChevronsUpDown,
-  CheckCircle2,
   CircleDollarSign,
   Filter,
   Pencil,
@@ -26,6 +28,7 @@ import {
   EmptyState,
   Panel,
 } from "@/components/command-center"
+import { selectInputClassName } from "@/components/operations-ui"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -56,6 +59,7 @@ import {
   type PaymentMethod,
 } from "@/schemas"
 import { useI18n } from "@/locales/client"
+import styles from "./manual-debt-input.module.css"
 
 type ManualDebtInputClientProps = {
   customers: CustomerDirectoryItem[]
@@ -148,16 +152,16 @@ function FormField({
   htmlFor: string
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className={patterns.fieldStack}>
       <Label
-        className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+        className={patterns.eyebrow}
         htmlFor={htmlFor}
       >
         {label}
       </Label>
       {children}
       {error ? (
-        <p className="text-xs font-medium text-red-600" role="alert">
+        <p className={styles.fieldError} role="alert">
           {error}
         </p>
       ) : null}
@@ -250,7 +254,7 @@ function CustomerAutocomplete({
   }
 
   return (
-    <div className="relative">
+    <div className={patterns.relative}>
       <Input
         aria-autocomplete="list"
         aria-controls={listboxId}
@@ -272,11 +276,11 @@ function CustomerAutocomplete({
       />
       <ChevronsUpDown
         aria-hidden="true"
-        className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+        className={styles.comboIcon}
       />
       {isOpen ? (
         <div
-          className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 overflow-hidden rounded-lg border border-border bg-white shadow-[var(--shadow-md)]"
+          className={styles.listbox}
           id={listboxId}
           role="listbox"
         >
@@ -285,10 +289,8 @@ function CustomerAutocomplete({
               <button
                 aria-selected={index === activeIndex}
                 className={cn(
-                  "flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm transition-colors",
-                  index === activeIndex
-                    ? "bg-accent text-foreground"
-                    : "text-foreground hover:bg-accent/65",
+                  styles.option,
+                  index === activeIndex && styles.optionActive,
                 )}
                 key={customer.id}
                 onMouseDown={(event) => {
@@ -298,23 +300,23 @@ function CustomerAutocomplete({
                 role="option"
                 type="button"
               >
-                <span className="min-w-0">
-                  <span className="block truncate font-medium">
+                <span className={patterns.minWidthZero}>
+                  <span className={styles.optionName}>
                     {customer.full_name}
                   </span>
                   {customer.phone ? (
-                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                    <span className={styles.optionPhone}>
                       {customer.phone}
                     </span>
                   ) : null}
                 </span>
-                <span className="shrink-0 text-xs font-semibold text-muted-foreground">
+                <span className={styles.optionMeta}>
                   {formatCurrency(customer.current_balance)}
                 </span>
               </button>
             ))
           ) : (
-            <div className="px-3.5 py-3 text-sm text-muted-foreground">
+            <div className={styles.noResults}>
               {noResultsLabel}
             </div>
           )}
@@ -442,7 +444,7 @@ function AirlineAutocomplete({
   }
 
   return (
-    <div className="relative">
+    <div className={patterns.relative}>
       <input name={name} readOnly type="hidden" value={selectedCode} />
       <Input
         aria-autocomplete="list"
@@ -473,11 +475,11 @@ function AirlineAutocomplete({
       />
       <ChevronsUpDown
         aria-hidden="true"
-        className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+        className={styles.comboIcon}
       />
       {isOpen ? (
         <div
-          className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 overflow-hidden rounded-lg border border-border bg-white shadow-[var(--shadow-md)]"
+          className={styles.listbox}
           id={listboxId}
           role="listbox"
         >
@@ -486,10 +488,8 @@ function AirlineAutocomplete({
               <button
                 aria-selected={index === activeIndex}
                 className={cn(
-                  "flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm transition-colors",
-                  index === activeIndex
-                    ? "bg-accent text-foreground"
-                    : "text-foreground hover:bg-accent/65",
+                  styles.option,
+                  index === activeIndex && styles.optionActive,
                 )}
                 key={code}
                 onMouseDown={(event) => {
@@ -499,14 +499,14 @@ function AirlineAutocomplete({
                 role="option"
                 type="button"
               >
-                <span className="font-medium text-foreground">{label}</span>
-                <span className="shrink-0 font-mono text-xs font-semibold text-muted-foreground">
+                <span className={patterns.labelText}>{label}</span>
+                <span className={styles.optionCode}>
                   {code}
                 </span>
               </button>
             ))
           ) : (
-            <div className="px-3.5 py-3 text-sm text-muted-foreground">
+            <div className={styles.noResults}>
               {noResultsLabel}
             </div>
           )}
@@ -527,12 +527,12 @@ function SubmitButton({
 
   return (
     <Button
-      className="w-full sm:w-auto"
+      className={styles.submitButton}
       disabled={pending}
       onClick={onSubmit}
       type="button"
     >
-      {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+      {pending ? <Loader2 className={`${patterns.iconSmall} ${patterns.spinner}`} /> : <Plus className={patterns.iconSmall} />}
       {pending ? t("manualDebts.actions.saving") : t("manualDebts.actions.save")}
     </Button>
   )
@@ -548,16 +548,16 @@ function FormSection({
   title: string
 }) {
   return (
-    <div className="rounded-lg border border-border/80 bg-secondary/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
-      <div className="flex items-center gap-2.5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-white text-primary shadow-[var(--shadow-sm)]">
-          <Icon aria-hidden="true" className="h-4 w-4" />
+    <div className={styles.formSection}>
+      <div className={styles.sectionHeader}>
+        <span className={styles.sectionIcon}>
+          <Icon aria-hidden="true" className={patterns.iconSmall} />
         </span>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+        <p className={patterns.accentEyebrow}>
           {title}
         </p>
       </div>
-      <div className="mt-4">{children}</div>
+      <div className={styles.sectionBody}>{children}</div>
     </div>
   )
 }
@@ -579,7 +579,7 @@ function EditableMoneyCell({
 }) {
   if (!editing) {
     return (
-      <span className="block text-right text-sm font-semibold text-foreground">
+      <span className={styles.displayValue}>
         {formatCurrency(value)}
       </span>
     )
@@ -587,7 +587,7 @@ function EditableMoneyCell({
 
   return (
     <Input
-      className="ml-auto h-9 w-32 text-right font-semibold"
+      className={styles.editableMoney}
       defaultValue={formatCurrencyInput(value)}
       form={formId}
       inputMode="numeric"
@@ -622,7 +622,7 @@ function EditableDateCell({
 
   if (!editing) {
     return (
-      <span className="block text-sm text-foreground">
+      <span className={styles.displayDate}>
         {formatOptionalDate(value) || t("manualDebts.emptyValue")}
       </span>
     )
@@ -630,7 +630,7 @@ function EditableDateCell({
 
   return (
     <Input
-      className="h-9 min-w-52"
+      className={styles.editableDate}
       defaultValue={formatDateLocal(value)}
       form={formId}
       name={name}
@@ -705,8 +705,8 @@ function ManualDebtTableRow({
   }
 
   return (
-    <TableRow className="hover:bg-accent/35" ref={rowRef}>
-      <TableCell className="sticky left-0 z-10 min-w-40 whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-sm shadow-[8px_0_14px_rgba(24,29,38,0.035)]">
+    <TableRow className={styles.tableRow} ref={rowRef}>
+      <TableCell className={cn(styles.cell, styles.stickyCell)}>
         <EditableDateCell
           editing={isEditing}
           formId={updateFormId}
@@ -716,13 +716,13 @@ function ManualDebtTableRow({
           value={row.booked_at}
         />
       </TableCell>
-      <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-sm text-muted-foreground">
+      <TableCell className={cn(styles.cell, styles.mutedCell)}>
         {formatDate(row.created_at)}
       </TableCell>
-      <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-sm font-medium">
+      <TableCell className={cn(styles.cell, styles.mediumCell)}>
         {row.passenger_names}
       </TableCell>
-      <TableCell className="whitespace-nowrap border-r border-border bg-white px-3 py-2 text-right">
+      <TableCell className={styles.numberCell}>
         <EditableMoneyCell
           editing={isEditing}
           formId={updateFormId}
@@ -732,7 +732,7 @@ function ManualDebtTableRow({
           value={row.ticket_selling_price}
         />
       </TableCell>
-      <TableCell className="whitespace-nowrap border-r border-border bg-white px-3 py-2 text-right">
+      <TableCell className={styles.numberCell}>
         <EditableMoneyCell
           editing={isEditing}
           formId={updateFormId}
@@ -742,7 +742,7 @@ function ManualDebtTableRow({
           value={row.ticket_discount}
         />
       </TableCell>
-      <TableCell className="whitespace-nowrap border-r border-border bg-white px-3 py-2 text-right">
+      <TableCell className={styles.numberCell}>
         <EditableMoneyCell
           editing={isEditing}
           formId={updateFormId}
@@ -752,7 +752,7 @@ function ManualDebtTableRow({
           value={row.ticket_ev_price}
         />
       </TableCell>
-      <TableCell className="whitespace-nowrap border-r border-border bg-white px-3 py-2 text-right">
+      <TableCell className={styles.numberCell}>
         <EditableMoneyCell
           editing={isEditing}
           formId={updateFormId}
@@ -762,7 +762,7 @@ function ManualDebtTableRow({
           value={row.ticket_ast_price}
         />
       </TableCell>
-      <TableCell className="whitespace-nowrap border-r border-border bg-white px-3 py-2 text-right">
+      <TableCell className={styles.numberCell}>
         <EditableMoneyCell
           editing={isEditing}
           formId={updateFormId}
@@ -772,7 +772,7 @@ function ManualDebtTableRow({
           value={row.ticket_thf_price}
         />
       </TableCell>
-      <TableCell className="whitespace-nowrap border-r border-border bg-white px-3 py-2 text-right">
+      <TableCell className={styles.numberCell}>
         <EditableMoneyCell
           editing={isEditing}
           formId={updateFormId}
@@ -782,7 +782,7 @@ function ManualDebtTableRow({
           value={row.ticket_web_price}
         />
       </TableCell>
-      <TableCell className="whitespace-nowrap border-r border-border bg-white px-3 py-2 text-right">
+      <TableCell className={styles.numberCell}>
         <EditableMoneyCell
           editing={isEditing}
           formId={updateFormId}
@@ -792,23 +792,23 @@ function ManualDebtTableRow({
           value={row.ticket_insurance_price}
         />
       </TableCell>
-      <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-right text-sm font-semibold">
+      <TableCell className={styles.valueCell}>
         {formatCurrency(row.ticket_true_income)}
       </TableCell>
-      <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-right text-sm font-semibold">
+      <TableCell className={styles.valueCell}>
         {row.linked_payment_amount === null
           ? ""
           : formatCurrency(row.linked_payment_amount)}
       </TableCell>
-      <TableCell className="min-w-64 max-w-80 whitespace-normal border-r border-border bg-white px-5 py-3.5 text-sm text-muted-foreground">
+      <TableCell className={styles.noteCell}>
         {row.linked_payment_note ?? ""}
       </TableCell>
-      <TableCell className="sticky right-0 z-10 w-[104px] min-w-[104px] whitespace-nowrap bg-white px-3 py-3.5 text-right shadow-[-8px_0_14px_rgba(24,29,38,0.04)]">
+      <TableCell className={styles.actionsCell}>
         {row.ticket_id ? (
-          <div className="flex justify-end gap-2">
+          <div className={styles.rowActions}>
             <form
               action={updateManualDebtRowAction}
-              className="hidden"
+              className={patterns.hidden}
               id={updateFormId}
               ref={updateFormRef}
             >
@@ -829,7 +829,7 @@ function ManualDebtTableRow({
             </form>
             <form
               action={deleteManualDebtRowAction}
-              className="hidden"
+              className={patterns.hidden}
               id={deleteFormId}
               onSubmit={(event) => {
                 if (!window.confirm(t("manualDebts.table.actions.deleteConfirm"))) {
@@ -842,24 +842,23 @@ function ManualDebtTableRow({
             </form>
             <Button
               aria-label={t("manualDebts.table.actions.edit")}
-              className="h-9 w-9 px-0"
               onClick={() => setIsEditing(true)}
-              size="sm"
+              size="icon"
               title={t("manualDebts.table.actions.edit")}
               type="button"
               variant="outline"
             >
-              <Pencil className="h-3.5 w-3.5" />
+              <Pencil className={patterns.iconCompact} />
             </Button>
             <Button
               aria-label={t("manualDebts.table.actions.delete")}
-              className="h-9 w-9 bg-red-600 px-0 text-white hover:bg-red-700"
               form={deleteFormId}
-              size="sm"
+              size="icon"
               title={t("manualDebts.table.actions.delete")}
               type="submit"
+              variant="destructive"
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 className={patterns.iconCompact} />
             </Button>
           </div>
         ) : (
@@ -924,36 +923,36 @@ function TableHorizontalControls({
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-border bg-white px-4 py-2.5">
-      <p className="min-w-0 text-xs text-muted-foreground">
+    <div className={styles.scrollControls}>
+      <p className={styles.scrollHint}>
         {t("manualDebts.table.horizontalScrollHint")}
       </p>
       <div
         aria-label={t("manualDebts.table.horizontalScrollControls")}
-        className="flex shrink-0 items-center gap-1.5"
+        className={styles.scrollButtons}
         role="group"
       >
         <Button
           aria-label={t("manualDebts.table.scrollLeft")}
-          className="h-8 w-8 px-0"
           disabled={!canScrollLeft}
           onClick={() => scrollTable(-1)}
+          size="icon"
           title={t("manualDebts.table.scrollLeft")}
           type="button"
           variant="outline"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
+          <ArrowLeft className={patterns.iconCompact} />
         </Button>
         <Button
           aria-label={t("manualDebts.table.scrollRight")}
-          className="h-8 w-8 px-0"
           disabled={!canScrollRight}
           onClick={() => scrollTable(1)}
+          size="icon"
           title={t("manualDebts.table.scrollRight")}
           type="button"
           variant="outline"
         >
-          <ArrowRight className="h-3.5 w-3.5" />
+          <ArrowRight className={patterns.iconCompact} />
         </Button>
       </div>
     </div>
@@ -1094,42 +1093,32 @@ export function ManualDebtInputClient({
   }
 
   return (
-    <div className="space-y-6 pb-12 text-foreground">
-      <div className="grid gap-4 lg:grid-cols-[7fr_13fr] lg:items-start">
-        <div className="space-y-4 lg:sticky lg:top-6 lg:h-[calc(100dvh-8rem)]">
-          <Panel className="lg:h-full">
+    <div className={patterns.pageStack}>
+      <div className={styles.workbench}>
+        <div className={styles.workbenchColumn}>
+          <Panel className={styles.panel}>
             <form
-              className="flex flex-col lg:h-full"
+              className={styles.manualForm}
               key={formResetKey}
               onSubmit={handleManualDebtSubmit}
               ref={formRef}
             >
-              <div className="flex justify-end border-b border-border bg-white p-4">
+              <div className={styles.formActions}>
                 <SubmitButton
                   onSubmit={dispatchManualDebtAction}
                   pending={isSubmitPending}
                 />
               </div>
 
-              <div className="space-y-4 p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+              <div className={styles.formBody}>
                 {actionState.message ? (
-                  <div
-                    className={cn(
-                      "flex items-start gap-2 rounded-lg border px-3 py-2 text-sm",
-                      actionState.status === "success"
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                        : "border-red-200 bg-red-50 text-red-700",
-                    )}
-                    role={actionState.status === "error" ? "alert" : "status"}
-                  >
-                    {actionState.status === "success" ? (
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-                    ) : null}
-                    <span>{actionState.message}</span>
-                  </div>
+                  <Banner
+                    status={actionState.status === "success" ? "success" : "error"}
+                    title={actionState.message}
+                  />
                 ) : null}
 
-                <div className="grid gap-4">
+                <div className={patterns.grid}>
                   <FormField
                     error={getFieldError(fieldErrors, "customer_name")}
                     htmlFor="manual-debt-customer"
@@ -1163,7 +1152,6 @@ export function ManualDebtInputClient({
                     label={t("manualDebts.form.fields.passengers")}
                   >
                     <Textarea
-                      className="min-h-24"
                       id="manual-debt-passengers"
                       name="passengers"
                     />
@@ -1174,9 +1162,9 @@ export function ManualDebtInputClient({
                   icon={CircleDollarSign}
                   title={t("manualDebts.form.pricingGroup")}
                 >
-                  <div className="grid gap-4">
+                  <div className={patterns.grid}>
                     <input name="net_price" type="hidden" value="0" />
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className={patterns.twoColumnGrid}>
                       <FormField
                         error={getFieldError(fieldErrors, "ev_price")}
                         htmlFor="manual-debt-ev-price"
@@ -1283,11 +1271,11 @@ export function ManualDebtInputClient({
                         />
                       </FormField>
                     </div>
-                    <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-[inset_0_1px_0_rgba(27,97,201,0.08)]">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    <div className={styles.incomeSummary}>
+                      <p className={patterns.eyebrow}>
                         {t("manualDebts.table.columns.income")}
                       </p>
-                      <p className="mt-1 text-lg font-semibold tracking-normal text-foreground tabular-nums">
+                      <p className={styles.incomeValue}>
                         {formatCurrency(trueIncome)}
                       </p>
                     </div>
@@ -1298,7 +1286,7 @@ export function ManualDebtInputClient({
                   icon={Wallet}
                   title={t("manualDebts.form.paymentGroup")}
                 >
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className={patterns.twoColumnGrid}>
                     <FormField
                       error={getFieldError(fieldErrors, "payment_amount")}
                       htmlFor="manual-debt-payment-amount"
@@ -1329,7 +1317,7 @@ export function ManualDebtInputClient({
                       label={t("manualDebts.form.fields.paymentMethod")}
                     >
                       <select
-                        className="flex h-11 w-full rounded-md border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                        className={selectInputClassName}
                         id="manual-debt-payment-method"
                         name="payment_method"
                         onChange={(event) => {
@@ -1355,7 +1343,7 @@ export function ManualDebtInputClient({
                       </select>
                     </FormField>
                   </div>
-                  <div className="mt-4">
+                  <div className={styles.sectionOffset}>
                     <FormField
                       error={getFieldError(fieldErrors, "payment_date")}
                       htmlFor="manual-debt-payment-date"
@@ -1371,7 +1359,7 @@ export function ManualDebtInputClient({
                       />
                     </FormField>
                   </div>
-                  <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                  <p className={styles.hint}>
                     {t("manualDebts.form.paymentHint")}
                   </p>
                 </FormSection>
@@ -1386,7 +1374,7 @@ export function ManualDebtInputClient({
                       <Input id="manual-debt-itinerary" name="itinerary" />
                     </FormField>
                   </div>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div className={cn(patterns.twoColumnGrid, styles.sectionOffset)}>
                     <FormField
                       error={getFieldError(fieldErrors, "departure_code")}
                       htmlFor="manual-debt-departure-code"
@@ -1412,8 +1400,8 @@ export function ManualDebtInputClient({
                   </div>
                 </FormSection>
 
-                <div className="grid gap-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
+                <div className={patterns.grid}>
+                  <div className={patterns.twoColumnGrid}>
                     <FormField
                       error={getFieldError(fieldErrors, "pnr")}
                       htmlFor="manual-debt-pnr"
@@ -1435,7 +1423,7 @@ export function ManualDebtInputClient({
                     </FormField>
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className={patterns.twoColumnGrid}>
                     <FormField
                       error={getFieldError(fieldErrors, "airline")}
                       htmlFor="manual-debt-airline"
@@ -1467,16 +1455,16 @@ export function ManualDebtInputClient({
           </Panel>
         </div>
 
-        <div className="min-w-0 lg:sticky lg:top-6 lg:h-[calc(100dvh-8rem)]">
-          <Panel className="min-w-0 lg:flex lg:h-full lg:flex-col">
-            <div className="shrink-0 border-b border-border bg-white p-4">
+        <div className={styles.tableColumn}>
+          <Panel className={styles.tablePanel}>
+            <div className={styles.filterHeader}>
               <form
-                className="grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                className={styles.filterForm}
                 onSubmit={handleApplyFilters}
               >
-                <div className="space-y-1.5">
+                <div className={patterns.fieldStack}>
                   <Label
-                    className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+                    className={patterns.eyebrow}
                     htmlFor="manual-debt-from"
                   >
                     {t("manualDebts.filters.from")}
@@ -1488,9 +1476,9 @@ export function ManualDebtInputClient({
                     value={fromValue}
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className={patterns.fieldStack}>
                   <Label
-                    className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+                    className={patterns.eyebrow}
                     htmlFor="manual-debt-to"
                   >
                     {t("manualDebts.filters.to")}
@@ -1502,69 +1490,69 @@ export function ManualDebtInputClient({
                     value={toValue}
                   />
                 </div>
-                <Button className="self-end" type="submit" variant="outline">
-                  <Filter className="h-4 w-4" />
+                <Button className={styles.filterButton} type="submit" variant="outline">
+                  <Filter className={patterns.iconSmall} />
                   {t("manualDebts.filters.apply")}
                 </Button>
               </form>
             </div>
             {filterError ? (
               <p
-                className="border-b border-border px-5 py-3 text-sm text-red-600"
+                className={styles.filterError}
                 role="alert"
               >
                 {filterError}
               </p>
             ) : null}
             <TableHorizontalControls scrollContainerRef={tableScrollRef} />
-            <div className="min-h-0 flex-1">
+            <div className={styles.tableArea}>
               <Table
-                className="min-w-[1900px] border-collapse"
-                containerClassName="lg:h-full"
+                className={styles.ledgerTable}
+                containerClassName={styles.tableViewport}
                 containerRef={tableScrollRef}
               >
-                <TableHeader className="sticky top-0 z-20">
-                  <TableRow className="bg-sidebar-accent hover:bg-sidebar-accent">
-                    <TableHead className="sticky left-0 z-30 min-w-40 whitespace-nowrap border-r border-border bg-sidebar-accent px-5 py-3.5 font-semibold text-foreground shadow-[8px_0_14px_rgba(24,29,38,0.035)]">
+                <TableHeader className={styles.stickyHeader}>
+                  <TableRow>
+                    <TableHead className={styles.headerStickyLeft}>
                       {t("manualDebts.table.columns.bookedAt")}
                     </TableHead>
-                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-foreground">
+                    <TableHead className={styles.headerCell}>
                       {t("manualDebts.table.columns.date")}
                     </TableHead>
-                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-foreground">
+                    <TableHead className={styles.headerCell}>
                       {t("manualDebts.table.columns.description")}
                     </TableHead>
-                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                    <TableHead className={styles.headerNumber}>
                       {t("manualDebts.table.columns.customerPaid")}
                     </TableHead>
-                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                    <TableHead className={styles.headerNumber}>
                       {t("manualDebts.table.columns.discount")}
                     </TableHead>
-                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                    <TableHead className={styles.headerNumber}>
                       {t("manualDebts.table.columns.evPrice")}
                     </TableHead>
-                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                    <TableHead className={styles.headerNumber}>
                       {t("manualDebts.table.columns.astPrice")}
                     </TableHead>
-                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                    <TableHead className={styles.headerNumber}>
                       {t("manualDebts.table.columns.thfPrice")}
                     </TableHead>
-                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                    <TableHead className={styles.headerNumber}>
                       {t("manualDebts.table.columns.webPrice")}
                     </TableHead>
-                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                    <TableHead className={styles.headerNumber}>
                       {t("manualDebts.table.columns.insurancePrice")}
                     </TableHead>
-                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                    <TableHead className={styles.headerNumber}>
                       {t("manualDebts.table.columns.income")}
                     </TableHead>
-                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                    <TableHead className={styles.headerNumber}>
                       {t("manualDebts.table.columns.payment")}
                     </TableHead>
-                    <TableHead className="min-w-64 whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-foreground">
+                    <TableHead className={styles.headerNote}>
                       {t("manualDebts.table.columns.note")}
                     </TableHead>
-                    <TableHead className="sticky right-0 z-30 w-[104px] min-w-[104px] whitespace-nowrap bg-sidebar-accent px-3 py-3.5 text-right font-semibold text-foreground shadow-[-8px_0_14px_rgba(24,29,38,0.04)]">
+                    <TableHead className={styles.headerStickyRight}>
                       {t("manualDebts.table.columns.actions")}
                     </TableHead>
                   </TableRow>

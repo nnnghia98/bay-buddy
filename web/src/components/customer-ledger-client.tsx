@@ -1,5 +1,7 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
 import * as React from "react"
 import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
@@ -18,6 +20,7 @@ import {
   updateCustomerAction,
 } from "@/actions/customer-management"
 import { PaymentDialog } from "@/components/payment-dialog"
+import { selectInputClassName } from "@/components/operations-ui"
 import {
   Panel,
   PanelHeaderRow,
@@ -36,6 +39,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Table,
   TableBody,
@@ -62,6 +66,7 @@ import {
   type CustomerManagementActionState,
   type CustomerManagementField,
 } from "@/schemas"
+import styles from "./customer-ledger-client.module.css"
 
 type CustomerLedgerClientProps = {
   currentUserRole: "ADMIN" | "STAFF"
@@ -114,7 +119,7 @@ function CustomerActionSubmitButton({
     <Button disabled={pending} type="submit" variant={variant}>
       {pending ? (
         <>
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className={`${patterns.iconSmall} ${patterns.spinner}`} />
           {pendingLabel}
         </>
       ) : (
@@ -218,19 +223,16 @@ function EditCustomerDialog({
     setClientErrors({})
   }
 
-  const selectClassName =
-    "flex h-11 w-full rounded-md border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
-
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
         <Button size="lg" variant="outline">
-          <PencilLine className="h-4 w-4" />
+          <PencilLine className={patterns.iconSmall} />
           {t("customers.management.editAction")}
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="w-[min(92vw,42rem)]">
+      <DialogContent width="min(92vw, 42rem)">
         <DialogHeader>
           <DialogTitle>{t("customers.management.dialogs.edit.title")}</DialogTitle>
           <DialogDescription>
@@ -238,12 +240,12 @@ function EditCustomerDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form action={formAction} className="space-y-5" onSubmit={handleSubmit}>
+        <form action={formAction} className={patterns.contentStack} onSubmit={handleSubmit}>
           <input name="customer_id" type="hidden" value={customer.id} />
           <input name="is_active" type="hidden" value={String(customer.is_active)} />
 
-          <div className="grid gap-4">
-            <div className="space-y-2">
+          <div className={patterns.grid}>
+            <div className={patterns.fieldStack}>
               <Label htmlFor="customer-name">
                 {t("customers.management.fields.name")}
               </Label>
@@ -255,18 +257,18 @@ function EditCustomerDialog({
                 value={name}
               />
               {getCustomerFieldError("name", clientErrors, state) ? (
-                <p className="text-sm text-red-600">
+                <p className={patterns.errorText}>
                   {getCustomerFieldError("name", clientErrors, state)}
                 </p>
               ) : null}
             </div>
 
-            <div className="space-y-2">
+            <div className={patterns.fieldStack}>
               <Label htmlFor="customer-type">
                 {t("customers.management.fields.type")}
               </Label>
               <select
-                className={selectClassName}
+                className={selectInputClassName}
                 id="customer-type"
                 name="type"
                 onChange={(event) =>
@@ -282,14 +284,14 @@ function EditCustomerDialog({
                 </option>
               </select>
               {getCustomerFieldError("type", clientErrors, state) ? (
-                <p className="text-sm text-red-600">
+                <p className={patterns.errorText}>
                   {getCustomerFieldError("type", clientErrors, state)}
                 </p>
               ) : null}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
+            <div className={patterns.twoColumnGrid}>
+              <div className={patterns.fieldStack}>
                 <Label htmlFor="customer-phone">
                   {t("customers.management.fields.phone")}
                 </Label>
@@ -301,13 +303,13 @@ function EditCustomerDialog({
                   value={phone}
                 />
                 {getCustomerFieldError("phone", clientErrors, state) ? (
-                  <p className="text-sm text-red-600">
+                  <p className={patterns.errorText}>
                     {getCustomerFieldError("phone", clientErrors, state)}
                   </p>
                 ) : null}
               </div>
 
-              <div className="space-y-2">
+              <div className={patterns.fieldStack}>
                 <Label htmlFor="customer-email">
                   {t("customers.management.fields.email")}
                 </Label>
@@ -319,14 +321,14 @@ function EditCustomerDialog({
                   value={email}
                 />
                 {getCustomerFieldError("email", clientErrors, state) ? (
-                  <p className="text-sm text-red-600">
+                  <p className={patterns.errorText}>
                     {getCustomerFieldError("email", clientErrors, state)}
                   </p>
                 ) : null}
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className={patterns.fieldStack}>
               <Label htmlFor="customer-address">
                 {t("customers.management.fields.address")}
               </Label>
@@ -338,13 +340,13 @@ function EditCustomerDialog({
                 value={address}
               />
               {getCustomerFieldError("address", clientErrors, state) ? (
-                <p className="text-sm text-red-600">
+                <p className={patterns.errorText}>
                   {getCustomerFieldError("address", clientErrors, state)}
                 </p>
               ) : null}
             </div>
 
-            <div className="space-y-2">
+            <div className={patterns.fieldStack}>
               <Label htmlFor="customer-tax-code">
                 {t("customers.management.fields.taxCode")}
               </Label>
@@ -356,14 +358,14 @@ function EditCustomerDialog({
                 value={taxCode}
               />
               {getCustomerFieldError("tax_code", clientErrors, state) ? (
-                <p className="text-sm text-red-600">
+                <p className={patterns.errorText}>
                   {getCustomerFieldError("tax_code", clientErrors, state)}
                 </p>
               ) : null}
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:justify-end">
+          <DialogFooter>
             <Button onClick={() => setOpen(false)} type="button" variant="outline">
               {t("customers.management.dialogs.cancel")}
             </Button>
@@ -439,13 +441,13 @@ function LedgerCorrectionSubmitButton({
 
   return (
     <Button
-      className={destructive ? "bg-red-600 hover:bg-red-700" : undefined}
       disabled={pending}
       type="submit"
+      variant={destructive ? "destructive" : "default"}
     >
       {pending ? (
         <>
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className={`${patterns.iconSmall} ${patterns.spinner}`} />
           {pendingLabel}
         </>
       ) : (
@@ -514,23 +516,19 @@ function LedgerRecordCorrectionDialog({
     return null
   }
 
-  const selectClassName =
-    "flex h-11 w-full rounded-md border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
-
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
         <Button
           aria-label={t("customers.ledger.corrections.edit")}
-          className="h-8 w-8"
           size="icon"
           variant="ghost"
         >
-          <PencilLine className="h-4 w-4" />
+          <PencilLine className={patterns.iconSmall} />
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-h-[88vh] w-[min(94vw,46rem)] overflow-y-auto">
+      <DialogContent maxHeight="88vh" width="min(94vw, 46rem)">
         <DialogHeader>
           <DialogTitle>{t("customers.ledger.corrections.editTitle")}</DialogTitle>
           <DialogDescription>
@@ -538,21 +536,21 @@ function LedgerRecordCorrectionDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form action={formAction} className="space-y-5">
+        <form action={formAction} className={patterns.contentStack}>
           <input name="customer_id" type="hidden" value={customerId} />
 
           {entry.entry_type === "ticket" && ticket ? (
             <>
               <input name="ticket_id" type="hidden" value={ticket.id} />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
+              <div className={patterns.twoColumnGrid}>
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`pnr-${entry.id}`}>{t("customers.ledger.corrections.fields.pnr")}</Label>
                   <Input id={`pnr-${entry.id}`} name="pnr" defaultValue={ticket.pnr ?? ""} />
                   {getCorrectionError("pnr", state) ? (
-                    <p className="text-sm text-red-600">{getCorrectionError("pnr", state)}</p>
+                    <p className={patterns.errorText}>{getCorrectionError("pnr", state)}</p>
                   ) : null}
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`ticket-number-${entry.id}`}>{t("customers.ledger.corrections.fields.ticketNumber")}</Label>
                   <Input
                     id={`ticket-number-${entry.id}`}
@@ -560,10 +558,10 @@ function LedgerRecordCorrectionDialog({
                     defaultValue={ticket.ticket_number ?? ""}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`airline-${entry.id}`}>{t("customers.ledger.corrections.fields.airline")}</Label>
                   <select
-                    className={selectClassName}
+                    className={selectInputClassName}
                     id={`airline-${entry.id}`}
                     name="airline"
                     defaultValue={ticket.airline ?? ""}
@@ -574,7 +572,7 @@ function LedgerRecordCorrectionDialog({
                     ))}
                   </select>
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`flight-date-${entry.id}`}>{t("customers.ledger.corrections.fields.flightDate")}</Label>
                   <Input
                     id={`flight-date-${entry.id}`}
@@ -585,18 +583,17 @@ function LedgerRecordCorrectionDialog({
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className={patterns.fieldStack}>
                 <Label htmlFor={`passengers-${entry.id}`}>{t("customers.ledger.corrections.fields.passengers")}</Label>
-                <textarea
-                  className="min-h-24 w-full rounded-md border border-input bg-white px-3.5 py-2 text-sm font-medium placeholder:font-normal shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                <Textarea
                   id={`passengers-${entry.id}`}
                   name="passengers"
                   defaultValue={ticket.passengers.join("\n")}
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
+              <div className={patterns.twoColumnGrid}>
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`departure-place-${entry.id}`}>{t("customers.ledger.corrections.fields.departurePlace")}</Label>
                   <Input
                     id={`departure-place-${entry.id}`}
@@ -604,7 +601,7 @@ function LedgerRecordCorrectionDialog({
                     defaultValue={ticket.departure_place ?? ""}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`arrival-place-${entry.id}`}>{t("customers.ledger.corrections.fields.arrivalPlace")}</Label>
                   <Input
                     id={`arrival-place-${entry.id}`}
@@ -612,7 +609,7 @@ function LedgerRecordCorrectionDialog({
                     defaultValue={ticket.arrival_place ?? ""}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`departure-code-${entry.id}`}>{t("customers.ledger.corrections.fields.departureCode")}</Label>
                   <Input
                     id={`departure-code-${entry.id}`}
@@ -620,7 +617,7 @@ function LedgerRecordCorrectionDialog({
                     defaultValue={ticket.departure_code ?? ""}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`arrival-code-${entry.id}`}>{t("customers.ledger.corrections.fields.arrivalCode")}</Label>
                   <Input
                     id={`arrival-code-${entry.id}`}
@@ -630,8 +627,8 @@ function LedgerRecordCorrectionDialog({
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
-                <div className="space-y-2">
+              <div className={styles.priceGrid}>
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`net-price-${entry.id}`}>{t("customers.ledger.corrections.fields.netPrice")}</Label>
                   <Input
                     id={`net-price-${entry.id}`}
@@ -641,7 +638,7 @@ function LedgerRecordCorrectionDialog({
                     defaultValue={ticket.net_price}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`ev-price-${entry.id}`}>{t("customers.ledger.corrections.fields.evPrice")}</Label>
                   <Input
                     id={`ev-price-${entry.id}`}
@@ -651,7 +648,7 @@ function LedgerRecordCorrectionDialog({
                     defaultValue={ticket.ev_price}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`ast-price-${entry.id}`}>{t("customers.ledger.corrections.fields.astPrice")}</Label>
                   <Input
                     id={`ast-price-${entry.id}`}
@@ -661,7 +658,7 @@ function LedgerRecordCorrectionDialog({
                     defaultValue={ticket.ast_price}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`thf-price-${entry.id}`}>{t("customers.ledger.corrections.fields.thfPrice")}</Label>
                   <Input
                     id={`thf-price-${entry.id}`}
@@ -671,7 +668,7 @@ function LedgerRecordCorrectionDialog({
                     defaultValue={ticket.thf_price}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`web-price-${entry.id}`}>{t("customers.ledger.corrections.fields.webPrice")}</Label>
                   <Input
                     id={`web-price-${entry.id}`}
@@ -681,7 +678,7 @@ function LedgerRecordCorrectionDialog({
                     defaultValue={ticket.web_price}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`insurance-price-${entry.id}`}>{t("customers.ledger.corrections.fields.insurancePrice")}</Label>
                   <Input
                     id={`insurance-price-${entry.id}`}
@@ -691,7 +688,7 @@ function LedgerRecordCorrectionDialog({
                     defaultValue={ticket.insurance_price}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`selling-price-${entry.id}`}>{t("customers.ledger.corrections.fields.sellingPrice")}</Label>
                   <Input
                     id={`selling-price-${entry.id}`}
@@ -701,7 +698,7 @@ function LedgerRecordCorrectionDialog({
                     defaultValue={ticket.selling_price}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`discount-${entry.id}`}>{t("customers.ledger.corrections.fields.discount")}</Label>
                   <Input
                     id={`discount-${entry.id}`}
@@ -716,8 +713,8 @@ function LedgerRecordCorrectionDialog({
           ) : transaction ? (
             <>
               <input name="transaction_id" type="hidden" value={transaction.id} />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
+              <div className={patterns.twoColumnGrid}>
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`amount-${entry.id}`}>{t("customers.ledger.corrections.fields.amount")}</Label>
                   <Input
                     id={`amount-${entry.id}`}
@@ -727,7 +724,7 @@ function LedgerRecordCorrectionDialog({
                     defaultValue={transaction.amount}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`occurred-at-${entry.id}`}>{t("customers.ledger.corrections.fields.occurredAt")}</Label>
                   <Input
                     id={`occurred-at-${entry.id}`}
@@ -736,10 +733,10 @@ function LedgerRecordCorrectionDialog({
                     defaultValue={formatDateTimeLocal(transaction.occurred_at)}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`category-${entry.id}`}>{t("customers.ledger.corrections.fields.category")}</Label>
                   <select
-                    className={selectClassName}
+                    className={selectInputClassName}
                     id={`category-${entry.id}`}
                     name="category"
                     defaultValue={transaction.category}
@@ -751,7 +748,7 @@ function LedgerRecordCorrectionDialog({
                     ))}
                   </select>
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor={`method-${entry.id}`}>{t("customers.ledger.corrections.fields.method")}</Label>
                   <Input
                     id={`method-${entry.id}`}
@@ -760,16 +757,15 @@ function LedgerRecordCorrectionDialog({
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className={patterns.fieldStack}>
                 <Label htmlFor={`note-${entry.id}`}>{t("customers.ledger.corrections.fields.note")}</Label>
-                <textarea
-                  className="min-h-24 w-full rounded-md border border-input bg-white px-3.5 py-2 text-sm font-medium placeholder:font-normal shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                <Textarea
                   id={`note-${entry.id}`}
                   name="note"
                   defaultValue={transaction.note ?? ""}
                 />
               </div>
-              <div className="space-y-2">
+              <div className={patterns.fieldStack}>
                 <Label htmlFor={`evidence-${entry.id}`}>{t("customers.ledger.corrections.fields.evidence")}</Label>
                 <Input
                   id={`evidence-${entry.id}`}
@@ -781,10 +777,10 @@ function LedgerRecordCorrectionDialog({
           ) : null}
 
           {state.status === "error" && state.message ? (
-            <p role="alert" className="text-sm text-red-600">{state.message}</p>
+            <p role="alert" className={patterns.errorText}>{state.message}</p>
           ) : null}
 
-          <DialogFooter className="gap-2 sm:justify-end">
+          <DialogFooter>
             <Button onClick={() => setOpen(false)} type="button" variant="outline">
               {t("customers.management.dialogs.cancel")}
             </Button>
@@ -865,28 +861,27 @@ function DeleteLedgerRecordDialog({
       <DialogTrigger asChild>
         <Button
           aria-label={t("customers.ledger.corrections.delete")}
-          className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
           size="icon"
-          variant="ghost"
+          variant="destructive"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className={patterns.iconSmall} />
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[min(92vw,34rem)]">
+      <DialogContent width="min(92vw, 34rem)">
         <DialogHeader>
           <DialogTitle>{t("customers.ledger.corrections.deleteTitle")}</DialogTitle>
           <DialogDescription>
             {t("customers.ledger.corrections.deleteDescription")}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-5">
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className={patterns.contentStack}>
+          <div className={styles.deletePreview}>
             {entry.content.trim() || t("customers.ledger.fallbackContent")}
           </div>
           {errorMessage ? (
-            <p role="alert" className="text-sm text-red-600">{errorMessage}</p>
+            <p role="alert" className={patterns.errorText}>{errorMessage}</p>
           ) : null}
-          <DialogFooter className="gap-2 sm:justify-end">
+          <DialogFooter>
             <Button
               disabled={isDeleting}
               onClick={() => setOpen(false)}
@@ -896,14 +891,14 @@ function DeleteLedgerRecordDialog({
               {t("customers.management.dialogs.cancel")}
             </Button>
             <Button
-              className="bg-red-600 hover:bg-red-700"
               disabled={isDeleting}
               onClick={handleDelete}
               type="button"
+              variant="destructive"
             >
               {isDeleting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className={`${patterns.iconSmall} ${patterns.spinner}`} />
                   {t("customers.ledger.corrections.deleting")}
                 </>
               ) : (
@@ -1025,14 +1020,14 @@ export function CustomerLedgerClient({
   }
 
   return (
-    <div className="space-y-4 text-foreground">
+    <div className={styles.ledger}>
       <Panel>
         <PanelHeaderRow
           eyebrow={t("customers.ledger.eyebrow")}
           title={ledger.customer.name}
           description={`${t("customers.ledger.customerId")}: ${ledger.customer.id}`}
           action={
-            <div className="flex flex-wrap justify-end gap-2">
+            <div className={patterns.endRow}>
               {currentUserRole === "ADMIN" ? (
                 <EditCustomerDialog customer={ledger.customer} />
               ) : null}
@@ -1049,21 +1044,21 @@ export function CustomerLedgerClient({
             </div>
           }
         />
-        <div className="grid gap-3 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-border bg-secondary/35 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+        <div className={styles.summaryLayout}>
+          <div className={styles.summaryMetrics}>
+            <div className={styles.summaryCard}>
+              <p className={patterns.accentEyebrow}>
                 {t("customers.ledger.currentBalance")}
               </p>
-              <p className="mt-2 text-2xl font-medium text-foreground">
+              <p className={styles.summaryValue}>
                 {formatCurrency(Math.abs(ledger.current_balance))}
               </p>
             </div>
-            <div className="rounded-lg border border-border bg-secondary/35 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+            <div className={styles.summaryCard}>
+              <p className={patterns.accentEyebrow}>
                 {t("customers.management.fields.status")}
               </p>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className={styles.statuses}>
                 <StatusChip
                   tone={
                     ledger.balance_state === "debt"
@@ -1080,20 +1075,20 @@ export function CustomerLedgerClient({
                 </StatusChip>
               </div>
             </div>
-            <div className="rounded-lg border border-border bg-secondary/35 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+            <div className={styles.summaryCard}>
+              <p className={patterns.accentEyebrow}>
                 {t("customers.ledger.entryCount")}
               </p>
-              <p className="mt-2 text-2xl font-medium text-foreground">
+              <p className={styles.summaryValue}>
                 {ledger.entries.length}
               </p>
             </div>
           </div>
-          <div className="rounded-lg border border-border bg-secondary/35 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+          <div className={styles.summaryCard}>
+            <p className={patterns.accentEyebrow}>
               {t("customers.ledger.amountInWords")}
             </p>
-            <p className="mt-2 text-sm leading-6 text-foreground">
+            <p className={styles.amountInWords}>
               {currentBalanceInWords}
             </p>
           </div>
@@ -1108,18 +1103,18 @@ export function CustomerLedgerClient({
         <TableScrollArea>
           <Table>
             <TableHeader>
-              <TableRow className="bg-secondary/55 hover:bg-secondary/55">
+              <TableRow>
                 <TableHead>{t("customers.ledger.columns.date")}</TableHead>
                 <TableHead>{t("customers.ledger.columns.type")}</TableHead>
                 <TableHead>{t("customers.ledger.columns.content")}</TableHead>
-                <TableHead className="text-right">
+                <TableHead className={patterns.textRight}>
                   {t("customers.ledger.columns.amount")}
                 </TableHead>
-                <TableHead className="text-right">
+                <TableHead className={patterns.textRight}>
                   {t("customers.ledger.columns.balance")}
                 </TableHead>
                 {hasRowActions ? (
-                  <TableHead className="text-right">
+                  <TableHead className={patterns.textRight}>
                     {t("customers.ledger.columns.actions")}
                   </TableHead>
                 ) : null}
@@ -1129,7 +1124,7 @@ export function CustomerLedgerClient({
               {ledger.entries.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    className="py-12 text-center text-muted-foreground"
+                    className={styles.emptyCell}
                     colSpan={hasRowActions ? 6 : 5}
                   >
                     {t("customers.ledger.empty")}
@@ -1137,11 +1132,11 @@ export function CustomerLedgerClient({
                 </TableRow>
               ) : (
                 ledger.entries.map((entry) => (
-                  <TableRow key={entry.id} className="hover:bg-accent/40">
-                    <TableCell className="whitespace-nowrap px-6 py-5 text-sm text-muted-foreground">
+                  <TableRow key={entry.id}>
+                    <TableCell className={styles.dateCell}>
                       {formatDate(entry.created_at)}
                     </TableCell>
-                    <TableCell className="px-6 py-5">
+                    <TableCell>
                       <StatusChip
                         tone={
                           entry.entry_type === "ticket"
@@ -1154,42 +1149,42 @@ export function CustomerLedgerClient({
                         {getEntryTypeLabel(entry.entry_type)}
                       </StatusChip>
                     </TableCell>
-                    <TableCell className="px-6 py-5">
+                    <TableCell>
                       {entry.entry_type === "ticket" && entry.ticket ? (
                         <Link
-                          className="inline-flex items-center gap-2 font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
+                          className={styles.ticketLink}
                           href={`/tickets/${entry.ticket.id}`}
                         >
                           <span>
                             {entry.content.trim() ||
                               t("customers.ledger.fallbackContent")}
                           </span>
-                          <ExternalLink className="h-3.5 w-3.5" />
+                          <ExternalLink className={patterns.iconCompact} />
                         </Link>
                       ) : (
-                        <p className="font-medium text-foreground">
+                        <p className={patterns.labelText}>
                           {entry.content.trim() || t("customers.ledger.fallbackContent")}
                         </p>
                       )}
                     </TableCell>
                     <TableCell
                       className={cn(
-                        "px-6 py-5 text-right font-semibold",
+                        styles.amountCell,
                         entry.amount > 0
-                          ? "text-foreground"
+                          ? styles.amountPositive
                           : entry.amount < 0
-                            ? "text-primary"
-                            : "text-muted-foreground",
+                            ? styles.amountNegative
+                            : styles.amountZero,
                       )}
                     >
                       {formatSignedCurrency(entry.amount)}
                     </TableCell>
-                    <TableCell className="px-6 py-5 text-right font-medium text-foreground">
+                    <TableCell className={styles.balanceCell}>
                       {formatCurrency(entry.running_balance)}
                     </TableCell>
                     {hasRowActions ? (
-                      <TableCell className="px-6 py-5 text-right">
-                        <div className="flex flex-wrap justify-end gap-1.5">
+                      <TableCell className={styles.actionsCell}>
+                        <div className={styles.rowActions}>
                           <PaymentDialog
                             customerId={customerId}
                             defaultLinkedTicketId={entry.ticket?.id ?? ""}

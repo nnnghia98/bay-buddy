@@ -6,7 +6,7 @@
 
 **Architecture:** Implement the redesign from the outside in. First, create shared layout tokens and shell helpers that control sidebar width, page gutters, section wrappers, and contrast. Then refactor shared command-center primitives so dashboard, customer, invoice, quote, and ticket-capture pages can adopt the same compact structure with minimal one-off styling.
 
-**Tech Stack:** Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, shadcn/ui, Vitest
+**Tech Stack:** Next.js 16 App Router, React 19, TypeScript, Astryx Design, token-based CSS Modules, Vitest
 
 ---
 

@@ -1,7 +1,10 @@
 "use client";
+
+import patterns from "@/styles/ui-patterns.module.css"
 /* eslint-disable @next/next/no-img-element */
 
 import * as React from "react";
+import { Banner } from "@astryxdesign/core/Banner";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -16,8 +19,6 @@ import {
   FileText,
   X,
   Loader2,
-  CheckCircle2,
-  AlertCircle,
   Pencil,
   Lock,
 } from "lucide-react";
@@ -35,6 +36,7 @@ import {
   CustomerDirectoryItemSchema,
   type CustomerDirectoryItem,
 } from "@/schemas";
+import styles from "./ticket-input.module.css";
 
 // ---------------------------------------------------------------------------
 // Zod Schema
@@ -491,6 +493,7 @@ export default function CaptureTicketPage() {
   const isImage = file?.type.startsWith("image/");
   const isPDF = file?.type === "application/pdf";
   const hasExtractedData = mutation.isSuccess;
+  const extractedClassName = hasExtractedData ? styles.extracted : undefined;
 
   if (!isReady || !token) {
     return null;
@@ -501,26 +504,26 @@ export default function CaptureTicketPage() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="pb-12">
-      <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start 2xl:grid-cols-[400px_minmax(0,1fr)]">
+    <div className={patterns.page}>
+      <div className={styles.workbench}>
           {/* ---------------------------------------------------------------- */}
           {/* Left column – File upload / Preview (Sticky)                     */}
           {/* ---------------------------------------------------------------- */}
-          <div className="flex flex-col gap-4 lg:sticky lg:top-16">
+          <div className={styles.uploadColumn}>
             <Panel>
-              <div className="border-b border-border px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+              <div className={styles.panelHeader}>
+                <p className={patterns.accentEyebrow}>
                   Chứng từ đặt chỗ
                 </p>
               </div>
-              <div className="flex flex-col gap-3 p-4">
+              <div className={styles.panelBody}>
                 {/* Hidden native file input */}
                 <input
                   ref={fileInputRef}
                   id="file-upload-input"
                   type="file"
                   accept="image/jpeg,image/png,image/webp,application/pdf"
-                  className="hidden"
+                  className={patterns.hidden}
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     if (f) handleFile(f);
@@ -528,22 +531,16 @@ export default function CaptureTicketPage() {
                 />
 
                 {/* Drop zone */}
-                <div
-                  role="button"
-                  tabIndex={0}
+                <button
+                  type="button"
                   aria-label="Upload ticket file"
                   onClick={() => fileInputRef.current?.click()}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && fileInputRef.current?.click()
-                  }
                   onDragOver={onDragOver}
                   onDragLeave={onDragLeave}
                   onDrop={onDrop}
                   className={cn(
-                    "relative flex min-h-[220px] cursor-pointer select-none flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed transition-colors lg:min-h-[260px]",
-                    isDragging
-                      ? "border-primary bg-accent/65"
-                      : "border-border-strong bg-secondary/35 hover:border-primary/35 hover:bg-accent/35",
+                    styles.dropZone,
+                    isDragging && styles.dropZoneDragging,
                   )}
                 >
                   {/* Preview area */}
@@ -551,60 +548,64 @@ export default function CaptureTicketPage() {
                     <img
                       src={previewUrl}
                       alt="Ticket preview"
-                      className="w-full h-full object-contain p-2 absolute inset-0 m-auto"
+                      className={styles.previewImage}
                     />
                   ) : isPDF ? (
-                    <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
+                    <div className={styles.filePreview}>
                       <FileText
-                        className="h-16 w-16 text-primary/80"
+                        className={styles.previewIcon}
                         strokeWidth={1.5}
                       />
-                      <span className="text-sm font-medium text-foreground text-center px-4 truncate max-w-full">
+                      <span className={styles.filePreviewName}>
                         {file!.name}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className={patterns.supportingText}>
                         {(file!.size / 1024).toFixed(1)} KB - PDF document
                       </span>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center gap-3 p-8 text-center text-muted-foreground">
-                      <UploadCloud className="h-10 w-10 text-muted-foreground/60" strokeWidth={1.5} />
+                    <div className={styles.uploadPrompt}>
+                      <UploadCloud className={styles.uploadIcon} strokeWidth={1.5} />
                       <div>
-                        <p className="text-sm font-medium text-foreground">
+                        <p className={patterns.labelText}>
                           Kéo thả, dán (Ctrl+V) hoặc bấm để tải file
                         </p>
-                        <p className="mt-1 text-xs">JPEG, PNG, WebP hoặc PDF</p>
+                        <p className={styles.fileFormatHint}>JPEG, PNG, WebP hoặc PDF</p>
                       </div>
                     </div>
                   )}
                   
                   {/* Parsing Overlay */}
                   {mutation.isPending && (
-                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-10">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
-                      <p className="text-sm font-medium">AI đang trích xuất dữ liệu...</p>
-                      <p className="text-xs text-muted-foreground mt-1">Quá trình này có thể mất vài giây</p>
+                    <div className={styles.parseOverlay}>
+                      <Loader2
+                        className={cn(styles.overlaySpinner, patterns.spinner)}
+                      />
+                      <p className={patterns.labelText}>AI đang trích xuất dữ liệu...</p>
+                      <p className={styles.overlayHint}>Quá trình này có thể mất vài giây</p>
                     </div>
                   )}
-                </div>
+                </button>
 
                 {/* File info bar + Clear button */}
                 {file && !mutation.isPending && (
-                  <div className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm">
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <FileText className="h-4 w-4 shrink-0 text-primary" />
-                      <span className="truncate text-foreground font-medium">
+                  <div className={styles.fileBar}>
+                    <div className={styles.fileBarName}>
+                      <FileText className={patterns.iconSmall} />
+                      <span className={styles.fileName}>
                         {file.name}
                       </span>
                     </div>
-                    <button
-                      type="button"
+                    <Button
+                      size="icon"
+                      variant="destructive"
                       onClick={clearFile}
-                      className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-500"
                       aria-label="Remove file"
+                      title="Remove file"
+                      type="button"
                     >
-                      <X className="h-4 w-4" />
-                    </button>
+                      <X className={patterns.iconSmall} />
+                    </Button>
                   </div>
                 )}
 
@@ -612,35 +613,35 @@ export default function CaptureTicketPage() {
                 <Button
                   id="parse-with-ai-btn"
                   onClick={handleParseWithAI}
-                  className="w-full"
+                  className={patterns.fullWidth}
                   size="lg"
                   disabled={!file || mutation.isPending}
                 >
                   {mutation.isPending ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className={cn(patterns.iconSmall, patterns.spinner)} />
                       Đang phân tích...
                     </>
                   ) : (
                     <>
-                      <Wand2 className="mr-2 h-4 w-4" />
+                      <Wand2 className={patterns.iconSmall} />
                       Nhập vé
                     </>
                   )}
                 </Button>
 
                 {hasExtractedData && (
-                  <div className="flex items-start gap-2 rounded-lg bg-green-50 px-3 py-2.5 text-sm text-green-800 border border-green-100">
-                    <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-green-600" />
-                    <p>Dữ liệu đã được trích xuất. Vui lòng kiểm tra và chỉnh sửa nếu cần trước khi lưu.</p>
-                  </div>
+                  <Banner
+                    status="success"
+                    title="Dữ liệu đã được trích xuất. Vui lòng kiểm tra và chỉnh sửa nếu cần trước khi lưu."
+                  />
                 )}
                 
                 {mutation.isError && (
-                  <div className="flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-800 border border-red-100">
-                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600" />
-                    <p>{(mutation.error as Error).message}</p>
-                  </div>
+                  <Banner
+                    status="error"
+                    title={(mutation.error as Error).message}
+                  />
                 )}
               </div>
             </Panel>
@@ -652,23 +653,23 @@ export default function CaptureTicketPage() {
           <form
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onSubmit={form.handleSubmit(onSubmit as any)}
-            className="flex min-w-0 flex-col gap-4"
+            className={styles.form}
           >
             {/* Customer & Price Card */}
             <Panel>
-              <div className="border-b border-border px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+              <div className={styles.panelHeader}>
+                <p className={patterns.accentEyebrow}>
                   Thông tin giao dịch
                 </p>
               </div>
-              <div className="space-y-5 p-4">
-                <div className="space-y-2">
-                  <Label htmlFor="customerName" className="text-sm font-semibold text-foreground">Tên khách hàng</Label>
+              <div className={styles.formPanelBody}>
+                <div className={patterns.fieldStack}>
+                  <Label htmlFor="customerName" className={patterns.sectionTitle}>Tên khách hàng</Label>
                   <Input
                     id="customerName"
                     list="customerNameOptions"
                     placeholder="Ví dụ: Nguyen Van A"
-                    className={cn("h-11", hasExtractedData && "border-primary/20 bg-primary/5")}
+                    className={extractedClassName}
                     {...form.register("customerName")}
                   />
                   <datalist id="customerNameOptions">
@@ -677,83 +678,83 @@ export default function CaptureTicketPage() {
                     ))}
                   </datalist>
                   {form.formState.errors.customerName && (
-                    <p className="text-xs text-red-500 font-medium">
+                    <p className={patterns.errorSupportingText}>
                       {form.formState.errors.customerName.message}
                     </p>
                   )}
                 </div>
 
-                <div className="rounded-lg border border-border/70 bg-secondary/30 p-4">
-                  <div className="space-y-3">
-                    <div className="grid gap-2">
-                      <Label htmlFor="totalPrice" className="text-sm font-semibold text-foreground">Giá gốc <span className="text-red-500">*</span></Label>
-                      <div className="space-y-1">
-                        <div className="relative">
+                <div className={styles.priceSurface}>
+                  <div className={patterns.stack}>
+                    <div className={patterns.fieldStack}>
+                      <Label htmlFor="totalPrice" className={patterns.sectionTitle}>Giá gốc <span className={styles.required}>*</span></Label>
+                      <div className={patterns.compactStack}>
+                        <div className={styles.moneyField}>
                         <Input
                           id="totalPrice"
                           type="text"
                           inputMode="numeric"
                           placeholder="0"
-                          className={cn("h-11 bg-background pr-14 text-right font-semibold", hasExtractedData && "border-primary/20 bg-primary/5")}
+                          className={cn(styles.moneyInput, extractedClassName)}
                           value={formatVndInput(Number(watchedNetPrice) || 0)}
                           onChange={(event) => handleMoneyChange("totalPrice", event.target.value)}
                         />
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
+                          <span className={styles.currencySuffix}>
                             VND
                           </span>
                         </div>
                         {form.formState.errors.totalPrice && (
-                          <p className="text-xs font-medium text-red-500">
+                          <p className={patterns.errorSupportingText}>
                             {form.formState.errors.totalPrice.message}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    <div className="grid gap-2">
-                      <Label htmlFor="sellingPrice" className="text-sm font-semibold text-foreground">Giá bán <span className="text-red-500">*</span></Label>
-                      <div className="space-y-1">
-                        <div className="relative">
+                    <div className={patterns.fieldStack}>
+                      <Label htmlFor="sellingPrice" className={patterns.sectionTitle}>Giá bán <span className={styles.required}>*</span></Label>
+                      <div className={patterns.compactStack}>
+                        <div className={styles.moneyField}>
                         <Input
                           id="sellingPrice"
                           type="text"
                           inputMode="numeric"
                           placeholder="0"
-                          className="h-11 bg-background pr-14 text-right font-semibold"
+                          className={styles.moneyInput}
                           value={formatVndInput(Number(watchedSellingPrice) || 0)}
                           onChange={(event) => handleMoneyChange("sellingPrice", event.target.value)}
                         />
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
+                          <span className={styles.currencySuffix}>
                             VND
                           </span>
                         </div>
                         {form.formState.errors.sellingPrice && (
-                          <p className="text-xs font-medium text-red-500">
+                          <p className={patterns.errorSupportingText}>
                             {form.formState.errors.sellingPrice.message}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    <div className="grid gap-2">
-                      <Label htmlFor="discount" className="text-sm font-semibold text-foreground">Chiết khấu hãng</Label>
-                      <div className="space-y-1">
-                        <div className="relative">
+                    <div className={patterns.fieldStack}>
+                      <Label htmlFor="discount" className={patterns.sectionTitle}>Chiết khấu hãng</Label>
+                      <div className={patterns.compactStack}>
+                        <div className={styles.moneyField}>
                         <Input
                           id="discount"
                           type="text"
                           inputMode="numeric"
                           placeholder="0"
-                          className="h-11 bg-background pr-14 text-right font-semibold"
+                          className={styles.moneyInput}
                           value={formatVndInput(Number(watchedDiscount) || 0)}
                           onChange={(event) => handleMoneyChange("discount", event.target.value)}
                         />
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
+                          <span className={styles.currencySuffix}>
                             VND
                           </span>
                         </div>
                         {form.formState.errors.discount && (
-                          <p className="text-xs font-medium text-red-500">
+                          <p className={patterns.errorSupportingText}>
                             {form.formState.errors.discount.message}
                           </p>
                         )}
@@ -761,10 +762,10 @@ export default function CaptureTicketPage() {
                     </div>
                   </div>
 
-                  <div className="mt-3 rounded-lg border border-border/70 bg-background px-3 py-2.5">
-                    <div className="grid gap-3">
-                      <Label htmlFor="trueIncome" className="text-sm font-semibold text-foreground">Lợi nhuận</Label>
-                      <div className="relative space-y-1">
+                  <div className={styles.incomeSurface}>
+                    <div className={patterns.stack}>
+                      <Label htmlFor="trueIncome" className={patterns.sectionTitle}>Lợi nhuận</Label>
+                      <div className={styles.incomeField}>
                         <Input
                           id="trueIncome"
                           type="text"
@@ -772,32 +773,32 @@ export default function CaptureTicketPage() {
                           placeholder="0"
                           readOnly={!isTrueIncomeEditable}
                           className={cn(
-                            "h-11 border-primary/20 bg-background pr-24 text-right font-semibold text-primary",
-                            !isTrueIncomeEditable && "cursor-default bg-secondary/50 text-primary/90",
+                            styles.incomeInput,
+                            !isTrueIncomeEditable && styles.incomeReadOnly,
                           )}
                           value={formatVndInput(Number(watchedTrueIncome) || 0)}
                           onChange={handleTrueIncomeChange}
                         />
-                        <span className="pointer-events-none absolute right-12 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
+                        <span className={cn(styles.currencySuffix, styles.incomeCurrencySuffix)}>
                           VND
                         </span>
                         <Button
                           type="button"
                           variant="outline"
                           size="icon"
-                          className="absolute right-1.5 top-1.5 h-8 w-8 bg-background"
+                          className={styles.incomeEdit}
                           onClick={handleToggleTrueIncomeEdit}
                           aria-label={isTrueIncomeEditable ? "Khóa thu nhập thực" : "Chỉnh sửa thu nhập thực"}
                           title={isTrueIncomeEditable ? "Khóa thu nhập thực" : "Chỉnh sửa thu nhập thực"}
                         >
                           {isTrueIncomeEditable ? (
-                            <Lock className="h-4 w-4" />
+                            <Lock className={patterns.iconSmall} />
                           ) : (
-                            <Pencil className="h-4 w-4" />
+                            <Pencil className={patterns.iconSmall} />
                           )}
                         </Button>
                         {form.formState.errors.trueIncome && (
-                          <p className="text-xs font-medium text-red-500">
+                          <p className={patterns.errorSupportingText}>
                             {form.formState.errors.trueIncome.message}
                           </p>
                         )}
@@ -810,83 +811,83 @@ export default function CaptureTicketPage() {
 
             {/* Flight Details Card */}
             <Panel>
-              <div className="border-b border-border px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+              <div className={styles.panelHeader}>
+                <p className={patterns.accentEyebrow}>
                   Chi tiết chuyến bay
                 </p>
               </div>
-              <div className="space-y-6 p-4">
+              <div className={styles.flightPanelBody}>
                 {/* PNR + Airline row */}
-                <div className="grid gap-4 2xl:grid-cols-3">
-                  <div className="space-y-2">
+                <div className={styles.threeFieldGrid}>
+                  <div className={patterns.fieldStack}>
                     <Label htmlFor="pnr">Mã đặt chỗ (PNR)</Label>
                     <Input
                       id="pnr"
                       placeholder="Ví dụ: XYZ987"
-                      className={cn("uppercase", hasExtractedData && "border-primary/20 bg-primary/5")}
+                      className={cn(styles.uppercase, extractedClassName)}
                       {...form.register("pnr")}
                     />
                     {form.formState.errors.pnr && (
-                      <p className="text-xs text-red-500">
+                      <p className={patterns.errorSupportingText}>
                         {form.formState.errors.pnr.message}
                       </p>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="airline">Hãng bay <span className="text-red-500">*</span></Label>
+                  <div className={patterns.fieldStack}>
+                    <Label htmlFor="airline">Hãng bay <span className={styles.required}>*</span></Label>
                     <Input
                       id="airline"
                       placeholder="Ví dụ: VNA"
-                      className={cn("uppercase", hasExtractedData && "border-primary/20 bg-primary/5")}
+                      className={cn(styles.uppercase, extractedClassName)}
                       {...form.register("airline")}
                     />
                     {form.formState.errors.airline && (
-                      <p className="text-xs text-red-500">
+                      <p className={patterns.errorSupportingText}>
                         {form.formState.errors.airline.message}
                       </p>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="ticketNumber">Số vé <span className="text-red-500">*</span></Label>
+                  <div className={patterns.fieldStack}>
+                    <Label htmlFor="ticketNumber">Số vé <span className={styles.required}>*</span></Label>
                     <Input
                       id="ticketNumber"
                       placeholder="Ví dụ: 7382319992101"
-                      className={cn(hasExtractedData && "border-primary/20 bg-primary/5")}
+                      className={extractedClassName}
                       {...form.register("ticketNumber")}
                     />
                     {form.formState.errors.ticketNumber && (
-                      <p className="text-xs text-red-500">
+                      <p className={patterns.errorSupportingText}>
                         {form.formState.errors.ticketNumber.message}
                       </p>
                     )}
                   </div>
                 </div>
 
-                <div className="grid gap-4 2xl:grid-cols-2">
-                  <div className="space-y-2">
+                <div className={styles.twoFieldGrid}>
+                  <div className={patterns.fieldStack}>
                     <Label htmlFor="departurePlace">Nơi đi</Label>
                     <Input
                       id="departurePlace"
                       placeholder="Ví dụ: Da Nang City"
-                      className={cn(hasExtractedData && "border-primary/20 bg-primary/5")}
+                      className={extractedClassName}
                       {...form.register("departurePlace")}
                     />
                     {form.formState.errors.departurePlace && (
-                      <p className="text-xs text-red-500">
+                      <p className={patterns.errorSupportingText}>
                         {form.formState.errors.departurePlace.message}
                       </p>
                     )}
                   </div>
-                  <div className="space-y-2">
+                  <div className={patterns.fieldStack}>
                     <Label htmlFor="arrivalPlace">Nơi đến</Label>
                     <Input
                       id="arrivalPlace"
                       placeholder="Ví dụ: Ho Chi Minh City"
-                      className={cn(hasExtractedData && "border-primary/20 bg-primary/5")}
+                      className={extractedClassName}
                       {...form.register("arrivalPlace")}
                     />
                     {form.formState.errors.arrivalPlace && (
-                      <p className="text-xs text-red-500">
+                      <p className={patterns.errorSupportingText}>
                         {form.formState.errors.arrivalPlace.message}
                       </p>
                     )}
@@ -894,62 +895,62 @@ export default function CaptureTicketPage() {
                 </div>
 
                 {/* Route & Date */}
-                <div className="grid gap-4 rounded-lg border border-border/50 bg-secondary/30 p-4 2xl:grid-cols-3">
-                  <div className="space-y-2">
+                <div className={styles.routeSurface}>
+                  <div className={patterns.fieldStack}>
                     <Label htmlFor="departureCode">Mã nơi đi</Label>
                     <Input
                       id="departureCode"
                       placeholder="Ví dụ: DAD"
-                      className={cn("uppercase bg-background", hasExtractedData && "border-primary/20 bg-primary/5")}
+                      className={cn(styles.uppercase, extractedClassName)}
                       {...form.register("departureCode")}
                     />
                     {form.formState.errors.departureCode && (
-                      <p className="text-xs text-red-500">
+                      <p className={patterns.errorSupportingText}>
                         {form.formState.errors.departureCode.message}
                       </p>
                     )}
                   </div>
-                  <div className="space-y-2">
+                  <div className={patterns.fieldStack}>
                     <Label htmlFor="arrivalCode">Mã nơi đến</Label>
                     <Input
                       id="arrivalCode"
                       placeholder="Ví dụ: SGN"
-                      className={cn("uppercase bg-background", hasExtractedData && "border-primary/20 bg-primary/5")}
+                      className={cn(styles.uppercase, extractedClassName)}
                       {...form.register("arrivalCode")}
                     />
                     {form.formState.errors.arrivalCode && (
-                      <p className="text-xs text-red-500">
+                      <p className={patterns.errorSupportingText}>
                         {form.formState.errors.arrivalCode.message}
                       </p>
                     )}
                   </div>
-                  <div className="space-y-2">
+                  <div className={patterns.fieldStack}>
                     <Label htmlFor="route">Hành trình</Label>
                     <Input
                       id="route"
                       placeholder="Ví dụ: DAD-SGN"
                       readOnly
-                      className="bg-muted/50 text-muted-foreground uppercase"
+                      className={styles.readOnlyInput}
                       {...form.register("route")}
                     />
                     {form.formState.errors.route && (
-                      <p className="text-xs text-red-500">
+                      <p className={patterns.errorSupportingText}>
                         {form.formState.errors.route.message}
                       </p>
                     )}
                   </div>
                 </div>
                 
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor="flightDate">Ngày giờ bay</Label>
                   <Input
                     id="flightDate"
                     type="datetime-local"
-                    className={cn(hasExtractedData && "border-primary/20 bg-primary/5")}
+                    className={extractedClassName}
                     {...form.register("flightDate")}
                   />
                   {form.formState.errors.flightDate && (
-                    <p className="text-xs text-red-500">
+                    <p className={patterns.errorSupportingText}>
                       {form.formState.errors.flightDate.message}
                     </p>
                   )}
@@ -959,10 +960,10 @@ export default function CaptureTicketPage() {
 
             {/* Passengers Card */}
             <Panel>
-              <div className="flex flex-row items-center justify-between gap-3 border-b border-border px-4 py-3">
+              <div className={styles.passengerHeader}>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                    Hành khách <span className="text-red-500">*</span>
+                  <p className={patterns.accentEyebrow}>
+                    Hành khách <span className={styles.required}>*</span>
                   </p>
                 </div>
                 <Button
@@ -971,43 +972,42 @@ export default function CaptureTicketPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => append({ name: "" })}
-                  className="shrink-0"
+                  className={patterns.shrinkNone}
                 >
-                  <Plus className="mr-1.5 h-4 w-4" />
+                  <Plus className={patterns.iconSmall} />
                   Thêm người
                 </Button>
               </div>
-              <div className="space-y-3 p-4">
+              <div className={styles.passengerBody}>
                 {fields.map((field, index) => (
-                  <div key={field.id} className="flex items-start gap-3">
-                    <div className="flex-1 space-y-1">
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground text-sm font-semibold">
+                  <div key={field.id} className={patterns.rowStart}>
+                    <div className={styles.passengerField}>
+                      <div className={patterns.relative}>
+                        <div className={styles.passengerIndex}>
                           {index + 1}.
                         </div>
                         <Input
                           id={`passenger-${index}`}
                           placeholder="Tên hành khách"
-                          className={cn("pl-8 uppercase", hasExtractedData && "border-primary/20 bg-primary/5")}
+                          className={cn(styles.passengerInput, extractedClassName)}
                           {...form.register(`passengers.${index}.name`)}
                         />
                       </div>
                       {form.formState.errors.passengers?.[index]?.name && (
-                        <p className="text-xs text-red-500 px-1">
+                        <p className={cn(patterns.errorSupportingText, styles.passengerError)}>
                           {form.formState.errors.passengers[index]?.name?.message}
                         </p>
                       )}
                     </div>
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="destructive"
                       size="icon"
-                      className="shrink-0 text-muted-foreground hover:bg-red-50 hover:text-red-600"
                       onClick={() => remove(index)}
                       disabled={fields.length === 1}
                       aria-label={`Remove passenger ${index + 1}`}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className={patterns.iconSmall} />
                     </Button>
                   </div>
                 ))}
@@ -1015,21 +1015,21 @@ export default function CaptureTicketPage() {
             </Panel>
 
             {/* Submit Action */}
-            <div className="flex flex-col gap-3 rounded-lg border border-primary/10 bg-primary/5 p-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
+            <div className={styles.submitBar}>
               <div>
-                <p className="text-sm font-medium text-foreground">Xác nhận tạo công nợ</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Vé sau khi lưu sẽ được tính vào công nợ của khách hàng.</p>
+                <p className={patterns.labelText}>Xác nhận tạo công nợ</p>
+                <p className={styles.submitHint}>Vé sau khi lưu sẽ được tính vào công nợ của khách hàng.</p>
               </div>
               <Button
                 id="save-ticket-btn"
                 type="submit"
                 size="lg"
                 disabled={saveMutation.isPending}
-                className="shrink-0"
+                className={patterns.shrinkNone}
               >
                 {saveMutation.isPending ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className={cn(patterns.iconSmall, patterns.spinner)} />
                     Đang lưu...
                   </>
                 ) : (

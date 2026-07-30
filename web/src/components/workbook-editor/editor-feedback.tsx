@@ -4,6 +4,8 @@ import type { ReactNode } from "react"
 import { AlertTriangle, CheckCircle2, CircleAlert, Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import patterns from "@/styles/ui-patterns.module.css"
+import styles from "./workbook-editor-components.module.css"
 
 export type EditorSaveState = "idle" | "dirty" | "saving" | "saved" | "error" | "conflict"
 
@@ -31,24 +33,24 @@ export function EditorFeedback({
     <div
       aria-live="polite"
       className={cn(
-        "flex items-center gap-2 border-b px-4 py-2.5 text-sm lg:px-5",
-        (state === "idle" || state === "dirty") && "border-blue-100 bg-blue-50 text-blue-700",
-        state === "saving" && "border-blue-100 bg-blue-50 text-blue-700",
-        state === "saved" && "border-emerald-200 bg-emerald-50 text-emerald-700",
-        state === "error" && "border-red-200 bg-red-50 text-red-700",
-        state === "conflict" && "border-amber-200 bg-amber-50 text-amber-800",
+        styles.feedback,
+        (state === "idle" || state === "dirty" || state === "saving")
+          && styles.feedbackInfo,
+        state === "saved" && styles.feedbackSuccess,
+        state === "error" && styles.feedbackError,
+        state === "conflict" && styles.feedbackWarning,
       )}
       role={state === "error" || state === "conflict" ? "alert" : "status"}
     >
       <Icon
         aria-hidden="true"
         className={cn(
-          "h-4 w-4 shrink-0",
-          state === "saving" && "animate-spin motion-reduce:animate-none",
+          styles.feedbackIcon,
+          state === "saving" && patterns.spinner,
         )}
       />
-      <span className="min-w-0">{message}</span>
-      {action ? <div className="ml-auto shrink-0">{action}</div> : null}
+      <span className={styles.feedbackMessage}>{message}</span>
+      {action ? <div className={styles.feedbackAction}>{action}</div> : null}
     </div>
   )
 }

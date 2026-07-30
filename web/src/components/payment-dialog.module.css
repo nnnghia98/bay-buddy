@@ -1,0 +1,62 @@
+.submitButton {
+  min-width: 9rem;
+}
+
+.amountSurface,
+.evidenceSurface {
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-container);
+  padding: var(--spacing-4);
+}
+
+.amountSurface {
+  background: var(--color-background-muted);
+}
+
+.evidenceSurface {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  background: var(--color-background-surface);
+  box-shadow: var(--shadow-low);
+}
+
+.inputIconWrapper {
+  position: relative;
+}
+
+.leadingIcon {
+  position: absolute;
+  inset-inline-start: var(--spacing-3);
+  top: 50%;
+  width: var(--spacing-4);
+  height: var(--spacing-4);
+  color: var(--color-icon-secondary);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.inputWithIcon {
+  padding-inline-start: var(--spacing-10);
+}
+
+.evidenceStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  border: var(--border-width) dashed var(--color-border-emphasized);
+  border-radius: var(--radius-element);
+  background: var(--color-background-muted);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-3);
+}
+
+.evidenceReady {
+  border-color: var(--color-border-green);
+  background: var(--color-background-green);
+  color: var(--color-text-green);
+}
+
+.footer {
+  padding-block-start: var(--spacing-2);
+}

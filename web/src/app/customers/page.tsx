@@ -1,5 +1,7 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
 import * as React from "react"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowRight, Landmark, Loader2, PencilLine, Plus, Search, Trash2, Users, WalletCards } from "lucide-react"
@@ -40,6 +42,7 @@ import { formatCurrency } from "@/lib/formatters"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
 import { CustomerDirectoryItemSchema, type CustomerDirectoryItem } from "@/schemas"
+import styles from "./customers.module.css"
 
 const customerDirectorySchema = z.array(CustomerDirectoryItemSchema)
 const currentUserSchema = z.object({
@@ -239,19 +242,19 @@ export default function CustomersPage() {
     filteredCustomers.map((customer) => (
       <TableRow
         key={customer.id}
-        className="cursor-pointer hover:bg-accent/45"
+        className={styles.clickableRow}
         onClick={() => router.push(`/customers/${customer.id}`)}
         data-state={customer.is_active ? "active" : "inactive"}
       >
         {/* Name + initials */}
-        <TableCell className="px-5 py-3.5">
-          <div className="flex items-center gap-3">
+        <TableCell>
+          <div className={patterns.row}>
             <InitialsAvatar value={customer.full_name} />
             <div>
-              <div className="text-sm font-medium text-foreground leading-snug">
+              <div className={styles.customerName}>
                 {customer.full_name}
               </div>
-              <div className="text-[11px] text-muted-foreground">
+              <div className={styles.customerId}>
                 #{customer.id.slice(0, 8)}
               </div>
             </div>
@@ -259,12 +262,12 @@ export default function CustomersPage() {
         </TableCell>
 
         {/* Phone */}
-        <TableCell className="px-5 py-3.5 text-sm text-muted-foreground">
+        <TableCell className={styles.phone}>
           {customer.phone ?? t("financeDocuments.common.notUpdated")}
         </TableCell>
 
         {/* Status */}
-        <TableCell className="px-5 py-3.5">
+        <TableCell>
           <StatusChip tone={customer.is_active ? "success" : "warning"}>
             {customer.is_active
               ? t("customers.management.statuses.active")
@@ -273,8 +276,8 @@ export default function CustomersPage() {
         </TableCell>
 
         {/* Balance */}
-        <TableCell className="px-5 py-3.5 text-right">
-          <div className="inline-flex items-center justify-end gap-2">
+        <TableCell className={styles.balanceCell}>
+          <div className={styles.balance}>
             {customer.current_balance < 0 ? (
               <StatusChip tone="info">
                 {t("customers.ledger.balanceStates.credit")}
@@ -282,24 +285,24 @@ export default function CustomersPage() {
             ) : null}
             <span
               className={cn(
-                "text-sm font-semibold",
+                styles.balanceValue,
                 customer.current_balance > 0
-                  ? "text-red-600"
+                  ? styles.balanceDebt
                   : customer.current_balance < 0
-                    ? "text-primary"
-                    : "text-foreground",
+                    ? styles.balanceCredit
+                    : undefined,
               )}
             >
               {formatCurrency(Math.abs(customer.current_balance))}
             </span>
-            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50" aria-hidden="true" />
+            <ArrowRight className={styles.rowArrow} aria-hidden="true" />
           </div>
         </TableCell>
 
         {/* Admin actions */}
         {isAdmin ? (
-          <TableCell className="px-5 py-3.5">
-            <div className="flex items-center justify-end gap-1.5">
+          <TableCell>
+            <div className={styles.actions}>
               <Button
                 disabled={Boolean(isMutatingCustomerId)}
                 onClick={(e) => {
@@ -311,9 +314,9 @@ export default function CustomersPage() {
                 size="icon"
                 type="button"
                 variant="ghost"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                title={t("customers.management.editAction")}
               >
-                <PencilLine className="h-3.5 w-3.5" />
+                <PencilLine className={patterns.iconCompact} />
               </Button>
               <Button
                 disabled={Boolean(isMutatingCustomerId)}
@@ -324,10 +327,10 @@ export default function CustomersPage() {
                 }}
                 size="icon"
                 type="button"
-                variant="ghost"
-                className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                variant="destructive"
+                title={t("customers.management.deleteAction")}
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className={patterns.iconCompact} />
               </Button>
             </div>
           </TableCell>
@@ -337,16 +340,16 @@ export default function CustomersPage() {
   )
 
   return (
-    <div className="space-y-6 pb-12 text-foreground">
+    <div className={patterns.pageStack}>
 
       {/* ------------------------------------------------------------------ */}
       {/* Page action bar                                                     */}
       {/* ------------------------------------------------------------------ */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="relative w-full max-w-xs">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+      <div className={styles.actionBar}>
+        <div className={styles.search}>
+          <Search className={styles.searchIcon} aria-hidden="true" />
           <Input
-            className="h-9 pl-9 text-sm font-medium"
+            className={styles.searchInput}
             onChange={(e) => setSearchValue(e.target.value)}
             placeholder={t("customers.directory.searchPlaceholder")}
             value={searchValue}
@@ -356,19 +359,19 @@ export default function CustomersPage() {
           <Dialog onOpenChange={setIsCreateOpen} open={isCreateOpen}>
             <DialogTrigger asChild>
               <Button type="button" size="sm">
-                <Plus className="h-4 w-4" />
+                <Plus className={patterns.iconSmall} />
                 {t("customers.management.createAction")}
               </Button>
             </DialogTrigger>
-            <DialogContent className="w-[min(92vw,42rem)]">
+            <DialogContent width="min(92vw, 42rem)">
               <DialogHeader>
                 <DialogTitle>{t("customers.management.dialogs.create.title")}</DialogTitle>
                 <DialogDescription>
                   {t("customers.management.dialogs.create.description")}
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4">
-                <div className="space-y-2">
+              <div className={patterns.grid}>
+                <div className={patterns.fieldStack}>
                   <Label htmlFor="create-customer-name">
                     {t("customers.management.fields.name")}
                   </Label>
@@ -379,7 +382,7 @@ export default function CustomersPage() {
                     value={createName}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor="create-customer-type">
                     {t("customers.management.fields.type")}
                   </Label>
@@ -393,8 +396,8 @@ export default function CustomersPage() {
                     <option value="BUSINESS">{t("customers.management.types.BUSINESS")}</option>
                   </select>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
+                <div className={patterns.twoColumnGrid}>
+                  <div className={patterns.fieldStack}>
                     <Label htmlFor="create-customer-phone">
                       {t("customers.management.fields.phone")}
                     </Label>
@@ -405,7 +408,7 @@ export default function CustomersPage() {
                       value={createPhone}
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className={patterns.fieldStack}>
                     <Label htmlFor="create-customer-email">
                       {t("customers.management.fields.email")}
                     </Label>
@@ -417,7 +420,7 @@ export default function CustomersPage() {
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor="create-customer-address">
                     {t("customers.management.fields.address")}
                   </Label>
@@ -428,7 +431,7 @@ export default function CustomersPage() {
                     value={createAddress}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className={patterns.fieldStack}>
                   <Label htmlFor="create-customer-tax-code">
                     {t("customers.management.fields.taxCode")}
                   </Label>
@@ -449,7 +452,9 @@ export default function CustomersPage() {
                   onClick={() => void createCustomer()}
                   type="button"
                 >
-                  {isSubmittingCreate && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSubmittingCreate && (
+                    <Loader2 className={cn(patterns.iconSmall, patterns.spinner)} />
+                  )}
                   {t("customers.management.dialogs.create.submit")}
                 </Button>
               </DialogFooter>
@@ -461,7 +466,7 @@ export default function CustomersPage() {
       {/* ------------------------------------------------------------------ */}
       {/* Metric strip                                                        */}
       {/* ------------------------------------------------------------------ */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className={patterns.threeColumnGrid}>
         <MetricCard
           icon={Users}
           label={t("customers.directory.metrics.totalCustomers")}
@@ -483,12 +488,12 @@ export default function CustomersPage() {
       {/* Customer table                                                      */}
       {/* ------------------------------------------------------------------ */}
       <Panel>
-        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+        <div className={styles.tableHeader}>
+          <p className={patterns.accentEyebrow}>
             {t("customers.directory.title")}
           </p>
           {customersQuery.data && (
-            <span className="text-xs text-muted-foreground">
+            <span className={patterns.supportingText}>
               {filteredCustomers.length} / {customersQuery.data.length}
             </span>
           )}
@@ -496,13 +501,13 @@ export default function CustomersPage() {
         <TableScrollArea>
           <Table>
             <TableHeader>
-              <TableRow className="bg-secondary/40 hover:bg-secondary/40">
-                <TableHead className="px-5">{t("financeDocuments.common.customer")}</TableHead>
-                <TableHead className="px-5">{t("customers.directory.columns.phone")}</TableHead>
-                <TableHead className="px-5">{t("customers.management.fields.status")}</TableHead>
-                <TableHead className="px-5 text-right">{t("customers.ledger.currentBalance")}</TableHead>
+              <TableRow>
+                <TableHead>{t("financeDocuments.common.customer")}</TableHead>
+                <TableHead>{t("customers.directory.columns.phone")}</TableHead>
+                <TableHead>{t("customers.management.fields.status")}</TableHead>
+                <TableHead className={styles.balanceCell}>{t("customers.ledger.currentBalance")}</TableHead>
                 {isAdmin ? (
-                  <TableHead className="px-5 text-right">{t("customers.directory.columns.actions")}</TableHead>
+                  <TableHead className={styles.actionsHeading}>{t("customers.directory.columns.actions")}</TableHead>
                 ) : null}
               </TableRow>
             </TableHeader>
@@ -517,14 +522,14 @@ export default function CustomersPage() {
       {isAdmin ? (
         <>
           <Dialog onOpenChange={setIsEditOpen} open={isEditOpen}>
-            <DialogContent className="w-[min(92vw,32rem)]">
+            <DialogContent width="min(92vw, 32rem)">
               <DialogHeader>
                 <DialogTitle>{t("customers.management.dialogs.edit.title")}</DialogTitle>
                 <DialogDescription>
                   {t("customers.management.dialogs.edit.description")}
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-2">
+              <div className={patterns.fieldStack}>
                 <Label htmlFor="edit-customer-name">
                   {t("customers.management.fields.name")}
                 </Label>
@@ -547,7 +552,9 @@ export default function CustomersPage() {
                   }}
                   type="button"
                 >
-                  {isSubmittingEdit && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSubmittingEdit && (
+                    <Loader2 className={cn(patterns.iconSmall, patterns.spinner)} />
+                  )}
                   {t("customers.management.dialogs.edit.submit")}
                 </Button>
               </DialogFooter>
@@ -555,7 +562,7 @@ export default function CustomersPage() {
           </Dialog>
 
           <Dialog onOpenChange={setIsDeleteOpen} open={isDeleteOpen}>
-            <DialogContent className="w-[min(92vw,32rem)]">
+            <DialogContent width="min(92vw, 32rem)" purpose="required">
               <DialogHeader>
                 <DialogTitle>{t("customers.management.deleteAction")}</DialogTitle>
                 <DialogDescription>
@@ -573,9 +580,11 @@ export default function CustomersPage() {
                     void deleteCustomer(selectedCustomer.id)
                   }}
                   type="button"
-                  className="bg-red-600 hover:bg-red-700"
+                  variant="destructive"
                 >
-                  {isSubmittingDelete && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSubmittingDelete && (
+                    <Loader2 className={cn(patterns.iconSmall, patterns.spinner)} />
+                  )}
                   {t("customers.management.deleteAction")}
                 </Button>
               </DialogFooter>

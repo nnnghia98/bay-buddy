@@ -1,58 +1,89 @@
 import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
+import { Button as AstryxButton } from "@astryxdesign/core/Button"
 
-import { cn } from "@/lib/utils"
+type ButtonVariant =
+  | "default"
+  | "destructive"
+  | "outline"
+  | "secondary"
+  | "ghost"
+  | "link"
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold tracking-[0.08px] transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-out active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:active:translate-y-0 motion-reduce:transition-none motion-reduce:active:translate-y-0 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-  {
-    variants: {
-      variant: {
-        default:
-          "bg-primary text-primary-foreground shadow-[var(--shadow-sm)] hover:bg-chart-2 hover:shadow-[var(--shadow-md)]",
-        destructive:
-          "bg-destructive text-primary-foreground shadow-[var(--shadow-sm)] hover:bg-red-700 hover:shadow-[var(--shadow-md)]",
-        outline:
-          "border border-border bg-white text-foreground shadow-[var(--shadow-sm)] hover:border-primary/35 hover:bg-accent/50 hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-[var(--shadow-sm)] hover:bg-muted",
-        ghost:
-          "hover:bg-accent/55 hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-11 px-5 py-2.5",
-        sm: "h-9 px-3.5 text-xs",
-        lg: "h-12 px-6 text-base",
-        icon: "h-11 w-11",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
+type ButtonSize = "default" | "sm" | "lg" | "icon"
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  as?: React.ComponentProps<typeof AstryxButton>["as"]
+  href?: string
+  label?: string
+  size?: ButtonSize
+  variant?: ButtonVariant
+  width?: React.ComponentProps<typeof AstryxButton>["width"]
+}
+
+function getAccessibleLabel(node: React.ReactNode): string | undefined {
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node)
+  }
+  if (Array.isArray(node)) {
+    const label = node.map(getAccessibleLabel).filter(Boolean).join(" ").trim()
+    return label || undefined
+  }
+  if (React.isValidElement<{ children?: React.ReactNode }>(node)) {
+    return getAccessibleLabel(node.props.children)
+  }
+  return undefined
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
+  (
+    {
+      "aria-label": ariaLabel,
+      as,
+      children,
+      className,
+      disabled,
+      href,
+      label: labelProp,
+      size = "default",
+      title,
+      variant = "default",
+      width,
+      ...props
+    },
+    ref,
+  ) => {
+    const label = labelProp ?? ariaLabel ?? getAccessibleLabel(children) ?? title ?? "Action"
+
     return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
+      <AstryxButton
+        aria-label={ariaLabel}
+        as={as}
+        className={className}
+        href={href}
+        isDisabled={disabled}
+        isIconOnly={size === "icon"}
+        label={label}
         ref={ref}
+        size={size === "default" || size === "icon" ? "md" : size}
+        tooltip={title}
+        variant={
+          variant === "default"
+            ? "primary"
+            : variant === "outline" || variant === "secondary"
+              ? "secondary"
+              : variant === "link"
+                ? "ghost"
+                : variant
+        }
+        width={width}
         {...props}
-      />
+      >
+        {children}
+      </AstryxButton>
     )
-  }
+  },
 )
 Button.displayName = "Button"
 
-export { Button, buttonVariants }
+export { Button }

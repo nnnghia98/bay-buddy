@@ -1,5 +1,7 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
 import * as React from "react"
 import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
@@ -8,6 +10,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { recordPaymentAction } from "@/actions/finance"
+import { selectInputClassName } from "@/components/operations-ui"
 import { Button } from "@/components/ui/button"
 import type { ButtonProps } from "@/components/ui/button"
 import {
@@ -23,6 +26,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { convertNumberToVietnameseWords } from "@/lib/number-to-vn-words"
+import { cn } from "@/lib/utils"
 import {
   createRecordPaymentFormSchema,
   getRecordPaymentValidationMessages,
@@ -31,6 +35,7 @@ import {
   type RecordPaymentFormValues,
 } from "@/schemas/finance"
 import { useI18n } from "@/locales/client"
+import styles from "./payment-dialog.module.css"
 
 type TicketOption = {
   id: string
@@ -71,10 +76,10 @@ function SubmitButton() {
   const t = useI18n()
 
   return (
-    <Button className="min-w-36" disabled={pending} type="submit">
+    <Button className={styles.submitButton} disabled={pending} type="submit">
       {pending ? (
         <>
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className={`${patterns.iconSmall} ${patterns.spinner}`} />
           {t("customers.ledger.paymentDialog.submitting")}
         </>
       ) : (
@@ -117,9 +122,6 @@ export function PaymentDialog({
   const amountInWords = displayAmount
     ? convertNumberToVietnameseWords(parseCurrencyInput(displayAmount))
     : t("customers.ledger.paymentDialog.amountPlaceholder")
-
-  const selectClassName =
-    "flex h-11 w-full rounded-md border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:border-primary"
 
   const paymentMethodLabels: Record<RecordPaymentFormValues["method"], string> = {
     "Chuyển khoản": t(
@@ -189,12 +191,12 @@ export function PaymentDialog({
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
         <Button disabled={disabled} size={triggerSize} variant={triggerVariant}>
-          <Wallet className="h-4 w-4" />
+          <Wallet className={patterns.iconSmall} />
           {triggerLabel ?? t("customers.ledger.paymentDialog.open")}
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="w-[min(92vw,42rem)]">
+      <DialogContent width="min(92vw, 42rem)">
         <DialogHeader>
           <DialogTitle>{t("customers.ledger.paymentDialog.title")}</DialogTitle>
           <DialogDescription>
@@ -202,11 +204,11 @@ export function PaymentDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form action={formAction} className="space-y-5" onSubmit={handleSubmit}>
+        <form action={formAction} className={patterns.contentStack} onSubmit={handleSubmit}>
           <input name="customer_id" type="hidden" value={customerId} />
 
-          <div className="rounded-lg border border-border bg-secondary/70 p-4">
-            <div className="space-y-2">
+          <div className={styles.amountSurface}>
+            <div className={patterns.fieldStack}>
               <Label htmlFor="amount">
                 {t("customers.ledger.paymentDialog.fields.amount")}
               </Label>
@@ -218,20 +220,20 @@ export function PaymentDialog({
                 value={displayAmount}
               />
               <input name="amount" type="hidden" value={displayAmount} />
-              <p className="text-sm leading-6 text-muted-foreground">
+              <p className={patterns.mutedText}>
                 {t("customers.ledger.amountInWords")}: {amountInWords}
               </p>
               {getFieldError("amount") ? (
-                <p className="text-sm text-red-600">{getFieldError("amount")}</p>
+                <p className={patterns.errorText}>{getFieldError("amount")}</p>
               ) : null}
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
+          <div className={patterns.twoColumnGrid}>
+            <div className={patterns.fieldStack}>
               <Label htmlFor="method">{t("customers.ledger.paymentDialog.fields.method")}</Label>
               <select
-                className={selectClassName}
+                className={selectInputClassName}
                 id="method"
                 name="method"
                 onChange={(event) =>
@@ -246,16 +248,16 @@ export function PaymentDialog({
                 ))}
               </select>
               {getFieldError("method") ? (
-                <p className="text-sm text-red-600">{getFieldError("method")}</p>
+                <p className={patterns.errorText}>{getFieldError("method")}</p>
               ) : null}
             </div>
 
-            <div className="space-y-2">
+            <div className={patterns.fieldStack}>
               <Label htmlFor="linked_ticket_id">
                 {t("customers.ledger.paymentDialog.fields.linkedTicket")}
               </Label>
               <select
-                className={selectClassName}
+                className={selectInputClassName}
                 defaultValue={defaultLinkedTicketId}
                 id="linked_ticket_id"
                 name="linked_ticket_id"
@@ -270,14 +272,14 @@ export function PaymentDialog({
                 ))}
               </select>
               {getFieldError("linked_ticket_id") ? (
-                <p className="text-sm text-red-600">
+                <p className={patterns.errorText}>
                   {getFieldError("linked_ticket_id")}
                 </p>
               ) : null}
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="note">{t("customers.ledger.paymentDialog.fields.note")}</Label>
             <Textarea
               id="note"
@@ -285,19 +287,19 @@ export function PaymentDialog({
               placeholder={t("customers.ledger.paymentDialog.fields.notePlaceholder")}
             />
             {getFieldError("note") ? (
-              <p className="text-sm text-red-600">{getFieldError("note")}</p>
+              <p className={patterns.errorText}>{getFieldError("note")}</p>
             ) : null}
           </div>
 
-          <div className="space-y-3 rounded-lg border border-border bg-white p-4 shadow-[var(--shadow-sm)]">
-            <div className="space-y-2">
+          <div className={styles.evidenceSurface}>
+            <div className={patterns.fieldStack}>
               <Label htmlFor="evidence_url">
                 {t("customers.ledger.paymentDialog.fields.evidence")}
               </Label>
-              <div className="relative">
-                <ReceiptText className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <div className={styles.inputIconWrapper}>
+                <ReceiptText className={styles.leadingIcon} />
                 <Input
-                  className="pl-10"
+                  className={styles.inputWithIcon}
                   id="evidence_url"
                   name="evidence_url"
                   onChange={(event) => setEvidenceUrl(event.target.value)}
@@ -305,30 +307,35 @@ export function PaymentDialog({
                   value={evidenceUrl}
                 />
               </div>
-              <p className="text-sm leading-6 text-muted-foreground">
+              <p className={patterns.mutedText}>
                 {t("customers.ledger.paymentDialog.fields.evidenceHint")}
               </p>
             </div>
 
-            <div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-secondary px-3 py-3 text-sm text-muted-foreground">
+            <div
+              className={cn(
+                styles.evidenceStatus,
+                evidenceUrl.trim() && styles.evidenceReady,
+              )}
+            >
               {evidenceUrl.trim() ? (
                 <>
-                  <ReceiptText className="h-4 w-4 text-primary" />
+                  <ReceiptText className={patterns.iconSmall} />
                   <span>{t("customers.ledger.paymentDialog.fields.evidenceReady")}</span>
                 </>
               ) : (
                 <>
-                  <CircleSlash className="h-4 w-4 text-muted-foreground" />
+                  <CircleSlash className={patterns.iconSmall} />
                   <span>{t("customers.ledger.paymentDialog.fields.evidenceEmpty")}</span>
                 </>
               )}
             </div>
             {getFieldError("evidence_url") ? (
-              <p className="text-sm text-red-600">{getFieldError("evidence_url")}</p>
+              <p className={patterns.errorText}>{getFieldError("evidence_url")}</p>
             ) : null}
           </div>
 
-          <DialogFooter className="pt-2">
+          <DialogFooter className={styles.footer}>
             <Button
               onClick={() => setOpen(false)}
               type="button"

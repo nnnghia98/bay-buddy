@@ -15,6 +15,7 @@ import { formatCurrency } from "@/lib/formatters"
 import { fetchInvoiceDetail } from "@/lib/server-finance"
 import { getI18n } from "@/locales/server"
 import type { InvoiceDetail } from "@/schemas"
+import patterns from "@/styles/ui-patterns.module.css"
 
 type PageProps = {
   params: Promise<{ id: string }>
@@ -51,21 +52,24 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
   const invoice = await fetchInvoiceDetail(invoiceId)
 
   return (
-    <div className="space-y-4 text-foreground">
+    <div className={patterns.sectionStack}>
       <Panel>
         <PanelHeaderRow
           eyebrow={t("financeDocuments.invoices.detail.eyebrow")}
           title={`${t("financeDocuments.invoices.detail.titlePrefix")} ${invoice.invoice_number}`}
           description={t("financeDocuments.common.snapshotNotice")}
           action={
-            <div className="flex flex-wrap items-center gap-2">
+            <div className={patterns.wrapRow}>
               <StatusChip tone={statusTone(invoice.status)}>
                 {t(`financeDocuments.statuses.invoice.${invoice.status}`)}
               </StatusChip>
-              <Button asChild variant="outline" size="sm">
-                <Link href={`/invoices/${invoice.id}/public`}>
-                  {t("financeDocuments.invoices.detail.publicLink")}
-                </Link>
+              <Button
+                as={Link}
+                href={`/invoices/${invoice.id}/public`}
+                variant="outline"
+                size="sm"
+              >
+                {t("financeDocuments.invoices.detail.publicLink")}
               </Button>
             </div>
           }
@@ -92,23 +96,23 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
             value={
               <>
                 <p>{formatCurrency(invoice.total_amount)}</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                <p className={patterns.supportingText}>
                   {invoice.amount_in_words}
                 </p>
               </>
             }
-            valueClassName="text-2xl font-medium tracking-[-0.02em]"
+            valueClassName={patterns.metricValue}
           />
           <DocumentField
             label={t("financeDocuments.common.taxAmount")}
             value={
-              <div className="space-y-3">
+              <div className={patterns.stack}>
                 <p>{formatCurrency(invoice.tax_amount)}</p>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+                  <p className={patterns.accentEyebrow}>
                     {t("financeDocuments.common.discountAmount")}
                   </p>
-                  <p className="mt-1 text-sm font-medium text-foreground">
+                  <p className={patterns.labelText}>
                     {formatCurrency(invoice.discount_amount)}
                   </p>
                 </div>
@@ -116,13 +120,13 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
             }
           />
           <DocumentField
-            className="lg:col-span-2"
+            className={patterns.spanTwo}
             label={t("financeDocuments.common.note")}
             value={invoice.note ?? t("financeDocuments.common.noNote")}
           />
           {invoice.issued_at ? (
             <DocumentField
-              className="lg:col-span-2"
+              className={patterns.spanTwo}
               label={t("financeDocuments.common.issuedAt")}
               value={formatDateTime(invoice.issued_at)}
             />

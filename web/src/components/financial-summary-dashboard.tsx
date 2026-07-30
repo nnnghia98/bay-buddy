@@ -1,5 +1,7 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
 import Link from "next/link"
 import * as React from "react"
 import {
@@ -31,6 +33,7 @@ import {
 import type { FinancialSummarySnapshot } from "@/lib/dashboard"
 import { formatCurrency, formatSignedCurrency } from "@/lib/formatters"
 import { useI18n } from "@/locales/client"
+import styles from "./financial-summary-dashboard.module.css"
 
 type FinancialSummaryDashboardProps = {
   summary: FinancialSummarySnapshot | null
@@ -75,11 +78,11 @@ export function FinancialSummaryDashboard({
   if (!summary) {
     return (
       <Panel>
-        <div className="px-5 py-8">
-          <h1 className="text-xl font-medium text-foreground">
+        <div className={styles.unavailable}>
+          <h1 className={patterns.title}>
             {t("dashboard.summary.unavailableTitle")}
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+          <p className={styles.unavailableDescription}>
             {t("dashboard.summary.unavailableDescription")}
           </p>
         </div>
@@ -109,11 +112,11 @@ export function FinancialSummaryDashboard({
   }
 
   return (
-    <div className="space-y-6 pb-12 text-foreground">
+    <div className={patterns.pageStack}>
       {/* ------------------------------------------------------------------ */}
       {/* Metric strip                                                        */}
       {/* ------------------------------------------------------------------ */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className={patterns.threeColumnGrid}>
         {/* Revenue */}
         <MetricCard
           action={
@@ -123,16 +126,15 @@ export function FinancialSummaryDashboard({
                   ? t("dashboard.summary.widgets.revenue.hide")
                   : t("dashboard.summary.widgets.revenue.show")
               }
-              className="h-8 w-8 shrink-0 text-muted-foreground"
               onClick={() => setIsRevenueVisible((v) => !v)}
               size="icon"
               type="button"
               variant="ghost"
             >
               {isRevenueVisible ? (
-                <EyeOff aria-hidden="true" className="h-4 w-4" />
+                <EyeOff aria-hidden="true" className={patterns.iconSmall} />
               ) : (
-                <Eye aria-hidden="true" className="h-4 w-4" />
+                <Eye aria-hidden="true" className={patterns.iconSmall} />
               )}
             </Button>
           }
@@ -162,10 +164,10 @@ export function FinancialSummaryDashboard({
       {/* ------------------------------------------------------------------ */}
       {/* Main two-column layout                                              */}
       {/* ------------------------------------------------------------------ */}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
+      <div className={styles.dashboardGrid}>
 
         {/* Top Debtors */}
-        <div className="space-y-6">
+        <div className={styles.primaryColumn}>
           <div>
             <SectionHeader
               title={t("dashboard.summary.analytics.topDebtors.title")}
@@ -173,36 +175,36 @@ export function FinancialSummaryDashboard({
               action={
                 <Link
                   href="/customers"
-                  className="flex items-center gap-1 text-xs font-semibold text-primary transition-opacity hover:opacity-75"
+                  className={styles.sectionLink}
                 >
                   {t("appShell.nav.customers")}
-                  <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                  <ArrowRight className={patterns.iconCompact} aria-hidden="true" />
                 </Link>
               }
             />
             <Panel aria-labelledby="dashboard-top-debtors-title">
               {summary.topDebtors.length === 0 ? (
-                <div className="px-5 py-8 text-sm text-muted-foreground">
+                <div className={styles.empty}>
                   {t("dashboard.summary.analytics.topDebtors.empty")}
                 </div>
               ) : (
-                <div className="divide-y divide-border">
+                <div className={patterns.dividerList}>
                   {summary.topDebtors.map((debtor, index) => (
                     <Link
                       key={debtor.id}
                       href={`/customers/${debtor.id}`}
-                      className="group grid gap-3 px-5 py-3.5 transition-colors hover:bg-accent/35 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                      className={styles.debtorLink}
                     >
-                      <span className="min-w-0">
-                        <span className="flex items-center gap-2.5 text-sm font-medium text-foreground">
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-secondary text-[10px] font-semibold text-muted-foreground">
+                      <span className={patterns.minWidthZero}>
+                        <span className={styles.debtorNameRow}>
+                          <span className={styles.debtorRank}>
                             {index + 1}
                           </span>
-                          <span className="truncate transition-colors group-hover:text-primary">
+                          <span className={styles.debtorName}>
                             {debtor.name}
                           </span>
                         </span>
-                        <span className="mt-2 block">
+                        <span className={styles.debtorStatus}>
                           <StatusChip tone={debtor.status === "high" ? "danger" : "warning"}>
                             {debtor.status === "high"
                               ? t("dashboard.summary.analytics.topDebtors.status.high")
@@ -210,11 +212,11 @@ export function FinancialSummaryDashboard({
                           </StatusChip>
                         </span>
                       </span>
-                      <span className="text-left sm:text-right">
-                        <span className="block text-sm font-semibold text-foreground">
+                      <span className={styles.debtorBalance}>
+                        <span className={styles.debtorAmount}>
                           {formatCurrency(debtor.outstandingBalance)}
                         </span>
-                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                        <span className={styles.debtorBalanceLabel}>
                           {t("dashboard.summary.analytics.topDebtors.balanceLabel")}
                         </span>
                       </span>
@@ -226,20 +228,20 @@ export function FinancialSummaryDashboard({
           </div>
         </div>
 
-        <aside className="space-y-6">
-          <Panel className="p-5">
-            <div className="flex items-start gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-secondary text-primary">
-                <CreditCard aria-hidden="true" className="h-4 w-4" />
+        <aside className={styles.secondaryColumn}>
+          <Panel className={styles.creditPanel}>
+            <div className={patterns.rowStart}>
+              <span className={styles.creditIcon}>
+                <CreditCard aria-hidden="true" className={patterns.iconSmall} />
               </span>
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+              <div className={patterns.minWidthZero}>
+                <p className={patterns.accentEyebrow}>
                   {t("dashboard.summary.metrics.credit.label")}
                 </p>
-                <p className="mt-1 text-xl font-semibold text-foreground">
+                <p className={styles.creditValue}>
                   {formatCurrency(summary.totalHeldCredit)}
                 </p>
-                <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                <p className={styles.creditDescription}>
                   {summary.customersWithCredit} {t("dashboard.summary.metrics.credit.detail")}
                 </p>
               </div>
@@ -258,21 +260,21 @@ export function FinancialSummaryDashboard({
         />
         <Panel aria-labelledby="dashboard-recent-activity-title">
           {summary.recentActivity.length === 0 ? (
-            <div className="px-5 py-8 text-sm text-muted-foreground">
+            <div className={styles.empty}>
               {t("dashboard.summary.commandCenter.recent.empty")}
             </div>
           ) : (
             <TableScrollArea>
               <Table>
                 <TableHeader>
-                  <TableRow className="hover:bg-transparent">
+                  <TableRow>
                     <TableHead>
                       {t("dashboard.summary.commandCenter.recent.columns.activity")}
                     </TableHead>
-                    <TableHead className="text-right">
+                    <TableHead className={patterns.textRight}>
                       {t("dashboard.summary.commandCenter.recent.columns.amount")}
                     </TableHead>
-                    <TableHead className="text-right">
+                    <TableHead className={patterns.textRight}>
                       {t("dashboard.summary.commandCenter.recent.columns.time")}
                     </TableHead>
                   </TableRow>
@@ -280,23 +282,23 @@ export function FinancialSummaryDashboard({
                 <TableBody>
                   {summary.recentActivity.map((activity) => (
                     <TableRow key={activity.id}>
-                      <TableCell className="min-w-[240px]">
+                      <TableCell className={styles.activityCell}>
                         <Link
-                          className="group inline-flex max-w-full flex-col gap-1.5"
+                          className={styles.activityLink}
                           href={activity.href}
                         >
                           <StatusChip tone={getActivityTone(activity.type)}>
                             {getActivityTypeLabel(activity.type)}
                           </StatusChip>
-                          <span className="truncate text-sm font-medium text-foreground group-hover:text-primary">
+                          <span className={styles.activityTitle}>
                             {getActivityTitle(activity)}
                           </span>
                         </Link>
                       </TableCell>
-                      <TableCell className="whitespace-nowrap text-right text-sm font-semibold text-foreground">
+                      <TableCell className={styles.numberCell}>
                         {formatSignedCurrency(activity.amount)}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap text-right text-xs text-muted-foreground">
+                      <TableCell className={styles.dateCell}>
                         {formatDateTime(activity.createdAt)}
                       </TableCell>
                     </TableRow>

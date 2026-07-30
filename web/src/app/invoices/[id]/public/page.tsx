@@ -1,9 +1,12 @@
+import patterns from "@/styles/ui-patterns.module.css"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { StatusChip } from "@/components/command-center"
 import { FinanceLineItemsTable } from "@/components/finance-document-ui"
 import { formatCurrency } from "@/lib/formatters"
 import { fetchInvoicePublicView } from "@/lib/server-finance"
 import { getI18n } from "@/locales/server"
 import type { InvoicePublicView } from "@/schemas"
+import styles from "./invoice-public.module.css"
 
 type PageProps = {
   params: Promise<{ id: string }>
@@ -19,16 +22,18 @@ function formatDateTime(value: Date): string {
   }).format(value)
 }
 
-function getStatusClass(status: InvoicePublicView["invoice"]["status"]): string {
+function getStatusTone(
+  status: InvoicePublicView["invoice"]["status"],
+): "info" | "success" | "danger" | "warning" {
   switch (status) {
     case "ISSUED":
-      return "border-blue-200 bg-blue-50 text-blue-700"
+      return "info"
     case "PAID":
-      return "border-emerald-200 bg-emerald-50 text-emerald-700"
+      return "success"
     case "CANCELLED":
-      return "border-rose-200 bg-rose-50 text-rose-700"
+      return "danger"
     default:
-      return "border-amber-200 bg-amber-50 text-amber-700"
+      return "warning"
   }
 }
 
@@ -38,23 +43,23 @@ export default async function InvoicePublicPage({ params }: PageProps) {
   const publicView = await fetchInvoicePublicView(invoiceId)
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 text-foreground">
-      <Card className="overflow-hidden border border-border bg-white shadow-[var(--shadow-lg),var(--theme-shadow-soft)]">
-        <CardHeader className="border-b border-border bg-secondary/30">
-          <div className="space-y-4">
-            <div className="inline-flex w-fit items-center rounded-full border border-primary/15 bg-accent/60 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+    <div className={styles.page}>
+      <Card className={styles.document}>
+        <CardHeader className={styles.brandHeader}>
+          <div className={patterns.sectionStack}>
+            <div className={styles.eyebrow}>
               {t("financeDocuments.invoices.public.eyebrow")}
             </div>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-2">
-                <CardTitle className="text-2xl font-semibold tracking-[-0.02em]">
+            <div className={styles.brandRow}>
+              <div className={patterns.fieldStack}>
+                <CardTitle className={styles.brandTitle}>
                   {publicView.brand.company_name}
                 </CardTitle>
-                <CardDescription className="max-w-2xl text-base leading-7">
+                <CardDescription className={styles.brandDescription}>
                   {publicView.brand.slogan}
                 </CardDescription>
               </div>
-              <div className="rounded-lg border border-border bg-white px-4 py-3 text-sm leading-6 text-muted-foreground">
+              <div className={styles.contact}>
                 <p>{t("financeDocuments.invoices.public.contact")}</p>
                 <p>{publicView.brand.support_email}</p>
                 <p>{publicView.brand.hotline}</p>
@@ -63,48 +68,46 @@ export default async function InvoicePublicPage({ params }: PageProps) {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6 p-6 lg:p-8">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
-            <div className="space-y-4">
-              <h1 className="text-2xl font-semibold tracking-[-0.02em] text-foreground">
+        <CardContent className={styles.content}>
+          <div className={styles.identityGrid}>
+            <div className={patterns.sectionStack}>
+              <h1 className={styles.invoiceTitle}>
                 {t("financeDocuments.common.invoice")} {publicView.invoice.invoice_number}
               </h1>
-              <div className="flex flex-wrap gap-3">
-                <span
-                  className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${getStatusClass(publicView.invoice.status)}`}
-                >
+              <div className={styles.metadata}>
+                <StatusChip tone={getStatusTone(publicView.invoice.status)}>
                   {t(`financeDocuments.statuses.invoice.${publicView.invoice.status}`)}
-                </span>
-                <span className="rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                </StatusChip>
+                <span className={styles.datePill}>
                   {t("financeDocuments.common.createdAt")}:{" "}
                   {formatDateTime(publicView.invoice.created_at)}
                 </span>
               </div>
             </div>
 
-            <div className="grid gap-3 rounded-lg border border-border bg-secondary/30 p-4">
+            <div className={styles.customerSummary}>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <p className={patterns.eyebrow}>
                   {t("financeDocuments.common.customer")}
                 </p>
-                <p className="mt-1 text-sm leading-6 text-foreground">
+                <p className={styles.fieldValue}>
                   {publicView.invoice.customer_name_snapshot}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <p className={patterns.eyebrow}>
                   {t("financeDocuments.common.address")}
                 </p>
-                <p className="mt-1 text-sm leading-6 text-foreground">
+                <p className={styles.fieldValue}>
                   {publicView.invoice.customer_address_snapshot ??
                     t("financeDocuments.common.notUpdated")}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <p className={patterns.eyebrow}>
                   {t("financeDocuments.common.taxCode")}
                 </p>
-                <p className="mt-1 text-sm leading-6 text-foreground">
+                <p className={styles.fieldValue}>
                   {publicView.invoice.customer_tax_code_snapshot ??
                     t("financeDocuments.common.notUpdated")}
                 </p>
@@ -112,9 +115,9 @@ export default async function InvoicePublicPage({ params }: PageProps) {
             </div>
           </div>
 
-          <section className="overflow-hidden rounded-xl border border-border bg-white">
-            <div className="border-b border-border px-5 py-4">
-              <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+          <section className={styles.lineItems}>
+            <div className={styles.lineItemsHeader}>
+              <h2 className={patterns.accentEyebrow}>
                 {t("financeDocuments.invoices.public.lineItemsTitle")}
               </h2>
             </div>
@@ -131,38 +134,38 @@ export default async function InvoicePublicPage({ params }: PageProps) {
             />
           </section>
 
-          <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="rounded-lg border border-border bg-secondary/30 p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          <section className={styles.totalsGrid}>
+            <div className={styles.amountWords}>
+              <p className={patterns.eyebrow}>
                 {t("financeDocuments.common.amountInWords")}
               </p>
-              <p className="mt-3 text-base leading-7 text-foreground">
+              <p className={styles.amountWordsValue}>
                 {publicView.amount_in_words}
               </p>
             </div>
 
-            <div className="grid gap-3 rounded-lg border border-border bg-secondary/30 p-5">
+            <div className={styles.totals}>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <p className={patterns.eyebrow}>
                   {t("financeDocuments.common.taxAmount")}
                 </p>
-                <p className="mt-1 text-lg font-medium text-foreground">
+                <p className={styles.totalValue}>
                   {formatCurrency(publicView.invoice.tax_amount)}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <p className={patterns.eyebrow}>
                   {t("financeDocuments.common.discountAmount")}
                 </p>
-                <p className="mt-1 text-lg font-medium text-foreground">
+                <p className={styles.totalValue}>
                   {formatCurrency(publicView.invoice.discount_amount)}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <p className={patterns.eyebrow}>
                   {t("financeDocuments.common.total")}
                 </p>
-                <p className="mt-1 text-lg font-medium text-foreground">
+                <p className={styles.totalValue}>
                   {formatCurrency(publicView.invoice.total_amount)}
                 </p>
               </div>

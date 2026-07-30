@@ -9,6 +9,7 @@ import { fetchTicket } from "@/lib/server-tickets"
 import { fetchCurrentUser } from "@/lib/server-users"
 import { getI18n } from "@/locales/server"
 import type { TicketRead } from "@/schemas"
+import patterns from "@/styles/ui-patterns.module.css"
 
 type PageProps = {
   params: Promise<{ id: string }>
@@ -35,12 +36,14 @@ export default async function TicketDetailPage({ params }: PageProps) {
   ])
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-start">
-        <Button asChild variant="outline">
-          <Link href={`/customers/${ticketResult.customer_id}`}>
-            {t("tickets.detail.backToCustomer")}
-          </Link>
+    <div className={patterns.sectionStack}>
+      <div>
+        <Button
+          as={Link}
+          href={`/customers/${ticketResult.customer_id}`}
+          variant="outline"
+        >
+          {t("tickets.detail.backToCustomer")}
         </Button>
       </div>
 

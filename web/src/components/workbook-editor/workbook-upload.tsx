@@ -1,10 +1,13 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
 import { FileSpreadsheet, LoaderCircle, Upload } from "lucide-react"
 import * as React from "react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import styles from "./workbook-editor-components.module.css"
 
 const XLSX_MIME_TYPE =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -58,15 +61,12 @@ export function WorkbookUpload({
   )
 
   return (
-    <div className="space-y-3">
+    <div className={patterns.stack}>
       <label
         className={cn(
-          "group flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed px-5 py-6 text-center transition-colors",
-          "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20",
-          isDragging
-            ? "border-primary bg-primary/5"
-            : "border-border-strong bg-secondary/35 hover:border-primary/60 hover:bg-primary/[0.03]",
-          disabled && "pointer-events-none cursor-not-allowed opacity-60",
+          styles.dropZone,
+          isDragging && styles.dropZoneDragging,
+          disabled && styles.dropZoneDisabled,
         )}
         htmlFor={inputId}
         onDragEnter={(event) => {
@@ -88,7 +88,7 @@ export function WorkbookUpload({
       >
         <input
           accept={`.xlsx,.xls,${XLSX_MIME_TYPE},${XLS_MIME_TYPE}`}
-          className="sr-only"
+          className={patterns.srOnly}
           disabled={disabled}
           id={inputId}
           onChange={(event) => {
@@ -97,40 +97,44 @@ export function WorkbookUpload({
           }}
           type="file"
         />
-        <span className="mb-3 grid size-10 place-items-center rounded-sm border border-blue-200 bg-blue-50 text-primary">
-          <Upload aria-hidden="true" className="size-4" />
+        <span className={cn(styles.iconTileLarge, styles.dropZoneIcon)}>
+          <Upload aria-hidden="true" className={patterns.iconSmall} />
         </span>
-        <span className="text-sm font-semibold text-foreground">{labels.choose}</span>
-        <span className="mt-1 text-sm text-muted-foreground">{labels.drop}</span>
-        <span className="mt-3 font-mono text-[11px] text-muted-foreground">
+        <span className={patterns.sectionTitle}>{labels.choose}</span>
+        <span className={patterns.mutedText}>{labels.drop}</span>
+        <span className={styles.supportedFiles}>
           {labels.supported}
         </span>
       </label>
 
       {file ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-primary/20 bg-primary/[0.035] p-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-sm border border-blue-200 bg-white text-primary">
-              <FileSpreadsheet aria-hidden="true" className="size-4" />
+        <div className={styles.selectedFile}>
+          <div className={styles.selectedFileIdentity}>
+            <span className={styles.iconTile}>
+              <FileSpreadsheet aria-hidden="true" className={patterns.iconSmall} />
             </span>
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+            <div className={patterns.minWidthZero}>
+              <p className={patterns.accentEyebrow}>
                 {labels.selected}
               </p>
-              <p className="truncate text-sm font-medium text-foreground" title={file.name}>
+              <p className={styles.selectedFilename} title={file.name}>
                 {file.name}
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <Button asChild disabled={disabled} size="sm" variant="outline">
-              <label className="cursor-pointer" htmlFor={inputId}>
-                {labels.change}
-              </label>
+          <div className={styles.selectedFileActions}>
+            <Button
+              disabled={disabled}
+              onClick={() => document.getElementById(inputId)?.click()}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              {labels.change}
             </Button>
             <Button disabled={disabled || pending} onClick={onUpload} size="sm" type="button">
               {pending ? (
-                <LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />
+                <LoaderCircle aria-hidden="true" className={`${patterns.iconSmall} ${patterns.spinner}`} />
               ) : null}
               {pending ? labels.uploading : labels.upload}
             </Button>

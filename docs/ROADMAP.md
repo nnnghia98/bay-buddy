@@ -1,8 +1,8 @@
 # 🗺️ BAY BUDDY MASTER ROADMAP
 
 **Project Status:** 🟢 Phase 4 (Completed) | 🔵 Phase 5 (In-Progress)
-**Design System:** Airtable-inspired (Design-MD)
-**Core Aesthetics:** High-density, Data-driven, Flat UI, Blue Sapphire Palette (`#2d7ff9`)
+**Design System:** Astryx Design with the default Neutral theme
+**Core Aesthetics:** High-density, data-driven, calm operational UI
 
 ---
 
@@ -10,7 +10,7 @@
 
 ### Phase 1: Infrastructure & Tech Stack
 - [x] Service workspace setup with **separate `api/` and `web/` services**.
-- [x] Styling with **Tailwind CSS v4** & **shadcn/ui**.
+- [x] Styling with **Astryx Design**, the **Neutral theme**, and token-based CSS Modules.
 - [x] Database architecture with **PostgreSQL** & **Prisma**.
 - [x] Centralized design tokens in `globals.css`.
 
@@ -28,7 +28,7 @@
 - [x] **Double-entry Ledger:** Comprehensive transaction logging for every customer.
 - [x] **Invoice Snapshots:** Point-in-time billing records for easy auditing.
 - [x] **Payment Tracking:** Payment receipts & debt offsetting logic.
-- [x] **UI Transition:** Migration from "Corporate Trust" to **Airtable/Design-MD** style.
+- [x] **UI Transition:** Migration to the Astryx Neutral operations UI.
 
 ---
 
@@ -38,7 +38,7 @@
 *Goal: Turn Ledger data into actionable business insights.*
 - [ ] **Financial Widgets:** Total Revenue, Net Profit, Total Receivables (Công nợ phải thu).
 - [ ] **Debt Aging Reports:** Visual breakdown of overdue payments (0-30, 31-60, 60+ days).
-- [ ] **Revenue Trends:** Interactive line charts using `Recharts` (Airtable flat aesthetic).
+- [ ] **Revenue Trends:** Interactive line charts using `Recharts` and Neutral semantic tokens.
 - [ ] **Performance Benchmarking:** Top-performing customers and high-profit routes.
 
 ---
@@ -47,7 +47,7 @@
 
 ### Phase 6: Professional Output & Communication
 *Goal: Professionalize customer-facing interactions.*
-- [ ] **Airtable-style PDFs:** High-density, clean PDF Invoice generation.
+- [ ] **Operations-style PDFs:** High-density, clean PDF invoice generation.
 - [ ] **Public View Links:** Unique, secure URLs for customers to view their Ledger/Invoices.
 - [ ] **Zalo/Social Integration:** Quick-share buttons for booking details and debt reminders.
 
@@ -66,7 +66,7 @@
 ---
 
 ## 🛠️ DEVELOPER GUIDELINES (FOR AGENT)
-1. **Color Lock:** Always use `var(--primary)` (#2d7ff9) for main actions. Never hardcode hex colors.
-2. **UI Density:** Prioritize showing more information with less whitespace (Airtable style).
+1. **Theme Lock:** Use the Astryx Neutral semantic tokens. Do not add a local color palette.
+2. **UI Density:** Prioritize showing more information with less whitespace.
 3. **Logic Integrity:** Never modify Phase 4 Ledger/Financial logic unless explicitly requested. 
-4. **Consistency:** All new components must follow the `#docs/NEW_UI_GUIDELINE.md`.
+4. **Consistency:** All new components must follow `docs/DESIGN.md` and `docs/UX.md`.

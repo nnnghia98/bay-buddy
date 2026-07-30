@@ -1,5 +1,9 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
+import { Banner } from "@astryxdesign/core/Banner"
+import { Card } from "@astryxdesign/core/Card"
 import {
   AlertTriangle,
   FileSpreadsheet,
@@ -24,6 +28,7 @@ import type {
 } from "@/schemas/workbook"
 import { useI18n } from "@/locales/client"
 import { cn } from "@/lib/utils"
+import styles from "./workbook-start.module.css"
 
 type PendingAction = "upload" | "session" | null
 
@@ -104,28 +109,29 @@ export function WorkbookStartClient({
   const busy = pending !== null
 
   return (
-    <div className="grid gap-4 pb-12 text-foreground xl:grid-cols-[minmax(20rem,5fr)_minmax(0,8fr)] xl:items-start">
-      <section
+    <div className={styles.workbench}>
+      <Card
         aria-labelledby="workbook-start-title"
-        className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] xl:sticky xl:top-5"
+        className={styles.startCard}
+        padding={0}
       >
-        <div className="flex flex-col gap-3 border-b border-border bg-secondary/20 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-sm border border-blue-200 bg-blue-50 text-primary">
-              <FileSpreadsheet aria-hidden="true" className="size-4" />
+        <div className={styles.header}>
+          <div className={styles.identity}>
+            <span className={styles.iconTile}>
+              <FileSpreadsheet aria-hidden="true" className={patterns.iconSmall} />
             </span>
-            <h1 className="min-w-0 text-base font-semibold tracking-[-0.01em]" id="workbook-start-title">
+            <h1 className={styles.title} id="workbook-start-title">
               {text("workbookEditor.start.title")}
             </h1>
           </div>
-          <div className="flex shrink-0 items-center gap-2 text-xs font-medium text-emerald-700">
-            <ShieldCheck aria-hidden="true" className="size-4 text-emerald-700" />
+          <div className={styles.protected}>
+            <ShieldCheck aria-hidden="true" className={patterns.iconSmall} />
             <span>{text("workbookEditor.start.originalProtected")}</span>
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-col">
-          <div className="p-4">
+        <div className={styles.body}>
+          <div className={styles.upload}>
             <WorkbookUpload
               disabled={busy}
               file={file}
@@ -150,57 +156,56 @@ export function WorkbookStartClient({
             />
 
             {error ? (
-              <div
-                aria-live="assertive"
-                className="mt-4 flex gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700"
-                role="alert"
-              >
-                <AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-                <span>{error}</span>
+              <div className={styles.error}>
+                <Banner
+                  icon={<AlertTriangle aria-hidden="true" />}
+                  status="error"
+                  title={error}
+                />
               </div>
             ) : null}
           </div>
 
           <div
             aria-busy={busy}
-            className="flex min-h-64 flex-col border-t border-border bg-secondary/20 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30"
+            className={styles.sheetsRegion}
             ref={sheetsRegionRef}
             tabIndex={-1}
           >
-            <div className="border-b border-border px-4 py-3">
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="text-sm font-semibold text-foreground">
+            <div className={styles.sheetsHeader}>
+              <div className={styles.sheetsHeaderRow}>
+                <p className={patterns.sectionTitle}>
                   {text("workbookEditor.sheets.eyebrow")}
                 </p>
                 {uploaded ? (
-                  <span className="font-mono text-xs text-muted-foreground">
+                  <span className={patterns.monoSupporting}>
                     {uploaded.sheets.length}
                   </span>
                 ) : null}
               </div>
-              <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
+              <p className={styles.sheetsDescription}>
                 {text("workbookEditor.sheets.description")}
               </p>
             </div>
 
             {uploaded ? (
-              <div className="flex flex-1 flex-col">
-                <div className="border-b border-blue-100 bg-blue-50/65 px-4 py-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <FileSpreadsheet aria-hidden="true" className="size-4 shrink-0 text-primary" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold" title={uploaded.original_filename}>
+              <div className={styles.uploadedContent}>
+                <div className={styles.uploadedFile}>
+                  <div className={styles.uploadedIdentity}>
+                    <FileSpreadsheet aria-hidden="true" className={patterns.iconSmall} />
+                    <div className={patterns.minWidthZero}>
+                      <p className={styles.uploadedName} title={uploaded.original_filename}>
                         {uploaded.original_filename}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className={patterns.supportingText}>
                         {text("workbookEditor.start.uploadedProtected")}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <fieldset className="max-h-64 divide-y divide-border overflow-y-auto" disabled={busy}>
-                  <legend className="sr-only">{text("workbookEditor.sheets.selectLabel")}</legend>
+                <fieldset className={styles.sheetList} disabled={busy}>
+                  <legend className={patterns.srOnly}>{text("workbookEditor.sheets.selectLabel")}</legend>
                   {uploaded.sheets.map((sheet) => (
                     <SheetOption
                       key={sheet.name}
@@ -214,17 +219,17 @@ export function WorkbookStartClient({
                   ))}
                 </fieldset>
 
-                <div className="mt-auto border-t border-border bg-white p-3">
+                <div className={styles.openAction}>
                   <Button
-                    className="w-full"
                     disabled={!selectedSheet || busy}
                     onClick={handleCreateSession}
                     type="button"
+                    width="100%"
                   >
                     {pending === "session" ? (
                       <LoaderCircle
                         aria-hidden="true"
-                        className="size-4 animate-spin motion-reduce:animate-none"
+                        className={`${patterns.iconSmall} ${patterns.spinner}`}
                       />
                     ) : null}
                     {pending === "session"
@@ -234,15 +239,15 @@ export function WorkbookStartClient({
                 </div>
               </div>
             ) : (
-              <div className="grid flex-1 place-items-center px-6 py-9 text-center">
-                <div className="max-w-xs">
-                  <span className="mx-auto grid size-10 place-items-center rounded-sm border border-border bg-white text-muted-foreground">
-                    <FileSpreadsheet aria-hidden="true" className="size-4" />
+              <div className={styles.emptyState}>
+                <div className={styles.emptyCopy}>
+                  <span className={styles.emptyIcon}>
+                    <FileSpreadsheet aria-hidden="true" className={patterns.iconSmall} />
                   </span>
-                  <p className="mt-3 text-sm font-medium text-foreground">
+                  <p className={styles.emptyTitle}>
                     {text("workbookEditor.sheets.emptyTitle")}
                   </p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  <p className={patterns.mutedText}>
                     {text("workbookEditor.sheets.emptyDescription")}
                   </p>
                 </div>
@@ -250,7 +255,7 @@ export function WorkbookStartClient({
             )}
           </div>
         </div>
-      </section>
+      </Card>
       <WorkbookSessionLibrary initialData={initialSessions} userId={userId} />
     </div>
   )
@@ -274,29 +279,29 @@ function SheetOption({
   return (
     <label
       className={cn(
-        "relative block bg-white px-4 py-3 transition-colors",
-        selectable ? "cursor-pointer hover:bg-primary/[0.035]" : "cursor-not-allowed opacity-60",
-        selected && "bg-blue-50/80",
+        styles.sheetOption,
+        selectable ? styles.sheetSelectable : styles.sheetUnavailable,
+        selected && styles.sheetSelected,
       )}
     >
       {selected ? (
-        <span aria-hidden="true" className="absolute inset-y-2 left-0 w-1 rounded-r-full bg-primary" />
+        <span aria-hidden="true" className={styles.selectionMarker} />
       ) : null}
-      <div className="flex items-start gap-3">
+      <div className={patterns.rowStart}>
         <input
           checked={selected}
-          className="mt-1 size-4 accent-primary"
+          className={styles.radio}
           disabled={!selectable}
           name="workbook-sheet"
           onChange={() => onSelect(sheet.name)}
           type="radio"
           value={sheet.name}
         />
-        <div className="min-w-0 flex-1">
-          <span className={cn("block truncate text-sm font-semibold", selected && "text-primary")} title={sheet.name}>
+        <div className={styles.sheetCopy}>
+          <span className={cn(styles.sheetName, selected && styles.sheetNameSelected)} title={sheet.name}>
             {sheet.name}
           </span>
-          <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+          <p className={styles.sheetSize}>
             {labels.rowsColumns}: {sheet.max_row} × {sheet.max_column}
           </p>
         </div>

@@ -6,7 +6,7 @@
 
 **Architecture:** Keep reads in the existing React Server Component page at `apps/web/src/app/page.tsx`, derive command-center data in pure TypeScript helpers, and render the interactive-free dashboard as a client component only where Recharts requires it. Add small shared UX primitives for status/action panels so later ledger and finance document pages can reuse the same visual language.
 
-**Tech Stack:** Next.js 16 App Router, React 19, TypeScript, shadcn-style local UI primitives, Tailwind CSS, Recharts, Vitest, next-international.
+**Tech Stack:** Next.js 16 App Router, React 19, TypeScript, Astryx Design, token-based CSS Modules, Recharts, Vitest, next-international.
 
 ---
 

@@ -1,5 +1,7 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
 import * as React from "react"
 import { useActionState } from "react"
 import Link from "next/link"
@@ -21,10 +23,11 @@ import { DetailField, selectInputClassName } from "@/components/operations-ui"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { formatCurrency } from "@/lib/formatters"
-import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
 import type { CustomerDirectoryItem, TicketRead } from "@/schemas"
+import styles from "./ticket-detail.module.css"
 
 type TicketDetailClientProps = {
   currentUserRole: "ADMIN" | "STAFF"
@@ -121,7 +124,7 @@ function DetailItem({
 }) {
   return (
     <DetailField
-      className={cn("bg-white", className)}
+      className={className}
       label={label}
       labelMuted
       value={value}
@@ -144,34 +147,34 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
   )
 
   return (
-    <Panel className="p-5">
+    <Panel className={styles.panel}>
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+        <p className={patterns.accentEyebrow}>
           {t("tickets.detail.adminEyebrow")}
         </p>
-        <h2 className="mt-2 text-lg font-semibold text-foreground">
+        <h2 className={styles.sectionTitle}>
           {t("tickets.detail.correctionTitle")}
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className={patterns.mutedText}>
           {t("tickets.detail.correctionDescription")}
         </p>
       </div>
 
-      <form action={formAction} className="mt-5 space-y-5">
+      <form action={formAction} className={styles.form}>
         <input name="customer_id" type="hidden" value={ticket.customer_id} />
         <input name="ticket_id" type="hidden" value={ticket.id} />
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-2">
+        <div className={patterns.fourColumnGrid}>
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-pnr">
               {t("customers.ledger.corrections.fields.pnr")}
             </Label>
             <Input id="ticket-detail-pnr" name="pnr" defaultValue={ticket.pnr ?? ""} />
             {fieldError("pnr") ? (
-              <p className="text-sm text-red-600">{fieldError("pnr")}</p>
+              <p className={patterns.errorText}>{fieldError("pnr")}</p>
             ) : null}
           </div>
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-ticket-number">
               {t("customers.ledger.corrections.fields.ticketNumber")}
             </Label>
@@ -181,7 +184,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               defaultValue={ticket.ticket_number ?? ""}
             />
           </div>
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-airline">
               {t("customers.ledger.corrections.fields.airline")}
             </Label>
@@ -199,7 +202,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               ))}
             </select>
           </div>
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-flight-date">
               {t("customers.ledger.corrections.fields.flightDate")}
             </Label>
@@ -212,20 +215,19 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className={patterns.fieldStack}>
           <Label htmlFor="ticket-detail-passengers">
             {t("customers.ledger.corrections.fields.passengers")}
           </Label>
-          <textarea
-            className="min-h-24 w-full rounded-md border border-input bg-white px-3.5 py-2 text-sm font-medium placeholder:font-normal shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+          <Textarea
             id="ticket-detail-passengers"
             name="passengers"
             defaultValue={ticket.passengers.join("\n")}
           />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-2">
+        <div className={patterns.fourColumnGrid}>
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-departure-place">
               {t("customers.ledger.corrections.fields.departurePlace")}
             </Label>
@@ -235,7 +237,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               defaultValue={ticket.departure_place ?? ""}
             />
           </div>
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-arrival-place">
               {t("customers.ledger.corrections.fields.arrivalPlace")}
             </Label>
@@ -245,7 +247,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               defaultValue={ticket.arrival_place ?? ""}
             />
           </div>
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-departure-code">
               {t("customers.ledger.corrections.fields.departureCode")}
             </Label>
@@ -255,7 +257,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               defaultValue={ticket.departure_code ?? ""}
             />
           </div>
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-arrival-code">
               {t("customers.ledger.corrections.fields.arrivalCode")}
             </Label>
@@ -267,8 +269,8 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          <div className="space-y-2">
+        <div className={styles.priceGrid}>
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-net-price">
               {t("customers.ledger.corrections.fields.netPrice")}
             </Label>
@@ -280,7 +282,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               defaultValue={ticket.net_price}
             />
           </div>
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-ev-price">
               {t("customers.ledger.corrections.fields.evPrice")}
             </Label>
@@ -292,7 +294,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               defaultValue={ticket.ev_price}
             />
           </div>
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-ast-price">
               {t("customers.ledger.corrections.fields.astPrice")}
             </Label>
@@ -304,7 +306,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               defaultValue={ticket.ast_price}
             />
           </div>
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-thf-price">
               {t("customers.ledger.corrections.fields.thfPrice")}
             </Label>
@@ -316,7 +318,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               defaultValue={ticket.thf_price}
             />
           </div>
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-web-price">
               {t("customers.ledger.corrections.fields.webPrice")}
             </Label>
@@ -328,7 +330,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               defaultValue={ticket.web_price}
             />
           </div>
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-insurance-price">
               {t("customers.ledger.corrections.fields.insurancePrice")}
             </Label>
@@ -340,7 +342,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               defaultValue={ticket.insurance_price}
             />
           </div>
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-selling-price">
               {t("customers.ledger.corrections.fields.sellingPrice")}
             </Label>
@@ -352,7 +354,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               defaultValue={ticket.selling_price}
             />
           </div>
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-discount">
               {t("customers.ledger.corrections.fields.discount")}
             </Label>
@@ -367,12 +369,12 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
         </div>
 
         {state.status === "error" && state.message ? (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className={patterns.errorText}>
             {state.message}
           </p>
         ) : null}
 
-        <div className="flex justify-end">
+        <div className={patterns.endRow}>
           <LifecycleSubmitButton
             idleLabel={t("customers.ledger.corrections.save")}
             pendingLabel={t("customers.ledger.corrections.saving")}
@@ -423,34 +425,36 @@ export function TicketDetailClient({
   )
 
   return (
-    <div className="space-y-5">
-      <Panel className="p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div className={patterns.contentStack}>
+      <Panel className={styles.panel}>
+        <div className={styles.header}>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+            <p className={patterns.accentEyebrow}>
               {t("tickets.detail.eyebrow")}
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-normal text-foreground">
+            <div className={styles.titleRow}>
+              <h1 className={styles.title}>
                 {ticket.pnr ?? t("tickets.detail.emptyValue")}
               </h1>
               <StatusChip tone={getStatusTone(ticket.status)}>
                 {t(`tickets.statuses.${ticket.status}`)}
               </StatusChip>
             </div>
-            <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+            <p className={`${patterns.mutedText} ${styles.description}`}>
               {t("tickets.detail.description")}
             </p>
           </div>
 
-          <Button asChild variant="outline">
-            <Link href={`/customers/${ticket.customer_id}`}>
-              {t("tickets.detail.openCustomer")}
-            </Link>
+          <Button
+            as={Link}
+            href={`/customers/${ticket.customer_id}`}
+            variant="outline"
+          >
+            {t("tickets.detail.openCustomer")}
           </Button>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className={styles.metricGrid}>
           <DetailItem label={t("tickets.detail.metrics.route")} value={route} />
           <DetailItem
             label={t("tickets.detail.metrics.flightDate")}
@@ -467,18 +471,18 @@ export function TicketDetailClient({
         </div>
       </Panel>
 
-      <section className="grid gap-5 xl:grid-cols-[1.3fr_0.7fr]">
-        <Panel className="p-5">
+      <section className={styles.layout}>
+        <Panel className={styles.panel}>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+            <p className={patterns.accentEyebrow}>
               {t("tickets.detail.ticketInfoEyebrow")}
             </p>
-            <h2 className="mt-2 text-lg font-semibold text-foreground">
+            <h2 className={styles.sectionTitle}>
               {t("tickets.detail.ticketInfoTitle")}
             </h2>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className={styles.detailGrid}>
             <DetailItem label={t("tickets.detail.fields.ticketNumber")} value={ticket.ticket_number ?? t("tickets.detail.emptyValue")} />
             <DetailItem label={t("tickets.detail.fields.airline")} value={ticket.airline ?? t("tickets.detail.emptyValue")} />
             <DetailItem label={t("tickets.detail.fields.departure")} value={`${ticket.departure_place ?? t("tickets.detail.emptyValue")} (${ticket.departure_code ?? "-"})`} />
@@ -494,45 +498,42 @@ export function TicketDetailClient({
             <DetailItem label={t("tickets.detail.fields.updatedAt")} value={formatDateTime(ticket.updated_at)} />
           </div>
 
-          <div className="mt-3 rounded-lg border border-border bg-white p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          <div className={styles.passengers}>
+            <p className={patterns.eyebrow}>
               {t("tickets.detail.fields.passengers")}
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className={styles.passengerList}>
               {ticket.passengers.map((passenger) => (
-                <span
-                  className="rounded-full border border-border bg-secondary px-3 py-1 text-xs font-semibold text-foreground"
-                  key={passenger}
-                >
+                <StatusChip key={passenger}>
                   {passenger}
-                </span>
+                </StatusChip>
               ))}
             </div>
           </div>
         </Panel>
 
-        <aside className="space-y-5">
-          <Panel className="p-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+        <aside className={patterns.contentStack}>
+          <Panel className={styles.panel}>
+            <p className={patterns.accentEyebrow}>
               {t("tickets.detail.actionsEyebrow")}
             </p>
-            <h2 className="mt-2 text-lg font-semibold text-foreground">
+            <h2 className={styles.sectionTitle}>
               {t("tickets.detail.actionsTitle")}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className={patterns.mutedText}>
               {t("tickets.detail.actionsDescription")}
             </p>
 
-            <div className="mt-5 space-y-4">
-              <form action={voidAction} className="rounded-lg border border-border bg-secondary/30 p-4">
+            <div className={styles.actionStack}>
+              <form action={voidAction} className={styles.actionForm}>
                 <input name="ticket_id" type="hidden" value={ticket.id} />
                 <input name="customer_id" type="hidden" value={ticket.customer_id} />
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between xl:flex-col xl:items-stretch">
+                <div className={styles.responsiveAction}>
                   <div>
-                    <p className="text-sm font-semibold text-foreground">
+                    <p className={patterns.sectionTitle}>
                       {t("tickets.actions.voidTitle")}
                     </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className={patterns.mutedText}>
                       {t("tickets.actions.voidDescription")}
                     </p>
                   </div>
@@ -545,19 +546,19 @@ export function TicketDetailClient({
                 </div>
               </form>
 
-              <form action={refundAction} className="rounded-lg border border-border bg-secondary/30 p-4">
+              <form action={refundAction} className={styles.actionForm}>
                 <input name="ticket_id" type="hidden" value={ticket.id} />
                 <input name="customer_id" type="hidden" value={ticket.customer_id} />
-                <div className="space-y-3">
+                <div className={patterns.stack}>
                   <div>
-                    <p className="text-sm font-semibold text-foreground">
+                    <p className={patterns.sectionTitle}>
                       {t("tickets.actions.refundTitle")}
                     </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className={patterns.mutedText}>
                       {t("tickets.actions.refundDescription")}
                     </p>
                   </div>
-                  <div className="flex flex-col gap-3 sm:flex-row xl:flex-col">
+                  <div className={styles.refundControls}>
                     <Input
                       aria-label={t("tickets.actions.refundAmount")}
                       defaultValue={ticket.selling_price}
@@ -572,24 +573,24 @@ export function TicketDetailClient({
                     />
                   </div>
                   {refundState.fieldErrors.amount ? (
-                    <p className="text-sm text-red-600">{refundState.fieldErrors.amount}</p>
+                    <p className={patterns.errorText}>{refundState.fieldErrors.amount}</p>
                   ) : null}
                 </div>
               </form>
 
-              <form action={reassignAction} className="rounded-lg border border-border bg-secondary/30 p-4">
+              <form action={reassignAction} className={styles.actionForm}>
                 <input name="ticket_id" type="hidden" value={ticket.id} />
                 <input name="customer_id" type="hidden" value={ticket.customer_id} />
-                <div className="space-y-3">
+                <div className={patterns.stack}>
                   <div>
-                    <p className="text-sm font-semibold text-foreground">
+                    <p className={patterns.sectionTitle}>
                       {t("tickets.actions.reassignTitle")}
                     </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className={patterns.mutedText}>
                       {t("tickets.actions.reassignDescription")}
                     </p>
                   </div>
-                  <div className="flex flex-col gap-3">
+                  <div className={patterns.stack}>
                     <select
                       aria-label={t("tickets.actions.reassignCustomer")}
                       className={selectInputClassName}
@@ -616,7 +617,7 @@ export function TicketDetailClient({
                     />
                   </div>
                   {reassignState.fieldErrors.new_customer_id ? (
-                    <p className="text-sm text-red-600">
+                    <p className={patterns.errorText}>
                       {reassignState.fieldErrors.new_customer_id}
                     </p>
                   ) : null}
@@ -627,11 +628,11 @@ export function TicketDetailClient({
         </aside>
       </section>
 
-      <Panel className="p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+      <Panel className={styles.panel}>
+        <p className={patterns.accentEyebrow}>
           {t("tickets.detail.timestampsEyebrow")}
         </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className={styles.timestampGrid}>
           <DetailItem
             label={t("tickets.detail.fields.createdAt")}
             value={formatDateTime(ticket.created_at)}
@@ -645,12 +646,10 @@ export function TicketDetailClient({
 
       {currentUserRole === "ADMIN" ? <TicketCorrectionForm ticket={ticket} /> : null}
 
-      <div className="flex justify-end">
-        <Button asChild variant="outline">
-          <Link href="/report">
-            {t("tickets.detail.openReport")}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+      <div className={patterns.endRow}>
+        <Button as={Link} href="/report" variant="outline">
+          {t("tickets.detail.openReport")}
+          <ArrowRight className={patterns.iconSmall} />
         </Button>
       </div>
     </div>

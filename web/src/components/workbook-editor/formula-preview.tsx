@@ -1,9 +1,13 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
 import { AlertCircle, CheckCircle2, LoaderCircle } from "lucide-react"
 
 import type { WorkbookFormulaPreviewResponse } from "@/schemas/workbook"
 import type { FormulaTranslator } from "./simple-formula-builder"
+import { cn } from "@/lib/utils"
+import styles from "./workbook-editor-components.module.css"
 
 function formulaMessage(t: FormulaTranslator, code?: string | null): string {
   const knownCodes = new Set([
@@ -57,41 +61,41 @@ export function FormulaPreview({
   t: FormulaTranslator
 }) {
   if (loading) {
-    return <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/30 p-3 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin" />{t("workbookEditor.editor.columns.preview.loading")}</div>
+    return <div className={styles.previewState}><LoaderCircle className={`${patterns.iconSmall} ${patterns.spinner}`} />{t("workbookEditor.editor.columns.preview.loading")}</div>
   }
   if (localInvalid) {
-    return <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert"><AlertCircle className="size-4" />{t("workbookEditor.editor.columns.preview.localInvalid")}</div>
+    return <div className={cn(styles.previewState, styles.previewError)} role="alert"><AlertCircle className={patterns.iconSmall} />{t("workbookEditor.editor.columns.preview.localInvalid")}</div>
   }
   if (error) {
-    return <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert"><AlertCircle className="size-4" />{t("workbookEditor.editor.columns.preview.failed")}</div>
+    return <div className={cn(styles.previewState, styles.previewError)} role="alert"><AlertCircle className={patterns.iconSmall} />{t("workbookEditor.editor.columns.preview.failed")}</div>
   }
   if (!preview) {
-    return <div className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">{t("workbookEditor.editor.columns.preview.empty")}</div>
+    return <div className={styles.previewEmpty}>{t("workbookEditor.editor.columns.preview.empty")}</div>
   }
 
   return (
-    <div className="grid gap-3 rounded-lg border border-border bg-secondary/20 p-3">
-      <div className="flex items-start gap-2">
-        {preview.valid ? <CheckCircle2 className="mt-0.5 size-4 text-emerald-600" /> : <AlertCircle className="mt-0.5 size-4 text-destructive" />}
-        <div className="min-w-0">
-          <p className="text-sm font-medium">{preview.valid ? t("workbookEditor.editor.columns.preview.valid") : t("workbookEditor.editor.columns.preview.invalid")}</p>
-          {preview.readable_expression ? <code className="mt-1 block overflow-x-auto rounded bg-white px-2 py-1 text-xs text-foreground">{preview.readable_expression}</code> : null}
+    <div className={styles.previewSurface}>
+      <div className={styles.previewSummary}>
+        {preview.valid ? <CheckCircle2 className={styles.previewSuccessIcon} /> : <AlertCircle className={styles.previewErrorIcon} />}
+        <div className={patterns.minWidthZero}>
+          <p className={patterns.labelText}>{preview.valid ? t("workbookEditor.editor.columns.preview.valid") : t("workbookEditor.editor.columns.preview.invalid")}</p>
+          {preview.readable_expression ? <code className={styles.previewCode}>{preview.readable_expression}</code> : null}
         </div>
       </div>
-      {preview.errors?.map((item) => <p className="text-xs font-medium text-destructive" key={`${item.code}:${item.message}`}>{formulaMessage(t, item.code)}</p>)}
-      {preview.warnings?.map((item) => <p className="text-xs text-amber-700" key={`${item.code}:${item.message}`}>{formulaMessage(t, item.code)}</p>)}
+      {preview.errors?.map((item) => <p className={patterns.errorSupportingText} key={`${item.code}:${item.message}`}>{formulaMessage(t, item.code)}</p>)}
+      {preview.warnings?.map((item) => <p className={styles.previewWarning} key={`${item.code}:${item.message}`}>{formulaMessage(t, item.code)}</p>)}
       {preview.results?.length ? (
-        <div className="overflow-hidden rounded-md border border-border bg-white">
-          <div className="grid grid-cols-[5rem_1fr] bg-secondary/50 px-3 py-2 text-xs font-medium text-muted-foreground">
+        <div className={styles.previewTable}>
+          <div className={styles.previewTableHeader}>
             <span>{t("workbookEditor.editor.columns.preview.row")}</span>
             <span>{t("workbookEditor.editor.columns.preview.result")}</span>
           </div>
           {preview.results.map((row) => (
-            <div className="grid grid-cols-[5rem_1fr] border-t border-border px-3 py-2 text-sm" key={row.row_number}>
+            <div className={styles.previewTableRow} key={row.row_number}>
               <span>{row.row_number}</span>
               {row.error_code
-                ? <span className="text-destructive">{formulaMessage(t, row.error_code)}</span>
-                : <span className="font-medium tabular-nums">{row.value == null ? t("workbookEditor.editor.columns.preview.blank") : formatFormulaPreviewValue(row.value, outputType)}</span>}
+                ? <span className={patterns.errorText}>{formulaMessage(t, row.error_code)}</span>
+                : <span className={styles.previewValue}>{row.value == null ? t("workbookEditor.editor.columns.preview.blank") : formatFormulaPreviewValue(row.value, outputType)}</span>}
             </div>
           ))}
         </div>

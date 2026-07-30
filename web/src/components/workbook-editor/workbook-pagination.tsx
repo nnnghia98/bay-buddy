@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import styles from "./workbook-editor-components.module.css"
 
 export function WorkbookPagination({
   nextLabel,
@@ -24,11 +25,11 @@ export function WorkbookPagination({
   totalPages: number
 }) {
   return (
-    <div className="flex flex-col gap-3 border-t border-border bg-secondary/15 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between lg:px-5">
-      <p className="font-mono text-xs font-medium text-muted-foreground">
+    <div className={styles.pagination}>
+      <p className={styles.paginationMeta}>
         {totalLabel.replace("{total}", String(total))}
       </p>
-      <div className="flex items-center justify-end gap-2">
+      <div className={styles.paginationActions}>
         <Button
           aria-label={previousLabel}
           disabled={page <= 1}
@@ -37,10 +38,10 @@ export function WorkbookPagination({
           type="button"
           variant="outline"
         >
-          <ChevronLeft aria-hidden="true" className="h-4 w-4" />
-          <span className="hidden md:inline">{previousLabel}</span>
+          <ChevronLeft aria-hidden="true" className={styles.icon} />
+          <span className={styles.desktopLabel}>{previousLabel}</span>
         </Button>
-        <span className="min-w-24 text-center font-mono text-xs font-medium text-foreground">
+        <span className={styles.pageIndicator}>
           {pageLabel.replace("{page}", String(page)).replace("{total}", String(totalPages || 1))}
         </span>
         <Button
@@ -51,8 +52,8 @@ export function WorkbookPagination({
           type="button"
           variant="outline"
         >
-          <span className="hidden md:inline">{nextLabel}</span>
-          <ChevronRight aria-hidden="true" className="h-4 w-4" />
+          <span className={styles.desktopLabel}>{nextLabel}</span>
+          <ChevronRight aria-hidden="true" className={styles.icon} />
         </Button>
       </div>
     </div>

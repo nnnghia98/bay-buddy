@@ -4,7 +4,14 @@ import * as React from "react"
 import { Eye, FunctionSquare, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import type {
   WorkbookColumn,
   WorkbookColumnDataType,
@@ -12,6 +19,7 @@ import type {
 } from "@/schemas/workbook"
 import { FormulaBuilderDialog } from "./formula-builder-dialog"
 import type { FormulaTranslator } from "./simple-formula-builder"
+import styles from "./workbook-editor-components.module.css"
 
 export function WorkbookColumnControls({
   columns,
@@ -37,15 +45,16 @@ export function WorkbookColumnControls({
 }) {
   const [formulaOpen, setFormulaOpen] = React.useState(false)
   const [formulaTarget, setFormulaTarget] = React.useState<WorkbookColumn | null>(null)
+  const [hiddenOpen, setHiddenOpen] = React.useState(false)
   const formulaColumns = columns.filter((column) => column.origin === "user" && column.formula)
   const hiddenColumns = columns.filter((column) => column.hidden)
   const hidden = hiddenColumns.map((column) => column.id)
   const sticky = columns.filter((column) => column.sticky).map((column) => column.id)
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className={styles.columnControls}>
       <Button
-        className="whitespace-nowrap"
+        className={styles.controlButton}
         disabled={busy}
         onClick={() => {
           setFormulaTarget(null)
@@ -62,7 +71,7 @@ export function WorkbookColumnControls({
       {formulaColumns.length ? (
         <select
           aria-label={t("workbookEditor.editor.columns.editFormula")}
-          className="h-9 max-w-40 rounded-md border border-input bg-white px-2 text-xs font-medium"
+          className={styles.controlSelect}
           disabled={busy}
           onChange={(event) => {
             const target = formulaColumns.find((column) => column.id === event.target.value)
@@ -78,23 +87,28 @@ export function WorkbookColumnControls({
         </select>
       ) : null}
 
-      {hiddenColumns.length > 0 ? <Sheet>
-        <SheetTrigger asChild>
-          <Button className="whitespace-nowrap" disabled={busy} size="sm" type="button" variant="outline">
+      {hiddenColumns.length > 0 ? (
+        <Dialog onOpenChange={setHiddenOpen} open={hiddenOpen}>
+          <DialogTrigger asChild>
+          <Button className={styles.controlButton} disabled={busy} size="sm" type="button" variant="outline">
             <Eye />
             {t("workbookEditor.editor.columns.hiddenColumns", { count: hiddenColumns.length })}
           </Button>
-        </SheetTrigger>
-        <SheetContent className="flex flex-col gap-5 overflow-y-auto">
-          <SheetHeader><SheetTitle>{t("workbookEditor.editor.columns.hiddenTitle")}</SheetTitle><SheetDescription>{t("workbookEditor.editor.columns.hiddenDescription")}</SheetDescription></SheetHeader>
-          <div className="divide-y divide-border rounded-lg border border-border">
-            {hiddenColumns.map((column) => <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3" key={column.id}>
-              <div className="min-w-0"><p className="truncate text-sm font-medium">{column.label}</p><p className="flex items-center gap-1 text-xs text-muted-foreground">{column.formula ? <FunctionSquare className="size-3" /> : null}{column.formula ? t("workbookEditor.editor.columns.derived") : t(`workbookEditor.editor.columns.types.${column.data_type}`)}</p>{column.formula ? <p className="mt-1 text-[11px] text-muted-foreground">{t("workbookEditor.editor.columns.dependenciesHint")}</p> : null}</div>
+          </DialogTrigger>
+          <DialogContent width="min(92vw, 34rem)">
+            <DialogHeader>
+              <DialogTitle>{t("workbookEditor.editor.columns.hiddenTitle")}</DialogTitle>
+              <DialogDescription>{t("workbookEditor.editor.columns.hiddenDescription")}</DialogDescription>
+            </DialogHeader>
+            <div className={styles.hiddenList}>
+            {hiddenColumns.map((column) => <div className={styles.hiddenRow} key={column.id}>
+              <div className={styles.hiddenCopy}><p className={styles.hiddenName}>{column.label}</p><p className={styles.hiddenMeta}>{column.formula ? <FunctionSquare className={styles.tinyIcon} /> : null}{column.formula ? t("workbookEditor.editor.columns.derived") : t(`workbookEditor.editor.columns.types.${column.data_type}`)}</p>{column.formula ? <p className={styles.hiddenHint}>{t("workbookEditor.editor.columns.dependenciesHint")}</p> : null}</div>
               <Button disabled={busy} onClick={() => onConfigurationChange(hidden.filter((id) => id !== column.id), sticky)} size="sm" type="button" variant="outline"><Eye />{t("workbookEditor.editor.columns.showAgain")}</Button>
             </div>)}
           </div>
-        </SheetContent>
-      </Sheet> : null}
+          </DialogContent>
+        </Dialog>
+      ) : null}
 
       <FormulaBuilderDialog
         baseVersion={baseVersion}

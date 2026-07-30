@@ -17,6 +17,7 @@ import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
 import { fetchCurrentUser } from "@/lib/server-users"
 import { getI18n } from "@/locales/server"
 import { CustomerLedgerSchema, type CustomerLedger } from "@/schemas"
+import patterns from "@/styles/ui-patterns.module.css"
 
 const API_BASE_URL = getServerApiBaseUrl()
 
@@ -80,10 +81,10 @@ export default async function CustomerLedgerPage({ params }: PageProps) {
   ])
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-start">
-        <Button asChild variant="outline">
-          <Link href="/customers">{t("customers.ledger.back")}</Link>
+    <div className={patterns.sectionStack}>
+      <div>
+        <Button as={Link} href="/customers" variant="outline">
+          {t("customers.ledger.back")}
         </Button>
       </div>
 
@@ -98,10 +99,11 @@ export default async function CustomerLedgerPage({ params }: PageProps) {
           title={t("customers.ledger.invoices.title")}
           description={t("customers.ledger.invoices.description")}
           action={
-            <Button asChild>
-              <Link href={`/invoices?customer_id=${encodeURIComponent(customerId)}`}>
-                {t("customers.ledger.invoices.open")}
-              </Link>
+            <Button
+              as={Link}
+              href={`/invoices?customer_id=${encodeURIComponent(customerId)}`}
+            >
+              {t("customers.ledger.invoices.open")}
             </Button>
           }
         />

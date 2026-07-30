@@ -1,0 +1,172 @@
+.page {
+  max-width: 64rem;
+  margin-inline: auto;
+  padding: var(--spacing-8) var(--spacing-4);
+}
+
+.document {
+  overflow: hidden;
+}
+
+.brandHeader {
+  border-block-end: var(--border-width) solid var(--color-border);
+  background: var(--color-background-muted);
+}
+
+.eyebrow {
+  width: fit-content;
+  border: var(--border-width) solid var(--color-border-emphasized);
+  border-radius: var(--radius-full);
+  background: var(--color-accent-muted);
+  color: var(--color-text-accent);
+  padding: var(--spacing-1-5) var(--spacing-3);
+  font-size: var(--text-supporting-size);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.brandRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.brandTitle {
+  font-size: var(--text-heading-1-size);
+}
+
+.brandDescription {
+  max-width: 40rem;
+  font-size: var(--text-large-size);
+}
+
+.contact {
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-container);
+  background: var(--color-background-surface);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-3) var(--spacing-4);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+  padding: var(--spacing-6);
+}
+
+.identityGrid,
+.totalsGrid {
+  display: grid;
+  gap: var(--spacing-4);
+}
+
+.invoiceTitle {
+  color: var(--color-text-primary);
+  font-size: var(--text-heading-1-size);
+  font-weight: var(--text-heading-1-weight);
+}
+
+.metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+}
+
+.datePill {
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-background-muted);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-1) var(--spacing-3);
+  font-size: var(--text-supporting-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.customerSummary,
+.amountWords,
+.totals {
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-container);
+  background: var(--color-background-muted);
+  padding: var(--spacing-4);
+}
+
+.customerSummary,
+.totals {
+  display: grid;
+  gap: var(--spacing-3);
+}
+
+.fieldValue {
+  margin-block-start: var(--spacing-1);
+  color: var(--color-text-primary);
+  line-height: var(--text-body-leading);
+}
+
+.lineItems {
+  overflow: hidden;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-container);
+  background: var(--color-background-surface);
+}
+
+.lineItemsHeader {
+  border-block-end: var(--border-width) solid var(--color-border);
+  padding: var(--spacing-4) var(--spacing-5);
+}
+
+.amountWords {
+  padding: var(--spacing-5);
+}
+
+.amountWordsValue {
+  margin-block-start: var(--spacing-3);
+  color: var(--color-text-primary);
+  font-size: var(--text-large-size);
+  line-height: var(--text-large-leading);
+}
+
+.totals {
+  padding: var(--spacing-5);
+}
+
+.totalValue {
+  margin-block-start: var(--spacing-1);
+  color: var(--color-text-primary);
+  font-size: var(--text-heading-3-size);
+  font-weight: var(--font-weight-medium);
+}
+
+@media (min-width: 64rem) {
+  .brandRow {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .identityGrid {
+    grid-template-columns: minmax(0, 1.3fr) minmax(18rem, 0.7fr);
+  }
+
+  .totalsGrid {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+  }
+
+  .content {
+    padding: var(--spacing-8);
+  }
+}
+
+@media print {
+  .page {
+    max-width: none;
+    padding: 0;
+  }
+
+  .document {
+    border: 0;
+    box-shadow: none;
+  }
+}

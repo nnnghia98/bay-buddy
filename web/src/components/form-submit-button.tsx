@@ -4,6 +4,7 @@ import { useFormStatus } from "react-dom"
 import { Loader2 } from "lucide-react"
 
 import { Button, type ButtonProps } from "@/components/ui/button"
+import patterns from "@/styles/ui-patterns.module.css"
 
 type ActionSubmitButtonProps = Omit<ButtonProps, "type"> & {
   idleLabel: string
@@ -23,7 +24,10 @@ export function ActionSubmitButton({
     <Button disabled={pending || disabled} type="submit" {...props}>
       {pending ? (
         <>
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          <Loader2
+            className={`${patterns.iconSmall} ${patterns.spinner}`}
+            aria-hidden="true"
+          />
           {pendingLabel}
         </>
       ) : (

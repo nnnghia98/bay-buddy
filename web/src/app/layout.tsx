@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/app-shell";
+import { THEME_MODE_STORAGE_KEY } from "@/lib/theme-mode";
 import { Providers } from "./providers";
-import { Toaster } from "sonner";
+import "@astryxdesign/core/reset.css";
+import "@astryxdesign/core/astryx.css";
+import "@astryxdesign/theme-neutral/theme.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,18 +12,40 @@ export const metadata: Metadata = {
   description: "Flight and debt management system for Bay Buddy",
 };
 
+const themeModeInitializationScript = `
+try {
+  const mode = window.localStorage.getItem(${JSON.stringify(THEME_MODE_STORAGE_KEY)});
+  if (mode === "light" || mode === "dark") {
+    document.documentElement.setAttribute("data-theme", mode);
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+} catch {}
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className="h-full antialiased" data-scroll-behavior="smooth">
-      <body className="min-h-full flex flex-col bg-background font-sans text-foreground">
+    <html
+      data-astryx-theme="neutral"
+      data-scroll-behavior="smooth"
+      lang="vi"
+      suppressHydrationWarning
+    >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: themeModeInitializationScript,
+          }}
+        />
+      </head>
+      <body>
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>
-        <Toaster position="top-right" richColors />
       </body>
     </html>
   );

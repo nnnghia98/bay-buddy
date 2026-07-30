@@ -49,7 +49,7 @@ Removed/stale skills that must not be referenced as project standards: `ui-ux-pr
 
 ## 🛠 Tech Stack
 
-- **Frontend**: Next.js 16 (App Router, Turbopack), TypeScript, Shadcn UI, Tailwind CSS.
+- **Frontend**: Next.js 16 (App Router, Turbopack), TypeScript, Astryx Design with the default Neutral theme, and token-based CSS Modules.
 - **Backend**: Python 3.10+, FastAPI, SQLModel (Pydantic v2 + SQLAlchemy), Poetry.
 - **Package Managers**: **Yarn** (Frontend) and **Poetry** (Backend).
 - **State Management**: TanStack Query v5 (React Query).
@@ -79,7 +79,7 @@ Removed/stale skills that must not be referenced as project standards: `ui-ux-pr
 ### 3. Frontend (Next.js/TS)
 
 - **Components**: Use Functional Components and Server Components by default.
-- **UI**: Shadcn UI is the primary component library. Maintain a minimalist and clean aesthetic.
+- **UI**: Astryx Design is the primary component library. Use the default Neutral theme, component props first, and semantic Astryx tokens in CSS Modules for specialized layouts. Do not add a second design-system or utility-CSS layer.
 - **Authenticated Workbench UI**: Prefer function-first layouts over presentation layers. Do not add redundant intro cards, decorative metric strips, or panel headers that merely repeat breadcrumbs/page context. Let form labels, section labels, table headers, and the primary action carry the screen.
 - **App Shell Navigation**: Treat `/` as the real homepage. Do not duplicate it as a separate left-sidebar destination when the logo already serves as the home entry point. The homepage breadcrumb label must be locale-aware (`Trang chủ` in `vi`, `Home` in `en`).
 - **App Shell Utilities**: Do not show placeholder shell utilities such as quick search unless the feature is fully implemented and interactive. The authenticated header should stay focused on breadcrumbs and the user menu.

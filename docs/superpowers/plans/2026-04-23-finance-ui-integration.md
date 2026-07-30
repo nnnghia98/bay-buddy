@@ -6,7 +6,7 @@
 
 **Architecture:** Keep reads in React Server Components wherever possible, using the existing auth cookie to call FastAPI from the server. Keep write operations behind Server Actions or authenticated mutation boundaries. Preserve financial snapshot integrity: invoice and quote UI must render stored snapshot fields, never recompute from live customer/ticket joins.
 
-**Tech Stack:** Next.js 16 App Router, TypeScript, Zod, Shadcn UI, Tailwind CSS, FastAPI Stage 4 finance APIs, Yarn frontend tests, Poetry backend tests.
+**Tech Stack:** Next.js 16 App Router, TypeScript, Zod, Astryx Design, token-based CSS Modules, FastAPI Stage 4 finance APIs, Yarn frontend tests, Poetry backend tests.
 
 ---
 

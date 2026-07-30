@@ -1,5 +1,7 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
 import * as React from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -29,6 +31,7 @@ import {
 import { workbookQueryKeys } from "@/lib/workbooks/query-keys"
 import { useWorkbookDraft } from "@/lib/workbooks/use-workbook-draft"
 import { cn } from "@/lib/utils"
+import workbookStyles from "./workbook-editor-components.module.css"
 import { useI18n } from "@/locales/client"
 import {
   WORKBOOK_MAX_SAFE_VND,
@@ -669,8 +672,8 @@ export function EditorWorkbench({
   )
 
   return (
-    <div className="pb-12 text-foreground">
-      <Panel aria-busy={recordsQuery.isFetching} className="min-w-0">
+    <div className={patterns.page}>
+      <Panel aria-busy={recordsQuery.isFetching} className={patterns.minWidthZero}>
         <SessionActionBar
           clearDraftLabel={t("workbookEditor.editor.actions.clearLocal")}
           dirtyCount={dirtyCount}
@@ -694,7 +697,7 @@ export function EditorWorkbench({
         <EditorFeedback
           action={
             saveState === "conflict" ? (
-              <div className="flex gap-2">
+              <div className={workbookStyles.feedbackActions}>
                 {hasUnresolvedConflicts ? (
                   <Button onClick={() => setConflictDialogOpen(true)} size="sm" type="button" variant="outline">
                     {t("workbookEditor.editor.actions.resolveConflicts")}
@@ -737,7 +740,7 @@ export function EditorWorkbench({
           sheetLabel={t("workbookEditor.editor.sheet", { sheet: records.sheet_name })}
         />
         {recordsQuery.isError ? (
-          <div className="flex items-center justify-between gap-3 border-b border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+          <div className={workbookStyles.loadError} role="alert">
             <span>{t("workbookEditor.editor.feedback.loadFailed")}</span>
             <Button onClick={() => recordsQuery.refetch()} size="sm" type="button" variant="outline">
               {t("workbookEditor.editor.actions.retry")}
@@ -746,8 +749,8 @@ export function EditorWorkbench({
         ) : null}
         <div
           className={cn(
-            "transition-opacity motion-reduce:transition-none",
-            recordsQuery.isFetching && "opacity-70",
+            workbookStyles.fetchingContent,
+            recordsQuery.isFetching && workbookStyles.fetching,
           )}
         >
           <WorkbookRecordsTable

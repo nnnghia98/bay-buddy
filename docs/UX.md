@@ -2,7 +2,7 @@
 
 This document sits beside `docs/DESIGN.md`.
 
-- `docs/DESIGN.md` defines the visual token baseline: white canvas, deep navy text, Airtable blue, simple borders, soft shadows, and a geometric radius scale.
+- `docs/DESIGN.md` defines the visual baseline: Astryx Design, the default Neutral theme, semantic tokens, compact controls, simple borders, and restrained elevation.
 - `docs/UX.md` defines how Bay Buddy should feel and behave as an operations product.
 - Generic/community frontend skills may assist with general UI craft, but they do not override this document or `docs/DESIGN.md`.
 
@@ -29,23 +29,23 @@ Bay Buddy should feel:
 - **Trustworthy**: Finance values, invoice states, and audit-sensitive actions are presented with clear labels and stable layouts.
 - **Vietnam-first**: UI labels preserve terms such as `công nợ`, `Tiền dư / Đặt cọc`, `Số tiền bằng chữ`, `báo có`, and `báo nợ`.
 - **Fast to repeat**: Daily actions should be reachable with minimal navigation, especially payment recording, invoice review, ticket capture, and customer lookup.
-- **Calm**: The product should use the existing clean Airtable-inspired design language, but avoid oversized marketing-style cards and decorative layouts.
+- **Calm**: The product should use Astryx Neutral with restrained hierarchy and avoid oversized marketing-style cards and decorative layouts.
 
 ## 3. Visual Direction
 
 Use `docs/DESIGN.md` as the source of truth for visual tokens:
 
-- Deep navy text for primary information.
-- Airtable blue for primary actions, active states, and key links.
-- White surfaces with subtle borders for working areas.
-- Light secondary backgrounds for table headers, side panels, and grouped metadata.
-- Soft shadows only where they clarify layering.
+- Neutral theme primary text for important information.
+- The Neutral semantic accent for primary actions, active states, and key links.
+- Theme surfaces with subtle semantic borders for working areas.
+- Muted theme surfaces for table headers, side panels, and grouped metadata.
+- Astryx elevation tokens only where they clarify layering.
 
 Add these UX-specific visual rules:
 
 - Use compact working surfaces for dashboards, ledgers, invoices, and ticket capture.
 - Avoid giant hero cards inside authenticated app pages.
-- Use `4px` radius for icon badges and micro-actions, `8px` for interactive controls and nested blocks, and `12px` for structural panels and standard dialogs.
+- Use Astryx shape tokens: `--radius-inner` for compact details, `--radius-element` for controls, and `--radius-container` for panels and dialogs.
 - Use status chips with text and color together; never rely on color alone.
 - Make primary actions visually persistent near the data they affect.
 - Prefer tables for financial records on desktop and mobile-safe stacked rows or horizontal scroll on narrow screens.

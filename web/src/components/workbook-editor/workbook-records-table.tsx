@@ -1,5 +1,7 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
 import * as React from "react"
 import {
   createColumnHelper,
@@ -32,6 +34,7 @@ import {
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import type { WorkbookRecordsPage } from "@/schemas/workbook"
+import styles from "./workbook-records-table.module.css"
 
 type WorkbookRow = WorkbookRecordsPage["items"][number]
 type WorkbookColumn = WorkbookRecordsPage["columns"][number]
@@ -138,15 +141,15 @@ function WorkbookDataCell({
     const drafted = storedDraft !== undefined
 
     return (
-      <div className="w-48 px-2 py-1.5">
+      <div className={styles.cellEditor}>
         {workbookColumn.data_type === "boolean" ? (
           <select
             aria-invalid={Boolean(error)}
             aria-label={ariaLabel}
             className={cn(
-              "h-9 w-full rounded-md border border-input bg-white px-3 text-sm font-medium shadow-none focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
-              drafted && "border-primary/45 bg-primary/[0.055] ring-1 ring-primary/10",
-              error && "border-destructive",
+              styles.cellControl,
+              drafted && styles.draftedControl,
+              error && styles.errorControl,
             )}
             disabled={record.editable[field] === false}
             onChange={(event) =>
@@ -166,12 +169,12 @@ function WorkbookDataCell({
             aria-invalid={Boolean(error)}
             aria-label={ariaLabel}
             className={cn(
-              "h-9 shadow-none",
+              styles.cellControl,
               (workbookColumn.data_type === "currency"
                 || workbookColumn.data_type === "number")
-                && "text-right font-mono text-sm tabular-nums",
-              drafted && "border-primary/45 bg-primary/[0.055] ring-1 ring-primary/10",
-              error && "border-destructive",
+                && styles.numericControl,
+              drafted && styles.draftedControl,
+              error && styles.errorControl,
             )}
             disabled={record.editable[field] === false}
             inputMode={
@@ -191,7 +194,7 @@ function WorkbookDataCell({
           />
         )}
         {error ? (
-          <p className="mt-1 text-xs text-destructive" role="alert">
+          <p className={styles.cellError} role="alert">
             {error}
           </p>
         ) : null}
@@ -220,11 +223,11 @@ function WorkbookDataCell({
   return (
     <span
       className={cn(
-        "block w-48 truncate px-4 py-3 text-sm",
+        styles.displayCell,
         (workbookColumn.data_type === "currency"
           || workbookColumn.data_type === "number")
-          && "text-right font-mono tabular-nums",
-        workbookColumn.formula && "font-medium text-foreground/80",
+          && styles.numericCell,
+        workbookColumn.formula && styles.formulaValue,
       )}
       title={display === "-" ? undefined : display}
     >
@@ -337,36 +340,36 @@ export function WorkbookRecordsTable({
       : undefined
 
     return (
-      <div className="group/header relative flex min-w-0 items-center">
+      <div className={styles.headerContent}>
         <button
           aria-label={column.label || column.id}
           className={cn(
-            "inline-flex min-w-0 flex-1 items-center gap-1.5 rounded-sm pr-16 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-            column.origin === "user" && "pr-24",
-            pricing && column.origin !== "user" && "pr-10",
+            styles.sortButton,
+            column.origin === "user" && styles.sortButtonUser,
+            pricing && column.origin !== "user" && styles.sortButtonPricing,
           )}
           onClick={() => onSort(column.id)}
           type="button"
         >
           {column.formula ? (
-            <FunctionSquare aria-hidden="true" className="size-3.5 shrink-0 text-primary" />
+            <FunctionSquare aria-hidden="true" className={styles.headerIcon} />
           ) : null}
-          <span className="min-w-0 truncate whitespace-pre-line normal-case tracking-normal">
+          <span className={styles.headerLabel}>
             {column.label}
           </span>
           <Icon
             aria-hidden="true"
             className={cn(
-              "size-3.5 shrink-0 opacity-45",
-              active && "text-primary opacity-100",
+              styles.sortIcon,
+              active && styles.sortIconActive,
             )}
           />
         </button>
 
         <div
           className={cn(
-            "absolute right-0 top-1/2 flex -translate-y-1/2 items-center rounded-sm border border-border/80 bg-white/95 p-0.5 opacity-100 shadow-sm transition-opacity md:opacity-0 md:group-hover/header:opacity-100 md:group-focus-within/header:opacity-100",
-            pricing && "border-blue-200 bg-blue-50/95",
+            styles.headerActions,
+            pricing && styles.headerActionsPricing,
           )}
         >
           {!pricing ? (
@@ -374,8 +377,8 @@ export function WorkbookRecordsTable({
               aria-label={column.sticky ? headerActionLabels.unpin : headerActionLabels.pin}
               aria-pressed={column.sticky}
               className={cn(
-                "grid size-7 place-items-center rounded-sm text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                column.sticky && "bg-primary/10 text-primary",
+                styles.headerAction,
+                column.sticky && styles.headerActionSelected,
               )}
               disabled={isConfiguringColumns}
               onClick={() => onToggleSticky(column.id, !column.sticky)}
@@ -385,14 +388,14 @@ export function WorkbookRecordsTable({
             >
               <Pin
                 aria-hidden="true"
-                className={cn("size-3.5", column.sticky && "fill-current")}
+                className={cn(patterns.iconCompact, column.sticky && styles.filled)}
               />
             </button>
           ) : null}
           {column.origin === "user" ? (
             <button
               aria-label={headerActionLabels.remove}
-              className="grid size-7 place-items-center rounded-sm text-muted-foreground hover:bg-red-50 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className={cn(styles.headerAction, styles.headerActionDanger)}
               disabled={isConfiguringColumns}
               onClick={() => {
                 if (
@@ -406,18 +409,18 @@ export function WorkbookRecordsTable({
               title={disabledTitle ?? headerActionLabels.remove}
               type="button"
             >
-              <Trash2 aria-hidden="true" className="size-3.5" />
+              <Trash2 aria-hidden="true" className={patterns.iconCompact} />
             </button>
           ) : null}
           <button
             aria-label={headerActionLabels.hide}
-            className="grid size-7 place-items-center rounded-sm text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className={styles.headerAction}
             disabled={isConfiguringColumns}
             onClick={() => onHideColumn(column.id)}
             title={disabledTitle ?? headerActionLabels.hide}
             type="button"
           >
-            <EyeOff aria-hidden="true" className="size-3.5" />
+            <EyeOff aria-hidden="true" className={patterns.iconCompact} />
           </button>
         </div>
       </div>
@@ -488,17 +491,17 @@ export function WorkbookRecordsTable({
   return (
     <div
       aria-label={records.sheet_name}
-      className="max-h-[calc(100dvh-17.5rem)] min-h-[26rem] w-full overflow-auto bg-secondary/10 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30 [&>div]:overflow-visible"
+      className={styles.scrollRegion}
       role="region"
       tabIndex={0}
     >
-      <Table className="min-w-max border-separate border-spacing-0">
-        <TableHeader className="sticky top-0 z-40 bg-secondary">
+      <Table className={styles.recordsTable}>
+        <TableHeader className={styles.recordsHeader}>
           {records.header_row_count === 2 ? (
             <>
               <TableRow>
                 <TableHead
-                  className="sticky left-0 z-[60] w-12 min-w-12 max-w-12 border-r border-border bg-secondary px-0 text-center font-mono tracking-normal text-muted-foreground"
+                  className={styles.rowGutterHeader}
                   rowSpan={2}
                   scope="col"
                 >
@@ -514,14 +517,15 @@ export function WorkbookRecordsTable({
                   return (
                     <TableHead
                       className={cn(
-                        "w-48 min-w-48 max-w-48 border-b border-r border-border bg-secondary px-3 py-2.5 text-center text-xs font-semibold text-foreground",
-                        pricing && "bg-blue-50 text-primary",
+                        styles.columnHeader,
+                        styles.groupHeader,
+                        pricing && styles.pricingHeader,
                         stickyLeft !== undefined
-                          && "sticky z-50 shadow-[8px_0_14px_rgba(24,29,38,0.05)]",
+                          && styles.stickyLeft,
                         stickyRight !== undefined
-                          && "md:sticky md:z-50 md:shadow-[-8px_0_14px_rgba(24,29,38,0.05)]",
+                          && styles.stickyRight,
                         field === firstPricingField
-                          && "border-l-2 border-l-primary/25",
+                          && styles.pricingDivider,
                       )}
                       colSpan={run.columns.length}
                       key={`${run.groupLabel ?? field}-${field}`}
@@ -529,7 +533,7 @@ export function WorkbookRecordsTable({
                       style={positioned ? placementStyle(field) : undefined}
                     >
                       {run.groupLabel ? (
-                        <span className="whitespace-pre-line normal-case tracking-normal">
+                        <span className={styles.groupLabel}>
                           {run.groupLabel}
                         </span>
                       ) : renderColumnHeader(column)}
@@ -545,14 +549,14 @@ export function WorkbookRecordsTable({
                   return (
                     <TableHead
                       className={cn(
-                        "w-48 min-w-48 max-w-48 border-b border-r border-border bg-secondary px-3 py-2.5 text-xs font-semibold text-foreground",
-                        pricing && "bg-blue-50 text-primary",
+                        styles.columnHeader,
+                        pricing && styles.pricingHeader,
                         stickyLeft !== undefined
-                          && "sticky z-50 shadow-[8px_0_14px_rgba(24,29,38,0.05)]",
+                          && styles.stickyLeft,
                         stickyRight !== undefined
-                          && "md:sticky md:z-50 md:shadow-[-8px_0_14px_rgba(24,29,38,0.05)]",
+                          && styles.stickyRight,
                         column.field === firstPricingField
-                          && "border-l-2 border-l-primary/25",
+                          && styles.pricingDivider,
                       )}
                       key={column.field}
                       style={placementStyle(column.field)}
@@ -566,7 +570,7 @@ export function WorkbookRecordsTable({
           ) : table.getHeaderGroups().map((group) => (
             <TableRow key={group.id}>
               <TableHead
-                className="sticky left-0 z-[60] w-12 min-w-12 max-w-12 border-r border-border bg-secondary px-0 text-center font-mono tracking-normal text-muted-foreground"
+                className={styles.rowGutterHeader}
                 scope="col"
               >
                 #
@@ -580,13 +584,13 @@ export function WorkbookRecordsTable({
                 return (
                   <TableHead
                     className={cn(
-                      "w-48 min-w-48 max-w-48 border-b border-r border-border bg-secondary px-3 py-3 text-xs font-semibold text-foreground",
-                      pricing && "bg-blue-50 text-primary",
+                      styles.columnHeader,
+                      pricing && styles.pricingHeader,
                       stickyLeft !== undefined
-                        && "sticky z-50 shadow-[8px_0_14px_rgba(24,29,38,0.05)]",
+                        && styles.stickyLeft,
                       stickyRight !== undefined
-                        && "md:sticky md:z-50 md:shadow-[-8px_0_14px_rgba(24,29,38,0.05)]",
-                      field === firstPricingField && "border-l-2 border-l-primary/25",
+                        && styles.stickyRight,
+                      field === firstPricingField && styles.pricingDivider,
                     )}
                     key={header.id}
                     style={placementStyle(field)}
@@ -603,7 +607,7 @@ export function WorkbookRecordsTable({
             <TableRow>
               <TableCell colSpan={Math.max(columns.length + 1, 1)}>
                 <EmptyState
-                  className="py-20"
+                  className={styles.emptyState}
                   icon={ChevronsUpDown}
                   message={emptyLabel}
                 />
@@ -611,8 +615,8 @@ export function WorkbookRecordsTable({
             </TableRow>
           ) : (
             table.getRowModel().rows.map((row) => (
-              <TableRow className="group" key={row.original.row_number}>
-                <TableCell className="sticky left-0 z-30 w-12 min-w-12 max-w-12 border-r border-border bg-secondary/80 px-0 py-0 text-center font-mono text-[11px] font-medium text-muted-foreground group-hover:bg-secondary">
+              <TableRow key={row.original.row_number}>
+                <TableCell className={styles.rowGutter}>
                   {row.original.row_number}
                 </TableCell>
                 {row.getVisibleCells().map((cell) => {
@@ -626,18 +630,18 @@ export function WorkbookRecordsTable({
                   return (
                     <TableCell
                       className={cn(
-                        "w-48 min-w-48 max-w-48 border-b border-r border-border bg-white p-0 group-hover:bg-secondary/30",
-                        column?.formula && "bg-primary/[0.025]",
+                        styles.dataCell,
+                        column?.formula && styles.dataCellFormula,
                         drafted && !pricing
-                          && "bg-blue-50/65 group-hover:bg-blue-50/80",
+                          && styles.dataCellDrafted,
                         pricing
-                          && "bg-blue-50/75 group-hover:bg-blue-50 md:sticky md:z-20",
+                          && styles.dataCellPricing,
                         stickyLeft !== undefined
-                          && "sticky z-30 bg-white shadow-[8px_0_14px_rgba(24,29,38,0.05)] group-hover:bg-secondary",
+                          && styles.dataCellSticky,
                         stickyRight !== undefined
-                          && "md:shadow-[-8px_0_14px_rgba(24,29,38,0.05)]",
+                          && styles.stickyRight,
                         field === firstPricingField
-                          && "border-l-2 border-l-primary/25",
+                          && styles.pricingDivider,
                       )}
                       key={cell.id}
                       style={placementStyle(field)}

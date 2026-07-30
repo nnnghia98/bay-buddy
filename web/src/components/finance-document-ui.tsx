@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/formatters"
 import { cn } from "@/lib/utils"
+import styles from "./finance-document-ui.module.css"
 
 export type FinanceDocumentLineItem = {
   id: string
@@ -39,7 +40,7 @@ export function DocumentSummaryGrid({
   className?: string
 }) {
   return (
-    <div className={cn("grid gap-3 p-4 lg:grid-cols-2", className)}>
+    <div className={cn(styles.summaryGrid, className)}>
       {children}
     </div>
   )
@@ -81,33 +82,33 @@ export function FinanceLineItemsTable({
     <TableScrollArea>
       <Table>
         <TableHeader>
-          <TableRow className="bg-secondary/55 hover:bg-secondary/55">
+          <TableRow>
             <TableHead>{labels.description}</TableHead>
             <TableHead>{labels.passenger}</TableHead>
-            <TableHead className="text-right">{labels.quantity}</TableHead>
-            <TableHead className="text-right">{labels.unitPrice}</TableHead>
-            <TableHead className="text-right">{labels.total}</TableHead>
+            <TableHead className={styles.numberCell}>{labels.quantity}</TableHead>
+            <TableHead className={styles.numberCell}>{labels.unitPrice}</TableHead>
+            <TableHead className={styles.numberCell}>{labels.total}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {items.map((item) => (
             <TableRow key={item.id}>
-              <TableCell className={cn("max-w-[28rem]", descriptionClassName)}>
-                <div className="space-y-1">
-                  <p className="font-medium text-foreground">{item.description}</p>
+              <TableCell className={cn(styles.descriptionCell, descriptionClassName)}>
+                <div className={styles.descriptionStack}>
+                  <p className={styles.description}>{item.description}</p>
                   {showLinkedTicketId && item.linked_ticket_id ? (
-                    <p className="font-mono text-xs text-muted-foreground">
+                    <p className={styles.ticketId}>
                       {item.linked_ticket_id}
                     </p>
                   ) : null}
                 </div>
               </TableCell>
               <TableCell>{item.passenger_name_snapshot}</TableCell>
-              <TableCell className="text-right">{item.quantity}</TableCell>
-              <TableCell className="text-right">
+              <TableCell className={styles.numberCell}>{item.quantity}</TableCell>
+              <TableCell className={styles.numberCell}>
                 {formatCurrency(item.unit_price_snapshot)}
               </TableCell>
-              <TableCell className="text-right font-semibold">
+              <TableCell className={cn(styles.numberCell, styles.totalCell)}>
                 {formatCurrency(item.total)}
               </TableCell>
             </TableRow>

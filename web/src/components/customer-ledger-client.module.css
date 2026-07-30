@@ -1,0 +1,129 @@
+.priceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--spacing-4);
+}
+
+.deletePreview {
+  border: var(--border-width) solid var(--color-border-red);
+  border-radius: var(--radius-container);
+  background: var(--color-background-red);
+  color: var(--color-text-red);
+  padding: var(--spacing-3) var(--spacing-4);
+}
+
+.ledger {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.summaryLayout {
+  display: grid;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+}
+
+.summaryMetrics {
+  display: grid;
+  gap: var(--spacing-3);
+}
+
+.summaryCard {
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-container);
+  background: var(--color-background-muted);
+  padding: var(--spacing-4);
+}
+
+.summaryValue {
+  margin-block-start: var(--spacing-2);
+  color: var(--color-text-primary);
+  font-size: var(--text-heading-1-size);
+  font-weight: var(--text-heading-1-weight);
+  font-variant-numeric: tabular-nums;
+}
+
+.statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  margin-block-start: var(--spacing-2);
+}
+
+.amountInWords {
+  margin-block-start: var(--spacing-2);
+  color: var(--color-text-primary);
+  line-height: var(--text-body-leading);
+}
+
+.emptyCell {
+  padding-block: var(--spacing-12);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.dateCell {
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.ticketLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--color-text-accent);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+}
+
+.ticketLink:hover {
+  text-decoration: underline;
+}
+
+.amountCell,
+.balanceCell,
+.actionsCell {
+  text-align: end;
+  white-space: nowrap;
+}
+
+.amountCell {
+  font-weight: var(--font-weight-semibold);
+}
+
+.amountPositive {
+  color: var(--color-text-primary);
+}
+
+.amountNegative {
+  color: var(--color-text-blue);
+}
+
+.amountZero {
+  color: var(--color-text-secondary);
+}
+
+.balanceCell {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--spacing-1-5);
+}
+
+@media (min-width: 40rem) {
+  .summaryMetrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .summaryLayout {
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 20rem);
+  }
+}

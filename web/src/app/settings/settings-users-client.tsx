@@ -1,8 +1,9 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
 import * as React from "react"
 import {
-  BadgeCheck,
   Loader2,
   ShieldCheck,
   ShieldOff,
@@ -13,8 +14,15 @@ import {
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
-import { StatusChip, TableScrollArea } from "@/components/command-center"
 import {
+  EmptyState,
+  MetricCard,
+  Panel,
+  StatusChip,
+  TableScrollArea,
+} from "@/components/command-center"
+import {
+  InitialsAvatar,
   RestrictedAccessPanel,
   selectInputClassName,
 } from "@/components/operations-ui"
@@ -48,6 +56,7 @@ import {
   type SettingsUserActionField,
   type UserRead,
 } from "@/schemas"
+import styles from "./settings-users.module.css"
 
 type SettingsUsersClientProps = {
   currentUser: UserRead
@@ -76,7 +85,7 @@ function SettingsActionSubmitButton({
     <Button disabled={pending} type="submit" variant={variant}>
       {pending ? (
         <>
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className={`${patterns.iconSmall} ${patterns.spinner}`} />
           {pendingLabel}
         </>
       ) : (
@@ -249,30 +258,30 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
         {isCreateMode ? (
-          <Button className="h-10 px-4 shadow-[0_8px_22px_rgba(27,97,201,0.18)]">
-            <UserPlus className="h-4 w-4" />
+          <Button>
+            <UserPlus className={patterns.iconSmall} />
             {t("settings.users.createAction")}
           </Button>
         ) : (
-          <Button className="h-9 px-3" size="sm" variant="outline">
+          <Button size="sm" variant="outline">
             {t("settings.users.editAction")}
           </Button>
         )}
       </DialogTrigger>
 
-      <DialogContent className="w-[min(92vw,34rem)]">
+      <DialogContent width="min(92vw, 34rem)">
         <DialogHeader>
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-5" onSubmit={handleSubmit}>
+        <form className={patterns.contentStack} onSubmit={handleSubmit}>
           {!isCreateMode && user ? (
             <input name="user_id" type="hidden" value={user.id} />
           ) : null}
 
-          <div className="grid gap-4">
-            <div className="space-y-2">
+          <div className={patterns.grid}>
+            <div className={patterns.fieldStack}>
               <Label htmlFor={`${mode}-username`}>
                 {t("settings.users.fields.username")}
               </Label>
@@ -284,13 +293,13 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
                 value={username}
               />
               {getFieldError("username", clientErrors, serverErrors) ? (
-                <p className="text-sm text-red-600">
+                <p className={patterns.errorText}>
                   {getFieldError("username", clientErrors, serverErrors)}
                 </p>
               ) : null}
             </div>
 
-            <div className="space-y-2">
+            <div className={patterns.fieldStack}>
               <Label htmlFor={`${mode}-password`}>
                 {t("settings.users.fields.password")}
               </Label>
@@ -303,19 +312,19 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
                 value={password}
               />
               {!isCreateMode ? (
-                <p className="text-xs leading-5 text-muted-foreground">
+                <p className={patterns.supportingText}>
                   {t("settings.users.fields.passwordHint")}
                 </p>
               ) : null}
               {getFieldError("password", clientErrors, serverErrors) ? (
-                <p className="text-sm text-red-600">
+                <p className={patterns.errorText}>
                   {getFieldError("password", clientErrors, serverErrors)}
                 </p>
               ) : null}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
+            <div className={patterns.twoColumnGrid}>
+              <div className={patterns.fieldStack}>
                 <Label htmlFor={`${mode}-role`}>
                   {t("settings.users.fields.role")}
                 </Label>
@@ -330,13 +339,13 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
                   <option value="STAFF">{t("settings.users.roles.STAFF")}</option>
                 </select>
                 {getFieldError("role", clientErrors, serverErrors) ? (
-                  <p className="text-sm text-red-600">
+                  <p className={patterns.errorText}>
                     {getFieldError("role", clientErrors, serverErrors)}
                   </p>
                 ) : null}
               </div>
 
-              <div className="space-y-2">
+              <div className={patterns.fieldStack}>
                 <Label htmlFor={`${mode}-status`}>
                   {t("settings.users.fields.status")}
                 </Label>
@@ -351,7 +360,7 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
                   <option value="false">{t("settings.users.statuses.inactive")}</option>
                 </select>
                 {getFieldError("is_active", clientErrors, serverErrors) ? (
-                  <p className="text-sm text-red-600">
+                  <p className={patterns.errorText}>
                     {getFieldError("is_active", clientErrors, serverErrors)}
                   </p>
                 ) : null}
@@ -359,7 +368,7 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:justify-end">
+          <DialogFooter>
             <Button onClick={() => setOpen(false)} type="button" variant="outline">
               {t("settings.users.dialogs.cancel")}
             </Button>
@@ -388,7 +397,7 @@ function ToggleUserStatusButton({
 
   if (isCurrentUser) {
     return (
-      <span className="text-xs font-medium text-muted-foreground">
+      <span className={patterns.supportingText}>
         {t("settings.users.currentSession")}
       </span>
     )
@@ -396,7 +405,6 @@ function ToggleUserStatusButton({
 
   return (
     <Button
-      className="h-9 px-3"
       disabled={isPending}
       onClick={() => {
         setIsPending(true)
@@ -428,7 +436,7 @@ function ToggleUserStatusButton({
     >
       {isPending ? (
         <>
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className={`${patterns.iconSmall} ${patterns.spinner}`} />
           {t("settings.users.toggleSubmitting")}
         </>
       ) : user.is_active ? (
@@ -462,101 +470,68 @@ export function SettingsUsersClient({
       label: t("settings.users.metrics.total"),
       value: users.length,
       icon: UsersRound,
-      className: "border-primary/15 bg-accent text-primary",
     },
     {
       label: t("settings.users.metrics.active"),
       value: activeUsers,
       icon: ShieldCheck,
-      className: "border-emerald-200 bg-emerald-50 text-emerald-700",
     },
     {
       label: t("settings.users.metrics.inactive"),
       value: inactiveUsers,
       icon: ShieldOff,
-      className: "border-amber-200 bg-amber-50 text-amber-800",
     },
   ]
 
   return (
-    <div className="space-y-5 pb-12 text-foreground">
-      <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_14px_40px_rgba(24,29,38,0.06)]">
-        <div className="flex flex-col gap-5 border-b border-border px-5 py-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-accent text-primary shadow-[0_10px_24px_rgba(27,97,201,0.08)]">
-              <UserCog className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                {t("settings.users.eyebrow")}
-              </p>
-              <h1 className="mt-1 text-xl font-semibold tracking-[-0.02em] text-foreground">
-                {t("settings.users.title")}
-              </h1>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                {t("settings.users.description")}
-              </p>
-            </div>
-          </div>
-          <div className="shrink-0">
-            <UserEditorDialog mode="create" />
-          </div>
+    <div className={patterns.pageStack}>
+      <header className={styles.pageHeader}>
+        <div className={patterns.minWidthZero}>
+          <p className={patterns.accentEyebrow}>
+            {t("settings.users.eyebrow")}
+          </p>
+          <h1 className={styles.pageTitle}>
+            {t("settings.users.title")}
+          </h1>
+          <p className={styles.pageDescription}>
+            {t("settings.users.description")}
+          </p>
         </div>
-
-        <div className="grid divide-y divide-border bg-secondary/35 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          {metricItems.map((metric) => {
-            const MetricIcon = metric.icon
-
-            return (
-              <div className="flex items-center gap-3 px-5 py-4" key={metric.label}>
-                <div
-                  className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-md border",
-                    metric.className,
-                  )}
-                >
-                  <MetricIcon className="h-4 w-4" aria-hidden="true" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    {metric.label}
-                  </p>
-                  <p className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-foreground">
-                    {metric.value}
-                  </p>
-                </div>
-              </div>
-            )
-          })}
+        <div className={patterns.shrinkNone}>
+          <UserEditorDialog mode="create" />
         </div>
-      </section>
+      </header>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+      <div className={patterns.threeColumnGrid}>
+        {metricItems.map((metric) => (
+          <MetricCard
+            icon={metric.icon}
+            key={metric.label}
+            label={metric.label}
+            value={metric.value}
+          />
+        ))}
+      </div>
+
+      <div className={styles.contentGrid}>
+        <Panel>
           {users.length === 0 ? (
-            <div className="flex min-h-64 flex-col items-center justify-center px-6 py-14 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-secondary text-primary">
-                <UsersRound className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <p className="mt-4 text-sm font-medium text-foreground">
-                {t("settings.users.empty")}
-              </p>
-            </div>
+            <EmptyState icon={UsersRound} message={t("settings.users.empty")} />
           ) : (
             <TableScrollArea>
-              <Table className="min-w-[760px]">
+              <Table className={styles.userTable}>
                 <TableHeader>
-                  <TableRow className="bg-secondary/40 hover:bg-secondary/40">
-                    <TableHead className="h-12 px-5 text-[11px] uppercase tracking-[0.16em]">
+                  <TableRow>
+                    <TableHead>
                       {t("settings.users.columns.username")}
                     </TableHead>
-                    <TableHead className="h-12 px-5 text-[11px] uppercase tracking-[0.16em]">
+                    <TableHead>
                       {t("settings.users.columns.role")}
                     </TableHead>
-                    <TableHead className="h-12 px-5 text-[11px] uppercase tracking-[0.16em]">
+                    <TableHead>
                       {t("settings.users.columns.status")}
                     </TableHead>
-                    <TableHead className="h-12 px-5 text-right text-[11px] uppercase tracking-[0.16em]">
+                    <TableHead className={styles.actionsHeading}>
                       {t("settings.users.columns.actions")}
                     </TableHead>
                   </TableRow>
@@ -565,37 +540,27 @@ export function SettingsUsersClient({
                   {users.map((user) => {
                     const isCurrentUser = currentUser.id === user.id
                     return (
-                      <TableRow className="group hover:bg-accent/35" key={user.id}>
-                        <TableCell className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={cn(
-                                "flex h-10 w-10 shrink-0 items-center justify-center rounded-md border text-sm font-semibold transition-transform group-hover:scale-[1.02]",
-                                user.is_active
-                                  ? "border-primary/15 bg-accent text-primary"
-                                  : "border-border bg-secondary/50 text-muted-foreground",
-                              )}
-                            >
-                              {user.username.slice(0, 1).toUpperCase()}
-                            </div>
+                      <TableRow key={user.id}>
+                        <TableCell>
+                          <div className={patterns.row}>
+                            <InitialsAvatar value={user.username} />
                             <div>
-                              <p className="text-sm font-medium text-foreground">
+                              <p className={patterns.labelText}>
                                 {user.username}
                               </p>
-                              <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                              <p className={styles.userId}>
                                 #{user.id.slice(0, 8)}
                               </p>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="px-5 py-4">
-                          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-muted-foreground">
-                            <BadgeCheck className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                        <TableCell>
+                          <StatusChip>
                             {formatRoleLabel(user.role, t)}
-                          </div>
+                          </StatusChip>
                         </TableCell>
-                        <TableCell className="px-5 py-4">
-                          <div className="inline-flex items-center gap-2">
+                        <TableCell>
+                          <div className={styles.statusGroup}>
                             <StatusChip tone={user.is_active ? "success" : "warning"}>
                               {user.is_active
                                 ? t("settings.users.statuses.active")
@@ -608,8 +573,8 @@ export function SettingsUsersClient({
                             ) : null}
                           </div>
                         </TableCell>
-                        <TableCell className="px-5 py-4 text-right">
-                          <div className="inline-flex flex-wrap justify-end gap-2">
+                        <TableCell className={styles.actionsCell}>
+                          <div className={patterns.endRow}>
                             <UserEditorDialog mode="edit" user={user} />
                             <ToggleUserStatusButton isCurrentUser={isCurrentUser} user={user} />
                           </div>
@@ -621,35 +586,37 @@ export function SettingsUsersClient({
               </Table>
             </TableScrollArea>
           )}
-        </section>
+        </Panel>
 
-        <aside className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-          <div className="border-b border-border px-5 py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-              {t("settings.guidance.title")}
-            </p>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {t("settings.guidance.description")}
-            </p>
-          </div>
-          <div className="divide-y divide-border">
-            <div className="flex items-start gap-3 px-5 py-4">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-accent text-primary">
-                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-              </div>
-              <p className="text-sm leading-6 text-muted-foreground">
-                {t("settings.guidance.access")}
+        <aside>
+          <Panel>
+            <div className={styles.guidanceHeader}>
+              <p className={patterns.accentEyebrow}>
+                {t("settings.guidance.title")}
+              </p>
+              <p className={cn(patterns.mutedText, styles.guidanceDescription)}>
+                {t("settings.guidance.description")}
               </p>
             </div>
-            <div className="flex items-start gap-3 px-5 py-4">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-accent text-primary">
-                <UserCog className="h-4 w-4" aria-hidden="true" />
+            <div className={patterns.dividerList}>
+              <div className={styles.guidanceItem}>
+                <div className={styles.guidanceIcon}>
+                  <ShieldCheck className={patterns.iconSmall} aria-hidden="true" />
+                </div>
+                <p className={patterns.mutedText}>
+                  {t("settings.guidance.access")}
+                </p>
               </div>
-              <p className="text-sm leading-6 text-muted-foreground">
-                {t("settings.guidance.status")}
-              </p>
+              <div className={styles.guidanceItem}>
+                <div className={styles.guidanceIcon}>
+                  <UserCog className={patterns.iconSmall} aria-hidden="true" />
+                </div>
+                <p className={patterns.mutedText}>
+                  {t("settings.guidance.status")}
+                </p>
+              </div>
             </div>
-          </div>
+          </Panel>
         </aside>
       </div>
     </div>

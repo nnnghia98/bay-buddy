@@ -1,47 +1,46 @@
 "use client"
 
 import * as React from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { AppShell as AstryxAppShell, useAppShellMobile } from "@astryxdesign/core/AppShell"
+import { Avatar } from "@astryxdesign/core/Avatar"
+import { BreadcrumbItem, Breadcrumbs } from "@astryxdesign/core/Breadcrumbs"
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+} from "@astryxdesign/core/DropdownMenu"
+import { HStack } from "@astryxdesign/core/HStack"
+import { Layout, LayoutContent } from "@astryxdesign/core/Layout"
+import { MobileNav, MobileNavToggle } from "@astryxdesign/core/MobileNav"
+import { SideNav, SideNavHeading, SideNavItem, SideNavSection } from "@astryxdesign/core/SideNav"
+import { Skeleton } from "@astryxdesign/core/Skeleton"
+import { TopNav } from "@astryxdesign/core/TopNav"
+import { VStack } from "@astryxdesign/core/VStack"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Activity,
   ChartColumn,
-  ChevronDown,
-  ChevronRight,
   CircleDollarSign,
   Database,
   FileSpreadsheet,
-  Menu,
+  LogOut,
   Settings,
   Ticket,
   Users,
+  type LucideIcon,
 } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 
-import { Button } from "@/components/ui/button"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
 import { apiFetchData } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
 import { LOGIN_PATH, SESSION_EXPIRED_LOGIN_PATH } from "@/lib/auth-token"
 import {
-  getAuthenticatedContentOffsetClassName,
-  getAuthenticatedMainClassName,
-  getAuthenticatedSidebarClassName,
-  getPageHeaderClassName,
-} from "@/lib/authenticated-layout"
-import {
   isUnauthorizedSessionError,
   shouldRenderAuthenticatedShell,
 } from "@/lib/auth-session"
+import { ThemeModeRadioGroup } from "@/components/theme-mode-menu"
 import { useI18n } from "@/locales/client"
-import { cn } from "@/lib/utils"
 
 type AppShellProps = {
   children: React.ReactNode
@@ -72,7 +71,7 @@ type NavLabelKey =
 type NavItem = {
   labelKey: NavLabelKey
   href: string
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>
+  icon: LucideIcon
   adminOnly?: boolean
   disabled?: boolean
 }
@@ -87,15 +86,6 @@ const navItems: NavItem[] = [
   { labelKey: "settings", href: "/settings", icon: Settings },
   { labelKey: "dataCenter", href: "/data_center", icon: Database, adminOnly: true },
 ]
-
-function getInitials(value: string): string {
-  return value
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("")
-}
 
 function useBreadcrumbs(
   pathname: string,
@@ -200,21 +190,65 @@ function useBreadcrumbs(
   }, [customerName, homeLabel, labels, pathname])
 }
 
+function isNavigationItemActive(pathname: string, item: NavItem): boolean {
+  if (item.disabled) {
+    return false
+  }
+
+  if (pathname === item.href) {
+    return true
+  }
+
+  if (item.href === "/tickets/input") {
+    return pathname.startsWith("/tickets/")
+  }
+
+  if (item.href === "/debts/input") {
+    return pathname.startsWith("/debts/")
+  }
+
+  return pathname.startsWith(item.href)
+}
+
+function BrandHeading() {
+  const t = useI18n()
+
+  return (
+    <SideNavHeading
+      as={Link}
+      heading="Bay Buddy"
+      headingHref="/"
+      icon={
+        <Image
+          alt=""
+          aria-hidden="true"
+          height={26}
+          priority
+          src="/branding/logo-bay-buddy-v1-crop.png"
+          width={32}
+        />
+      }
+      subheading={t("appShell.productDescription")}
+    />
+  )
+}
+
 function ShellNavigation({
-  compact = false,
   currentUserRole,
-  pathname,
   onNavigate,
+  pathname,
 }: {
-  compact?: boolean
   currentUserRole?: string
-  pathname: string
   onNavigate?: () => void
+  pathname: string
 }) {
   const t = useI18n()
 
   return (
-    <nav className={cn(compact ? "flex flex-col items-center gap-2" : "space-y-2")}>
+    <SideNavSection
+      isHeaderHidden
+      title={t("appShell.navigationSection")}
+    >
       {navItems.map((item) => {
         if (item.adminOnly && currentUserRole !== "ADMIN") {
           return null
@@ -222,191 +256,98 @@ function ShellNavigation({
 
         const Icon = item.icon
         const label = t(`appShell.nav.${item.labelKey}`)
-        const isActive =
-          !item.disabled &&
-          (pathname === item.href ||
-            (item.href === "/tickets/input"
-              ? pathname.startsWith("/tickets/")
-              : item.href === "/debts/input"
-                ? pathname.startsWith("/debts/")
-              : item.href !== "/" && pathname.startsWith(item.href)))
-
-        const itemClasses = cn(
-          "group relative flex min-h-11 items-center overflow-hidden rounded-md border border-border bg-transparent text-sm font-semibold tracking-[0.08px] text-foreground/70 transition-[background-color,border-color,color,box-shadow,transform] duration-200 hover:border-primary/25 hover:bg-sidebar-accent/65 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar active:translate-x-0",
-          compact
-            ? "h-12 w-12 justify-center p-0"
-            : "w-full gap-3 px-3.5 py-2.5 hover:translate-x-0.5",
-          isActive &&
-            "border-primary bg-[#e0f2ff] text-primary shadow-[0_12px_26px_-22px_rgba(27,97,201,0.72)] hover:border-primary hover:bg-[#e0f2ff] hover:text-primary",
-          item.disabled &&
-            "cursor-default opacity-55 hover:border-border hover:bg-transparent hover:text-foreground/70",
-        )
-
-        const content = (
-          <>
-            {isActive ? (
-              <span
-                aria-hidden="true"
-                className="absolute inset-y-2 left-0 w-1 rounded-r-full bg-primary"
-              />
-            ) : null}
-            <Icon aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={2} />
-            <span className={cn("flex-1 text-left", compact && "sr-only")}>
-              {label}
-            </span>
-            {compact ? (
-              <span
-                className="pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 hidden -translate-y-1/2 whitespace-nowrap rounded-lg border border-border bg-white px-3 py-2 text-xs font-semibold text-foreground opacity-0 shadow-[var(--shadow-md)] transition-opacity duration-150 group-hover:block group-hover:opacity-100"
-                role="tooltip"
-              >
-                {label}
-              </span>
-            ) : null}
-            {item.disabled && !compact ? (
-              <span className="rounded-full border border-border bg-white px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {t("appShell.comingSoon")}
-              </span>
-            ) : null}
-          </>
-        )
-
-        if (item.disabled) {
-          return (
-            <div aria-disabled="true" className={itemClasses} key={item.labelKey}>
-              {content}
-            </div>
-          )
-        }
 
         return (
-          <Link
-            aria-current={isActive ? "page" : undefined}
-            aria-label={compact ? label : undefined}
-            className={itemClasses}
+          <SideNavItem
+            as={Link}
             href={item.href}
+            icon={<Icon aria-hidden="true" size={18} strokeWidth={2} />}
+            isDisabled={item.disabled}
+            isSelected={isNavigationItemActive(pathname, item)}
             key={item.href}
+            label={label}
             onClick={onNavigate}
-          >
-            {content}
-          </Link>
+          />
         )
       })}
-    </nav>
+    </SideNavSection>
   )
 }
 
-function SkeletonBlock({ className }: { className: string }) {
+function MobileShellNavigation({
+  currentUserRole,
+  pathname,
+}: {
+  currentUserRole?: string
+  pathname: string
+}) {
+  const { closeMobileNav } = useAppShellMobile()
+
   return (
-    <div
-      aria-hidden="true"
-      className={cn("animate-pulse rounded-lg bg-muted", className)}
+    <ShellNavigation
+      currentUserRole={currentUserRole}
+      onNavigate={closeMobileNav}
+      pathname={pathname}
     />
   )
 }
 
-function AuthenticatedShellLoading({
-  loadingLabel,
+function LoadingShell({
   homeLabel,
+  loadingLabel,
 }: {
-  loadingLabel: string
   homeLabel: string
+  loadingLabel: string
 }) {
+  const t = useI18n()
+
   return (
-    <div
-      aria-busy="true"
-      aria-label={loadingLabel}
-      className="min-h-full bg-background text-foreground"
-      role="status"
-    >
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-40 hidden border-r border-sidebar-border bg-sidebar/96 px-2 py-4 shadow-[12px_0_36px_-34px_rgba(15,48,106,0.48)] lg:block",
-          getAuthenticatedSidebarClassName(),
-        )}
-      >
-        <div className="flex h-full flex-col">
-          <div className="border-b border-border/80 pb-4">
-            <div className="flex justify-center py-2">
-              <SkeletonBlock className="h-10 w-10" />
-            </div>
-          </div>
-          <div className="space-y-3 py-4">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div
-                className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-transparent"
-                key={index}
-              >
-                <SkeletonBlock className="h-4 w-4 rounded-sm" />
-              </div>
+    <AstryxAppShell
+      contentPadding={0}
+      height="fill"
+      sideNav={
+        <SideNav header={<BrandHeading />}>
+          <VStack gap={3} padding={4}>
+            {Array.from({ length: 7 }).map((_, index) => (
+              <Skeleton height={32} index={index} key={index} radius={2} />
             ))}
-          </div>
-        </div>
-      </aside>
-
-      <div className={getAuthenticatedContentOffsetClassName()}>
-        <header className={cn("sticky top-0 z-30", getPageHeaderClassName())}>
-          <div className="flex min-h-14 items-center gap-3 px-4 py-2 sm:px-6 lg:px-7">
-            <SkeletonBlock className="h-11 w-11 lg:hidden" />
-            <div className="min-w-0 flex-1">
-              <div className="inline-flex min-h-10 max-w-full items-center rounded-md border border-border/75 bg-white/78 px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-                <p className="truncate text-sm font-semibold text-foreground">
-                  {homeLabel}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 rounded-md border border-border/80 bg-white/86 px-2.5 py-1.5 shadow-[var(--shadow-sm)]">
-              <SkeletonBlock className="h-10 w-10 rounded-md" />
-              <div className="hidden min-w-24 space-y-2 sm:block">
-                <SkeletonBlock className="h-3 w-24" />
-                <SkeletonBlock className="h-2.5 w-16" />
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="min-h-[calc(100vh-3.5rem)]">
-          <div className={getAuthenticatedMainClassName()}>
-            <div className="space-y-6 pb-12">
-              <section className="rounded-xl border border-border bg-white px-5 py-4 shadow-[var(--shadow-sm)]">
-                <SkeletonBlock className="h-3 w-40" />
-                <SkeletonBlock className="mt-3 h-7 max-w-lg" />
-                <SkeletonBlock className="mt-3 h-4 max-w-2xl" />
-              </section>
-              <div className="grid gap-4 sm:grid-cols-3">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <section
-                    className="rounded-xl border border-border bg-white p-5 shadow-[var(--shadow-sm)]"
-                    key={index}
-                  >
-                    <SkeletonBlock className="h-8 w-8" />
-                    <SkeletonBlock className="mt-4 h-3 w-28" />
-                    <SkeletonBlock className="mt-3 h-7 w-32" />
-                    <SkeletonBlock className="mt-3 h-3 w-44 max-w-full" />
-                  </section>
-                ))}
-              </div>
-              <section className="rounded-xl border border-border bg-white shadow-[var(--shadow-sm)]">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div
-                    className="grid gap-3 border-b border-border px-5 py-4 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto]"
-                    key={index}
-                  >
-                    <div className="flex items-start gap-3">
-                      <SkeletonBlock className="h-9 w-9" />
-                      <div className="min-w-0 flex-1 space-y-2">
-                        <SkeletonBlock className="h-4 max-w-xs" />
-                        <SkeletonBlock className="h-3 max-w-lg" />
-                      </div>
-                    </div>
-                    <SkeletonBlock className="h-5 w-24" />
-                  </div>
-                ))}
-              </section>
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
+          </VStack>
+        </SideNav>
+      }
+      topNav={
+        <TopNav
+          label={t("appShell.topNavigationAria")}
+          startContent={
+            <Breadcrumbs label={t("appShell.breadcrumbAria")}>
+              <BreadcrumbItem isCurrent>{homeLabel}</BreadcrumbItem>
+            </Breadcrumbs>
+          }
+          endContent={<Skeleton height={36} radius="rounded" width={112} />}
+        />
+      }
+      variant="section"
+    >
+      <Layout
+        content={
+          <LayoutContent isScrollable={false} padding={6}>
+            <VStack
+              align="center"
+              aria-busy="true"
+              aria-label={loadingLabel}
+              gap={4}
+              minHeight="50dvh"
+              role="status"
+              justify="center"
+            >
+              <Skeleton height={20} width={220} />
+              <Skeleton height={12} width={320} />
+            </VStack>
+          </LayoutContent>
+        }
+        contentWidth={1600}
+        height="auto"
+      />
+    </AstryxAppShell>
   )
 }
 
@@ -416,7 +357,6 @@ export function AppShell({ children }: AppShellProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { token, isReady, logout } = useAuth()
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
 
   const showShell = pathname !== "/login"
   const shouldRenderShell = shouldRenderAuthenticatedShell({
@@ -440,10 +380,6 @@ export function AppShell({ children }: AppShellProps) {
     queryFn: () => apiFetchData<CustomerSummary>(`/customers/${customerId}`),
     enabled: showShell && isReady && Boolean(token) && Boolean(customerId),
   })
-
-  React.useEffect(() => {
-    setIsSidebarOpen(false)
-  }, [pathname])
 
   React.useEffect(() => {
     if (isReady && !token && showShell) {
@@ -491,11 +427,6 @@ export function AppShell({ children }: AppShellProps) {
     ),
     customerQuery.data?.name,
   )
-  const userName = userQuery.data?.username ?? t("appShell.userFallback")
-  const userRole =
-    userQuery.data?.role === "ADMIN"
-      ? t("appShell.roles.admin")
-      : t("appShell.roles.staff")
 
   if (!showShell) {
     return <>{children}</>
@@ -503,7 +434,7 @@ export function AppShell({ children }: AppShellProps) {
 
   if (!isReady) {
     return (
-      <AuthenticatedShellLoading
+      <LoadingShell
         homeLabel={t("appShell.home")}
         loadingLabel={t("appShell.loading")}
       />
@@ -514,158 +445,110 @@ export function AppShell({ children }: AppShellProps) {
     return null
   }
 
+  const userName = userQuery.data?.username ?? t("appShell.userFallback")
+  const userRole =
+    userQuery.data?.role === "ADMIN"
+      ? t("appShell.roles.admin")
+      : t("appShell.roles.staff")
+
+  const signOut = () => {
+    logout()
+    queryClient.clear()
+    router.replace(LOGIN_PATH)
+  }
+
   return (
-    <div className="min-h-full bg-background text-foreground">
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-40 hidden border-r border-sidebar-border bg-sidebar/96 px-2 py-4 shadow-[12px_0_36px_-34px_rgba(15,48,106,0.48)] lg:block",
-          getAuthenticatedSidebarClassName(),
-        )}
-      >
-        <div className="flex h-full flex-col">
-          <div className="border-b border-border/80 pb-4">
-            <div className="flex justify-center py-2">
-              <Link
-                aria-label={t("appShell.brandHomeAria")}
-                className="flex justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                href="/"
-              >
-                <Image
-                  alt="Bay Buddy"
-                  className="h-10 w-auto object-contain"
-                  height={820}
-                  priority
-                  src="/branding/logo-bay-buddy-v1-crop.png"
-                  width={1020}
-                />
-              </Link>
-            </div>
-          </div>
-          <div className="flex-1 py-4">
-            <ShellNavigation
-              compact
-              currentUserRole={userQuery.data?.role}
-              onNavigate={() => setIsSidebarOpen(false)}
-              pathname={pathname}
-            />
-          </div>
-        </div>
-      </aside>
-
-      <div className={getAuthenticatedContentOffsetClassName()}>
-        <header className={cn("sticky top-0 z-30", getPageHeaderClassName())}>
-          <div className="flex min-h-14 items-center gap-3 px-4 py-2 sm:px-6 lg:px-7">
-            <Sheet onOpenChange={setIsSidebarOpen} open={isSidebarOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  aria-label={t("appShell.mobileMenuAria")}
-                  className="lg:hidden"
-                  size="icon"
-                  type="button"
-                  variant="outline"
-                >
-                  <Menu className="h-5 w-5" strokeWidth={2} />
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="bg-sidebar p-0" side="left">
-                <div className="flex h-full flex-col bg-sidebar">
-                  <SheetHeader className="border-b border-border px-5 py-5">
-                    <SheetTitle className="flex justify-center px-2 py-2">
-                      <Link
-                        aria-label={t("appShell.brandHomeAria")}
-                        className="flex justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                        href="/"
-                        onClick={() => setIsSidebarOpen(false)}
-                      >
-                        <Image
-                          alt="Bay Buddy"
-                          className="h-20 w-auto object-contain"
-                          height={820}
-                          priority
-                          src="/branding/logo-bay-buddy-v1-crop.png"
-                          width={1020}
-                        />
-                      </Link>
-                    </SheetTitle>
-                  </SheetHeader>
-                  <div className="flex-1 overflow-y-auto px-4 py-5">
-                    <ShellNavigation
-                      currentUserRole={userQuery.data?.role}
-                      onNavigate={() => setIsSidebarOpen(false)}
-                      pathname={pathname}
-                    />
-                  </div>
-
-                </div>
-              </SheetContent>
-            </Sheet>
-
-            <div className="min-w-0 flex-1">
-              <nav
-                aria-label="Breadcrumb"
-                className="inline-flex min-h-10 max-w-full items-center overflow-hidden rounded-md border border-border/75 bg-white/78 px-3 text-sm text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]"
-              >
+    <AstryxAppShell
+      contentPadding={0}
+      height="auto"
+      mobileNav={
+        <MobileNav
+          header="Bay Buddy"
+          label={t("appShell.navigationAria")}
+          side="start"
+        >
+          <MobileShellNavigation
+            currentUserRole={userQuery.data?.role}
+            pathname={pathname}
+          />
+        </MobileNav>
+      }
+      sideNav={
+        <SideNav
+          collapsible={{
+            buttonLabel: t("appShell.collapseNavigation"),
+            defaultIsCollapsed: false,
+          }}
+          header={<BrandHeading />}
+        >
+          <ShellNavigation
+            currentUserRole={userQuery.data?.role}
+            pathname={pathname}
+          />
+        </SideNav>
+      }
+      topNav={
+        <TopNav
+          label={t("appShell.topNavigationAria")}
+          startContent={
+            <HStack align="center" gap={2}>
+              <MobileNavToggle label={t("appShell.mobileMenuAria")} />
+              <Breadcrumbs label={t("appShell.breadcrumbAria")} variant="supporting">
                 {breadcrumbs.map((crumb, index) => (
-                  <React.Fragment key={`${crumb.href}-${crumb.label}`}>
-                    {index > 0 ? (
-                      <ChevronRight
-                        aria-hidden="true"
-                        className="mx-1.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/45"
-                        strokeWidth={2}
-                      />
-                    ) : null}
-                    {index === breadcrumbs.length - 1 ? (
-                      <span className="min-w-0 truncate font-semibold text-foreground">
-                        {crumb.label}
-                      </span>
-                    ) : (
-                      <Link
-                        className="shrink-0 font-medium text-muted-foreground transition-colors hover:text-primary"
-                        href={crumb.href}
-                      >
-                        {crumb.label}
-                      </Link>
-                    )}
-                  </React.Fragment>
+                  <BreadcrumbItem
+                    as={Link}
+                    href={
+                      index === breadcrumbs.length - 1
+                        ? undefined
+                        : crumb.href
+                    }
+                    isCurrent={index === breadcrumbs.length - 1}
+                    key={`${crumb.href}-${crumb.label}`}
+                  >
+                    {crumb.label}
+                  </BreadcrumbItem>
                 ))}
-              </nav>
-            </div>
-
-            <details className="group relative">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-md border border-border/80 bg-white/86 px-2.5 py-1.5 shadow-[var(--shadow-sm)] transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-px hover:border-primary/25 hover:bg-white hover:shadow-[var(--shadow-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-md border border-primary/10 bg-[linear-gradient(135deg,var(--theme-blue-soft),#ffffff)] text-sm font-semibold text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-                  {getInitials(userName)}
-                </div>
-                <div className="hidden text-left sm:block">
-                  <p className="max-w-36 truncate text-sm font-semibold leading-[1.2] text-foreground">
-                    {userName}
-                  </p>
-                  <p className="max-w-36 truncate text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    {userRole}
-                  </p>
-                </div>
-                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
-              </summary>
-              <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border/85 bg-white p-2 shadow-[var(--shadow-lg)]">
-                <button
-                  className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground"
-                  onClick={() => {
-                    logout()
-                    router.replace(LOGIN_PATH)
-                  }}
-                  type="button"
-                >
-                  {t("appShell.signOut")}
-                </button>
-              </div>
-            </details>
-          </div>
-        </header>
-
-        <main className="min-h-[calc(100vh-3.5rem)]">
-          <div className={getAuthenticatedMainClassName()}>{children}</div>
-        </main>
-      </div>
-    </div>
+              </Breadcrumbs>
+            </HStack>
+          }
+          endContent={
+            <DropdownMenu
+              button={{
+                icon: <Avatar name={userName} size="md" tooltip={false} />,
+                label: `${userName} · ${userRole}`,
+                variant: "ghost",
+              }}
+              hasChevron
+              menuWidth={260}
+              placement="below"
+            >
+              <ThemeModeRadioGroup />
+              <DropdownMenuItem
+                icon={
+                  <LogOut
+                    aria-hidden="true"
+                    size={16}
+                    strokeWidth={2}
+                  />
+                }
+                label={t("appShell.signOut")}
+                onClick={signOut}
+              />
+            </DropdownMenu>
+          }
+        />
+      }
+      variant="section"
+    >
+      <Layout
+        content={
+          <LayoutContent isScrollable={false} padding={6}>
+            {children}
+          </LayoutContent>
+        }
+        contentWidth={1600}
+        height="auto"
+      />
+    </AstryxAppShell>
   )
 }

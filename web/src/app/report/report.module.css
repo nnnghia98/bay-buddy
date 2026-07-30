@@ -1,0 +1,191 @@
+.metric {
+  padding: var(--spacing-4) var(--spacing-5);
+  border-inline-end: var(--border-width) solid var(--color-border);
+}
+
+.metric:last-child {
+  border-inline-end: 0;
+}
+
+.metricValue {
+  margin-block-start: var(--spacing-1-5);
+  color: var(--color-text-primary);
+  font-size: var(--text-heading-3-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.report,
+.columnPicker {
+  overflow: hidden;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-container);
+  background: var(--color-background-surface);
+  box-shadow: var(--shadow-low);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  border-block-end: var(--border-width) solid var(--color-border);
+  padding: var(--spacing-3) var(--spacing-5);
+}
+
+.title {
+  margin-block-start: var(--spacing-1);
+  color: var(--color-text-primary);
+  font-size: var(--text-heading-3-size);
+  font-weight: var(--text-heading-3-weight);
+}
+
+.filters {
+  display: grid;
+  gap: var(--spacing-3);
+}
+
+.error {
+  border-block-end: var(--border-width) solid var(--color-border-red);
+  background: var(--color-background-red);
+  color: var(--color-text-red);
+  padding: var(--spacing-3) var(--spacing-5);
+}
+
+.summary {
+  border-block-end: var(--border-width) solid var(--color-border);
+  background: var(--color-background-muted);
+}
+
+.summaryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  border-block-end: var(--border-width) solid var(--color-border);
+  padding: var(--spacing-2) var(--spacing-5);
+}
+
+.metrics {
+  display: grid;
+}
+
+.table {
+  min-width: 48rem;
+  border-collapse: collapse;
+}
+
+.tableHead,
+.tableCell {
+  border-inline-end: var(--border-width) solid var(--color-border);
+  white-space: nowrap;
+}
+
+.tableHead:last-child,
+.tableCell:last-child {
+  border-inline-end: 0;
+}
+
+.tableHead {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.tableCell {
+  background: var(--color-background-surface);
+}
+
+.numericCell {
+  font-weight: var(--font-weight-semibold);
+  text-align: end;
+}
+
+.columnSummary {
+  display: flex;
+  cursor: pointer;
+  list-style: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-5);
+}
+
+.columnSummary::-webkit-details-marker {
+  display: none;
+}
+
+.columnCount {
+  display: block;
+  margin-block-start: var(--spacing-1);
+  color: var(--color-text-secondary);
+}
+
+.columnDescription {
+  color: var(--color-text-accent);
+  font-weight: var(--font-weight-medium);
+}
+
+.columnContent {
+  border-block-start: var(--border-width) solid var(--color-border);
+  padding: var(--spacing-4) var(--spacing-5);
+}
+
+.columnActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--spacing-2);
+  padding-block-end: var(--spacing-4);
+}
+
+.columnGrid {
+  display: grid;
+  gap: var(--spacing-2);
+}
+
+.columnOption {
+  display: flex;
+  min-height: var(--spacing-10);
+  align-items: center;
+  gap: var(--spacing-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-element);
+  background: var(--color-background-muted);
+  color: var(--color-text-primary);
+  padding-inline: var(--spacing-3);
+  font-weight: var(--font-weight-medium);
+}
+
+.checkbox {
+  width: var(--spacing-4);
+  height: var(--spacing-4);
+  accent-color: var(--color-accent);
+}
+
+@media (min-width: 40rem) {
+  .filters {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;
+    align-items: end;
+  }
+
+  .metrics,
+  .columnGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .columnGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 80rem) {
+  .header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

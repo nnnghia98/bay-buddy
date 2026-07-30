@@ -4,12 +4,12 @@ import { Plus, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
 import type {
   WorkbookColumn,
   WorkbookFormulaExpression,
   WorkbookFormulaOperator,
 } from "@/schemas/workbook"
+import styles from "./workbook-editor-components.module.css"
 
 export type FormulaTranslator = (
   key: string,
@@ -175,9 +175,6 @@ export function SimpleFormulaBuilder({
   )
   const hasThirdColumn = value.columnIds.length === 3
   const canAddThirdColumn = !hasThirdColumn && numericColumns.length >= 3
-  const columnSelectClass = "h-11 min-w-0 rounded-md border border-input bg-white px-3 text-sm"
-  const operatorSelectClass = "h-11 min-w-0 rounded-md border border-input bg-white px-2 text-center font-mono text-base"
-
   const updateColumn = (index: number, columnId: string) => {
     onChange({
       ...value,
@@ -212,25 +209,18 @@ export function SimpleFormulaBuilder({
   }
 
   return (
-    <div className="grid gap-3 rounded-lg border border-border bg-secondary/20 p-3">
-      <div
-        className={cn(
-          "grid gap-3",
-          hasThirdColumn
-            ? "sm:grid-cols-[minmax(0,1fr)_4.5rem_minmax(0,1fr)_4.5rem_minmax(0,1fr)]"
-            : "sm:grid-cols-[minmax(0,1fr)_4.5rem_minmax(0,1fr)]",
-        )}
-      >
+    <div className={styles.formulaSurface}>
+      <div className={hasThirdColumn ? styles.formulaGridThree : styles.formulaGrid}>
         {value.columnIds.map((columnId, index) => (
-          <div className="contents" key={`${index}:${columnId}`}>
+          <div className={styles.formulaContents} key={`${index}:${columnId}`}>
             {index > 0 ? (
-              <div className="grid content-start gap-1.5">
+              <div className={styles.formulaPart}>
                 <Label htmlFor={`simple-formula-operator-${index}`}>
                   {t("workbookEditor.editor.columns.operator")}
                 </Label>
                 <select
                   aria-label={t("workbookEditor.editor.columns.simpleOperator", { index })}
-                  className={operatorSelectClass}
+                  className={styles.operatorSelect}
                   id={`simple-formula-operator-${index}`}
                   onChange={(event) => updateOperator(
                     index - 1,
@@ -247,13 +237,13 @@ export function SimpleFormulaBuilder({
               </div>
             ) : null}
 
-            <div className="grid content-start gap-1.5">
+            <div className={styles.formulaPart}>
               <Label htmlFor={`simple-formula-column-${index + 1}`}>
                 {t("workbookEditor.editor.columns.simpleColumn", { index: index + 1 })}
               </Label>
               <select
                 aria-label={t("workbookEditor.editor.columns.simpleColumn", { index: index + 1 })}
-                className={columnSelectClass}
+                className={styles.formulaSelect}
                 id={`simple-formula-column-${index + 1}`}
                 onChange={(event) => updateColumn(index, event.target.value)}
                 value={columnId}
@@ -272,8 +262,8 @@ export function SimpleFormulaBuilder({
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">
+      <div className={styles.formulaActions}>
+        <p className={styles.formulaHint}>
           {t("workbookEditor.editor.columns.simpleFormulaOrder")}
         </p>
         {canAddThirdColumn ? (

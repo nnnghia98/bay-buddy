@@ -1,12 +1,29 @@
-import Link from "next/link"
-import type { ComponentPropsWithoutRef, ComponentType, ReactNode, SVGProps } from "react"
+import { Card } from "@astryxdesign/core/Card"
+import { Center } from "@astryxdesign/core/Center"
+import { ClickableCard } from "@astryxdesign/core/ClickableCard"
+import { Heading } from "@astryxdesign/core/Heading"
+import { HStack } from "@astryxdesign/core/HStack"
+import { Icon } from "@astryxdesign/core/Icon"
+import { LayoutHeader } from "@astryxdesign/core/Layout"
+import { Text } from "@astryxdesign/core/Text"
+import { Token } from "@astryxdesign/core/Token"
+import { VStack } from "@astryxdesign/core/VStack"
+import type {
+  ComponentPropsWithoutRef,
+  ComponentType,
+  ReactNode,
+  SVGProps,
+} from "react"
 
 import { cn } from "@/lib/utils"
+import styles from "./command-center.module.css"
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
 
-const panelClassName =
-  "overflow-hidden rounded-xl border border-border/90 bg-white shadow-[var(--shadow-sm)]"
+type PanelProps = Omit<
+  ComponentPropsWithoutRef<typeof Card>,
+  "padding" | "variant"
+>
 
 type PanelHeaderRowProps = {
   eyebrow?: string
@@ -16,23 +33,15 @@ type PanelHeaderRowProps = {
   action?: ReactNode
 }
 
-export function Panel({
-  children,
-  className,
-  ...props
-}: ComponentPropsWithoutRef<"section">) {
+export function Panel({ children, className, ...props }: PanelProps) {
   return (
-    <section className={cn(panelClassName, className)} {...props}>
+    <Card className={className} padding={0} {...props}>
       {children}
-    </section>
+    </Card>
   )
 }
 
-export function TableSection({
-  children,
-  className,
-  ...props
-}: ComponentPropsWithoutRef<"section">) {
+export function TableSection({ children, className, ...props }: PanelProps) {
   return (
     <Panel className={className} {...props}>
       {children}
@@ -48,24 +57,31 @@ export function PanelHeaderRow({
   action,
 }: PanelHeaderRowProps) {
   return (
-    <div className="flex flex-col gap-3 border-b border-border bg-white px-5 py-3.5 sm:flex-row sm:items-start sm:justify-between">
-      <div className="min-w-0 space-y-1">
-        {eyebrow ? (
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-            {eyebrow}
-          </p>
-        ) : null}
-        <h2 className="text-base font-semibold text-foreground" id={titleId}>
-          {title}
-        </h2>
-        {description ? (
-          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            {description}
-          </p>
-        ) : null}
-      </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
-    </div>
+    <LayoutHeader hasDivider padding={5}>
+      <HStack align="start" gap={4} justify="between" wrap="wrap">
+        <VStack gap={1}>
+          {eyebrow ? (
+            <Text color="accent" display="block" type="label">
+              {eyebrow}
+            </Text>
+          ) : null}
+          <Heading id={titleId} level={2}>
+            {title}
+          </Heading>
+          {description ? (
+            <Text
+              color="secondary"
+              display="block"
+              maxLines={3}
+              type="supporting"
+            >
+              {description}
+            </Text>
+          ) : null}
+        </VStack>
+        {action}
+      </HStack>
+    </LayoutHeader>
   )
 }
 
@@ -81,20 +97,23 @@ export function SectionHeader({
   className?: string
 }) {
   return (
-    <div className={cn("flex items-center justify-between pb-3", className)}>
-      <h2
-        className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary"
-        id={id}
-      >
+    <HStack
+      align="center"
+      className={className}
+      gap={3}
+      justify="between"
+      paddingBlock={3}
+    >
+      <Heading color="accent" id={id} level={3}>
         {title}
-      </h2>
+      </Heading>
       {action}
-    </div>
+    </HStack>
   )
 }
 
 export function MetricCard({
-  icon: Icon,
+  icon,
   label,
   value,
   description,
@@ -109,33 +128,37 @@ export function MetricCard({
   className?: string
 }) {
   return (
-    <Panel
-      className={cn(
-        "group p-5 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[var(--shadow-md)]",
-        className,
-      )}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-sm border border-border bg-secondary text-primary transition-colors group-hover:border-primary/20 group-hover:bg-accent/60">
-          <Icon className="h-4 w-4" aria-hidden="true" />
-        </div>
-        {action}
-      </div>
-      <p className="mt-3.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-semibold tracking-normal text-foreground tabular-nums">
-        {value}
-      </p>
-      {description ? (
-        <p className="mt-1.5 text-xs text-muted-foreground">{description}</p>
-      ) : null}
-    </Panel>
+    <Card className={className} padding={5}>
+      <VStack gap={3}>
+        <HStack align="start" justify="between">
+          <Center height={32} width={32}>
+            <Icon color="accent" icon={icon} size="sm" />
+          </Center>
+          {action}
+        </HStack>
+        <Text color="accent" display="block" type="label">
+          {label}
+        </Text>
+        <Text
+          display="block"
+          hasTabularNumbers
+          type="large"
+          weight="semibold"
+        >
+          {value}
+        </Text>
+        {description ? (
+          <Text color="secondary" display="block" type="supporting">
+            {description}
+          </Text>
+        ) : null}
+      </VStack>
+    </Card>
   )
 }
 
 export function EmptyState({
-  icon: Icon,
+  icon,
   message,
   action,
   className,
@@ -146,13 +169,19 @@ export function EmptyState({
   className?: string
 }) {
   return (
-    <div className={cn("flex flex-col items-center gap-3 px-6 py-16 text-center", className)}>
-      <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-border bg-secondary text-muted-foreground">
-        <Icon className="h-4 w-4" aria-hidden="true" />
-      </div>
-      <p className="max-w-md text-sm leading-6 text-muted-foreground">{message}</p>
+    <VStack
+      align="center"
+      className={className}
+      gap={3}
+      padding={8}
+      role="status"
+    >
+      <Icon color="secondary" icon={icon} size="lg" />
+      <Text color="secondary" display="block" justify="center" type="body">
+        {message}
+      </Text>
       {action}
-    </div>
+    </VStack>
   )
 }
 
@@ -163,57 +192,63 @@ export function StatusChip({
   children: ReactNode
   tone?: "neutral" | "info" | "warning" | "success" | "danger"
 }) {
+  const label =
+    typeof children === "string" || typeof children === "number"
+      ? String(children)
+      : ""
+
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold",
-        tone === "neutral" &&
-          "border-border bg-secondary text-muted-foreground",
-        tone === "info" && "border-blue-200 bg-blue-50 text-blue-700",
-        tone === "warning" && "border-amber-200 bg-amber-50 text-amber-800",
-        tone === "success" &&
-          "border-emerald-200 bg-emerald-50 text-emerald-700",
-        tone === "danger" && "border-rose-200 bg-rose-50 text-rose-700",
-      )}
-    >
-      {children}
-    </span>
+    <Token
+      color={
+        tone === "info"
+          ? "blue"
+          : tone === "warning"
+            ? "orange"
+            : tone === "success"
+              ? "green"
+              : tone === "danger"
+                ? "red"
+                : "gray"
+      }
+      label={label}
+      size="sm"
+    />
   )
 }
 
 export function CommandActionLink({
   href,
-  icon: Icon,
+  icon,
   label,
   description,
   className,
-  ...props
-}: Omit<ComponentPropsWithoutRef<typeof Link>, "children"> & {
+}: {
+  href: string
   icon: IconComponent
   label: string
   description: string
+  className?: string
 }) {
   return (
-    <Link
-      className={cn(
-        "group flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-3.5 transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-accent/45 hover:shadow-[var(--shadow-sm)] active:translate-y-px",
-        className,
-      )}
+    <ClickableCard
+      className={className}
+      elevation="low"
       href={href}
-      {...props}
+      label={label}
+      padding={4}
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-border bg-secondary text-primary transition-colors group-hover:border-primary/20 group-hover:bg-white">
-        <Icon className="h-4 w-4" aria-hidden="true" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-medium text-foreground">
-          {label}
-        </span>
-        <span className="mt-0.5 block text-xs leading-4 text-muted-foreground">
-          {description}
-        </span>
-      </span>
-    </Link>
+      <HStack align="center" gap={3}>
+        <Icon color="accent" icon={icon} size="sm" />
+        <VStack gap={0.5}>
+          <Text display="block" type="label">
+            {label}
+          </Text>
+          <Text color="secondary" display="block" type="supporting">
+            {description}
+          </Text>
+        </VStack>
+      </HStack>
+    </ClickableCard>
   )
 }
 
@@ -223,7 +258,7 @@ export function TableScrollArea({
   ...props
 }: ComponentPropsWithoutRef<"div">) {
   return (
-    <div className={cn("w-full overflow-x-auto", className)} {...props}>
+    <div className={cn(styles.tableScroll, className)} {...props}>
       {children}
     </div>
   )

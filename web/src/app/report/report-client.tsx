@@ -1,5 +1,7 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { Download, Loader2 } from "lucide-react"
@@ -7,6 +9,7 @@ import { Download, Loader2 } from "lucide-react"
 import { StatusChip, TableScrollArea } from "@/components/command-center"
 import { TableStateRow } from "@/components/operations-ui"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -27,6 +30,7 @@ import {
 import type { LedgerReportRow } from "@/lib/server-report"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
+import styles from "./report.module.css"
 
 type LedgerReportClientProps = {
   initialFrom: string
@@ -400,11 +404,11 @@ function SummaryMetric({
   value: string
 }) {
   return (
-    <div className="border-r border-border px-5 py-4 last:border-r-0">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+    <div className={styles.metric}>
+      <p className={patterns.eyebrow}>
         {label}
       </p>
-      <p className="mt-1.5 text-lg font-semibold tracking-[-0.02em] text-foreground">
+      <p className={styles.metricValue}>
         {value}
       </p>
     </div>
@@ -531,31 +535,30 @@ export function LedgerReportClient({
   }
 
   return (
-    <div className="space-y-4 pb-12 text-foreground">
-      <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-        <div className="flex flex-col gap-4 border-b border-border px-5 py-3.5 xl:flex-row xl:items-end xl:justify-between">
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+    <div className={`${patterns.page} ${patterns.sectionStack}`}>
+      <section className={styles.report}>
+        <div className={styles.header}>
+          <div className={patterns.minWidthZero}>
+            <p className={patterns.accentEyebrow}>
               {t("report.eyebrow")}
             </p>
-            <h1 className="mt-1 text-lg font-semibold text-foreground">
+            <h1 className={styles.title}>
               {t("report.previewTitle")}
             </h1>
           </div>
 
           <form
-            className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] sm:items-end"
+            className={styles.filters}
             onSubmit={handleApplyFilters}
           >
-            <div className="space-y-1.5">
+            <div className={patterns.fieldStack}>
               <label
-                className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+                className={patterns.eyebrow}
                 htmlFor="report-from"
               >
                 {t("report.filters.from")}
               </label>
-              <input
-                className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm text-foreground shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+              <Input
                 id="report-from"
                 name="from"
                 onChange={(event) => setFromValue(event.target.value)}
@@ -563,15 +566,14 @@ export function LedgerReportClient({
                 value={fromValue}
               />
             </div>
-            <div className="space-y-1.5">
+            <div className={patterns.fieldStack}>
               <label
-                className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+                className={patterns.eyebrow}
                 htmlFor="report-to"
               >
                 {t("report.filters.to")}
               </label>
-              <input
-                className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm text-foreground shadow-[var(--shadow-sm)] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+              <Input
                 id="report-to"
                 name="to"
                 onChange={(event) => setToValue(event.target.value)}
@@ -580,14 +582,13 @@ export function LedgerReportClient({
               />
             </div>
             <Button
-              className="w-full sm:w-auto"
               disabled={isApplying}
               type="submit"
               variant="outline"
             >
               {isApplying ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className={`${patterns.iconSmall} ${patterns.spinner}`} />
                   {t("report.filters.applying")}
                 </>
               ) : (
@@ -595,7 +596,6 @@ export function LedgerReportClient({
               )}
             </Button>
             <Button
-              className="w-full sm:w-auto"
               disabled={
                 isExporting ||
                 reportRows.length === 0 ||
@@ -606,12 +606,12 @@ export function LedgerReportClient({
             >
               {isExporting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className={`${patterns.iconSmall} ${patterns.spinner}`} />
                   {t("report.exporting")}
                 </>
               ) : (
                 <>
-                  <Download className="h-4 w-4" />
+                  <Download className={patterns.iconSmall} />
                   {t("report.exportAction")}
                 </>
               )}
@@ -620,19 +620,19 @@ export function LedgerReportClient({
         </div>
 
         {filterError || exportError ? (
-          <p className="border-b border-border px-5 py-3 text-sm text-red-600" role="alert">
+          <p className={styles.error} role="alert">
             {filterError ?? exportError}
           </p>
         ) : null}
 
-        <div className="border-b border-border bg-secondary/20">
-          <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-2.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+        <div className={styles.summary}>
+          <div className={styles.summaryHeader}>
+            <p className={patterns.accentEyebrow}>
               {t("report.metrics.summary")}
             </p>
-            <span className="text-xs text-muted-foreground">{scopeLabel}</span>
+            <span className={patterns.supportingText}>{scopeLabel}</span>
           </div>
-          <div className="grid sm:grid-cols-2 xl:grid-cols-4">
+          <div className={styles.metrics}>
             <SummaryMetric
               label={t("report.metrics.totalSellingPrice")}
               value={formatCurrency(summary.totalSellingPrice)}
@@ -653,16 +653,16 @@ export function LedgerReportClient({
         </div>
 
         <TableScrollArea>
-          <Table className="min-w-[760px] border-collapse">
+          <Table className={styles.table}>
             <TableHeader>
-              <TableRow className="bg-sidebar-accent hover:bg-sidebar-accent">
+              <TableRow>
                 {selectedColumns.length === 0 ? (
                   <TableHead>{t("report.noColumns")}</TableHead>
                 ) : (
                   selectedColumns.map((column) => (
                     <TableHead
                       className={cn(
-                        "whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-foreground last:border-r-0",
+                        styles.tableHead,
                       )}
                       key={column.key}
                     >
@@ -682,15 +682,15 @@ export function LedgerReportClient({
                 <TableStateRow colSpan={1} message={t("report.noColumns")} />
               ) : (
                 reportRows.map((row, rowIndex) => (
-                  <TableRow className="hover:bg-accent/35" key={row.id}>
+                  <TableRow key={row.id}>
                     {selectedColumns.map((column) => {
                       const value = formatCellValue(row, column.key, rowIndex)
 
                       return (
                         <TableCell
                           className={cn(
-                            "whitespace-nowrap border-r border-border bg-white px-5 py-3.5 last:border-r-0",
-                            column.align === "right" && "text-right font-semibold",
+                            styles.tableCell,
+                            column.align === "right" && styles.numericCell,
                           )}
                           key={`${row.id}-${column.key}`}
                         >
@@ -712,23 +712,23 @@ export function LedgerReportClient({
         </TableScrollArea>
       </section>
 
-      <details className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3.5">
+      <details className={styles.columnPicker}>
+        <summary className={styles.columnSummary}>
           <span>
-            <span className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+            <span className={patterns.accentEyebrow}>
               {t("report.columnsTitle")}
             </span>
-            <span className="mt-1 block text-sm text-muted-foreground">
+            <span className={styles.columnCount}>
               {selectedColumns.length}/{columns.length}
             </span>
           </span>
-          <span className="text-sm font-medium text-primary">
+          <span className={styles.columnDescription}>
             {t("report.columnsDescription")}
           </span>
         </summary>
 
-        <div className="border-t border-border px-5 py-4">
-          <div className="flex flex-wrap justify-end gap-2 pb-4">
+        <div className={styles.columnContent}>
+          <div className={styles.columnActions}>
             <Button
               onClick={() => setSelectedKeys(columns.map((column) => column.key))}
               type="button"
@@ -745,15 +745,15 @@ export function LedgerReportClient({
             </Button>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className={styles.columnGrid}>
             {columns.map((column) => (
               <label
-                className="flex min-h-10 items-center gap-3 rounded-md border border-border bg-secondary/25 px-3 text-sm font-medium text-foreground"
+                className={styles.columnOption}
                 key={column.key}
               >
                 <input
                   checked={selectedKeys.includes(column.key)}
-                  className="h-4 w-4 accent-primary"
+                  className={styles.checkbox}
                   onChange={() => toggleColumn(column.key)}
                   type="checkbox"
                 />

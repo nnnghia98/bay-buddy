@@ -1,5 +1,7 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
 import * as React from "react"
 import { FunctionSquare, LoaderCircle, Plus } from "lucide-react"
 
@@ -24,8 +26,7 @@ import {
   type FormulaTranslator,
   type SimpleFormulaDefinition,
 } from "./simple-formula-builder"
-
-const selectClass = "h-11 min-w-0 rounded-md border border-input bg-white px-3 text-sm"
+import styles from "./workbook-editor-components.module.css"
 
 export type FormulaDraft = {
   label: string
@@ -254,12 +255,15 @@ export function FormulaBuilderDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[min(46rem,calc(100vh-2rem))] max-w-3xl overflow-y-auto">
+      <DialogContent
+        maxHeight="min(46rem, calc(100vh - 2rem))"
+        width="min(94vw, 48rem)"
+      >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className={patterns.row}>
             {targetColumn
-              ? <FunctionSquare className="size-5 text-primary" />
-              : <Plus className="size-5 text-primary" />}
+              ? <FunctionSquare className={patterns.iconMedium} />
+              : <Plus className={patterns.iconMedium} />}
             {title}
           </DialogTitle>
           <DialogDescription>
@@ -269,20 +273,20 @@ export function FormulaBuilderDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-5 py-1">
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
-            <div className="grid gap-1.5">
+        <div className={styles.dialogGrid}>
+          <div className={styles.formulaHeaderGrid}>
+            <div className={patterns.fieldStack}>
               <Label htmlFor="formula-column-label">{t("workbookEditor.editor.columns.label")}</Label>
               <Input id="formula-column-label" maxLength={255} onChange={(event) => updateDraft({ label: event.target.value })} value={draft.label} />
             </div>
-            <div className="grid gap-1.5">
+            <div className={patterns.fieldStack}>
               <Label htmlFor="formula-output-type">
                 {t(draft.formulaEnabled
                   ? "workbookEditor.editor.columns.outputType"
                   : "workbookEditor.editor.columns.type")}
               </Label>
               <select
-                className={selectClass}
+                className={styles.formulaSelect}
                 id="formula-output-type"
                 onChange={(event) => {
                   const dataType = event.target.value as WorkbookColumnDataType
@@ -297,25 +301,25 @@ export function FormulaBuilderDialog({
           </div>
 
           {!targetColumn ? (
-            <div className="rounded-lg border border-border bg-secondary/20 p-3">
-              <label className="flex items-start gap-3" htmlFor="workbook-column-use-formula">
+            <div className={styles.checkboxSurface}>
+              <label className={patterns.rowStart} htmlFor="workbook-column-use-formula">
                 <input
                   checked={draft.formulaEnabled}
-                  className="mt-0.5 size-4 shrink-0 accent-primary"
+                  className={styles.checkbox}
                   disabled={!canEnableFormula || busy}
                   id="workbook-column-use-formula"
                   onChange={(event) => updateFormulaEnabled(event.target.checked)}
                   type="checkbox"
                 />
-                <span className="grid gap-0.5">
-                  <span className="text-sm font-medium">{t("workbookEditor.editor.columns.optionalFormula")}</span>
-                  <span className="text-xs leading-5 text-muted-foreground">
+                <span className={styles.checkboxCopy}>
+                  <span className={patterns.labelText}>{t("workbookEditor.editor.columns.optionalFormula")}</span>
+                  <span className={patterns.supportingText}>
                     {t("workbookEditor.editor.columns.optionalFormulaDescription")}
                   </span>
                 </span>
               </label>
               {!canEnableFormula ? (
-                <p className="mt-2 pl-7 text-xs text-muted-foreground">
+                <p className={styles.indentedHint}>
                   {t("workbookEditor.editor.columns.formulaNeedsColumns")}
                 </p>
               ) : null}
@@ -324,10 +328,10 @@ export function FormulaBuilderDialog({
 
           {draft.formulaEnabled ? (
             <>
-              <div className="grid gap-2">
+              <div className={patterns.fieldStack}>
                 <div>
                   <Label>{t("workbookEditor.editor.columns.formulaBuilder")}</Label>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className={patterns.supportingText}>
                     {t("workbookEditor.editor.columns.simpleFormulaDescription")}
                   </p>
                 </div>
@@ -340,10 +344,10 @@ export function FormulaBuilderDialog({
                   />
                 ) : (
                   <div
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-secondary/20 p-3"
+                    className={styles.legacyFormula}
                     role="status"
                   >
-                    <p className="max-w-xl text-sm text-muted-foreground">
+                    <p className={styles.legacyFormulaCopy}>
                       {t("workbookEditor.editor.columns.legacyFormulaDescription")}
                     </p>
                     <Button
@@ -360,11 +364,11 @@ export function FormulaBuilderDialog({
               </div>
 
               {draft.simpleFormula ? (
-                <div className="grid gap-2">
-                  <div className="flex items-center justify-between gap-3">
+                <div className={patterns.fieldStack}>
+                  <div className={styles.previewHeader}>
                     <Label>{t("workbookEditor.editor.columns.preview.title")}</Label>
                     <Button disabled={!canPreview} onClick={requestPreview} size="sm" type="button" variant="outline">
-                      {previewLoading ? <LoaderCircle className="animate-spin" /> : null}
+                      {previewLoading ? <LoaderCircle className={patterns.spinner} /> : null}
                       {t("workbookEditor.editor.columns.preview.action")}
                     </Button>
                   </div>
@@ -378,7 +382,7 @@ export function FormulaBuilderDialog({
         <DialogFooter>
           <Button disabled={busy || previewLoading} onClick={() => onOpenChange(false)} type="button" variant="outline">{t("workbookEditor.editor.columns.cancel")}</Button>
           <Button disabled={!canApply} onClick={apply} type="button">
-            {busy ? <LoaderCircle className="animate-spin" /> : null}
+            {busy ? <LoaderCircle className={patterns.spinner} /> : null}
             {t(targetColumn
               ? "workbookEditor.editor.columns.apply"
               : "workbookEditor.editor.columns.add")}

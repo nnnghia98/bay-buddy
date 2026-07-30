@@ -1,3 +1,5 @@
+import patterns from "@/styles/ui-patterns.module.css"
+import { Banner } from "@astryxdesign/core/Banner"
 import { redirect } from "next/navigation"
 
 import { convertQuoteToInvoiceAction } from "@/actions/quotes"
@@ -81,11 +83,9 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
     convertStatus === "error" ? convertMessage ?? convertFailureMessage : null
 
   return (
-    <div className="space-y-4 text-foreground">
+    <div className={patterns.sectionStack}>
       {convertBannerMessage ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-950 shadow-sm">
-          <p className="text-sm font-medium">{convertBannerMessage}</p>
-        </div>
+        <Banner status="warning" title={convertBannerMessage} />
       ) : null}
 
       <Panel>
@@ -94,11 +94,11 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
           title={`${t("financeDocuments.quotes.detail.titlePrefix")} ${quote.quote_number}`}
           description={t("financeDocuments.quotes.detail.informationalNotice")}
           action={
-            <div className="flex flex-wrap items-center gap-2">
+            <div className={patterns.wrapRow}>
               <StatusChip tone={statusTone(quote.status)}>
                 {quoteStatusLabel}
               </StatusChip>
-              <span className="text-xs text-muted-foreground">
+              <span className={patterns.supportingText}>
                 {t("financeDocuments.common.validUntil")}: {formatDate(quote.valid_until)}
               </span>
             </div>
@@ -110,11 +110,11 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             value={
               <>
                 <p>{quote.customer_name_snapshot}</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                <p className={patterns.supportingText}>
                   {t("financeDocuments.common.address")}:{" "}
                   {quote.customer_address_snapshot ?? t("financeDocuments.common.notUpdated")}
                 </p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                <p className={patterns.supportingText}>
                   {t("financeDocuments.common.taxCode")}:{" "}
                   {quote.customer_tax_code_snapshot ?? t("financeDocuments.common.notUpdated")}
                 </p>
@@ -126,15 +126,15 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             value={
               <>
                 <p>{formatCurrency(quote.total_amount)}</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                <p className={patterns.supportingText}>
                   {t("financeDocuments.common.taxAmount")}: {formatCurrency(quote.tax_amount)}
                 </p>
-                <p className="text-xs leading-5 text-muted-foreground">
+                <p className={patterns.supportingText}>
                   {t("financeDocuments.common.discountAmount")}: {formatCurrency(quote.discount_amount)}
                 </p>
               </>
             }
-            valueClassName="text-2xl font-medium tracking-[-0.02em]"
+            valueClassName={patterns.metricValue}
           />
           <DocumentField
             label={t("financeDocuments.common.createdAt")}
@@ -145,7 +145,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             value={quote.amount_in_words}
           />
           <DocumentField
-            className="lg:col-span-2"
+            className={patterns.spanTwo}
             label={t("financeDocuments.common.note")}
             value={quote.note ?? t("financeDocuments.common.noNote")}
           />
@@ -166,14 +166,13 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
                 />
               </form>
             ) : (
-              <p className="max-w-sm text-sm leading-6 text-muted-foreground">
+              <p className={patterns.mutedText}>
                 {t("financeDocuments.quotes.detail.convertUnavailable")}
               </p>
             )
           }
         />
         <FinanceLineItemsTable
-          descriptionClassName="max-w-[20rem]"
           items={quote.items}
           labels={{
             description: t("financeDocuments.common.columns.description"),

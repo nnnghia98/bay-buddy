@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import styles from "./ui.module.css";
 
 type TableProps = React.HTMLAttributes<HTMLTableElement> & {
   containerClassName?: string
@@ -12,12 +13,12 @@ type TableProps = React.HTMLAttributes<HTMLTableElement> & {
 const Table = React.forwardRef<HTMLTableElement, TableProps>(
   ({ className, containerClassName, containerRef, ...props }, ref) => (
     <div
-      className={cn("relative w-full overflow-auto", containerClassName)}
+      className={cn(styles.tableViewport, containerClassName)}
       ref={containerRef}
     >
       <table
         ref={ref}
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn(styles.table, className)}
         {...props}
       />
     </div>
@@ -29,7 +30,7 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
+  <thead ref={ref} className={cn(styles.tableHeader, className)} {...props} />
 ));
 TableHeader.displayName = "TableHeader";
 
@@ -39,7 +40,7 @@ const TableBody = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={cn("[&_tr:last-child]:border-0", className)}
+    className={cn(styles.tableBody, className)}
     {...props}
   />
 ));
@@ -51,10 +52,7 @@ const TableRow = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tr
     ref={ref}
-    className={cn(
-      "border-b border-border/75 transition-colors duration-150 hover:bg-accent/38 data-[state=selected]:bg-muted",
-      className,
-    )}
+    className={cn(styles.tableRow, className)}
     {...props}
   />
 ));
@@ -66,10 +64,7 @@ const TableHead = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <th
     ref={ref}
-    className={cn(
-      "h-11 bg-secondary/55 px-5 py-3 text-left align-middle text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground",
-      className,
-    )}
+    className={cn(styles.tableHead, className)}
     {...props}
   />
 ));
@@ -81,7 +76,7 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn("px-5 py-3.5 align-middle", className)}
+    className={cn(styles.tableCell, className)}
     {...props}
   />
 ));

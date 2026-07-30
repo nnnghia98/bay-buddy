@@ -1,5 +1,7 @@
 "use client"
 
+import patterns from "@/styles/ui-patterns.module.css"
+
 import { LoaderCircle } from "lucide-react"
 import * as React from "react"
 
@@ -48,14 +50,14 @@ export function SessionRenameDialog({
           </DialogDescription>
         </DialogHeader>
         <form
-          className="space-y-4"
+          className={patterns.sectionStack}
           onSubmit={(event) => {
             event.preventDefault()
             if (!normalizedName || pending) return
             onSubmit(normalizedName)
           }}
         >
-          <div className="space-y-2">
+          <div className={patterns.fieldStack}>
             <Label htmlFor="workbook-session-name">
               {text("workbookEditor.library.renameDialog.label")}
             </Label>
@@ -71,7 +73,7 @@ export function SessionRenameDialog({
             />
           </div>
           {error ? (
-            <p className="text-sm text-destructive" role="alert">
+            <p className={patterns.errorText} role="alert">
               {error}
             </p>
           ) : null}
@@ -85,7 +87,7 @@ export function SessionRenameDialog({
               {pending ? (
                 <LoaderCircle
                   aria-hidden="true"
-                  className="size-4 animate-spin motion-reduce:animate-none"
+                  className={`${patterns.iconSmall} ${patterns.spinner}`}
                 />
               ) : null}
               {pending

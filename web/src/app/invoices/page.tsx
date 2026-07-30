@@ -1,3 +1,4 @@
+import patterns from "@/styles/ui-patterns.module.css"
 import Link from "next/link"
 import { ArrowLeft, FileText } from "lucide-react"
 
@@ -8,6 +9,7 @@ import { formatCurrency } from "@/lib/formatters"
 import { fetchCustomerInvoices } from "@/lib/server-finance"
 import { getI18n } from "@/locales/server"
 import type { InvoiceListItem } from "@/schemas"
+import styles from "./invoices.module.css"
 
 type PageProps = {
   searchParams?: Promise<{ customer_id?: string | string[] }>
@@ -35,25 +37,23 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
 
   if (!customerId) {
     return (
-      <div className="pb-12 text-foreground">
+      <div className={patterns.page}>
         <Panel>
-          <div className="flex flex-col items-center gap-4 px-6 py-16 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-secondary text-primary">
-              <FileText className="h-5 w-5" aria-hidden="true" />
+          <div className={styles.scopeEmpty}>
+            <div className={styles.scopeIcon}>
+              <FileText className={patterns.iconMedium} aria-hidden="true" />
             </div>
-            <div className="space-y-1">
-              <h1 className="text-base font-semibold text-foreground">
+            <div className={patterns.compactStack}>
+              <h1 className={patterns.sectionTitle}>
                 {t("financeDocuments.invoices.list.emptyScopeTitle")}
               </h1>
-              <p className="max-w-sm text-sm text-muted-foreground">
+              <p className={styles.scopeDescription}>
                 {t("financeDocuments.invoices.list.emptyScopeDescription")}
               </p>
             </div>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/customers">
-                <ArrowLeft className="h-4 w-4" />
-                {t("financeDocuments.common.backToCustomer")}
-              </Link>
+            <Button as={Link} href="/customers" variant="outline" size="sm">
+              <ArrowLeft className={patterns.iconSmall} />
+              {t("financeDocuments.common.backToCustomer")}
             </Button>
           </div>
         </Panel>
@@ -64,13 +64,13 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
   const invoices = await fetchCustomerInvoices(customerId)
 
   return (
-    <div className="pb-12 text-foreground">
+    <div className={patterns.page}>
       <Panel>
-        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+        <div className={styles.header}>
+          <p className={patterns.accentEyebrow}>
             {t("financeDocuments.invoices.list.title")}
           </p>
-          <span className="text-xs text-muted-foreground">
+          <span className={patterns.supportingText}>
             {invoices.length} {t("financeDocuments.common.invoice").toLowerCase()}
           </span>
         </div>
@@ -84,42 +84,51 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
           <TableScrollArea>
             <Table>
               <TableHeader>
-                <TableRow className="bg-secondary/40 hover:bg-secondary/40">
-                  <TableHead className="px-5">{t("financeDocuments.common.invoice")}</TableHead>
-                  <TableHead className="px-5">{t("financeDocuments.common.status")}</TableHead>
-                  <TableHead className="px-5">{t("financeDocuments.common.customer")}</TableHead>
-                  <TableHead className="px-5 text-right">{t("financeDocuments.common.total")}</TableHead>
-                  <TableHead className="px-5">{t("financeDocuments.common.createdAt")}</TableHead>
-                  <TableHead className="px-5 text-right">{t("financeDocuments.common.print")}</TableHead>
+                <TableRow>
+                  <TableHead>{t("financeDocuments.common.invoice")}</TableHead>
+                  <TableHead>{t("financeDocuments.common.status")}</TableHead>
+                  <TableHead>{t("financeDocuments.common.customer")}</TableHead>
+                  <TableHead className={styles.numberCell}>{t("financeDocuments.common.total")}</TableHead>
+                  <TableHead>{t("financeDocuments.common.createdAt")}</TableHead>
+                  <TableHead className={styles.actionsCell}>{t("financeDocuments.common.print")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {invoices.map((invoice) => (
-                  <TableRow key={invoice.id} className="hover:bg-accent/45">
-                    <TableCell className="px-5 py-3.5 font-mono text-sm font-medium text-foreground">
+                  <TableRow key={invoice.id}>
+                    <TableCell className={styles.invoiceNumber}>
                       {invoice.invoice_number}
                     </TableCell>
-                    <TableCell className="px-5 py-3.5">
+                    <TableCell>
                       <StatusChip tone={statusTone(invoice.status)}>
                         {t(`financeDocuments.statuses.invoice.${invoice.status}`)}
                       </StatusChip>
                     </TableCell>
-                    <TableCell className="px-5 py-3.5 text-sm text-muted-foreground">
+                    <TableCell className={styles.mutedCell}>
                       {invoice.customer_name_snapshot}
                     </TableCell>
-                    <TableCell className="px-5 py-3.5 text-right text-sm font-semibold text-foreground">
+                    <TableCell className={styles.numberCell}>
                       {formatCurrency(invoice.total_amount)}
                     </TableCell>
-                    <TableCell className="px-5 py-3.5 text-sm text-muted-foreground">
+                    <TableCell className={styles.mutedCell}>
                       {formatDate(invoice.created_at)}
                     </TableCell>
-                    <TableCell className="px-5 py-3.5">
-                      <div className="inline-flex flex-wrap justify-end gap-2">
-                        <Button asChild variant="ghost" size="sm" className="h-8 text-xs">
-                          <Link href={`/invoices/${invoice.id}`}>{t("financeDocuments.common.viewDetail")}</Link>
+                    <TableCell className={styles.actionsCell}>
+                      <div className={patterns.endRow}>
+                        <Button
+                          as={Link}
+                          href={`/invoices/${invoice.id}`}
+                          variant="ghost"
+                          size="sm"
+                        >
+                          {t("financeDocuments.common.viewDetail")}
                         </Button>
-                        <Button asChild size="sm" className="h-8 text-xs">
-                          <Link href={`/invoices/${invoice.id}/public`}>{t("financeDocuments.common.openPrint")}</Link>
+                        <Button
+                          as={Link}
+                          href={`/invoices/${invoice.id}/public`}
+                          size="sm"
+                        >
+                          {t("financeDocuments.common.openPrint")}
                         </Button>
                       </div>
                     </TableCell>

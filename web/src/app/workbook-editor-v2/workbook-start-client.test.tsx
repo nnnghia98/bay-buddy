@@ -74,7 +74,6 @@ describe("WorkbookStartClient", () => {
     expect(html).not.toContain("workbookEditor.library.columns.sheet")
     expect(html).not.toContain("workbookEditor.library.columns.version")
     expect(html).not.toContain("workbookEditor.library.columns.status")
-    expect(html.match(/<section/g)).toHaveLength(2)
   })
 
   it("renders open, rename, and delete actions for active sessions", () => {

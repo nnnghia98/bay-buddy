@@ -2,8 +2,13 @@
 
 import * as React from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { Toaster } from "sonner"
 
 import { AuthProvider } from "@/lib/auth-context"
+import {
+  ThemeModeProvider,
+  useThemeMode,
+} from "@/lib/theme-mode-context"
 import { I18nProviderClient } from "@/locales/client"
 
 function makeQueryClient() {
@@ -29,14 +34,23 @@ function getQueryClient() {
   return browserQueryClient
 }
 
+function ThemedToaster() {
+  const { mode } = useThemeMode()
+
+  return <Toaster position="top-right" richColors theme={mode} />
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient()
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <I18nProviderClient locale="vi">
-        <AuthProvider>{children}</AuthProvider>
-      </I18nProviderClient>
-    </QueryClientProvider>
+    <ThemeModeProvider>
+      <QueryClientProvider client={queryClient}>
+        <I18nProviderClient locale="vi">
+          <AuthProvider>{children}</AuthProvider>
+        </I18nProviderClient>
+      </QueryClientProvider>
+      <ThemedToaster />
+    </ThemeModeProvider>
   )
 }

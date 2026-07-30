@@ -1,0 +1,336 @@
+.cellEditor {
+  width: 12rem;
+  padding: var(--spacing-1-5) var(--spacing-2);
+}
+
+.cellControl {
+  width: 100%;
+  min-height: var(--size-element-md);
+  border: var(--border-width) solid var(--color-border-emphasized);
+  border-radius: var(--radius-element);
+  background: var(--color-background-surface);
+  color: var(--color-text-primary);
+  padding-inline: var(--spacing-3);
+  font: inherit;
+  font-weight: var(--font-weight-medium);
+  box-shadow: none;
+}
+
+.numericControl {
+  font-family: var(--font-family-code);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.draftedControl {
+  border-color: var(--color-accent);
+  background: var(--color-accent-muted);
+  box-shadow: var(--shadow-inset-selected);
+}
+
+.errorControl {
+  border-color: var(--color-border-red);
+  box-shadow: var(--shadow-inset-error);
+}
+
+.cellError {
+  margin-block-start: var(--spacing-1);
+  color: var(--color-error);
+  font-size: var(--text-supporting-size);
+}
+
+.displayCell {
+  display: block;
+  width: 12rem;
+  overflow: hidden;
+  padding: var(--spacing-3) var(--spacing-4);
+  font-size: var(--text-body-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.numericCell {
+  font-family: var(--font-family-code);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.formulaValue {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.headerContent {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.sortButton {
+  display: inline-flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--spacing-1-5);
+  border: 0;
+  border-radius: var(--radius-inner);
+  background: transparent;
+  color: inherit;
+  padding: 0 var(--spacing-12) 0 0;
+  font: inherit;
+  text-align: start;
+}
+
+.sortButton:focus-visible,
+.headerAction:focus-visible {
+  outline: calc(var(--border-width) * 2) solid var(--color-accent);
+  outline-offset: var(--border-width);
+}
+
+.sortButtonUser {
+  padding-inline-end: calc(var(--spacing-12) * 2);
+}
+
+.sortButtonPricing {
+  padding-inline-end: var(--spacing-10);
+}
+
+.headerLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre-line;
+}
+
+.headerIcon,
+.sortIcon {
+  width: var(--spacing-3);
+  height: var(--spacing-3);
+  flex-shrink: 0;
+}
+
+.headerIcon {
+  color: var(--color-icon-accent);
+}
+
+.sortIcon {
+  color: var(--color-icon-secondary);
+  opacity: 0.5;
+}
+
+.sortIconActive {
+  color: var(--color-icon-accent);
+  opacity: 1;
+}
+
+.headerActions {
+  position: absolute;
+  inset-inline-end: 0;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-inner);
+  background: var(--color-background-popover);
+  padding: var(--spacing-0-5);
+  box-shadow: var(--shadow-low);
+  opacity: 1;
+  transform: translateY(-50%);
+  transition: opacity var(--duration-fast);
+}
+
+.headerActionsPricing {
+  border-color: var(--color-border-blue);
+  background: var(--color-background-blue);
+}
+
+.headerAction {
+  display: grid;
+  width: var(--size-element-sm);
+  height: var(--size-element-sm);
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-inner);
+  background: transparent;
+  color: var(--color-icon-secondary);
+}
+
+.headerAction:hover {
+  background: var(--color-overlay-hover);
+  color: var(--color-icon-primary);
+}
+
+.headerActionSelected {
+  background: var(--color-accent-muted);
+  color: var(--color-icon-accent);
+}
+
+.headerActionDanger:hover {
+  background: var(--color-background-red);
+  color: var(--color-icon-red);
+}
+
+.filled {
+  fill: currentColor;
+}
+
+.scrollRegion {
+  width: 100%;
+  min-height: 26rem;
+  max-height: calc(100dvh - 17.5rem);
+  overflow: auto;
+  background: var(--color-background-muted);
+  outline: none;
+}
+
+.scrollRegion:focus-visible {
+  box-shadow: var(--shadow-inset-selected);
+}
+
+.scrollRegion > div {
+  overflow: visible;
+}
+
+.recordsTable {
+  min-width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.recordsHeader {
+  position: sticky;
+  z-index: 40;
+  top: 0;
+  background: var(--color-background-muted);
+}
+
+.rowGutterHeader,
+.rowGutter {
+  position: sticky;
+  left: 0;
+  width: 3rem;
+  min-width: 3rem;
+  max-width: 3rem;
+  border-inline-end: var(--border-width) solid var(--color-border);
+  background: var(--color-background-muted);
+  color: var(--color-text-secondary);
+  padding: 0;
+  font-family: var(--font-family-code);
+  text-align: center;
+}
+
+.rowGutterHeader {
+  z-index: 60;
+}
+
+.rowGutter {
+  z-index: 30;
+  font-size: var(--text-supporting-size);
+  font-weight: var(--font-weight-medium);
+}
+
+.columnHeader,
+.dataCell {
+  box-sizing: border-box;
+  width: 12rem;
+  min-width: 12rem;
+  max-width: 12rem;
+  border-block-end: var(--border-width) solid var(--color-border);
+  border-inline-end: var(--border-width) solid var(--color-border);
+}
+
+.columnHeader {
+  background: var(--color-background-muted);
+  color: var(--color-text-primary);
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--text-supporting-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.groupHeader {
+  text-align: center;
+}
+
+.pricingHeader {
+  background: var(--color-background-blue);
+  color: var(--color-text-blue);
+}
+
+.stickyLeft {
+  position: sticky;
+  z-index: 50;
+  box-shadow: var(--shadow-med);
+}
+
+.stickyRight {
+  z-index: 50;
+}
+
+.pricingDivider {
+  border-inline-start: calc(var(--border-width) * 2) solid
+    var(--color-border-blue);
+}
+
+.groupLabel {
+  white-space: pre-line;
+}
+
+.emptyState {
+  padding-block: var(--spacing-12);
+}
+
+.dataCell {
+  background: var(--color-background-surface);
+  padding: 0;
+}
+
+.dataCellFormula {
+  background: var(--color-accent-muted);
+}
+
+.dataCellDrafted {
+  background: var(--color-background-blue);
+}
+
+.dataCellPricing {
+  background: var(--color-background-blue);
+}
+
+.dataCellSticky {
+  position: sticky;
+  z-index: 30;
+  box-shadow: var(--shadow-med);
+}
+
+tbody tr:hover .dataCell,
+tbody tr:hover .rowGutter {
+  background: var(--color-overlay-hover);
+}
+
+tbody tr:hover .dataCellDrafted,
+tbody tr:hover .dataCellPricing {
+  background: var(--color-background-blue);
+}
+
+@media (min-width: 48rem) {
+  .headerActions {
+    opacity: 0;
+  }
+
+  .headerContent:hover .headerActions,
+  .headerContent:focus-within .headerActions {
+    opacity: 1;
+  }
+
+  .stickyRight,
+  .dataCellPricing {
+    position: sticky;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .headerActions {
+    transition: none;
+  }
+}

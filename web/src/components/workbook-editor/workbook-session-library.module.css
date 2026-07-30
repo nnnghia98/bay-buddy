@@ -1,0 +1,204 @@
+.library {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  border-block-end: var(--border-width) solid var(--color-border);
+  background: var(--color-background-muted);
+  padding: var(--spacing-4) var(--spacing-5);
+}
+
+.headerIdentity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.headerIcon,
+.sessionIcon,
+.emptyIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-inner);
+  background: var(--color-background-surface);
+  color: var(--color-icon-accent);
+}
+
+.headerIcon {
+  width: var(--spacing-9);
+  height: var(--spacing-9);
+}
+
+.sessionIcon {
+  width: var(--spacing-8);
+  height: var(--spacing-8);
+  margin-block-start: var(--spacing-0-5);
+  background: var(--color-background-muted);
+}
+
+.emptyIcon {
+  width: var(--spacing-10);
+  height: var(--spacing-10);
+  margin-inline: auto;
+  background: var(--color-background-muted);
+  color: var(--color-icon-secondary);
+}
+
+.title,
+.sessionName,
+.sessionSubtitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title {
+  color: var(--color-text-primary);
+  font-size: var(--text-heading-4-size);
+  font-weight: var(--text-heading-4-weight);
+}
+
+.total {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-code);
+  font-size: var(--text-supporting-size);
+  font-weight: var(--font-weight-medium);
+}
+
+.feedback {
+  border-block-end: var(--border-width) solid var(--color-border-blue);
+  background: var(--color-background-blue);
+  color: var(--color-text-blue);
+  padding: var(--spacing-2) var(--spacing-5);
+}
+
+.errorState,
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.errorState {
+  gap: var(--spacing-3);
+  padding: var(--spacing-12) var(--spacing-6);
+}
+
+.errorIcon {
+  width: var(--spacing-6);
+  height: var(--spacing-6);
+  color: var(--color-error);
+}
+
+.emptyState {
+  padding: var(--spacing-12) var(--spacing-6);
+}
+
+.emptyTitle {
+  margin-block-start: var(--spacing-3);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.emptyDescription {
+  max-width: 24rem;
+  margin: var(--spacing-1) auto 0;
+  color: var(--color-text-secondary);
+  line-height: var(--text-body-leading);
+}
+
+.emptyPagination,
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  border-block-start: var(--border-width) solid var(--color-border);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-3) var(--spacing-5);
+}
+
+.emptyPagination {
+  justify-content: flex-end;
+}
+
+.tableActionsHeader {
+  width: 9rem;
+  text-align: end;
+}
+
+.sessionCell {
+  min-width: 14rem;
+}
+
+.sessionIdentity {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+}
+
+.sessionName {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.sessionSubtitle {
+  margin-block-start: var(--spacing-0-5);
+  color: var(--color-text-secondary);
+  font-size: var(--text-supporting-size);
+}
+
+.localStatus {
+  margin-block-start: var(--spacing-2);
+}
+
+.updatedCell {
+  min-width: 11rem;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-code);
+  font-size: var(--text-supporting-size);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-1-5);
+}
+
+.dangerAction {
+  color: var(--color-error);
+}
+
+.pagination {
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--color-background-muted);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  border-block-start: var(--border-width) solid var(--color-border);
+  background: var(--color-background-muted);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-2) var(--spacing-5);
+  font-size: var(--text-supporting-size);
+}
+
+@media (min-width: 40rem) {
+  .pagination {
+    flex-direction: row;
+    align-items: center;
+  }
+}

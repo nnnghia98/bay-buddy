@@ -8,7 +8,7 @@ This redesign is not a visual rebrand. It is a structural UX refinement for the 
 
 ## Context
 
-The current UI already uses Bay Buddy's Airtable-inspired visual baseline, but several authenticated pages still feel harder to scan than they should. The main issues identified during review are:
+The UI already had a compact operational baseline, but several authenticated pages still felt harder to scan than they should. The main issues identified during review were:
 
 - Section boundaries feel too soft, which makes it harder to concentrate on the main work area.
 - Decorative framing and large card treatments consume attention without adding enough operational value.

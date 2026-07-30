@@ -33,7 +33,7 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 
 ## 🛠 Tech Stack
 
-- **Frontend**: Next.js 16 (App Router, Turbopack), TypeScript, Shadcn UI, Tailwind CSS.
+- **Frontend**: Next.js 16 (App Router, Turbopack), TypeScript, Astryx Design with the default Neutral theme, and token-based CSS Modules.
 - **Backend**: Python 3.10+, FastAPI, SQLModel (Pydantic v2 + SQLAlchemy), Poetry.
 - **Package Managers**: **Yarn** (Frontend) and **Poetry** (Backend).
 - **State Management**: TanStack Query v5 (React Query).
@@ -61,7 +61,7 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 ### 3. Frontend (Next.js/TS)
 
 - **Components**: Use Functional Components and Server Components by default.
-- **UI**: Shadcn UI is the primary component library. Maintain a minimalist and clean aesthetic.
+- **UI**: Astryx Design is the primary component library. Use the default Neutral theme, component props first, and semantic Astryx tokens in CSS Modules for specialized layout.
 - **Data Fetching**: Use custom hooks wrapping TanStack Query for all API interactions.
 
 ## 🔐 Authentication & Security
