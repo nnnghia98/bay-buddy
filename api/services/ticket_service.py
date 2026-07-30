@@ -62,6 +62,13 @@ class TicketPaymentPayload(BaseModel):
         max_length=2000,
         description="Audit note for the payment.",
     )
+    occurred_at: Optional[datetime] = Field(
+        default=None,
+        description=(
+            "Optional real-world payment timestamp. Defaults to the transaction "
+            "creation time when omitted."
+        ),
+    )
 
     @model_validator(mode="after")
     def normalize_payment_text(self) -> "TicketPaymentPayload":
@@ -732,6 +739,7 @@ def create_ticket_with_transaction(
             customer_id=customer.id,
             linked_ticket_id=ticket.id,
             created_by=actor_user_id,
+            occurred_at=payload.payment.occurred_at or datetime.now(timezone.utc),
         )
         session.add(payment_transaction)
         customer.balance += get_transaction_balance_delta(

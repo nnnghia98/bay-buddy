@@ -22,7 +22,8 @@ const validManualDebtInput = {
   selling_price: "1200000",
   discount: "0",
   payment_amount: "",
-  payment_method: "Chuyển khoản",
+  payment_method: "",
+  payment_date: "",
 }
 
 describe("manualDebtFormSchema", () => {
@@ -91,6 +92,8 @@ describe("manualDebtFormSchema", () => {
     expect(parsed.booked_at).toBeUndefined()
     expect(parsed.selling_price).toBe(0)
     expect(parsed.payment_amount).toBe(0)
+    expect(parsed.payment_method).toBeUndefined()
+    expect(parsed.payment_date).toBeUndefined()
   })
 
   it.each(["Chuyển khoản", "Tiền mặt", "AST", "THF"] as const)(
@@ -107,7 +110,7 @@ describe("manualDebtFormSchema", () => {
     },
   )
 
-  it("uses bank transfer when the optional payment type is blank", () => {
+  it("keeps the optional payment type empty by default", () => {
     const parsed = manualDebtFormSchema.parse({
       ...validManualDebtInput,
       payment_amount: "",
@@ -115,7 +118,46 @@ describe("manualDebtFormSchema", () => {
     })
 
     expect(parsed.payment_amount).toBe(0)
-    expect(parsed.payment_method).toBe("Chuyển khoản")
+    expect(parsed.payment_method).toBeUndefined()
+  })
+
+  it("requires a payment type when an amount is entered", () => {
+    const result = manualDebtFormSchema.safeParse({
+      ...validManualDebtInput,
+      payment_amount: "500000",
+      payment_method: "",
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.payment_method).toBeDefined()
+    }
+  })
+
+  it("requires a payment amount when a type is selected", () => {
+    const result = manualDebtFormSchema.safeParse({
+      ...validManualDebtInput,
+      payment_amount: "",
+      payment_method: "AST",
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.payment_amount).toBeDefined()
+    }
+  })
+
+  it("accepts an optional payment date with a complete payment", () => {
+    const parsed = manualDebtFormSchema.parse({
+      ...validManualDebtInput,
+      payment_amount: "500000",
+      payment_method: "THF",
+      payment_date: "2026-07-28",
+    })
+
+    expect(parsed.payment_date?.toISOString()).toBe(
+      "2026-07-28T00:00:00.000Z",
+    )
   })
 
   it("rejects unsupported payment types", () => {

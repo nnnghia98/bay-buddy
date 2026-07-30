@@ -38,7 +38,15 @@ function translate(key: string): string {
   return messages[key] ?? key
 }
 
-function createFormData(paymentAmount: string): FormData {
+function createFormData({
+  paymentAmount,
+  paymentDate = "",
+  paymentMethod = "",
+}: {
+  paymentAmount: string
+  paymentDate?: string
+  paymentMethod?: string
+}): FormData {
   const formData = new FormData()
   formData.set("customer_name", "Nguyen Van A")
   formData.set("pnr", "ABC123")
@@ -56,7 +64,8 @@ function createFormData(paymentAmount: string): FormData {
   formData.set("selling_price", "1200000")
   formData.set("discount", "0")
   formData.set("payment_amount", paymentAmount)
-  formData.set("payment_method", "THF")
+  formData.set("payment_method", paymentMethod)
+  formData.set("payment_date", paymentDate)
   return formData
 }
 
@@ -83,7 +92,11 @@ describe("createManualDebtFromFormData", () => {
     vi.stubGlobal("fetch", fetchSpy)
 
     const result = await createManualDebtFromFormData(
-      createFormData("500000"),
+      createFormData({
+        paymentAmount: "500000",
+        paymentMethod: "THF",
+        paymentDate: "2026-07-28",
+      }),
       translate,
     )
 
@@ -94,6 +107,7 @@ describe("createManualDebtFromFormData", () => {
       amount: 500000,
       method: "THF",
       note: "Thanh toán khi ghi nhận công nợ",
+      occurred_at: "2026-07-28T00:00:00.000Z",
     })
     expect(result).toMatchObject({
       status: "success",
@@ -118,7 +132,7 @@ describe("createManualDebtFromFormData", () => {
     vi.stubGlobal("fetch", fetchSpy)
 
     const result = await createManualDebtFromFormData(
-      createFormData(""),
+      createFormData({ paymentAmount: "" }),
       translate,
     )
 

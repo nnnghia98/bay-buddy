@@ -1656,6 +1656,11 @@ export interface components {
              * @description Audit note for the payment.
              */
             note: string;
+            /**
+             * Occurred At
+             * @description Optional real-world payment timestamp. Defaults to the transaction creation time when omitted.
+             */
+            occurred_at?: string | null;
         };
         /**
          * TicketReassignPayload

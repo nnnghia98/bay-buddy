@@ -5345,6 +5345,19 @@
             "minLength": 1,
             "title": "Note",
             "description": "Audit note for the payment."
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At",
+            "description": "Optional real-world payment timestamp. Defaults to the transaction creation time when omitted."
           }
         },
         "type": "object",

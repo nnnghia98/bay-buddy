@@ -35,6 +35,8 @@ export type LedgerReportRow = {
   transaction_category: string | null
   transaction_method: string | null
   evidence_url: string | null
+  linked_payment_amount: number | null
+  linked_payment_note: string | null
 }
 
 export type LedgerReportRange = {
@@ -54,10 +56,56 @@ function getTicketRoute(ticket: CustomerLedger["entries"][number]["ticket"]): st
   return ticket.itinerary ?? null
 }
 
-function mapLedgerToReportRows(ledger: CustomerLedger): LedgerReportRow[] {
+type LinkedPaymentSummary = {
+  amount: number
+  notes: string[]
+}
+
+function getLinkedPaymentSummaries(
+  ledger: CustomerLedger,
+): Map<string, LinkedPaymentSummary> {
+  const summaries = new Map<string, LinkedPaymentSummary>()
+
+  ledger.entries.forEach((entry) => {
+    const transaction = entry.transaction
+    const linkedTicketId = transaction?.linked_ticket_id
+
+    if (
+      entry.entry_type !== "payment" ||
+      transaction?.category !== "PAYMENT" ||
+      !linkedTicketId
+    ) {
+      return
+    }
+
+    const summary = summaries.get(linkedTicketId) ?? {
+      amount: 0,
+      notes: [],
+    }
+    const note = transaction.note?.trim()
+
+    summary.amount += transaction.amount
+    if (note && !summary.notes.includes(note)) {
+      summary.notes.push(note)
+    }
+
+    summaries.set(linkedTicketId, summary)
+  })
+
+  return summaries
+}
+
+export function mapLedgerToReportRows(
+  ledger: CustomerLedger,
+): LedgerReportRow[] {
+  const linkedPaymentSummaries = getLinkedPaymentSummaries(ledger)
+
   return ledger.entries.map((entry) => {
     const ticket = entry.ticket ?? null
     const transaction = entry.transaction ?? null
+    const linkedPaymentSummary = ticket
+      ? linkedPaymentSummaries.get(ticket.id)
+      : undefined
 
     return {
       id: entry.id,
@@ -94,6 +142,11 @@ function mapLedgerToReportRows(ledger: CustomerLedger): LedgerReportRow[] {
       transaction_category: transaction?.category ?? null,
       transaction_method: transaction?.method ?? null,
       evidence_url: transaction?.evidence_url ?? null,
+      linked_payment_amount: linkedPaymentSummary?.amount ?? null,
+      linked_payment_note:
+        linkedPaymentSummary && linkedPaymentSummary.notes.length > 0
+          ? linkedPaymentSummary.notes.join("; ")
+          : null,
     }
   })
 }

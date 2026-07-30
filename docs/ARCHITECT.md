@@ -223,9 +223,12 @@ Bay Buddy follows the project's Next.js App Router patterns, Bay Buddy DNA, and 
 7. `recordPaymentAction` must call `revalidatePath('/customers/[id]')` so the RSC ledger refreshes after a successful mutation, instead of manually refetching on the client.
 8. After the Server Action completes, the optimistic row is reconciled with the persisted transaction or rolled back if validation/authentication fails.
 
-The `/debts/input` workbench may include an optional payment amount and method.
-When supplied, the ticket charge and linked payment must be committed atomically by
-the ticket confirmation flow so a partial save cannot create only one side.
+The `/debts/input` workbench may include an optional payment amount, method, and
+real-world payment date. The method starts empty; choosing one enables the optional
+date input. When supplied, the ticket charge and linked payment must be committed
+atomically by the ticket confirmation flow so a partial save cannot create only one
+side. Ticket rows may show the total linked payment and its note; tickets without a
+linked payment keep those cells empty.
 
 ### Workbook Editor v2 integrity rules
 

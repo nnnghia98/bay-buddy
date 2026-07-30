@@ -99,6 +99,7 @@ export async function createManualDebtFromFormData(
     discount: formData.get("discount"),
     payment_amount: formData.get("payment_amount"),
     payment_method: formData.get("payment_method"),
+    payment_date: formData.get("payment_date"),
   })
 
   if (!parsedInput.success) {
@@ -134,11 +135,12 @@ export async function createManualDebtFromFormData(
       : null
   const route = values.itinerary ?? derivedRoute
   const payment =
-    values.payment_amount > 0
+    values.payment_amount > 0 && values.payment_method
       ? {
           amount: values.payment_amount,
           method: values.payment_method,
           note: t("manualDebts.form.paymentNote"),
+          occurred_at: values.payment_date?.toISOString() ?? null,
         }
       : null
   const response = await fetch(buildUrl("/tickets/confirm"), {

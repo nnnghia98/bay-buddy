@@ -108,6 +108,7 @@ To comply with Vietnamese Accounting Standards (Circular 200/2014/TT-BTC or Circ
 - Every transaction must store the authenticated internal user in `created_by`.
 - Manual customer payments support the method labels `Chuyển khoản`, `Tiền mặt`, `AST`, and `THF`.
 - Transaction `occurred_at` is the real-world business event time and may be historical; transaction `created_at` is the Bay Buddy audit timestamp used for logs, histories, and base date-time filtering.
+- The optional payment in `/debts/input` may capture `occurred_at` as the payment date; omitting it uses the transaction creation time.
 - Payment receipts or transfer screenshots should be attached via `evidence_url` whenever available.
 - Refund / overpayment returns should use `is_refund_confirmed` to distinguish planned vs. confirmed outbound payouts.
 

@@ -18,6 +18,12 @@ import {
 import { expireStoredSession } from "@/lib/auth-storage"
 import { SESSION_EXPIRED_LOGIN_PATH } from "@/lib/auth-token"
 import { formatCurrency } from "@/lib/formatters"
+import {
+  buildReportWorkbookBytes,
+  createXlsxBlob,
+  getMonthlyDebtReportFilename,
+  type ReportWorkbookCell,
+} from "@/lib/report-export"
 import type { LedgerReportRow } from "@/lib/server-report"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
@@ -209,15 +215,6 @@ function parseDateFilter(value: string, boundary: "start" | "end"): Date | null 
     : new Date(Date.UTC(year, month - 1, day, 16, 59, 59, 999))
 }
 
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;")
-}
-
 function formatCellValue(
   row: LedgerReportRow,
   key: ColumnKey,
@@ -300,34 +297,38 @@ function formatCellValue(
   return columns.find((column) => column.key === key)?.getValue(row, index) ?? ""
 }
 
-function downloadExcelPreview(
+function getWorkbookCellValue(
+  row: LedgerReportRow,
+  column: ColumnDefinition,
+  index: number,
+): ReportWorkbookCell {
+  const value = column.getValue(row, index)
+  return column.align === "right"
+    ? Number(value)
+    : formatCellValue(row, column.key, index)
+}
+
+async function downloadExcelPreview(
   rows: LedgerReportRow[],
   selectedColumns: ColumnDefinition[],
   labels: Record<ColumnKey, string>,
-) {
-  const header = selectedColumns
-    .map((column) => `<th>${escapeHtml(labels[column.key])}</th>`)
-    .join("")
-  const body = rows
-    .map((row, index) => {
-      const cells = selectedColumns
-        .map(
-          (column) =>
-            `<td>${escapeHtml(formatCellValue(row, column.key, index))}</td>`,
-        )
-        .join("")
-
-      return `<tr>${cells}</tr>`
-    })
-    .join("")
-  const html = `<!doctype html><html><head><meta charset="utf-8" /><style>table{border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px}th,td{border:1px solid #cfd8e3;padding:6px 8px;white-space:nowrap}th{background:#eef4fb;font-weight:700}</style></head><body><table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table></body></html>`
-  const blob = new Blob([html], {
-    type: "application/vnd.ms-excel;charset=utf-8",
-  })
+): Promise<void> {
+  const workbookRows = rows.map((row, index) =>
+    selectedColumns.map((column) => getWorkbookCellValue(row, column, index)),
+  )
+  const numericColumnIndexes = selectedColumns.flatMap((column, index) =>
+    column.align === "right" ? [index] : [],
+  )
+  const bytes = await buildReportWorkbookBytes(
+    selectedColumns.map((column) => labels[column.key]),
+    workbookRows,
+    numericColumnIndexes,
+  )
+  const blob = createXlsxBlob(bytes)
   const url = URL.createObjectURL(blob)
   const link = document.createElement("a")
   link.href = url
-  link.download = "bay-buddy-ledger-report.xls"
+  link.download = getMonthlyDebtReportFilename()
   document.body.append(link)
   link.click()
   link.remove()
@@ -423,7 +424,9 @@ export function LedgerReportClient({
   const [appliedFrom, setAppliedFrom] = React.useState(initialFrom)
   const [appliedTo, setAppliedTo] = React.useState(initialTo)
   const [isApplying, setIsApplying] = React.useState(false)
+  const [isExporting, setIsExporting] = React.useState(false)
   const [filterError, setFilterError] = React.useState<string | null>(null)
+  const [exportError, setExportError] = React.useState<string | null>(null)
   const [selectedKeys, setSelectedKeys] = React.useState<ColumnKey[]>(
     defaultColumnKeys,
   )
@@ -514,6 +517,19 @@ export function LedgerReportClient({
     }
   }
 
+  const handleExport = async () => {
+    setIsExporting(true)
+    setExportError(null)
+
+    try {
+      await downloadExcelPreview(reportRows, selectedColumns, columnLabels)
+    } catch {
+      setExportError(t("report.exportFailure"))
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <div className="space-y-4 pb-12 text-foreground">
       <section className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
@@ -580,19 +596,32 @@ export function LedgerReportClient({
             </Button>
             <Button
               className="w-full sm:w-auto"
-              disabled={reportRows.length === 0 || selectedColumns.length === 0}
-              onClick={() => downloadExcelPreview(reportRows, selectedColumns, columnLabels)}
+              disabled={
+                isExporting ||
+                reportRows.length === 0 ||
+                selectedColumns.length === 0
+              }
+              onClick={handleExport}
               type="button"
             >
-              <Download className="h-4 w-4" />
-              {t("report.exportAction")}
+              {isExporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t("report.exporting")}
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  {t("report.exportAction")}
+                </>
+              )}
             </Button>
           </form>
         </div>
 
-        {filterError ? (
+        {filterError || exportError ? (
           <p className="border-b border-border px-5 py-3 text-sm text-red-600" role="alert">
-            {filterError}
+            {filterError ?? exportError}
           </p>
         ) : null}
 

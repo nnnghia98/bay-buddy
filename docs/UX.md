@@ -174,6 +174,8 @@ Forms must follow the App Router standard from the DNA:
 - Keep validation errors close to the field and accessible.
 - On desktop workbench pages, long forms should scroll inside their panel instead of pushing the whole page. Keep the adjacent table available for context.
 - Order fields by operational priority, not database schema order.
+- Optional payment controls should start inactive: keep the payment type empty and
+  enable the optional payment date only after staff chooses a payment type.
 
 ## 6. Page-Level UX Rules
 

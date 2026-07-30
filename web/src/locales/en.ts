@@ -377,6 +377,8 @@ export default {
     description:
       "Preview the full ledger as an Excel-style table, choose export columns, and download a file for reconciliation.",
     exportAction: "Export Excel",
+    exporting: "Exporting...",
+    exportFailure: "Unable to create the Excel file.",
     columnsTitle: "Export columns",
     columnsDescription:
       "Only selected columns are exported to Excel and shown in the preview table.",
@@ -471,8 +473,9 @@ export default {
       pricingGroup: "Price and income",
       paymentGroup: "Payment (optional)",
       paymentAmountPlaceholder: "Leave blank when unpaid",
+      paymentMethodPlaceholder: "Choose payment type",
       paymentHint:
-        "When an amount is entered, the payment is linked to the new ticket and saved with the debt.",
+        "Choose a payment type to enable the payment date. The payment is linked to the new ticket and saved with the debt.",
       paymentNote: "Payment recorded with manual debt",
       fields: {
         customer: "Customer",
@@ -499,6 +502,7 @@ export default {
         trueIncome: "True income",
         paymentAmount: "Payment amount",
         paymentMethod: "Payment type",
+        paymentDate: "Payment date",
       },
     },
     filters: {
@@ -515,6 +519,10 @@ export default {
       description:
         "This table uses the system record time; flight date is shown only as flight information.",
       empty: "No ticket debt rows are available for the selected range.",
+      horizontalScrollHint: "Drag horizontally or use the arrows to view more columns.",
+      horizontalScrollControls: "Column navigation",
+      scrollLeft: "View columns on the left",
+      scrollRight: "View columns on the right",
       columns: {
         date: "Date",
         bookedAt: "Ticket issue date",
@@ -527,6 +535,8 @@ export default {
         webPrice: "WEB price",
         insurancePrice: "Insurance",
         income: "Revenue",
+        payment: "Payment",
+        note: "Note",
         actions: "Actions",
         createdAt: "Recorded time",
         customer: "Customer",
@@ -573,7 +583,10 @@ export default {
       sellingPriceMin: "Selling price must be at least 0.",
       discountMin: "Discount must be at least 0.",
       paymentAmountMin: "Payment must be at least 0.",
-      paymentMethodRequired: "Please choose a valid payment type.",
+      paymentAmountRequired:
+        "Enter a payment amount after choosing a payment type.",
+      paymentMethodRequired:
+        "Choose a payment type when entering a payment amount.",
       sellingPriceFormula: "Selling price must be greater than or equal to net price.",
     },
   },

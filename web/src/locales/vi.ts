@@ -377,6 +377,8 @@ export default {
     description:
       "Xem trước toàn bộ ledger theo dạng bảng Excel, chọn cột cần xuất và tải file để đối soát.",
     exportAction: "Xuất Excel",
+    exporting: "Đang xuất...",
+    exportFailure: "Không thể tạo tệp Excel.",
     columnsTitle: "Cột xuất dữ liệu",
     columnsDescription:
       "Chỉ các cột được chọn mới xuất ra file Excel và hiển thị trong bảng preview.",
@@ -471,8 +473,9 @@ export default {
       pricingGroup: "Giá và thu nhập",
       paymentGroup: "Thanh toán (tùy chọn)",
       paymentAmountPlaceholder: "Để trống nếu chưa thanh toán",
+      paymentMethodPlaceholder: "Chọn loại thanh toán",
       paymentHint:
-        "Khi nhập số tiền, thanh toán sẽ được liên kết với vé mới và lưu cùng công nợ.",
+        "Chọn loại thanh toán để bật ngày thanh toán. Khoản thanh toán sẽ được liên kết với vé mới và lưu cùng công nợ.",
       paymentNote: "Thanh toán khi ghi nhận công nợ",
       fields: {
         customer: "Khách hàng",
@@ -499,6 +502,7 @@ export default {
         trueIncome: "Thu nhập thực",
         paymentAmount: "Số tiền thanh toán",
         paymentMethod: "Loại thanh toán",
+        paymentDate: "Ngày thanh toán",
       },
     },
     filters: {
@@ -515,6 +519,10 @@ export default {
       description:
         "Bảng dùng thời điểm ghi nhận trong hệ thống; ngày giờ bay chỉ là thông tin chuyến bay.",
       empty: "Chưa có dòng công nợ vé nào trong phạm vi đã chọn.",
+      horizontalScrollHint: "Kéo ngang hoặc dùng mũi tên để xem thêm cột.",
+      horizontalScrollControls: "Điều hướng cột",
+      scrollLeft: "Xem các cột bên trái",
+      scrollRight: "Xem các cột bên phải",
       columns: {
         date: "Ngày tháng",
         bookedAt: "Ngày xuất vé",
@@ -527,6 +535,8 @@ export default {
         webPrice: "Giá WEB",
         insurancePrice: "Bảo hiểm",
         income: "Doanh thu",
+        payment: "Thanh toán",
+        note: "Ghi chú",
         actions: "Thao tác",
         createdAt: "Thời gian ghi",
         customer: "Khách hàng",
@@ -573,7 +583,10 @@ export default {
       sellingPriceMin: "Giá bán phải lớn hơn hoặc bằng 0.",
       discountMin: "Chiết khấu phải lớn hơn hoặc bằng 0.",
       paymentAmountMin: "Số tiền thanh toán phải lớn hơn hoặc bằng 0.",
-      paymentMethodRequired: "Vui lòng chọn loại thanh toán hợp lệ.",
+      paymentAmountRequired:
+        "Vui lòng nhập số tiền khi đã chọn loại thanh toán.",
+      paymentMethodRequired:
+        "Vui lòng chọn loại thanh toán khi nhập số tiền.",
       sellingPriceFormula: "Giá bán phải lớn hơn hoặc bằng giá gốc.",
     },
   },

@@ -222,6 +222,14 @@ def test_confirm_ticket_records_optional_payment_atomically(
     test_client,
     test_engine,
 ):
+    payment_occurred_at = datetime(
+        2026,
+        4,
+        21,
+        0,
+        0,
+        tzinfo=timezone.utc,
+    )
     response = test_client.post(
         "/api/v1/tickets/confirm",
         json=_confirm_payload()
@@ -230,6 +238,7 @@ def test_confirm_ticket_records_optional_payment_atomically(
                 "amount": 500000,
                 "method": "AST",
                 "note": "Payment recorded with manual debt",
+                "occurred_at": payment_occurred_at.isoformat(),
             }
         },
     )
@@ -257,6 +266,7 @@ def test_confirm_ticket_records_optional_payment_atomically(
         assert payment.amount == pytest.approx(500000)
         assert payment.method == "AST"
         assert payment.note == "Payment recorded with manual debt - ticket ABC123"
+        assert payment.occurred_at == payment_occurred_at.replace(tzinfo=None)
 
 
 def test_confirm_ticket_allows_shared_ticket_numbers_for_return_flights(

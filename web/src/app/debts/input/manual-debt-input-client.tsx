@@ -3,6 +3,8 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import {
+  ArrowLeft,
+  ArrowRight,
   ChevronsUpDown,
   CheckCircle2,
   CircleDollarSign,
@@ -23,7 +25,6 @@ import {
 import {
   EmptyState,
   Panel,
-  TableScrollArea,
 } from "@/components/command-center"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -705,7 +706,7 @@ function ManualDebtTableRow({
 
   return (
     <TableRow className="hover:bg-accent/35" ref={rowRef}>
-      <TableCell className="min-w-40 whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-sm">
+      <TableCell className="sticky left-0 z-10 min-w-40 whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-sm shadow-[8px_0_14px_rgba(24,29,38,0.035)]">
         <EditableDateCell
           editing={isEditing}
           formId={updateFormId}
@@ -794,6 +795,14 @@ function ManualDebtTableRow({
       <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-right text-sm font-semibold">
         {formatCurrency(row.ticket_true_income)}
       </TableCell>
+      <TableCell className="whitespace-nowrap border-r border-border bg-white px-5 py-3.5 text-right text-sm font-semibold">
+        {row.linked_payment_amount === null
+          ? ""
+          : formatCurrency(row.linked_payment_amount)}
+      </TableCell>
+      <TableCell className="min-w-64 max-w-80 whitespace-normal border-r border-border bg-white px-5 py-3.5 text-sm text-muted-foreground">
+        {row.linked_payment_note ?? ""}
+      </TableCell>
       <TableCell className="sticky right-0 z-10 w-[104px] min-w-[104px] whitespace-nowrap bg-white px-3 py-3.5 text-right shadow-[-8px_0_14px_rgba(24,29,38,0.04)]">
         {row.ticket_id ? (
           <div className="flex justify-end gap-2">
@@ -861,6 +870,96 @@ function ManualDebtTableRow({
   )
 }
 
+function TableHorizontalControls({
+  scrollContainerRef,
+}: {
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>
+}) {
+  const t = useI18n()
+  const [canScrollLeft, setCanScrollLeft] = React.useState(false)
+  const [canScrollRight, setCanScrollRight] = React.useState(false)
+
+  const updateScrollState = React.useCallback(() => {
+    const container = scrollContainerRef.current
+
+    if (!container) {
+      return
+    }
+
+    const maximumScrollLeft = container.scrollWidth - container.clientWidth
+    setCanScrollLeft(container.scrollLeft > 1)
+    setCanScrollRight(container.scrollLeft < maximumScrollLeft - 1)
+  }, [scrollContainerRef])
+
+  React.useEffect(() => {
+    const container = scrollContainerRef.current
+
+    if (!container) {
+      return
+    }
+
+    updateScrollState()
+    container.addEventListener("scroll", updateScrollState, { passive: true })
+
+    const resizeObserver = new ResizeObserver(updateScrollState)
+    resizeObserver.observe(container)
+
+    return () => {
+      container.removeEventListener("scroll", updateScrollState)
+      resizeObserver.disconnect()
+    }
+  }, [scrollContainerRef, updateScrollState])
+
+  const scrollTable = (direction: -1 | 1) => {
+    const container = scrollContainerRef.current
+
+    if (!container) {
+      return
+    }
+
+    container.scrollBy({
+      behavior: "smooth",
+      left: direction * Math.max(container.clientWidth * 0.7, 320),
+    })
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-border bg-white px-4 py-2.5">
+      <p className="min-w-0 text-xs text-muted-foreground">
+        {t("manualDebts.table.horizontalScrollHint")}
+      </p>
+      <div
+        aria-label={t("manualDebts.table.horizontalScrollControls")}
+        className="flex shrink-0 items-center gap-1.5"
+        role="group"
+      >
+        <Button
+          aria-label={t("manualDebts.table.scrollLeft")}
+          className="h-8 w-8 px-0"
+          disabled={!canScrollLeft}
+          onClick={() => scrollTable(-1)}
+          title={t("manualDebts.table.scrollLeft")}
+          type="button"
+          variant="outline"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          aria-label={t("manualDebts.table.scrollRight")}
+          className="h-8 w-8 px-0"
+          disabled={!canScrollRight}
+          onClick={() => scrollTable(1)}
+          title={t("manualDebts.table.scrollRight")}
+          type="button"
+          variant="outline"
+        >
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 export function ManualDebtInputClient({
   customers,
   rows,
@@ -868,6 +967,7 @@ export function ManualDebtInputClient({
   const t = useI18n()
   const router = useRouter()
   const formRef = React.useRef<HTMLFormElement>(null)
+  const tableScrollRef = React.useRef<HTMLDivElement>(null)
   const [isSubmitPending, setIsSubmitPending] = React.useState(false)
   const [actionState, setActionState] = React.useState<ManualDebtActionState>(
     initialManualDebtActionState,
@@ -885,6 +985,10 @@ export function ManualDebtInputClient({
   const [webPrice, setWebPrice] = React.useState(0)
   const [insurancePrice, setInsurancePrice] = React.useState(0)
   const [paymentAmount, setPaymentAmount] = React.useState(0)
+  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod | "">(
+    "",
+  )
+  const [paymentDate, setPaymentDate] = React.useState("")
   const [formResetKey, setFormResetKey] = React.useState(0)
   const paymentMethodLabels: Record<PaymentMethod, string> = {
     "Chuyển khoản": t(
@@ -908,6 +1012,8 @@ export function ManualDebtInputClient({
     setWebPrice(0)
     setInsurancePrice(0)
     setPaymentAmount(0)
+    setPaymentMethod("")
+    setPaymentDate("")
     setFormResetKey((current) => current + 1)
     router.refresh()
   }, [actionState.status, actionState.submittedAt, router])
@@ -1224,16 +1330,45 @@ export function ManualDebtInputClient({
                     >
                       <select
                         className="flex h-11 w-full rounded-md border border-input bg-white px-3.5 py-2 text-sm text-foreground shadow-[var(--shadow-sm)] transition-all focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
-                        defaultValue={paymentMethodOptions[0]}
                         id="manual-debt-payment-method"
                         name="payment_method"
+                        onChange={(event) => {
+                          const nextMethod = event.target.value as
+                            | PaymentMethod
+                            | ""
+
+                          setPaymentMethod(nextMethod)
+                          if (!nextMethod) {
+                            setPaymentDate("")
+                          }
+                        }}
+                        value={paymentMethod}
                       >
+                        <option value="">
+                          {t("manualDebts.form.paymentMethodPlaceholder")}
+                        </option>
                         {paymentMethodOptions.map((method) => (
                           <option key={method} value={method}>
                             {paymentMethodLabels[method]}
                           </option>
                         ))}
                       </select>
+                    </FormField>
+                  </div>
+                  <div className="mt-4">
+                    <FormField
+                      error={getFieldError(fieldErrors, "payment_date")}
+                      htmlFor="manual-debt-payment-date"
+                      label={t("manualDebts.form.fields.paymentDate")}
+                    >
+                      <Input
+                        disabled={!paymentMethod}
+                        id="manual-debt-payment-date"
+                        name="payment_date"
+                        onChange={(event) => setPaymentDate(event.target.value)}
+                        type="date"
+                        value={paymentDate}
+                      />
                     </FormField>
                   </div>
                   <p className="mt-3 text-xs leading-5 text-muted-foreground">
@@ -1332,11 +1467,11 @@ export function ManualDebtInputClient({
           </Panel>
         </div>
 
-        <div className="min-w-0 space-y-4">
-          <Panel className="min-w-0">
-            <div className="shrink-0 border-b border-border bg-secondary/35 p-4">
+        <div className="min-w-0 lg:sticky lg:top-6 lg:h-[calc(100dvh-8rem)]">
+          <Panel className="min-w-0 lg:flex lg:h-full lg:flex-col">
+            <div className="shrink-0 border-b border-border bg-white p-4">
               <form
-                className="grid w-full gap-3 rounded-lg border border-border bg-white p-3 shadow-[var(--shadow-sm)] sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                className="grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
                 onSubmit={handleApplyFilters}
               >
                 <div className="space-y-1.5">
@@ -1381,11 +1516,16 @@ export function ManualDebtInputClient({
                 {filterError}
               </p>
             ) : null}
-            <TableScrollArea>
-              <Table className="min-w-[1560px] border-collapse">
+            <TableHorizontalControls scrollContainerRef={tableScrollRef} />
+            <div className="min-h-0 flex-1">
+              <Table
+                className="min-w-[1900px] border-collapse"
+                containerClassName="lg:h-full"
+                containerRef={tableScrollRef}
+              >
                 <TableHeader className="sticky top-0 z-20">
                   <TableRow className="bg-sidebar-accent hover:bg-sidebar-accent">
-                    <TableHead className="min-w-40 whitespace-nowrap border-r border-border bg-sidebar-accent px-5 py-3.5 font-semibold text-foreground">
+                    <TableHead className="sticky left-0 z-30 min-w-40 whitespace-nowrap border-r border-border bg-sidebar-accent px-5 py-3.5 font-semibold text-foreground shadow-[8px_0_14px_rgba(24,29,38,0.035)]">
                       {t("manualDebts.table.columns.bookedAt")}
                     </TableHead>
                     <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-foreground">
@@ -1418,6 +1558,12 @@ export function ManualDebtInputClient({
                     <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
                       {t("manualDebts.table.columns.income")}
                     </TableHead>
+                    <TableHead className="whitespace-nowrap border-r border-border px-5 py-3.5 text-right font-semibold text-foreground">
+                      {t("manualDebts.table.columns.payment")}
+                    </TableHead>
+                    <TableHead className="min-w-64 whitespace-nowrap border-r border-border px-5 py-3.5 font-semibold text-foreground">
+                      {t("manualDebts.table.columns.note")}
+                    </TableHead>
                     <TableHead className="sticky right-0 z-30 w-[104px] min-w-[104px] whitespace-nowrap bg-sidebar-accent px-3 py-3.5 text-right font-semibold text-foreground shadow-[-8px_0_14px_rgba(24,29,38,0.04)]">
                       {t("manualDebts.table.columns.actions")}
                     </TableHead>
@@ -1426,7 +1572,7 @@ export function ManualDebtInputClient({
                 <TableBody>
                   {filteredRows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={12}>
+                      <TableCell colSpan={14}>
                         <EmptyState
                           icon={ReceiptText}
                           message={t("manualDebts.table.empty")}
@@ -1440,7 +1586,7 @@ export function ManualDebtInputClient({
                   )}
                 </TableBody>
               </Table>
-            </TableScrollArea>
+            </div>
           </Panel>
         </div>
       </div>
