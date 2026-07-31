@@ -248,6 +248,62 @@ def test_admin_can_correct_ticket_payment_method_without_rebalancing() -> None:
     assert response.json()["data"]["transaction"]["method"] == "AST"
     session.refresh(transaction)
     assert transaction.method == "AST"
+
+
+def test_admin_can_correct_ticket_note_without_rebalancing() -> None:
+    client, session = create_test_client(role=UserRole.ADMIN)
+    customer = seed_customer(session)
+    ticket = Ticket(
+        pnr="ABC123",
+        airline=Airline.VJ,
+        passengers=["NGUYEN VAN A"],
+        itinerary="HAN-SGN",
+        flight_date=datetime(2026, 4, 1, tzinfo=timezone.utc),
+        net_price=1_000_000,
+        selling_price=1_200_000,
+        status=TicketStatus.CONFIRMED,
+        customer_id=customer.id,
+    )
+    transaction = Transaction(
+        amount=1_200_000,
+        type=TransactionType.CHARGE,
+        category=TransactionCategory.TICKET_PURCHASE,
+        method="Ticket",
+        note="Auto-debt for ticket ABC123",
+        customer_id=customer.id,
+        linked_ticket_id=ticket.id,
+        created_by=uuid.uuid4(),
+    )
+    customer.balance = 1_200_000
+    session.add(ticket)
+    session.add(transaction)
+    session.add(customer)
+    session.commit()
+    session.refresh(transaction)
+
+    response = client.patch(
+        f"/api/v1/transactions/{transaction.id}",
+        json={"note": "Customer requested an invoice copy"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"]["transaction"]["note"] == (
+        "Customer requested an invoice copy"
+    )
+    assert response.json()["data"]["customer_new_balance"] == 1_200_000
+    session.refresh(transaction)
+    assert transaction.note == "Customer requested an invoice copy"
+
+    clear_response = client.patch(
+        f"/api/v1/transactions/{transaction.id}",
+        json={"note": None},
+    )
+
+    clear_overrides()
+
+    assert clear_response.status_code == 200
+    session.refresh(transaction)
+    assert transaction.note is None
     assert session.get(Customer, customer.id).balance == 1_200_000
 
 

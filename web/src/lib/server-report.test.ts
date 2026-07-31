@@ -208,8 +208,46 @@ describe("mapLedgerToReportRows", () => {
     const [row] = mapLedgerToReportRows(ledger)
 
     expect(row).toMatchObject({
+      linked_payment_note: null,
       linked_payment_methods: ["AST"],
       linked_payment_transaction_ids: [charge.id],
     })
+  })
+
+  it("shows a manually edited ticket note when no payment is linked", () => {
+    const ticket = createTicket(ticketId)
+    const charge = createTicketCharge(
+      "6ba7b816-9dad-11d1-80b4-00c04fd430c8",
+      "AST",
+    )
+    charge.note = "Customer requested an invoice copy"
+    const ledger: CustomerLedger = {
+      customer: {
+        id: customerId,
+        name: "Nguyen Van A",
+        type: "INDIVIDUAL",
+        balance: 1_200_000,
+        is_active: true,
+        phone: null,
+      },
+      current_balance: 1_200_000,
+      balance_state: "debt",
+      entries: [
+        {
+          id: ticket.id,
+          entry_type: "ticket",
+          created_at: ticket.updated_at,
+          content: ticket.pnr,
+          amount: ticket.selling_price,
+          running_balance: ticket.selling_price,
+          ticket,
+          transaction: charge,
+        },
+      ],
+    }
+
+    const [row] = mapLedgerToReportRows(ledger)
+
+    expect(row.linked_payment_note).toBe("Customer requested an invoice copy")
   })
 })

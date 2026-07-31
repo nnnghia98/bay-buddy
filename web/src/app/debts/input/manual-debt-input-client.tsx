@@ -1163,6 +1163,7 @@ function ManualDebtTableRow({
         : []
   const canEditPaymentMethod =
     row.ticket_id !== null && paymentTransactionIds.length > 0
+  const currentPaymentNote = row.linked_payment_note?.trim() ?? ""
 
   const submitIfChanged = React.useCallback(() => {
     const form = updateFormRef.current
@@ -1175,6 +1176,7 @@ function ManualDebtTableRow({
     const nextBookedAt = String(formData.get("booked_at") ?? "")
     const nextPassengers = String(formData.get("passengers") ?? "").trim()
     const nextPaymentMethod = String(formData.get("payment_method") ?? "")
+    const nextPaymentNote = String(formData.get("payment_note") ?? "").trim()
     const nextTrueIncome = parseSignedCurrencyInput(
       String(formData.get("true_income") ?? ""),
     )
@@ -1196,7 +1198,8 @@ function ManualDebtTableRow({
       nextBookedAt !== formatDateLocal(row.booked_at) ||
       nextPassengers !== row.passenger_names.trim() ||
       nextTrueIncome !== row.ticket_true_income ||
-      (canEditPaymentMethod && nextPaymentMethod !== currentPaymentMethod)
+      (canEditPaymentMethod && nextPaymentMethod !== currentPaymentMethod) ||
+      (canEditPaymentMethod && nextPaymentNote !== currentPaymentNote)
 
     if (hasChanged) {
       const incomeOverrideInput = form.elements.namedItem("true_income_override")
@@ -1210,9 +1213,16 @@ function ManualDebtTableRow({
 
       form.requestSubmit()
     }
-  }, [canEditPaymentMethod, currentPaymentMethod, row])
+  }, [
+    canEditPaymentMethod,
+    currentPaymentMethod,
+    currentPaymentNote,
+    row,
+  ])
 
-  const handleInputBlur: React.FocusEventHandler<HTMLInputElement> = (event) => {
+  const handleInputBlur: React.FocusEventHandler<
+    HTMLInputElement | HTMLTextAreaElement
+  > = (event) => {
     const nextTarget = event.relatedTarget
 
     if (nextTarget instanceof Node && rowRef.current?.contains(nextTarget)) {
@@ -1223,7 +1233,9 @@ function ManualDebtTableRow({
     setIsEditing(false)
   }
 
-  const handleInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (event) => {
+  const handleInputKeyDown: React.KeyboardEventHandler<
+    HTMLInputElement | HTMLTextAreaElement
+  > = (event) => {
     if (event.key !== "Enter") {
       return
     }
@@ -1232,6 +1244,34 @@ function ManualDebtTableRow({
     submitIfChanged()
     setIsEditing(false)
     event.currentTarget.blur()
+  }
+
+  const handleNoteKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (
+    event,
+  ) => {
+    if (event.key !== "Enter" || (!event.metaKey && !event.ctrlKey)) {
+      return
+    }
+
+    event.preventDefault()
+    submitIfChanged()
+    setIsEditing(false)
+    event.currentTarget.blur()
+  }
+
+  const handleNoteChange: React.ChangeEventHandler<HTMLTextAreaElement> = (
+    event,
+  ) => {
+    const noteChangedInput = event.currentTarget.form?.elements.namedItem(
+      "payment_note_changed",
+    )
+
+    if (noteChangedInput instanceof HTMLInputElement) {
+      noteChangedInput.value =
+        event.currentTarget.value.trim() === currentPaymentNote
+          ? "false"
+          : "true"
+    }
   }
 
   const handlePaymentMethodBlur: React.FocusEventHandler<HTMLSelectElement> = (
@@ -1389,16 +1429,11 @@ function ManualDebtTableRow({
         />
       </TableCell>
       {tableView === "full" ? (
-        <>
-          <TableCell className={styles.valueCell}>
-            {row.linked_payment_amount === null
-              ? ""
-              : formatCurrency(row.linked_payment_amount)}
-          </TableCell>
-          <TableCell className={styles.noteCell}>
-            {row.linked_payment_note ?? ""}
-          </TableCell>
-        </>
+        <TableCell className={styles.valueCell}>
+          {row.linked_payment_amount === null
+            ? ""
+            : formatCurrency(row.linked_payment_amount)}
+        </TableCell>
       ) : null}
       <TableCell className={styles.paymentMethodCell}>
         {!isEditing ? (
@@ -1428,6 +1463,23 @@ function ManualDebtTableRow({
           </select>
         )}
       </TableCell>
+      <TableCell className={styles.noteCell}>
+        {isEditing ? (
+          <Textarea
+            aria-label={t("manualDebts.table.columns.note")}
+            className={styles.editableNote}
+            defaultValue={currentPaymentNote}
+            form={updateFormId}
+            name="payment_note"
+            onBlur={handleInputBlur}
+            onChange={handleNoteChange}
+            onKeyDown={handleNoteKeyDown}
+            rows={2}
+          />
+        ) : (
+          row.linked_payment_note ?? ""
+        )}
+      </TableCell>
       <TableCell className={styles.actionsCell}>
         <div className={styles.rowActions}>
           {row.ticket_id ? (
@@ -1441,6 +1493,7 @@ function ManualDebtTableRow({
               <input name="customer_id" type="hidden" value={row.customer_id} />
               <input name="ticket_id" type="hidden" value={row.ticket_id} />
               <input name="true_income_override" type="hidden" value="false" />
+              <input name="payment_note_changed" type="hidden" value="false" />
               {paymentTransactionIds.map((transactionId) => (
                 <input
                   key={transactionId}
@@ -1462,6 +1515,7 @@ function ManualDebtTableRow({
                   <input name="insurance_price" type="hidden" value={row.ticket_insurance_price} />
                   <input name="true_income" type="hidden" value={row.ticket_true_income} />
                   <input name="payment_method" type="hidden" value={currentPaymentMethod} />
+                  <input name="payment_note" type="hidden" value={currentPaymentNote} />
                 </>
               ) : null}
               {isEditing && tableView === "summary" ? (
@@ -2505,26 +2559,15 @@ export function ManualDebtInputClient({
                       </span>
                     </SortableTableHead>
                     {tableView === "full" ? (
-                      <>
-                        <SortableTableHead
-                          className={styles.headerNumber}
-                          label={t("manualDebts.table.columns.paymentAmount")}
-                          onSort={handleSort}
-                          sortKey="paymentAmount"
-                          sortState={sortState}
-                        >
-                          {t("manualDebts.table.columns.paymentAmount")}
-                        </SortableTableHead>
-                        <SortableTableHead
-                          className={cn(styles.headerNote, styles.groupStart)}
-                          label={t("manualDebts.table.columns.note")}
-                          onSort={handleSort}
-                          sortKey="note"
-                          sortState={sortState}
-                        >
-                          {t("manualDebts.table.columns.note")}
-                        </SortableTableHead>
-                      </>
+                      <SortableTableHead
+                        className={styles.headerNumber}
+                        label={t("manualDebts.table.columns.paymentAmount")}
+                        onSort={handleSort}
+                        sortKey="paymentAmount"
+                        sortState={sortState}
+                      >
+                        {t("manualDebts.table.columns.paymentAmount")}
+                      </SortableTableHead>
                     ) : null}
                     <SortableTableHead
                       className={styles.headerPaymentMethod}
@@ -2535,6 +2578,15 @@ export function ManualDebtInputClient({
                     >
                       {t("manualDebts.table.columns.paymentMethod")}
                     </SortableTableHead>
+                    <SortableTableHead
+                      className={styles.headerNote}
+                      label={t("manualDebts.table.columns.note")}
+                      onSort={handleSort}
+                      sortKey="note"
+                      sortState={sortState}
+                    >
+                      {t("manualDebts.table.columns.note")}
+                    </SortableTableHead>
                     <TableHead className={styles.headerStickyRight}>
                       {t("manualDebts.table.columns.actions")}
                     </TableHead>
@@ -2543,7 +2595,7 @@ export function ManualDebtInputClient({
                 <TableBody>
                   {filteredRows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={tableView === "full" ? 15 : 6}>
+                      <TableCell colSpan={tableView === "full" ? 15 : 7}>
                         <EmptyState
                           icon={ReceiptText}
                           message={t("manualDebts.table.empty")}

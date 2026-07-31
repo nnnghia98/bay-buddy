@@ -58,7 +58,11 @@ const TransactionBaseSchema = z.object({
    * Optional free-text note or reference number.
    * Maps to Python: note
    */
-  note: z.string().max(500, "Note must be at most 500 characters.").optional(),
+  note: z
+    .string()
+    .max(2000, "Note must be at most 2000 characters.")
+    .nullable()
+    .optional(),
 
   /**
    * Optional receipt URL or payment-proof link.
@@ -117,7 +121,7 @@ export const TransactionUpdateSchema = z.object({
   type: TransactionTypeSchema.optional(),
   category: TransactionCategorySchema.optional(),
   method: z.string().min(1).max(100).optional(),
-  note: z.string().max(2000).optional(),
+  note: z.string().max(2000).nullable().optional(),
   evidence_url: z.string().url().max(2048).nullable().optional(),
   occurred_at: z.coerce.date().optional(),
   linked_ticket_id: z.string().uuid().nullable().optional(),

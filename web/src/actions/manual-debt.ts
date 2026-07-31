@@ -46,6 +46,11 @@ const paymentMethodFromForm = z.preprocess(
   z.enum(paymentMethodOptions).optional(),
 )
 
+const paymentNoteFromForm = z.preprocess(
+  (value) => (typeof value === "string" ? value.trim() : ""),
+  z.string().max(2000),
+)
+
 const passengersFromForm = z
   .string()
   .trim()
@@ -71,6 +76,8 @@ const manualDebtRowUpdateSchema = z.object({
   true_income: incomeFromForm,
   true_income_override: overrideFromForm,
   payment_method: paymentMethodFromForm,
+  payment_note: paymentNoteFromForm,
+  payment_note_changed: overrideFromForm,
   payment_transaction_ids: z.array(z.string().uuid()),
 })
 
@@ -107,6 +114,8 @@ export async function updateManualDebtRowAction(formData: FormData): Promise<voi
     true_income: formData.get("true_income"),
     true_income_override: formData.get("true_income_override"),
     payment_method: formData.get("payment_method"),
+    payment_note: formData.get("payment_note"),
+    payment_note_changed: formData.get("payment_note_changed"),
     payment_transaction_ids: formData.getAll("payment_transaction_id"),
   })
 
@@ -125,6 +134,8 @@ export async function updateManualDebtRowAction(formData: FormData): Promise<voi
     true_income,
     true_income_override,
     payment_method,
+    payment_note,
+    payment_note_changed,
     payment_transaction_ids,
     ...values
   } = parsedInput.data
@@ -146,7 +157,15 @@ export async function updateManualDebtRowAction(formData: FormData): Promise<voi
     return
   }
 
-  if (payment_method && payment_transaction_ids.length > 0) {
+  if (
+    payment_transaction_ids.length > 0 &&
+    (payment_method || payment_note_changed)
+  ) {
+    const transactionUpdate = {
+      ...(payment_method ? { method: payment_method } : {}),
+      ...(payment_note_changed ? { note: payment_note || null } : {}),
+    }
+
     for (const transactionId of payment_transaction_ids) {
       const paymentResponse = await fetch(
         buildUrl(`/transactions/${transactionId}`),
@@ -156,7 +175,7 @@ export async function updateManualDebtRowAction(formData: FormData): Promise<voi
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ method: payment_method }),
+          body: JSON.stringify(transactionUpdate),
           cache: "no-store",
         },
       )

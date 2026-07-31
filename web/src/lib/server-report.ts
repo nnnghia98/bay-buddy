@@ -72,6 +72,16 @@ function isPaymentMethod(value: string | null | undefined): boolean {
   )
 }
 
+function getManualTicketNote(value: string | null | undefined): string | null {
+  const note = value?.trim()
+
+  if (!note || note.startsWith("Auto-debt for ticket ")) {
+    return null
+  }
+
+  return note
+}
+
 function getLinkedPaymentSummaries(
   ledger: CustomerLedger,
 ): Map<string, LinkedPaymentSummary> {
@@ -134,6 +144,10 @@ export function mapLedgerToReportRows(
     const paymentTransactionIds = [
       ...(linkedPaymentSummary?.transaction_ids ?? []),
     ]
+    const ticketNote =
+      ticket && transaction?.category === "TICKET_PURCHASE"
+        ? getManualTicketNote(transaction.note)
+        : null
 
     if (paymentMethods.length === 0 && ticketPaymentMethod) {
       paymentMethods.push(ticketPaymentMethod)
@@ -179,7 +193,9 @@ export function mapLedgerToReportRows(
       linked_payment_note:
         linkedPaymentSummary && linkedPaymentSummary.notes.length > 0
           ? linkedPaymentSummary.notes.join("; ")
-          : null,
+          : linkedPaymentSummary
+            ? null
+            : ticketNote,
       linked_payment_methods: paymentMethods,
       linked_payment_transaction_ids: paymentTransactionIds.filter(Boolean),
     }

@@ -137,7 +137,7 @@ def _validate_linked_ticket(
 def _ensure_transaction_is_mutable(
     transaction: Transaction,
     *,
-    allow_ticket_method_correction: bool = False,
+    allow_ticket_metadata_correction: bool = False,
 ) -> None:
     if transaction.is_invoiced or transaction.invoice_id is not None:
         raise HTTPException(
@@ -147,7 +147,7 @@ def _ensure_transaction_is_mutable(
     if (
         transaction.category == TransactionCategory.TICKET_PURCHASE
         and transaction.linked_ticket_id is not None
-        and not allow_ticket_method_correction
+        and not allow_ticket_metadata_correction
     ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -352,14 +352,15 @@ def update_transaction_for_admin(
         )
 
     update_data = payload.model_dump(exclude_unset=True)
-    allow_ticket_method_correction = (
+    allow_ticket_metadata_correction = (
         transaction.category == TransactionCategory.TICKET_PURCHASE
         and transaction.linked_ticket_id is not None
-        and set(update_data) == {"method"}
+        and bool(update_data)
+        and set(update_data).issubset({"method", "note"})
     )
     _ensure_transaction_is_mutable(
         transaction,
-        allow_ticket_method_correction=allow_ticket_method_correction,
+        allow_ticket_metadata_correction=allow_ticket_metadata_correction,
     )
     customer = _get_customer_or_404(session, transaction.customer_id)
 

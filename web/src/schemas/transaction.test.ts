@@ -1,0 +1,13 @@
+import { describe, expect, it } from "vitest"
+
+import {
+  TransactionReadSchema,
+  TransactionUpdateSchema,
+} from "@/schemas/transaction"
+
+describe("transaction note schemas", () => {
+  it("accepts a cleared note from the API", () => {
+    expect(TransactionReadSchema.shape.note.safeParse(null).success).toBe(true)
+    expect(TransactionUpdateSchema.shape.note.safeParse(null).success).toBe(true)
+  })
+})
