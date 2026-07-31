@@ -485,6 +485,8 @@ def correct_confirmed_ticket(
 
     old_selling_price = ticket.selling_price
     service_fee = update_data.pop("service_fee", None)
+    has_true_income_override = "true_income" in update_data
+    true_income_override = update_data.pop("true_income", None)
 
     if service_fee is not None:
         net_price = update_data.get("net_price", ticket.net_price)
@@ -527,15 +529,9 @@ def correct_confirmed_ticket(
         setattr(ticket, field_name, value)
 
     ticket.true_income = (
-        ticket.selling_price
-        + ticket.discount
-        - (
-            ticket.ev_price
-            + ticket.ast_price
-            + ticket.thf_price
-            + ticket.web_price
-            + ticket.insurance_price
-        )
+        true_income_override
+        if has_true_income_override and true_income_override is not None
+        else ticket.computed_true_income
     )
     purchase_transaction.amount = ticket.selling_price
     purchase_transaction.note = (

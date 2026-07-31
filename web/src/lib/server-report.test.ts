@@ -68,6 +68,24 @@ function createPayment(
   }
 }
 
+function createTicketCharge(id: string, method: string) {
+  return {
+    id,
+    amount: 1_200_000,
+    type: "CHARGE" as const,
+    category: "TICKET_PURCHASE" as const,
+    method,
+    note: "Auto-debt for ticket ABC123",
+    evidence_url: null,
+    customer_id: customerId,
+    linked_ticket_id: ticketId,
+    is_refund_confirmed: false,
+    created_at: new Date("2026-07-28T01:00:00.000Z"),
+    occurred_at: new Date("2026-07-28T01:00:00.000Z"),
+    created_by: userId,
+  }
+}
+
 describe("mapLedgerToReportRows", () => {
   it("joins linked payment totals and notes onto ticket rows", () => {
     const ticket = createTicket(ticketId)
@@ -142,10 +160,56 @@ describe("mapLedgerToReportRows", () => {
     expect(paidTicketRow).toMatchObject({
       linked_payment_amount: 500_000,
       linked_payment_note: "First payment; Second payment",
+      linked_payment_methods: ["THF"],
+      linked_payment_transaction_ids: [
+        "6ba7b813-9dad-11d1-80b4-00c04fd430c8",
+        "6ba7b814-9dad-11d1-80b4-00c04fd430c8",
+      ],
     })
     expect(unpaidTicketRow).toMatchObject({
       linked_payment_amount: null,
       linked_payment_note: null,
+      linked_payment_methods: [],
+      linked_payment_transaction_ids: [],
+    })
+  })
+
+  it("uses the ticket charge method when no linked payment exists", () => {
+    const ticket = createTicket(ticketId)
+    const charge = createTicketCharge(
+      "6ba7b815-9dad-11d1-80b4-00c04fd430c8",
+      "AST",
+    )
+    const ledger: CustomerLedger = {
+      customer: {
+        id: customerId,
+        name: "Nguyen Van A",
+        type: "INDIVIDUAL",
+        balance: 1_200_000,
+        is_active: true,
+        phone: null,
+      },
+      current_balance: 1_200_000,
+      balance_state: "debt",
+      entries: [
+        {
+          id: ticket.id,
+          entry_type: "ticket",
+          created_at: ticket.updated_at,
+          content: ticket.pnr,
+          amount: ticket.selling_price,
+          running_balance: ticket.selling_price,
+          ticket,
+          transaction: charge,
+        },
+      ],
+    }
+
+    const [row] = mapLedgerToReportRows(ledger)
+
+    expect(row).toMatchObject({
+      linked_payment_methods: ["AST"],
+      linked_payment_transaction_ids: [charge.id],
     })
   })
 })

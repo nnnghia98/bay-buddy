@@ -1,7 +1,7 @@
 import "server-only"
 
 import { fetchCustomerDirectory, fetchCustomerLedger } from "@/lib/server-customers"
-import type { CustomerLedger } from "@/schemas"
+import { paymentMethodOptions, type CustomerLedger } from "@/schemas"
 
 export type LedgerReportRow = {
   id: string
@@ -37,6 +37,8 @@ export type LedgerReportRow = {
   evidence_url: string | null
   linked_payment_amount: number | null
   linked_payment_note: string | null
+  linked_payment_methods: string[]
+  linked_payment_transaction_ids: string[]
 }
 
 export type LedgerReportRange = {
@@ -59,6 +61,15 @@ function getTicketRoute(ticket: CustomerLedger["entries"][number]["ticket"]): st
 type LinkedPaymentSummary = {
   amount: number
   notes: string[]
+  methods: string[]
+  transaction_ids: string[]
+}
+
+function isPaymentMethod(value: string | null | undefined): boolean {
+  return (
+    value != null &&
+    (paymentMethodOptions as readonly string[]).includes(value)
+  )
 }
 
 function getLinkedPaymentSummaries(
@@ -81,13 +92,20 @@ function getLinkedPaymentSummaries(
     const summary = summaries.get(linkedTicketId) ?? {
       amount: 0,
       notes: [],
+      methods: [],
+      transaction_ids: [],
     }
     const note = transaction.note?.trim()
+    const method = transaction.method?.trim()
 
     summary.amount += transaction.amount
     if (note && !summary.notes.includes(note)) {
       summary.notes.push(note)
     }
+    if (method && !summary.methods.includes(method)) {
+      summary.methods.push(method)
+    }
+    summary.transaction_ids.push(transaction.id)
 
     summaries.set(linkedTicketId, summary)
   })
@@ -106,6 +124,21 @@ export function mapLedgerToReportRows(
     const linkedPaymentSummary = ticket
       ? linkedPaymentSummaries.get(ticket.id)
       : undefined
+    const ticketPaymentMethod =
+      ticket &&
+      transaction?.category === "TICKET_PURCHASE" &&
+      isPaymentMethod(transaction.method)
+        ? transaction.method
+        : null
+    const paymentMethods = [...(linkedPaymentSummary?.methods ?? [])]
+    const paymentTransactionIds = [
+      ...(linkedPaymentSummary?.transaction_ids ?? []),
+    ]
+
+    if (paymentMethods.length === 0 && ticketPaymentMethod) {
+      paymentMethods.push(ticketPaymentMethod)
+      paymentTransactionIds.push(transaction?.id ?? "")
+    }
 
     return {
       id: entry.id,
@@ -147,6 +180,8 @@ export function mapLedgerToReportRows(
         linkedPaymentSummary && linkedPaymentSummary.notes.length > 0
           ? linkedPaymentSummary.notes.join("; ")
           : null,
+      linked_payment_methods: paymentMethods,
+      linked_payment_transaction_ids: paymentTransactionIds.filter(Boolean),
     }
   })
 }

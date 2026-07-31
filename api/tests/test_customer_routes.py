@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
 from sqlalchemy.pool import StaticPool
@@ -10,8 +11,9 @@ from core.auth import get_current_user
 from database import get_session
 from main import app
 from models.customer import Customer
-from models.enums import CustomerType, UserRole
+from models.enums import Airline, CustomerType, TicketStatus, UserRole
 from models.enums import TransactionCategory, TransactionType
+from models.ticket import Ticket
 from models.transaction import Transaction
 from models.user import User
 
@@ -202,6 +204,51 @@ def test_admin_can_correct_transaction_and_rebalance_customer() -> None:
     payload = response.json()["data"]
     assert payload["transaction"]["amount"] == 300000
     assert payload["customer_new_balance"] == -300000
+
+
+def test_admin_can_correct_ticket_payment_method_without_rebalancing() -> None:
+    client, session = create_test_client(role=UserRole.ADMIN)
+    customer = seed_customer(session)
+    ticket = Ticket(
+        pnr="ABC123",
+        airline=Airline.VJ,
+        passengers=["NGUYEN VAN A"],
+        itinerary="HAN-SGN",
+        flight_date=datetime(2026, 4, 1, tzinfo=timezone.utc),
+        net_price=1_000_000,
+        selling_price=1_200_000,
+        status=TicketStatus.CONFIRMED,
+        customer_id=customer.id,
+    )
+    transaction = Transaction(
+        amount=1_200_000,
+        type=TransactionType.CHARGE,
+        category=TransactionCategory.TICKET_PURCHASE,
+        method="Ticket",
+        note="Auto-debt for ticket ABC123",
+        customer_id=customer.id,
+        linked_ticket_id=ticket.id,
+        created_by=uuid.uuid4(),
+    )
+    customer.balance = 1_200_000
+    session.add(ticket)
+    session.add(transaction)
+    session.add(customer)
+    session.commit()
+    session.refresh(transaction)
+
+    response = client.patch(
+        f"/api/v1/transactions/{transaction.id}",
+        json={"method": "AST"},
+    )
+
+    clear_overrides()
+
+    assert response.status_code == 200
+    assert response.json()["data"]["transaction"]["method"] == "AST"
+    session.refresh(transaction)
+    assert transaction.method == "AST"
+    assert session.get(Customer, customer.id).balance == 1_200_000
 
 
 def test_admin_can_delete_transaction_and_rebalance_customer() -> None:

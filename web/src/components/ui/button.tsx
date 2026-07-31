@@ -1,6 +1,8 @@
 import * as React from "react"
 import { Button as AstryxButton } from "@astryxdesign/core/Button"
 
+import styles from "./button.module.css"
+
 type ButtonVariant =
   | "default"
   | "destructive"
@@ -61,6 +63,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         as={as}
         className={className}
         href={href}
+        icon={size === "icon" ? children : undefined}
         isDisabled={disabled}
         isIconOnly={size === "icon"}
         label={label}
@@ -79,7 +82,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         width={width}
         {...props}
       >
-        {children}
+        {size === "icon" ? null : children != null ? <span className={styles.content}>{children}</span> : undefined}
       </AstryxButton>
     )
   },

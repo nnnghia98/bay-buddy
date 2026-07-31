@@ -1,6 +1,6 @@
 import patterns from "@/styles/ui-patterns.module.css"
 import Link from "next/link"
-import { CalendarClock, CircleDollarSign, FileWarning, Plane, Users } from "lucide-react"
+import { CalendarClock, Plane } from "lucide-react"
 
 import { EmptyState, MetricCard, Panel, StatusChip } from "@/components/command-center"
 import { InitialsAvatar } from "@/components/operations-ui"
@@ -120,17 +120,17 @@ export default async function TicketActivityPage({ searchParams }: PageProps) {
 
       <div className={patterns.threeColumnGrid}>
         <MetricCard
-          icon={Plane}
+          iconName="plane"
           label={t("tickets.activity.metrics.tickets")}
           value={rows.length}
         />
         <MetricCard
-          icon={Users}
+          iconName="users"
           label={t("tickets.activity.metrics.customers")}
           value={uniqueCustomerCount}
         />
         <MetricCard
-          icon={CircleDollarSign}
+          iconName="circleDollarSign"
           label={t("tickets.activity.metrics.value")}
           value={formatCurrency(totalIncome)}
         />
@@ -152,7 +152,10 @@ export default async function TicketActivityPage({ searchParams }: PageProps) {
         </div>
 
         {rows.length === 0 ? (
-          <EmptyState icon={FileWarning} message={t("tickets.activity.empty")} />
+          <EmptyState
+            iconName="fileWarning"
+            message={t("tickets.activity.empty")}
+          />
         ) : (
           <ul className={patterns.dividerList} role="list">
             {rows.map((row) => {

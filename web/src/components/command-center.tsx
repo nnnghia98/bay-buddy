@@ -8,6 +8,23 @@ import { LayoutHeader } from "@astryxdesign/core/Layout"
 import { Text } from "@astryxdesign/core/Text"
 import { Token } from "@astryxdesign/core/Token"
 import { VStack } from "@astryxdesign/core/VStack"
+import {
+  CircleDollarSign,
+  Database,
+  FileSpreadsheet,
+  FileText,
+  FileWarning,
+  Landmark,
+  Plane,
+  ReceiptText,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldOff,
+  TrendingUp,
+  Users,
+  UsersRound,
+  WalletCards,
+} from "lucide-react"
 import type {
   ComponentPropsWithoutRef,
   ComponentType,
@@ -19,6 +36,43 @@ import { cn } from "@/lib/utils"
 import styles from "./command-center.module.css"
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
+
+const serializableIconComponents = {
+  circleDollarSign: CircleDollarSign,
+  database: Database,
+  fileSpreadsheet: FileSpreadsheet,
+  fileText: FileText,
+  fileWarning: FileWarning,
+  landmark: Landmark,
+  plane: Plane,
+  receiptText: ReceiptText,
+  shieldAlert: ShieldAlert,
+  shieldCheck: ShieldCheck,
+  shieldOff: ShieldOff,
+  trendingUp: TrendingUp,
+  users: Users,
+  usersRound: UsersRound,
+  walletCards: WalletCards,
+} satisfies Record<string, IconComponent>
+
+type SerializableIconName = keyof typeof serializableIconComponents
+
+function SerializableIcon({
+  name,
+  size,
+}: {
+  name: SerializableIconName
+  size: "sm" | "lg"
+}) {
+  const IconComponent = serializableIconComponents[name]
+
+  return (
+    <IconComponent
+      aria-hidden="true"
+      className={size === "lg" ? styles.emptyStateIcon : styles.metricIcon}
+    />
+  )
+}
 
 type PanelProps = Omit<
   ComponentPropsWithoutRef<typeof Card>,
@@ -114,13 +168,15 @@ export function SectionHeader({
 
 export function MetricCard({
   icon,
+  iconName,
   label,
   value,
   description,
   action,
   className,
 }: {
-  icon: IconComponent
+  icon?: IconComponent
+  iconName?: SerializableIconName
   label: string
   value: ReactNode
   description?: ReactNode
@@ -132,7 +188,11 @@ export function MetricCard({
       <VStack gap={3}>
         <HStack align="start" justify="between">
           <Center height={32} width={32}>
-            <Icon color="accent" icon={icon} size="sm" />
+            {iconName ? (
+              <SerializableIcon name={iconName} size="sm" />
+            ) : icon ? (
+              <Icon color="accent" icon={icon} size="sm" />
+            ) : null}
           </Center>
           {action}
         </HStack>
@@ -159,11 +219,13 @@ export function MetricCard({
 
 export function EmptyState({
   icon,
+  iconName,
   message,
   action,
   className,
 }: {
-  icon: IconComponent
+  icon?: IconComponent
+  iconName?: SerializableIconName
   message: ReactNode
   action?: ReactNode
   className?: string
@@ -176,7 +238,11 @@ export function EmptyState({
       padding={8}
       role="status"
     >
-      <Icon color="secondary" icon={icon} size="lg" />
+      {iconName ? (
+        <SerializableIcon name={iconName} size="lg" />
+      ) : icon ? (
+        <Icon color="secondary" icon={icon} size="lg" />
+      ) : null}
       <Text color="secondary" display="block" justify="center" type="body">
         {message}
       </Text>

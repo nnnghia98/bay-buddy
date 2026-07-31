@@ -569,6 +569,42 @@ def test_admin_ticket_correction_updates_debt_transaction_and_balance(
         assert persisted_customer.balance == pytest.approx(1800000.0)
 
 
+def test_admin_ticket_correction_allows_income_override(
+    test_client,
+    test_engine,
+):
+    customer = _seed_customer(test_engine, balance=1200000.0)
+    ticket = _seed_confirmed_ticket(
+        test_engine,
+        customer=customer,
+        selling_price=1200000.0,
+    )
+    _seed_ticket_purchase_transaction(
+        test_engine,
+        customer=customer,
+        ticket=ticket,
+        amount=1200000.0,
+    )
+
+    response = test_client.patch(
+        f"/api/v1/tickets/{ticket.id}/correction",
+        json={
+            "passengers": ["  Tran Thi B  "],
+            "true_income": -45000,
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()["data"]
+    assert payload["ticket"]["passengers"] == ["TRAN THI B"]
+    assert payload["ticket"]["true_income"] == pytest.approx(-45000)
+
+    with Session(test_engine) as session:
+        persisted_ticket = session.get(Ticket, ticket.id)
+        assert persisted_ticket is not None
+        assert persisted_ticket.true_income == pytest.approx(-45000)
+
+
 def test_admin_ticket_removal_deletes_ticket_purchase_and_reverses_balance(
     test_client,
     test_engine,

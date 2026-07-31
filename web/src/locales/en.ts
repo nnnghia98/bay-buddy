@@ -493,6 +493,7 @@ export default {
       paymentHint:
         "Choose a payment type to enable the payment date. The payment is linked to the new ticket and saved with the debt.",
       paymentNote: "Payment recorded with manual debt",
+      unsavedConfirm: "Discard the unsaved debt details?",
       fields: {
         customer: "Customer",
         pnr: "PNR",
@@ -525,6 +526,9 @@ export default {
       from: "From",
       to: "To",
       apply: "Apply",
+      searchLabel: "Search",
+      searchPlaceholder:
+        "Search customers, passengers, PNRs, ticket numbers, or payment methods",
       all: "All time",
       filtered: "Selected time",
       invalidRange: "The start time must be before the end time.",
@@ -534,11 +538,28 @@ export default {
       title: "Ticket debt table",
       description:
         "This table uses the system record time; flight date is shown only as flight information.",
+      incomeAutoCalculateTooltip:
+        "Revenue is calculated from the selling price, discount, and costs. You can still override it when needed.",
       empty: "No ticket debt rows are available for the selected range.",
+      detailsTitle: "Debt details",
       horizontalScrollHint: "Drag horizontally or use the arrows to view more columns.",
       horizontalScrollControls: "Column navigation",
       scrollLeft: "View columns on the left",
       scrollRight: "View columns on the right",
+      results: "rows",
+      view: {
+        label: "Table view",
+        summary: "Summary",
+        full: "Full",
+      },
+      groups: {
+        record: "Ticket information",
+        customer: "Customer",
+        cost: "Costs",
+        result: "Result",
+        context: "Reconciliation",
+        pricing: "Price and income",
+      },
       columns: {
         date: "Date",
         bookedAt: "Ticket issue date",
@@ -551,7 +572,9 @@ export default {
         webPrice: "WEB price",
         insurancePrice: "Insurance",
         income: "Revenue",
-        payment: "Payment",
+        payment: "Payment amount",
+        paymentAmount: "Payment amount",
+        paymentMethod: "Payment",
         note: "Note",
         actions: "Actions",
         createdAt: "Recorded time",
@@ -564,6 +587,7 @@ export default {
         status: "Status",
       },
       actions: {
+        view: "View details",
         edit: "Edit",
         save: "Save",
         delete: "Delete",
@@ -571,6 +595,7 @@ export default {
       },
     },
     actions: {
+      openForm: "Enter debt",
       save: "Save debt",
       saving: "Saving...",
       invalidInput: "Please review the debt details.",

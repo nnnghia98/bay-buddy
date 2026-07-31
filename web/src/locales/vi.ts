@@ -493,6 +493,7 @@ export default {
       paymentHint:
         "Chọn loại thanh toán để bật ngày thanh toán. Khoản thanh toán sẽ được liên kết với vé mới và lưu cùng công nợ.",
       paymentNote: "Thanh toán khi ghi nhận công nợ",
+      unsavedConfirm: "Bỏ các thông tin công nợ chưa lưu?",
       fields: {
         customer: "Khách hàng",
         pnr: "Mã chỗ",
@@ -525,6 +526,9 @@ export default {
       from: "Từ",
       to: "Đến",
       apply: "Áp dụng",
+      searchLabel: "Tìm kiếm",
+      searchPlaceholder:
+        "Tìm khách hàng, hành khách, mã chỗ, số vé hoặc phương thức thanh toán",
       all: "Toàn bộ thời gian",
       filtered: "Theo thời gian đã chọn",
       invalidRange: "Mốc bắt đầu phải trước mốc kết thúc.",
@@ -534,11 +538,28 @@ export default {
       title: "Bảng công nợ từ vé",
       description:
         "Bảng dùng thời điểm ghi nhận trong hệ thống; ngày giờ bay chỉ là thông tin chuyến bay.",
+      incomeAutoCalculateTooltip:
+        "Doanh thu được tự động tính từ giá bán, chiết khấu và chi phí. Bạn vẫn có thể sửa thủ công nếu cần.",
       empty: "Chưa có dòng công nợ vé nào trong phạm vi đã chọn.",
+      detailsTitle: "Chi tiết công nợ",
       horizontalScrollHint: "Kéo ngang hoặc dùng mũi tên để xem thêm cột.",
       horizontalScrollControls: "Điều hướng cột",
       scrollLeft: "Xem các cột bên trái",
       scrollRight: "Xem các cột bên phải",
+      results: "dòng",
+      view: {
+        label: "Chế độ xem bảng",
+        summary: "Tóm tắt",
+        full: "Đầy đủ",
+      },
+      groups: {
+        record: "Thông tin vé",
+        customer: "Thu khách",
+        cost: "Chi phí",
+        result: "Kết quả",
+        context: "Đối chiếu",
+        pricing: "Giá và thu nhập",
+      },
       columns: {
         date: "Ngày tháng",
         bookedAt: "Ngày xuất vé",
@@ -551,7 +572,9 @@ export default {
         webPrice: "Giá WEB",
         insurancePrice: "Bảo hiểm",
         income: "Doanh thu",
-        payment: "Thanh toán",
+        payment: "Số tiền thanh toán",
+        paymentAmount: "Số tiền thanh toán",
+        paymentMethod: "Thanh toán",
         note: "Ghi chú",
         actions: "Thao tác",
         createdAt: "Thời gian ghi",
@@ -564,6 +587,7 @@ export default {
         status: "Trạng thái",
       },
       actions: {
+        view: "Xem chi tiết",
         edit: "Sửa",
         save: "Lưu",
         delete: "Xóa",
@@ -571,6 +595,7 @@ export default {
       },
     },
     actions: {
+      openForm: "Nhập công nợ",
       save: "Lưu công nợ",
       saving: "Đang lưu...",
       invalidInput: "Vui lòng kiểm tra lại thông tin công nợ.",

@@ -4,21 +4,30 @@ import patterns from "@/styles/ui-patterns.module.css"
 
 import * as React from "react"
 import { Banner } from "@astryxdesign/core/Banner"
+import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog"
+import { Layout, LayoutContent } from "@astryxdesign/core/Layout"
+import { Tooltip } from "@astryxdesign/core/Tooltip"
 import { useRouter } from "next/navigation"
 import {
+  ArrowDown,
   ArrowLeft,
   ArrowRight,
+  ArrowUp,
   ChevronsUpDown,
   CircleDollarSign,
+  Eye,
   Filter,
+  Info,
   Pencil,
   Loader2,
   Plus,
   ReceiptText,
   Route,
+  Search,
   Trash2,
   Wallet,
 } from "lucide-react"
+import { toast } from "sonner"
 
 import {
   deleteManualDebtRowAction,
@@ -44,7 +53,9 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   formatCurrency,
   formatCurrencyInput,
+  formatSignedCurrencyInput,
   parseCurrencyInput,
+  parseSignedCurrencyInput,
 } from "@/lib/formatters"
 import type { LedgerReportRow } from "@/lib/server-report"
 import { cn } from "@/lib/utils"
@@ -67,6 +78,28 @@ type ManualDebtInputClientProps = {
 }
 
 type ManualDebtField = keyof ManualDebtFormValues
+type TableView = "summary" | "full"
+type SortDirection = "asc" | "desc"
+type SortKey =
+  | "bookedAt"
+  | "description"
+  | "createdAt"
+  | "customerPaid"
+  | "discount"
+  | "evPrice"
+  | "astPrice"
+  | "thfPrice"
+  | "webPrice"
+  | "insurancePrice"
+  | "income"
+  | "paymentAmount"
+  | "note"
+  | "paymentMethod"
+
+type SortState = {
+  key: SortKey
+  direction: SortDirection
+}
 
 const airlineOptions = Object.entries(AIRLINE_LABELS) as [Airline, string][]
 
@@ -137,7 +170,120 @@ function getFieldError(
 }
 
 function normalizeSearch(value: string): string {
-  return value.trim().toLocaleLowerCase("vi-VN")
+  return value
+    .trim()
+    .toLocaleLowerCase("vi-VN")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+}
+
+function getRowPaymentMethod(row: LedgerReportRow): string {
+  if (row.linked_payment_methods.length > 0) {
+    return row.linked_payment_methods.join(", ")
+  }
+
+  return paymentMethodOptions.includes(row.transaction_method as PaymentMethod)
+    ? row.transaction_method ?? ""
+    : ""
+}
+
+function getRowSearchText(row: LedgerReportRow): string {
+  return normalizeSearch(
+    [
+      row.customer_name,
+      row.customer_phone,
+      row.passenger_names,
+      row.content,
+      row.pnr,
+      row.ticket_number,
+      row.airline,
+      row.route,
+      row.ticket_status,
+      row.linked_payment_note,
+      getRowPaymentMethod(row),
+      row.booked_at ? formatDate(row.booked_at) : "",
+      formatDate(row.created_at),
+      row.ticket_selling_price,
+      row.ticket_discount,
+      row.ticket_ev_price,
+      row.ticket_ast_price,
+      row.ticket_thf_price,
+      row.ticket_web_price,
+      row.ticket_insurance_price,
+      row.ticket_true_income,
+      row.linked_payment_amount,
+    ]
+      .filter((value) => value !== null && value !== undefined)
+      .join(" "),
+  )
+}
+
+function getRowSortValue(
+  row: LedgerReportRow,
+  sortKey: SortKey,
+): number | string | null {
+  switch (sortKey) {
+    case "bookedAt":
+      return row.booked_at ? new Date(row.booked_at).getTime() : null
+    case "description":
+      return `${row.passenger_names} ${row.customer_name}`.trim()
+    case "createdAt":
+      return new Date(row.created_at).getTime()
+    case "customerPaid":
+      return row.ticket_selling_price
+    case "discount":
+      return row.ticket_discount
+    case "evPrice":
+      return row.ticket_ev_price
+    case "astPrice":
+      return row.ticket_ast_price
+    case "thfPrice":
+      return row.ticket_thf_price
+    case "webPrice":
+      return row.ticket_web_price
+    case "insurancePrice":
+      return row.ticket_insurance_price
+    case "income":
+      return row.ticket_true_income
+    case "paymentAmount":
+      return row.linked_payment_amount
+    case "note":
+      return row.linked_payment_note
+    case "paymentMethod":
+      return getRowPaymentMethod(row)
+  }
+}
+
+function compareSortValues(
+  first: number | string | null,
+  second: number | string | null,
+): number {
+  const firstEmpty = first === null || first === ""
+  const secondEmpty = second === null || second === ""
+
+  if (firstEmpty || secondEmpty) {
+    if (firstEmpty && secondEmpty) {
+      return 0
+    }
+
+    return firstEmpty ? 1 : -1
+  }
+
+  if (typeof first === "number" && typeof second === "number") {
+    return first - second
+  }
+
+  return String(first).localeCompare(String(second), "vi", {
+    numeric: true,
+    sensitivity: "base",
+  })
+}
+
+function getDefaultSortDirection(sortKey: SortKey): SortDirection {
+  return sortKey === "description" || sortKey === "note" || sortKey === "paymentMethod"
+    ? "asc"
+    : "desc"
 }
 
 function FormField({
@@ -568,6 +714,8 @@ function EditableMoneyCell({
   name,
   onBlur,
   onKeyDown,
+  signed = false,
+  tooltip,
   value,
 }: {
   editing: boolean
@@ -575,28 +723,90 @@ function EditableMoneyCell({
   name: string
   onBlur: React.FocusEventHandler<HTMLInputElement>
   onKeyDown: React.KeyboardEventHandler<HTMLInputElement>
+  signed?: boolean
+  tooltip?: string
   value: number
+}) {
+  const formatValue = signed ? formatSignedCurrencyInput : formatCurrencyInput
+
+  if (!editing) {
+    const displayValue = (
+      <span className={styles.displayValue}>
+        {formatCurrency(value)}
+      </span>
+    )
+
+    return tooltip ? (
+      <Tooltip content={tooltip} hasHoverIndication={false} placement="above">
+        {displayValue}
+      </Tooltip>
+    ) : (
+      displayValue
+    )
+  }
+
+  const input = (
+    <Input
+      aria-label={tooltip}
+      className={cn(styles.editableMoney, signed && styles.editableIncome)}
+      defaultValue={formatValue(value)}
+      form={formId}
+      inputMode={signed ? "decimal" : "numeric"}
+      min={signed ? undefined : 0}
+      name={name}
+      onBlur={onBlur}
+      onChange={(event) => {
+        event.target.value = formatValue(event.target.value)
+      }}
+      onKeyDown={onKeyDown}
+      type="text"
+    />
+  )
+
+  return tooltip ? (
+    <Tooltip content={tooltip} hasHoverIndication={false} placement="above">
+      {input}
+    </Tooltip>
+  ) : (
+    input
+  )
+}
+
+function EditableTextCell({
+  ariaLabel,
+  editing,
+  emptyValue,
+  formId,
+  name,
+  onBlur,
+  onKeyDown,
+  value,
+}: {
+  ariaLabel: string
+  editing: boolean
+  emptyValue: string
+  formId: string
+  name: string
+  onBlur: React.FocusEventHandler<HTMLInputElement>
+  onKeyDown: React.KeyboardEventHandler<HTMLInputElement>
+  value: string
 }) {
   if (!editing) {
     return (
-      <span className={styles.displayValue}>
-        {formatCurrency(value)}
+      <span className={styles.passengerText}>
+        {value || emptyValue}
       </span>
     )
   }
 
   return (
     <Input
-      className={styles.editableMoney}
-      defaultValue={formatCurrencyInput(value)}
+      aria-label={ariaLabel}
+      className={styles.editableText}
+      defaultValue={value}
       form={formId}
-      inputMode="numeric"
-      min={0}
       name={name}
       onBlur={onBlur}
-      onChange={(event) => {
-        event.target.value = formatCurrencyInput(event.target.value)
-      }}
       onKeyDown={onKeyDown}
       type="text"
     />
@@ -641,10 +851,276 @@ function EditableDateCell({
   )
 }
 
-function ManualDebtTableRow({
+function DetailItem({
+  label,
+  value,
+  numeric = false,
+}: {
+  label: string
+  value: React.ReactNode
+  numeric?: boolean
+}) {
+  return (
+    <div className={styles.detailItem}>
+      <dt className={styles.detailLabel}>{label}</dt>
+      <dd className={cn(styles.detailValue, numeric && styles.detailNumber)}>
+        {value}
+      </dd>
+    </div>
+  )
+}
+
+function ManualDebtDetailsDrawer({
+  onOpenChange,
   row,
 }: {
+  onOpenChange: (open: boolean) => void
+  row: LedgerReportRow | null
+}) {
+  const t = useI18n()
+  const paymentMethodLabels: Record<PaymentMethod, string> = {
+    "Chuyển khoản": t(
+      "customers.ledger.paymentDialog.fields.methodOptions.bankTransfer",
+    ),
+    "Tiền mặt": t("customers.ledger.paymentDialog.fields.methodOptions.cash"),
+    AST: t("customers.ledger.paymentDialog.fields.methodOptions.ast"),
+    THF: t("customers.ledger.paymentDialog.fields.methodOptions.thf"),
+  }
+
+  return (
+    <Dialog
+      className={cn(styles.sideDrawer, styles.detailDrawer)}
+      isOpen={row !== null}
+      maxHeight="100dvh"
+      onOpenChange={onOpenChange}
+      padding={0}
+      position={{ bottom: 0, right: 0, top: 0 }}
+      purpose="info"
+      width="min(32rem, 100dvw)"
+    >
+      {row ? (
+        <Layout
+          className={styles.drawerLayout}
+          defaultHasDividers
+          header={
+            <DialogHeader
+              className={styles.drawerHeader}
+              onOpenChange={onOpenChange}
+              subtitle={row.customer_name}
+              title={
+                row.passenger_names || t("manualDebts.table.detailsTitle")
+              }
+            />
+          }
+          content={
+            <LayoutContent padding={4}>
+              <div className={styles.detailSections}>
+                <section aria-labelledby="manual-debt-detail-record">
+                  <h3
+                    className={styles.detailSectionTitle}
+                    id="manual-debt-detail-record"
+                  >
+                    {t("manualDebts.table.groups.record")}
+                  </h3>
+                  <dl className={styles.detailGrid}>
+                    <DetailItem
+                      label={t("manualDebts.table.columns.customer")}
+                      value={row.customer_name}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.description")}
+                      value={row.passenger_names}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.bookedAt")}
+                      value={
+                        formatOptionalDate(row.booked_at) ||
+                        t("manualDebts.emptyValue")
+                      }
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.date")}
+                      value={formatDate(row.created_at)}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.pnr")}
+                      value={row.pnr || t("manualDebts.emptyValue")}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.ticketNumber")}
+                      value={row.ticket_number || t("manualDebts.emptyValue")}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.form.fields.airline")}
+                      value={row.airline || t("manualDebts.emptyValue")}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.route")}
+                      value={row.route || t("manualDebts.emptyValue")}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.flightDate")}
+                      value={
+                        formatOptionalDate(row.flight_date) ||
+                        t("manualDebts.emptyValue")
+                      }
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.status")}
+                      value={row.ticket_status || t("manualDebts.emptyValue")}
+                    />
+                  </dl>
+                </section>
+
+                <section aria-labelledby="manual-debt-detail-pricing">
+                  <h3
+                    className={styles.detailSectionTitle}
+                    id="manual-debt-detail-pricing"
+                  >
+                    {t("manualDebts.table.groups.pricing")}
+                  </h3>
+                  <dl className={styles.detailGrid}>
+                    <DetailItem
+                      label={t("manualDebts.table.columns.customerPaid")}
+                      numeric
+                      value={formatCurrency(row.ticket_selling_price)}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.discount")}
+                      numeric
+                      value={formatCurrency(row.ticket_discount)}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.evPrice")}
+                      numeric
+                      value={formatCurrency(row.ticket_ev_price)}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.astPrice")}
+                      numeric
+                      value={formatCurrency(row.ticket_ast_price)}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.thfPrice")}
+                      numeric
+                      value={formatCurrency(row.ticket_thf_price)}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.webPrice")}
+                      numeric
+                      value={formatCurrency(row.ticket_web_price)}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.insurancePrice")}
+                      numeric
+                      value={formatCurrency(row.ticket_insurance_price)}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.income")}
+                      numeric
+                      value={formatCurrency(row.ticket_true_income)}
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.paymentAmount")}
+                      numeric
+                      value={
+                        row.linked_payment_amount === null
+                          ? t("manualDebts.emptyValue")
+                          : formatCurrency(row.linked_payment_amount)
+                      }
+                    />
+                    <DetailItem
+                      label={t("manualDebts.table.columns.paymentMethod")}
+                      value={
+                        row.linked_payment_methods.length === 0
+                          ? t("manualDebts.emptyValue")
+                          : row.linked_payment_methods
+                              .map(
+                                (method) =>
+                                  paymentMethodLabels[method as PaymentMethod] ??
+                                  method,
+                              )
+                              .join(", ")
+                      }
+                    />
+                  </dl>
+                </section>
+
+                <section aria-labelledby="manual-debt-detail-note">
+                  <h3
+                    className={styles.detailSectionTitle}
+                    id="manual-debt-detail-note"
+                  >
+                    {t("manualDebts.table.columns.note")}
+                  </h3>
+                  <p className={styles.detailNote}>
+                    {row.linked_payment_note || t("manualDebts.emptyValue")}
+                  </p>
+                </section>
+              </div>
+            </LayoutContent>
+          }
+        />
+      ) : null}
+    </Dialog>
+  )
+}
+
+function SortableTableHead({
+  children,
+  className,
+  label,
+  onSort,
+  sortKey,
+  sortState,
+}: {
+  children: React.ReactNode
+  className?: string
+  label: string
+  onSort: (sortKey: SortKey) => void
+  sortKey: SortKey
+  sortState: SortState
+}) {
+  const isActive = sortState.key === sortKey
+  const SortIcon = isActive
+    ? sortState.direction === "asc"
+      ? ArrowUp
+      : ArrowDown
+    : ChevronsUpDown
+
+  return (
+    <TableHead
+      aria-sort={
+        isActive
+          ? sortState.direction === "asc"
+            ? "ascending"
+            : "descending"
+          : "none"
+      }
+      className={className}
+    >
+      <button
+        aria-label={label}
+        className={styles.sortButton}
+        onClick={() => onSort(sortKey)}
+        title={label}
+        type="button"
+      >
+        <span>{children}</span>
+        <SortIcon aria-hidden="true" className={styles.sortIcon} />
+      </button>
+    </TableHead>
+  )
+}
+
+function ManualDebtTableRow({
+  onViewDetails,
+  row,
+  tableView,
+}: {
+  onViewDetails: (row: LedgerReportRow) => void
   row: LedgerReportRow
+  tableView: TableView
 }) {
   const t = useI18n()
   const rowRef = React.useRef<HTMLTableRowElement>(null)
@@ -652,6 +1128,41 @@ function ManualDebtTableRow({
   const [isEditing, setIsEditing] = React.useState(false)
   const updateFormId = `manual-debt-update-${row.id}`
   const deleteFormId = `manual-debt-delete-${row.id}`
+  const paymentMethodLabels: Record<PaymentMethod, string> = {
+    "Chuyển khoản": t(
+      "customers.ledger.paymentDialog.fields.methodOptions.bankTransfer",
+    ),
+    "Tiền mặt": t("customers.ledger.paymentDialog.fields.methodOptions.cash"),
+    AST: t("customers.ledger.paymentDialog.fields.methodOptions.ast"),
+    THF: t("customers.ledger.paymentDialog.fields.methodOptions.thf"),
+  }
+  const ticketPaymentMethod = paymentMethodOptions.find(
+    (method) => method === row.transaction_method,
+  )
+  const currentPaymentMethod =
+    row.linked_payment_methods.length === 1
+      ? row.linked_payment_methods[0]
+      : row.linked_payment_methods.length === 0
+        ? ticketPaymentMethod ?? ""
+        : ""
+  const paymentMethodDisplay =
+    row.linked_payment_methods.length === 0
+      ? ticketPaymentMethod
+        ? paymentMethodLabels[ticketPaymentMethod]
+        : t("manualDebts.emptyValue")
+      : row.linked_payment_methods
+          .map(
+            (method) => paymentMethodLabels[method as PaymentMethod] ?? method,
+          )
+          .join(", ")
+  const paymentTransactionIds =
+    row.linked_payment_transaction_ids.length > 0
+      ? row.linked_payment_transaction_ids
+      : row.transaction_id
+        ? [row.transaction_id]
+        : []
+  const canEditPaymentMethod =
+    row.ticket_id !== null && paymentTransactionIds.length > 0
 
   const submitIfChanged = React.useCallback(() => {
     const form = updateFormRef.current
@@ -662,6 +1173,11 @@ function ManualDebtTableRow({
 
     const formData = new FormData(form)
     const nextBookedAt = String(formData.get("booked_at") ?? "")
+    const nextPassengers = String(formData.get("passengers") ?? "").trim()
+    const nextPaymentMethod = String(formData.get("payment_method") ?? "")
+    const nextTrueIncome = parseSignedCurrencyInput(
+      String(formData.get("true_income") ?? ""),
+    )
     const initialValues = {
       selling_price: row.ticket_selling_price,
       discount: row.ticket_discount,
@@ -671,16 +1187,30 @@ function ManualDebtTableRow({
       web_price: row.ticket_web_price,
       insurance_price: row.ticket_insurance_price,
     }
-    const hasChanged = Object.entries(initialValues).some(([key, value]) => {
+    const hasPricingChanged = Object.entries(initialValues).some(([key, value]) => {
       const nextValue = parseCurrencyInput(String(formData.get(key) ?? ""))
 
       return nextValue !== value
-    }) || nextBookedAt !== formatDateLocal(row.booked_at)
+    })
+    const hasChanged = hasPricingChanged ||
+      nextBookedAt !== formatDateLocal(row.booked_at) ||
+      nextPassengers !== row.passenger_names.trim() ||
+      nextTrueIncome !== row.ticket_true_income ||
+      (canEditPaymentMethod && nextPaymentMethod !== currentPaymentMethod)
 
     if (hasChanged) {
+      const incomeOverrideInput = form.elements.namedItem("true_income_override")
+
+      if (incomeOverrideInput instanceof HTMLInputElement) {
+        incomeOverrideInput.value =
+          !hasPricingChanged || nextTrueIncome !== row.ticket_true_income
+            ? "true"
+            : "false"
+      }
+
       form.requestSubmit()
     }
-  }, [row])
+  }, [canEditPaymentMethod, currentPaymentMethod, row])
 
   const handleInputBlur: React.FocusEventHandler<HTMLInputElement> = (event) => {
     const nextTarget = event.relatedTarget
@@ -704,6 +1234,37 @@ function ManualDebtTableRow({
     event.currentTarget.blur()
   }
 
+  const handlePaymentMethodBlur: React.FocusEventHandler<HTMLSelectElement> = (
+    event,
+  ) => {
+    const nextTarget = event.relatedTarget
+
+    if (nextTarget instanceof Node && rowRef.current?.contains(nextTarget)) {
+      return
+    }
+
+    submitIfChanged()
+    setIsEditing(false)
+  }
+
+  const handlePaymentMethodChange: React.ChangeEventHandler<HTMLSelectElement> = () => {
+    submitIfChanged()
+    setIsEditing(false)
+  }
+
+  const handlePaymentMethodKeyDown: React.KeyboardEventHandler<HTMLSelectElement> = (
+    event,
+  ) => {
+    if (event.key !== "Enter") {
+      return
+    }
+
+    event.preventDefault()
+    submitIfChanged()
+    setIsEditing(false)
+    event.currentTarget.blur()
+  }
+
   return (
     <TableRow className={styles.tableRow} ref={rowRef}>
       <TableCell className={cn(styles.cell, styles.stickyCell)}>
@@ -716,12 +1277,31 @@ function ManualDebtTableRow({
           value={row.booked_at}
         />
       </TableCell>
-      <TableCell className={cn(styles.cell, styles.mutedCell)}>
-        {formatDate(row.created_at)}
+      <TableCell
+        className={cn(styles.cell, styles.stickyContextCell)}
+        title={[row.passenger_names, row.customer_name]
+          .filter(Boolean)
+          .join(" · ")}
+      >
+        <div className={styles.recordContext}>
+          <EditableTextCell
+            ariaLabel={t("manualDebts.table.columns.description")}
+            editing={isEditing}
+            emptyValue={t("manualDebts.emptyValue")}
+            formId={updateFormId}
+            name="passengers"
+            onBlur={handleInputBlur}
+            onKeyDown={handleInputKeyDown}
+            value={row.passenger_names}
+          />
+          <span className={styles.customerText}>{row.customer_name}</span>
+        </div>
       </TableCell>
-      <TableCell className={cn(styles.cell, styles.mediumCell)}>
-        {row.passenger_names}
-      </TableCell>
+      {tableView === "full" ? (
+        <TableCell className={cn(styles.cell, styles.mutedCell)}>
+          {formatDate(row.created_at)}
+        </TableCell>
+      ) : null}
       <TableCell className={styles.numberCell}>
         <EditableMoneyCell
           editing={isEditing}
@@ -732,80 +1312,126 @@ function ManualDebtTableRow({
           value={row.ticket_selling_price}
         />
       </TableCell>
-      <TableCell className={styles.numberCell}>
-        <EditableMoneyCell
-          editing={isEditing}
-          formId={updateFormId}
-          name="discount"
-          onBlur={handleInputBlur}
-          onKeyDown={handleInputKeyDown}
-          value={row.ticket_discount}
-        />
-      </TableCell>
-      <TableCell className={styles.numberCell}>
-        <EditableMoneyCell
-          editing={isEditing}
-          formId={updateFormId}
-          name="ev_price"
-          onBlur={handleInputBlur}
-          onKeyDown={handleInputKeyDown}
-          value={row.ticket_ev_price}
-        />
-      </TableCell>
-      <TableCell className={styles.numberCell}>
-        <EditableMoneyCell
-          editing={isEditing}
-          formId={updateFormId}
-          name="ast_price"
-          onBlur={handleInputBlur}
-          onKeyDown={handleInputKeyDown}
-          value={row.ticket_ast_price}
-        />
-      </TableCell>
-      <TableCell className={styles.numberCell}>
-        <EditableMoneyCell
-          editing={isEditing}
-          formId={updateFormId}
-          name="thf_price"
-          onBlur={handleInputBlur}
-          onKeyDown={handleInputKeyDown}
-          value={row.ticket_thf_price}
-        />
-      </TableCell>
-      <TableCell className={styles.numberCell}>
-        <EditableMoneyCell
-          editing={isEditing}
-          formId={updateFormId}
-          name="web_price"
-          onBlur={handleInputBlur}
-          onKeyDown={handleInputKeyDown}
-          value={row.ticket_web_price}
-        />
-      </TableCell>
-      <TableCell className={styles.numberCell}>
-        <EditableMoneyCell
-          editing={isEditing}
-          formId={updateFormId}
-          name="insurance_price"
-          onBlur={handleInputBlur}
-          onKeyDown={handleInputKeyDown}
-          value={row.ticket_insurance_price}
-        />
-      </TableCell>
+      {tableView === "full" ? (
+        <>
+          <TableCell className={styles.numberCell}>
+            <EditableMoneyCell
+              editing={isEditing}
+              formId={updateFormId}
+              name="discount"
+              onBlur={handleInputBlur}
+              onKeyDown={handleInputKeyDown}
+              value={row.ticket_discount}
+            />
+          </TableCell>
+          <TableCell className={styles.numberCell}>
+            <EditableMoneyCell
+              editing={isEditing}
+              formId={updateFormId}
+              name="ev_price"
+              onBlur={handleInputBlur}
+              onKeyDown={handleInputKeyDown}
+              value={row.ticket_ev_price}
+            />
+          </TableCell>
+          <TableCell className={styles.numberCell}>
+            <EditableMoneyCell
+              editing={isEditing}
+              formId={updateFormId}
+              name="ast_price"
+              onBlur={handleInputBlur}
+              onKeyDown={handleInputKeyDown}
+              value={row.ticket_ast_price}
+            />
+          </TableCell>
+          <TableCell className={styles.numberCell}>
+            <EditableMoneyCell
+              editing={isEditing}
+              formId={updateFormId}
+              name="thf_price"
+              onBlur={handleInputBlur}
+              onKeyDown={handleInputKeyDown}
+              value={row.ticket_thf_price}
+            />
+          </TableCell>
+          <TableCell className={styles.numberCell}>
+            <EditableMoneyCell
+              editing={isEditing}
+              formId={updateFormId}
+              name="web_price"
+              onBlur={handleInputBlur}
+              onKeyDown={handleInputKeyDown}
+              value={row.ticket_web_price}
+            />
+          </TableCell>
+          <TableCell className={styles.numberCell}>
+            <EditableMoneyCell
+              editing={isEditing}
+              formId={updateFormId}
+              name="insurance_price"
+              onBlur={handleInputBlur}
+              onKeyDown={handleInputKeyDown}
+              value={row.ticket_insurance_price}
+            />
+          </TableCell>
+        </>
+      ) : null}
       <TableCell className={styles.valueCell}>
-        {formatCurrency(row.ticket_true_income)}
+        <EditableMoneyCell
+          editing={isEditing}
+          formId={updateFormId}
+          name="true_income"
+          onBlur={handleInputBlur}
+          onKeyDown={handleInputKeyDown}
+          signed
+          tooltip={t("manualDebts.table.incomeAutoCalculateTooltip")}
+          value={row.ticket_true_income}
+        />
       </TableCell>
-      <TableCell className={styles.valueCell}>
-        {row.linked_payment_amount === null
-          ? ""
-          : formatCurrency(row.linked_payment_amount)}
-      </TableCell>
-      <TableCell className={styles.noteCell}>
-        {row.linked_payment_note ?? ""}
+      {tableView === "full" ? (
+        <>
+          <TableCell className={styles.valueCell}>
+            {row.linked_payment_amount === null
+              ? ""
+              : formatCurrency(row.linked_payment_amount)}
+          </TableCell>
+          <TableCell className={styles.noteCell}>
+            {row.linked_payment_note ?? ""}
+          </TableCell>
+        </>
+      ) : null}
+      <TableCell className={styles.paymentMethodCell}>
+        {!isEditing ? (
+          <span className={styles.paymentMethodValue}>
+            {paymentMethodDisplay}
+          </span>
+        ) : (
+          <select
+            aria-label={t("manualDebts.table.columns.paymentMethod")}
+            className={cn(selectInputClassName, styles.editablePaymentMethod)}
+            defaultValue={currentPaymentMethod}
+            disabled={!canEditPaymentMethod}
+            form={updateFormId}
+            name="payment_method"
+            onBlur={handlePaymentMethodBlur}
+            onChange={handlePaymentMethodChange}
+            onKeyDown={handlePaymentMethodKeyDown}
+          >
+            <option value="">
+              {t("manualDebts.emptyValue")}
+            </option>
+            {paymentMethodOptions.map((method) => (
+              <option key={method} value={method}>
+                {paymentMethodLabels[method]}
+              </option>
+            ))}
+          </select>
+        )}
       </TableCell>
       <TableCell className={styles.actionsCell}>
-        {row.ticket_id ? (
-          <div className={styles.rowActions}>
+        <div className={styles.rowActions}>
+          {row.ticket_id ? (
+            <>
             <form
               action={updateManualDebtRowAction}
               className={patterns.hidden}
@@ -814,10 +1440,32 @@ function ManualDebtTableRow({
             >
               <input name="customer_id" type="hidden" value={row.customer_id} />
               <input name="ticket_id" type="hidden" value={row.ticket_id} />
+              <input name="true_income_override" type="hidden" value="false" />
+              {paymentTransactionIds.map((transactionId) => (
+                <input
+                  key={transactionId}
+                  name="payment_transaction_id"
+                  type="hidden"
+                  value={transactionId}
+                />
+              ))}
               {!isEditing ? (
                 <>
                   <input name="booked_at" type="hidden" value={formatDateLocal(row.booked_at)} />
+                  <input name="passengers" type="hidden" value={row.passenger_names} />
                   <input name="selling_price" type="hidden" value={row.ticket_selling_price} />
+                  <input name="discount" type="hidden" value={row.ticket_discount} />
+                  <input name="ev_price" type="hidden" value={row.ticket_ev_price} />
+                  <input name="ast_price" type="hidden" value={row.ticket_ast_price} />
+                  <input name="thf_price" type="hidden" value={row.ticket_thf_price} />
+                  <input name="web_price" type="hidden" value={row.ticket_web_price} />
+                  <input name="insurance_price" type="hidden" value={row.ticket_insurance_price} />
+                  <input name="true_income" type="hidden" value={row.ticket_true_income} />
+                  <input name="payment_method" type="hidden" value={currentPaymentMethod} />
+                </>
+              ) : null}
+              {isEditing && tableView === "summary" ? (
+                <>
                   <input name="discount" type="hidden" value={row.ticket_discount} />
                   <input name="ev_price" type="hidden" value={row.ticket_ev_price} />
                   <input name="ast_price" type="hidden" value={row.ticket_ast_price} />
@@ -840,6 +1488,20 @@ function ManualDebtTableRow({
               <input name="customer_id" type="hidden" value={row.customer_id} />
               <input name="ticket_id" type="hidden" value={row.ticket_id} />
             </form>
+            </>
+          ) : null}
+          <Button
+            aria-label={t("manualDebts.table.actions.view")}
+            onClick={() => onViewDetails(row)}
+            size="icon"
+            title={t("manualDebts.table.actions.view")}
+            type="button"
+            variant="ghost"
+          >
+            <Eye className={patterns.iconCompact} />
+          </Button>
+          {row.ticket_id ? (
+            <>
             <Button
               aria-label={t("manualDebts.table.actions.edit")}
               onClick={() => setIsEditing(true)}
@@ -860,19 +1522,24 @@ function ManualDebtTableRow({
             >
               <Trash2 className={patterns.iconCompact} />
             </Button>
-          </div>
-        ) : (
-          t("manualDebts.emptyValue")
-        )}
+            </>
+          ) : null}
+        </div>
       </TableCell>
     </TableRow>
   )
 }
 
 function TableHorizontalControls({
+  onTableViewChange,
+  resultCount,
   scrollContainerRef,
+  tableView,
 }: {
+  onTableViewChange: (view: TableView) => void
+  resultCount: number
   scrollContainerRef: React.RefObject<HTMLDivElement | null>
+  tableView: TableView
 }) {
   const t = useI18n()
   const [canScrollLeft, setCanScrollLeft] = React.useState(false)
@@ -902,12 +1569,17 @@ function TableHorizontalControls({
 
     const resizeObserver = new ResizeObserver(updateScrollState)
     resizeObserver.observe(container)
+    const table = container.querySelector("table")
+
+    if (table) {
+      resizeObserver.observe(table)
+    }
 
     return () => {
       container.removeEventListener("scroll", updateScrollState)
       resizeObserver.disconnect()
     }
-  }, [scrollContainerRef, updateScrollState])
+  }, [scrollContainerRef, tableView, updateScrollState])
 
   const scrollTable = (direction: -1 | 1) => {
     const container = scrollContainerRef.current
@@ -916,44 +1588,90 @@ function TableHorizontalControls({
       return
     }
 
-    container.scrollBy({
+    const headerCells = Array.from(
+      container.querySelectorAll<HTMLTableCellElement>(
+        "thead tr:last-child th",
+      ),
+    )
+    const pageDistance = Math.max(container.clientWidth * 0.7, 320)
+    const targetThreshold =
+      container.scrollLeft + direction * pageDistance
+    const targetCell =
+      direction === 1
+        ? headerCells.find((cell) => cell.offsetLeft >= targetThreshold)
+        : headerCells
+            .slice()
+            .reverse()
+            .find((cell) => cell.offsetLeft <= targetThreshold)
+    const maximumScrollLeft = container.scrollWidth - container.clientWidth
+    const targetLeft =
+      targetCell?.offsetLeft ?? (direction === 1 ? maximumScrollLeft : 0)
+
+    container.scrollTo({
       behavior: "smooth",
-      left: direction * Math.max(container.clientWidth * 0.7, 320),
+      left: Math.min(Math.max(targetLeft, 0), maximumScrollLeft),
     })
   }
 
   return (
     <div className={styles.scrollControls}>
-      <p className={styles.scrollHint}>
-        {t("manualDebts.table.horizontalScrollHint")}
-      </p>
-      <div
-        aria-label={t("manualDebts.table.horizontalScrollControls")}
-        className={styles.scrollButtons}
-        role="group"
-      >
-        <Button
-          aria-label={t("manualDebts.table.scrollLeft")}
-          disabled={!canScrollLeft}
-          onClick={() => scrollTable(-1)}
-          size="icon"
-          title={t("manualDebts.table.scrollLeft")}
-          type="button"
-          variant="outline"
+      <div className={styles.tableResult}>
+        <span className={styles.resultCount}>{resultCount}</span>
+        <span>{t("manualDebts.table.results")}</span>
+      </div>
+      <div className={styles.tableViewControls}>
+        <div
+          aria-label={t("manualDebts.table.view.label")}
+          className={styles.viewSwitcher}
+          role="group"
         >
-          <ArrowLeft className={patterns.iconCompact} />
-        </Button>
-        <Button
-          aria-label={t("manualDebts.table.scrollRight")}
-          disabled={!canScrollRight}
-          onClick={() => scrollTable(1)}
-          size="icon"
-          title={t("manualDebts.table.scrollRight")}
-          type="button"
-          variant="outline"
+          <Button
+            aria-pressed={tableView === "summary"}
+            onClick={() => onTableViewChange("summary")}
+            size="sm"
+            type="button"
+            variant={tableView === "summary" ? "secondary" : "ghost"}
+          >
+            {t("manualDebts.table.view.summary")}
+          </Button>
+          <Button
+            aria-pressed={tableView === "full"}
+            onClick={() => onTableViewChange("full")}
+            size="sm"
+            type="button"
+            variant={tableView === "full" ? "secondary" : "ghost"}
+          >
+            {t("manualDebts.table.view.full")}
+          </Button>
+        </div>
+        <div
+          aria-label={t("manualDebts.table.horizontalScrollControls")}
+          className={styles.scrollButtons}
+          role="group"
         >
-          <ArrowRight className={patterns.iconCompact} />
-        </Button>
+          <Button
+            aria-label={t("manualDebts.table.scrollLeft")}
+            disabled={!canScrollLeft}
+            onClick={() => scrollTable(-1)}
+            size="icon"
+            title={t("manualDebts.table.scrollLeft")}
+            type="button"
+            variant="outline"
+          >
+            <ArrowLeft className={patterns.iconCompact} />
+          </Button>
+          <Button
+            aria-label={t("manualDebts.table.scrollRight")}
+            disabled={!canScrollRight}
+            onClick={() => scrollTable(1)}
+            size="icon"
+            title={t("manualDebts.table.scrollRight")}
+            type="button"
+            variant="outline"
+          >
+            <ArrowRight className={patterns.iconCompact} />
+          </Button>
+        </div>
       </div>
     </div>
   )
@@ -967,7 +1685,13 @@ export function ManualDebtInputClient({
   const router = useRouter()
   const formRef = React.useRef<HTMLFormElement>(null)
   const tableScrollRef = React.useRef<HTMLDivElement>(null)
+  const [isFormOpen, setIsFormOpen] = React.useState(false)
+  const [isFormDirty, setIsFormDirty] = React.useState(false)
   const [isSubmitPending, setIsSubmitPending] = React.useState(false)
+  const [selectedRow, setSelectedRow] = React.useState<LedgerReportRow | null>(
+    null,
+  )
+  const [tableView, setTableView] = React.useState<TableView>("summary")
   const [actionState, setActionState] = React.useState<ManualDebtActionState>(
     initialManualDebtActionState,
   )
@@ -975,6 +1699,12 @@ export function ManualDebtInputClient({
   const [toValue, setToValue] = React.useState("")
   const [appliedFrom, setAppliedFrom] = React.useState("")
   const [appliedTo, setAppliedTo] = React.useState("")
+  const [searchValue, setSearchValue] = React.useState("")
+  const deferredSearchValue = React.useDeferredValue(searchValue)
+  const [sortState, setSortState] = React.useState<SortState>({
+    key: "createdAt",
+    direction: "desc",
+  })
   const [filterError, setFilterError] = React.useState<string | null>(null)
   const [sellingPrice, setSellingPrice] = React.useState(0)
   const [discount, setDiscount] = React.useState(0)
@@ -998,11 +1728,7 @@ export function ManualDebtInputClient({
     THF: t("customers.ledger.paymentDialog.fields.methodOptions.thf"),
   }
 
-  React.useEffect(() => {
-    if (actionState.status !== "success") {
-      return
-    }
-
+  const resetManualDebtForm = React.useCallback(() => {
     setSellingPrice(0)
     setDiscount(0)
     setEvPrice(0)
@@ -1013,15 +1739,35 @@ export function ManualDebtInputClient({
     setPaymentAmount(0)
     setPaymentMethod("")
     setPaymentDate("")
+    setIsFormDirty(false)
+    setActionState(initialManualDebtActionState)
     setFormResetKey((current) => current + 1)
+  }, [])
+
+  React.useEffect(() => {
+    if (actionState.status !== "success") {
+      return
+    }
+
+    toast.success(actionState.message ?? t("manualDebts.actions.success"))
+    resetManualDebtForm()
+    setIsFormOpen(false)
     router.refresh()
-  }, [actionState.status, actionState.submittedAt, router])
+  }, [
+    actionState.message,
+    actionState.status,
+    actionState.submittedAt,
+    resetManualDebtForm,
+    router,
+    t,
+  ])
 
   const filteredRows = React.useMemo(() => {
     const fromDate = parseDateFilter(appliedFrom, "start")
     const toDate = parseDateFilter(appliedTo, "end")
+    const normalizedQuery = normalizeSearch(deferredSearchValue)
 
-    return rows.filter((row) => {
+    const matchingRows = rows.filter((row) => {
       const rowDate = new Date(row.created_at)
 
       if (fromDate && rowDate < fromDate) {
@@ -1032,13 +1778,53 @@ export function ManualDebtInputClient({
         return false
       }
 
-      return true
+      return !normalizedQuery || getRowSearchText(row).includes(normalizedQuery)
     })
-  }, [appliedFrom, appliedTo, rows])
+
+    return matchingRows
+      .map((row, index) => ({ row, index }))
+      .sort((first, second) => {
+        const comparison = compareSortValues(
+          getRowSortValue(first.row, sortState.key),
+          getRowSortValue(second.row, sortState.key),
+        )
+
+        if (comparison !== 0) {
+          return sortState.direction === "asc" ? comparison : -comparison
+        }
+
+        return first.index - second.index
+      })
+      .map(({ row }) => row)
+  }, [appliedFrom, appliedTo, deferredSearchValue, rows, sortState])
 
   const trueIncome =
     sellingPrice + discount - (evPrice + astPrice + thfPrice + webPrice + insurancePrice)
   const fieldErrors = actionState.fieldErrors
+
+  const handleFormOpenChange = React.useCallback(
+    (nextOpen: boolean) => {
+      if (
+        !nextOpen &&
+        isFormDirty &&
+        !window.confirm(t("manualDebts.form.unsavedConfirm"))
+      ) {
+        return
+      }
+
+      if (!nextOpen) {
+        resetManualDebtForm()
+      }
+
+      setIsFormOpen(nextOpen)
+    },
+    [isFormDirty, resetManualDebtForm, t],
+  )
+
+  const openManualDebtForm = () => {
+    resetManualDebtForm()
+    setIsFormOpen(true)
+  }
 
   const handleApplyFilters = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -1055,6 +1841,20 @@ export function ManualDebtInputClient({
     setAppliedFrom(fromValue)
     setAppliedTo(toValue)
   }
+
+  const handleSort = React.useCallback((sortKey: SortKey) => {
+    setSortState((current) =>
+      current.key === sortKey
+        ? {
+            key: sortKey,
+            direction: current.direction === "asc" ? "desc" : "asc",
+          }
+        : {
+            key: sortKey,
+            direction: getDefaultSortDirection(sortKey),
+          },
+    )
+  }, [])
 
   const dispatchManualDebtAction = React.useCallback(async () => {
     if (!formRef.current) {
@@ -1094,22 +1894,41 @@ export function ManualDebtInputClient({
 
   return (
     <div className={patterns.pageStack}>
-      <div className={styles.workbench}>
-        <div className={styles.workbenchColumn}>
-          <Panel className={styles.panel}>
-            <form
-              className={styles.manualForm}
-              key={formResetKey}
-              onSubmit={handleManualDebtSubmit}
-              ref={formRef}
-            >
-              <div className={styles.formActions}>
+      <Dialog
+        className={cn(styles.sideDrawer, styles.formDrawer)}
+        isOpen={isFormOpen}
+        maxHeight="100dvh"
+        onOpenChange={handleFormOpenChange}
+        padding={0}
+        position={{ bottom: 0, left: 0, top: 0 }}
+        purpose="info"
+        width="min(30rem, 100dvw)"
+      >
+        <Layout
+          className={styles.drawerLayout}
+          defaultHasDividers
+          header={
+            <DialogHeader
+              className={styles.drawerHeader}
+              endContent={
                 <SubmitButton
                   onSubmit={dispatchManualDebtAction}
                   pending={isSubmitPending}
                 />
-              </div>
-
+              }
+              onOpenChange={handleFormOpenChange}
+              title={t("manualDebts.form.title")}
+            />
+          }
+          content={
+            <LayoutContent className={styles.formDrawerContent} padding={0}>
+            <form
+              className={styles.manualForm}
+              key={formResetKey}
+              onChange={() => setIsFormDirty(true)}
+              onSubmit={handleManualDebtSubmit}
+              ref={formRef}
+            >
               <div className={styles.formBody}>
                 {actionState.message ? (
                   <Banner
@@ -1452,11 +2271,13 @@ export function ManualDebtInputClient({
                 </div>
               </div>
             </form>
-          </Panel>
-        </div>
+            </LayoutContent>
+          }
+        />
+      </Dialog>
 
-        <div className={styles.tableColumn}>
-          <Panel className={styles.tablePanel}>
+      <div className={styles.tableColumn}>
+        <Panel className={styles.tablePanel}>
             <div className={styles.filterHeader}>
               <form
                 className={styles.filterForm}
@@ -1494,7 +2315,38 @@ export function ManualDebtInputClient({
                   <Filter className={patterns.iconSmall} />
                   {t("manualDebts.filters.apply")}
                 </Button>
+                <div className={styles.searchField}>
+                  <Label
+                    className={patterns.eyebrow}
+                    htmlFor="manual-debt-search"
+                  >
+                    {t("manualDebts.filters.searchLabel")}
+                  </Label>
+                  <div className={styles.searchInputWrap}>
+                    <Search
+                      aria-hidden="true"
+                      className={styles.searchIcon}
+                    />
+                    <Input
+                      aria-label={t("manualDebts.filters.searchLabel")}
+                      className={styles.searchInput}
+                      id="manual-debt-search"
+                      onChange={(event) => setSearchValue(event.target.value)}
+                      placeholder={t("manualDebts.filters.searchPlaceholder")}
+                      type="search"
+                      value={searchValue}
+                    />
+                  </div>
+                </div>
               </form>
+              <Button
+                className={styles.openFormButton}
+                onClick={openManualDebtForm}
+                type="button"
+              >
+                <Plus className={patterns.iconSmall} />
+                {t("manualDebts.actions.openForm")}
+              </Button>
             </div>
             {filterError ? (
               <p
@@ -1504,54 +2356,185 @@ export function ManualDebtInputClient({
                 {filterError}
               </p>
             ) : null}
-            <TableHorizontalControls scrollContainerRef={tableScrollRef} />
+            <TableHorizontalControls
+              onTableViewChange={setTableView}
+              resultCount={filteredRows.length}
+              scrollContainerRef={tableScrollRef}
+              tableView={tableView}
+            />
             <div className={styles.tableArea}>
               <Table
-                className={styles.ledgerTable}
+                className={cn(
+                  styles.ledgerTable,
+                  tableView === "full"
+                    ? styles.ledgerTableFull
+                    : styles.ledgerTableSummary,
+                )}
                 containerClassName={styles.tableViewport}
                 containerRef={tableScrollRef}
               >
                 <TableHeader className={styles.stickyHeader}>
                   <TableRow>
-                    <TableHead className={styles.headerStickyLeft}>
+                    <SortableTableHead
+                      className={styles.headerStickyLeft}
+                      label={t("manualDebts.table.columns.bookedAt")}
+                      onSort={handleSort}
+                      sortKey="bookedAt"
+                      sortState={sortState}
+                    >
                       {t("manualDebts.table.columns.bookedAt")}
-                    </TableHead>
-                    <TableHead className={styles.headerCell}>
-                      {t("manualDebts.table.columns.date")}
-                    </TableHead>
-                    <TableHead className={styles.headerCell}>
+                    </SortableTableHead>
+                    <SortableTableHead
+                      className={styles.headerStickyContext}
+                      label={t("manualDebts.table.columns.description")}
+                      onSort={handleSort}
+                      sortKey="description"
+                      sortState={sortState}
+                    >
                       {t("manualDebts.table.columns.description")}
-                    </TableHead>
-                    <TableHead className={styles.headerNumber}>
+                    </SortableTableHead>
+                    {tableView === "full" ? (
+                      <SortableTableHead
+                        className={styles.headerCell}
+                        label={t("manualDebts.table.columns.date")}
+                        onSort={handleSort}
+                        sortKey="createdAt"
+                        sortState={sortState}
+                      >
+                        {t("manualDebts.table.columns.date")}
+                      </SortableTableHead>
+                    ) : null}
+                    <SortableTableHead
+                      className={cn(
+                        styles.headerNumber,
+                        styles.groupStart,
+                      )}
+                      label={t("manualDebts.table.columns.customerPaid")}
+                      onSort={handleSort}
+                      sortKey="customerPaid"
+                      sortState={sortState}
+                    >
                       {t("manualDebts.table.columns.customerPaid")}
-                    </TableHead>
-                    <TableHead className={styles.headerNumber}>
-                      {t("manualDebts.table.columns.discount")}
-                    </TableHead>
-                    <TableHead className={styles.headerNumber}>
-                      {t("manualDebts.table.columns.evPrice")}
-                    </TableHead>
-                    <TableHead className={styles.headerNumber}>
-                      {t("manualDebts.table.columns.astPrice")}
-                    </TableHead>
-                    <TableHead className={styles.headerNumber}>
-                      {t("manualDebts.table.columns.thfPrice")}
-                    </TableHead>
-                    <TableHead className={styles.headerNumber}>
-                      {t("manualDebts.table.columns.webPrice")}
-                    </TableHead>
-                    <TableHead className={styles.headerNumber}>
-                      {t("manualDebts.table.columns.insurancePrice")}
-                    </TableHead>
-                    <TableHead className={styles.headerNumber}>
-                      {t("manualDebts.table.columns.income")}
-                    </TableHead>
-                    <TableHead className={styles.headerNumber}>
-                      {t("manualDebts.table.columns.payment")}
-                    </TableHead>
-                    <TableHead className={styles.headerNote}>
-                      {t("manualDebts.table.columns.note")}
-                    </TableHead>
+                    </SortableTableHead>
+                    {tableView === "full" ? (
+                      <>
+                        <SortableTableHead
+                          className={styles.headerNumber}
+                          label={t("manualDebts.table.columns.discount")}
+                          onSort={handleSort}
+                          sortKey="discount"
+                          sortState={sortState}
+                        >
+                          {t("manualDebts.table.columns.discount")}
+                        </SortableTableHead>
+                        <SortableTableHead
+                          className={cn(
+                            styles.headerNumber,
+                            styles.groupStart,
+                          )}
+                          label={t("manualDebts.table.columns.evPrice")}
+                          onSort={handleSort}
+                          sortKey="evPrice"
+                          sortState={sortState}
+                        >
+                          {t("manualDebts.table.columns.evPrice")}
+                        </SortableTableHead>
+                        <SortableTableHead
+                          className={styles.headerNumber}
+                          label={t("manualDebts.table.columns.astPrice")}
+                          onSort={handleSort}
+                          sortKey="astPrice"
+                          sortState={sortState}
+                        >
+                          {t("manualDebts.table.columns.astPrice")}
+                        </SortableTableHead>
+                        <SortableTableHead
+                          className={styles.headerNumber}
+                          label={t("manualDebts.table.columns.thfPrice")}
+                          onSort={handleSort}
+                          sortKey="thfPrice"
+                          sortState={sortState}
+                        >
+                          {t("manualDebts.table.columns.thfPrice")}
+                        </SortableTableHead>
+                        <SortableTableHead
+                          className={styles.headerNumber}
+                          label={t("manualDebts.table.columns.webPrice")}
+                          onSort={handleSort}
+                          sortKey="webPrice"
+                          sortState={sortState}
+                        >
+                          {t("manualDebts.table.columns.webPrice")}
+                        </SortableTableHead>
+                        <SortableTableHead
+                          className={styles.headerNumber}
+                          label={t("manualDebts.table.columns.insurancePrice")}
+                          onSort={handleSort}
+                          sortKey="insurancePrice"
+                          sortState={sortState}
+                        >
+                          {t("manualDebts.table.columns.insurancePrice")}
+                        </SortableTableHead>
+                      </>
+                    ) : null}
+                    <SortableTableHead
+                      className={cn(
+                        styles.headerNumber,
+                        styles.groupStart,
+                      )}
+                      label={t("manualDebts.table.columns.income")}
+                      onSort={handleSort}
+                      sortKey="income"
+                      sortState={sortState}
+                    >
+                      <span className={styles.headerWithHint}>
+                        {t("manualDebts.table.columns.income")}
+                        <Tooltip
+                          content={t("manualDebts.table.incomeAutoCalculateTooltip")}
+                          hasHoverIndication={false}
+                          placement="above"
+                        >
+                          <span
+                            aria-label={t("manualDebts.table.incomeAutoCalculateTooltip")}
+                            className={styles.tooltipTrigger}
+                            tabIndex={0}
+                          >
+                            <Info aria-hidden="true" className={patterns.iconCompact} />
+                          </span>
+                        </Tooltip>
+                      </span>
+                    </SortableTableHead>
+                    {tableView === "full" ? (
+                      <>
+                        <SortableTableHead
+                          className={styles.headerNumber}
+                          label={t("manualDebts.table.columns.paymentAmount")}
+                          onSort={handleSort}
+                          sortKey="paymentAmount"
+                          sortState={sortState}
+                        >
+                          {t("manualDebts.table.columns.paymentAmount")}
+                        </SortableTableHead>
+                        <SortableTableHead
+                          className={cn(styles.headerNote, styles.groupStart)}
+                          label={t("manualDebts.table.columns.note")}
+                          onSort={handleSort}
+                          sortKey="note"
+                          sortState={sortState}
+                        >
+                          {t("manualDebts.table.columns.note")}
+                        </SortableTableHead>
+                      </>
+                    ) : null}
+                    <SortableTableHead
+                      className={styles.headerPaymentMethod}
+                      label={t("manualDebts.table.columns.paymentMethod")}
+                      onSort={handleSort}
+                      sortKey="paymentMethod"
+                      sortState={sortState}
+                    >
+                      {t("manualDebts.table.columns.paymentMethod")}
+                    </SortableTableHead>
                     <TableHead className={styles.headerStickyRight}>
                       {t("manualDebts.table.columns.actions")}
                     </TableHead>
@@ -1560,7 +2543,7 @@ export function ManualDebtInputClient({
                 <TableBody>
                   {filteredRows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={14}>
+                      <TableCell colSpan={tableView === "full" ? 15 : 6}>
                         <EmptyState
                           icon={ReceiptText}
                           message={t("manualDebts.table.empty")}
@@ -1569,7 +2552,12 @@ export function ManualDebtInputClient({
                     </TableRow>
                   ) : (
                     filteredRows.map((row) => (
-                      <ManualDebtTableRow key={row.id} row={row} />
+                      <ManualDebtTableRow
+                        key={row.id}
+                        onViewDetails={setSelectedRow}
+                        row={row}
+                        tableView={tableView}
+                      />
                     ))
                   )}
                 </TableBody>
@@ -1577,7 +2565,14 @@ export function ManualDebtInputClient({
             </div>
           </Panel>
         </div>
-      </div>
+      <ManualDebtDetailsDrawer
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedRow(null)
+          }
+        }}
+        row={selectedRow}
+      />
     </div>
   )
 }

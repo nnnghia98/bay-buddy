@@ -134,7 +134,11 @@ def _validate_linked_ticket(
         )
 
 
-def _ensure_transaction_is_mutable(transaction: Transaction) -> None:
+def _ensure_transaction_is_mutable(
+    transaction: Transaction,
+    *,
+    allow_ticket_method_correction: bool = False,
+) -> None:
     if transaction.is_invoiced or transaction.invoice_id is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -143,6 +147,7 @@ def _ensure_transaction_is_mutable(transaction: Transaction) -> None:
     if (
         transaction.category == TransactionCategory.TICKET_PURCHASE
         and transaction.linked_ticket_id is not None
+        and not allow_ticket_method_correction
     ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -346,7 +351,16 @@ def update_transaction_for_admin(
             detail="Transaction not found.",
         )
 
-    _ensure_transaction_is_mutable(transaction)
+    update_data = payload.model_dump(exclude_unset=True)
+    allow_ticket_method_correction = (
+        transaction.category == TransactionCategory.TICKET_PURCHASE
+        and transaction.linked_ticket_id is not None
+        and set(update_data) == {"method"}
+    )
+    _ensure_transaction_is_mutable(
+        transaction,
+        allow_ticket_method_correction=allow_ticket_method_correction,
+    )
     customer = _get_customer_or_404(session, transaction.customer_id)
 
     old_delta = get_transaction_balance_delta(
@@ -355,7 +369,6 @@ def update_transaction_for_admin(
         transaction_type=transaction.type,
         linked_ticket_id=transaction.linked_ticket_id,
     )
-    update_data = payload.model_dump(exclude_unset=True)
 
     if "linked_ticket_id" in update_data and update_data["linked_ticket_id"] is not None:
         _validate_linked_ticket(

@@ -77,7 +77,7 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
 
         {invoices.length === 0 ? (
           <EmptyState
-            icon={FileText}
+            iconName="fileText"
             message={t("financeDocuments.invoices.list.emptyList")}
           />
         ) : (

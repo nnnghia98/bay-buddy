@@ -1,0 +1,7 @@
+.content {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--spacing-2);
+  white-space: inherit;
+}
