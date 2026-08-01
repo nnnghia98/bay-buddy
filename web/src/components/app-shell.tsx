@@ -8,7 +8,6 @@ import {
   DropdownMenu,
   DropdownMenuItem,
 } from "@astryxdesign/core/DropdownMenu"
-import { HStack } from "@astryxdesign/core/HStack"
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout"
 import { MobileNav, MobileNavToggle } from "@astryxdesign/core/MobileNav"
 import { SideNav, SideNavHeading, SideNavItem, SideNavSection } from "@astryxdesign/core/SideNav"
@@ -461,18 +460,21 @@ export function AppShell({ children }: AppShellProps) {
     <AstryxAppShell
       contentPadding={0}
       height="auto"
-      mobileNav={
-        <MobileNav
-          header="Bay Buddy"
-          label={t("appShell.navigationAria")}
-          side="start"
-        >
-          <MobileShellNavigation
-            currentUserRole={userQuery.data?.role}
-            pathname={pathname}
-          />
-        </MobileNav>
-      }
+      mobileNav={{
+        content: (
+          <MobileNav
+            header="Bay Buddy"
+            label={t("appShell.navigationAria")}
+            side="start"
+          >
+            <MobileShellNavigation
+              currentUserRole={userQuery.data?.role}
+              pathname={pathname}
+            />
+          </MobileNav>
+        ),
+        hasToggle: false,
+      }}
       sideNav={
         <SideNav
           collapsible={{
@@ -490,26 +492,24 @@ export function AppShell({ children }: AppShellProps) {
       topNav={
         <TopNav
           label={t("appShell.topNavigationAria")}
+          heading={<MobileNavToggle label={t("appShell.mobileMenuAria")} />}
           startContent={
-            <HStack align="center" gap={2}>
-              <MobileNavToggle label={t("appShell.mobileMenuAria")} />
-              <Breadcrumbs label={t("appShell.breadcrumbAria")} variant="supporting">
-                {breadcrumbs.map((crumb, index) => (
-                  <BreadcrumbItem
-                    as={Link}
-                    href={
-                      index === breadcrumbs.length - 1
-                        ? undefined
-                        : crumb.href
-                    }
-                    isCurrent={index === breadcrumbs.length - 1}
-                    key={`${crumb.href}-${crumb.label}`}
-                  >
-                    {crumb.label}
-                  </BreadcrumbItem>
-                ))}
-              </Breadcrumbs>
-            </HStack>
+            <Breadcrumbs label={t("appShell.breadcrumbAria")} variant="supporting">
+              {breadcrumbs.map((crumb, index) => (
+                <BreadcrumbItem
+                  as={Link}
+                  href={
+                    index === breadcrumbs.length - 1
+                      ? undefined
+                      : crumb.href
+                  }
+                  isCurrent={index === breadcrumbs.length - 1}
+                  key={`${crumb.href}-${crumb.label}`}
+                >
+                  {crumb.label}
+                </BreadcrumbItem>
+              ))}
+            </Breadcrumbs>
           }
           endContent={
             <DropdownMenu
