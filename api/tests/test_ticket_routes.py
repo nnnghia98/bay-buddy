@@ -234,6 +234,7 @@ def test_confirm_ticket_records_optional_payment_atomically(
         "/api/v1/tickets/confirm",
         json=_confirm_payload()
         | {
+            "payment_method": "AST",
             "payment": {
                 "amount": 500000,
                 "method": "AST",
@@ -256,6 +257,12 @@ def test_confirm_ticket_records_optional_payment_atomically(
             select(Transaction).where(Transaction.linked_ticket_id == ticket.id)
         ).all()
         assert len(transactions) == 2
+        charge = next(
+            transaction
+            for transaction in transactions
+            if transaction.category == TransactionCategory.TICKET_PURCHASE
+        )
+        assert charge.method == "AST"
 
         payment = next(
             transaction
@@ -267,6 +274,32 @@ def test_confirm_ticket_records_optional_payment_atomically(
         assert payment.method == "AST"
         assert payment.note == "Payment recorded with manual debt - ticket ABC123"
         assert payment.occurred_at == payment_occurred_at.replace(tzinfo=None)
+
+
+def test_confirm_ticket_preserves_selected_method_without_payment_amount(
+    test_client,
+    test_engine,
+):
+    response = test_client.post(
+        "/api/v1/tickets/confirm",
+        json=_confirm_payload() | {"payment_method": " AST "},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()["data"]
+    assert payload["payment_transaction_id"] is None
+    assert payload["customer"]["balance"] == pytest.approx(1200000)
+
+    with Session(test_engine) as session:
+        ticket = session.get(Ticket, uuid.UUID(payload["ticket"]["id"]))
+        assert ticket is not None
+
+        transactions = session.exec(
+            select(Transaction).where(Transaction.linked_ticket_id == ticket.id)
+        ).all()
+        assert len(transactions) == 1
+        assert transactions[0].category == TransactionCategory.TICKET_PURCHASE
+        assert transactions[0].method == "AST"
 
 
 def test_confirm_ticket_allows_shared_ticket_numbers_for_return_flights(

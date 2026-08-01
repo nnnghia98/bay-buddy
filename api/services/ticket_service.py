@@ -12,7 +12,8 @@ Flow of create_ticket_with_transaction:
   2. Validate and compute pricing fields.
   3. Persist Ticket with status = CONFIRMED inside a DB transaction.
      Multiple tickets may share the same PNR in group bookings.
-  4. Create a CHARGE Transaction linked to the customer AND the ticket.
+  4. Create a CHARGE Transaction linked to the customer AND the ticket, using
+     the selected payment method when one is provided.
   5. Optionally create a PAYMENT Transaction from the manual debt workbench.
   6. Apply both transaction effects to customer.balance.
   All mutations are committed atomically; any failure triggers a full rollback.
@@ -222,6 +223,14 @@ class TicketConfirmPayload(BaseModel):
         default=None,
         description="Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price).",
     )
+    payment_method: Optional[str] = Field(
+        default=None,
+        max_length=100,
+        description=(
+            "Optional payment method selected for this debt. It is stored on "
+            "the ticket charge when no payment amount is recorded."
+        ),
+    )
     payment: Optional[TicketPaymentPayload] = Field(
         default=None,
         description=(
@@ -286,6 +295,7 @@ class TicketConfirmPayload(BaseModel):
         self.fare_class = (self.fare_class or "").strip() or None
         self.departure_place = (self.departure_place or "").strip() or None
         self.arrival_place = (self.arrival_place or "").strip() or None
+        self.payment_method = (self.payment_method or "").strip() or None
 
         departure_code = (self.departure_code or "").strip().upper() or None
         arrival_code = (self.arrival_code or "").strip().upper() or None
@@ -705,7 +715,7 @@ def create_ticket_with_transaction(
         amount=selling_price,
         type=TransactionType.CHARGE,
         category=TransactionCategory.TICKET_PURCHASE,
-        method="Ticket",
+        method=payload.payment_method or "Ticket",
         note=(
             f"Auto-debt for ticket {payload.pnr or ticket.id} – {payload.itinerary} "
             f"on {payload.flight_date.date()} by user {actor_user_id}"

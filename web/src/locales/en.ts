@@ -491,7 +491,7 @@ export default {
       paymentAmountPlaceholder: "Leave blank when unpaid",
       paymentMethodPlaceholder: "Choose payment type",
       paymentHint:
-        "Choose a payment type to enable the payment date. The payment is linked to the new ticket and saved with the debt.",
+        "Choose a payment type to enable the payment date. You can leave the amount blank when unpaid; the method is still saved with the debt, while the payment date is saved only with an amount.",
       paymentNote: "Payment recorded with manual debt",
       unsavedConfirm: "Discard the unsaved debt details?",
       fields: {
@@ -624,8 +624,6 @@ export default {
       sellingPriceMin: "Selling price must be at least 0.",
       discountMin: "Discount must be at least 0.",
       paymentAmountMin: "Payment must be at least 0.",
-      paymentAmountRequired:
-        "Enter a payment amount after choosing a payment type.",
       paymentMethodRequired:
         "Choose a payment type when entering a payment amount.",
       sellingPriceFormula: "Selling price must be greater than or equal to net price.",

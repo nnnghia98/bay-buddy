@@ -21,7 +21,6 @@ const defaultManualDebtValidationMessages: ManualDebtValidationMessages = {
   sellingPriceMin: "Selling price must be at least 0.",
   discountMin: "Discount must be at least 0.",
   paymentAmountMin: "Payment must be at least 0.",
-  paymentAmountRequired: "Enter a payment amount after choosing a payment type.",
   paymentMethodRequired: "Please choose a valid payment type.",
   sellingPriceFormula: "Selling price must be greater than or equal to net price.",
 }
@@ -45,7 +44,6 @@ export type ManualDebtValidationMessages = {
   sellingPriceMin: string
   discountMin: string
   paymentAmountMin: string
-  paymentAmountRequired: string
   paymentMethodRequired: string
   sellingPriceFormula: string
 }
@@ -69,7 +67,6 @@ type ManualDebtValidationKey =
   | "manualDebts.validation.sellingPriceMin"
   | "manualDebts.validation.discountMin"
   | "manualDebts.validation.paymentAmountMin"
-  | "manualDebts.validation.paymentAmountRequired"
   | "manualDebts.validation.paymentMethodRequired"
   | "manualDebts.validation.sellingPriceFormula"
 
@@ -161,7 +158,6 @@ export function getManualDebtValidationMessages(
     sellingPriceMin: t("manualDebts.validation.sellingPriceMin"),
     discountMin: t("manualDebts.validation.discountMin"),
     paymentAmountMin: t("manualDebts.validation.paymentAmountMin"),
-    paymentAmountRequired: t("manualDebts.validation.paymentAmountRequired"),
     paymentMethodRequired: t("manualDebts.validation.paymentMethodRequired"),
     sellingPriceFormula: t("manualDebts.validation.sellingPriceFormula"),
   }
@@ -270,15 +266,10 @@ export function createManualDebtFormSchema(
         return
       }
 
-      if (values.payment_amount <= 0) {
-        context.addIssue({
-          code: "custom",
-          message: messages.paymentAmountRequired,
-          path: ["payment_amount"],
-        })
-      }
-
-      if (values.payment_method === undefined) {
+      if (
+        (values.payment_amount > 0 || values.payment_date !== undefined) &&
+        values.payment_method === undefined
+      ) {
         context.addIssue({
           code: "custom",
           message: messages.paymentMethodRequired,

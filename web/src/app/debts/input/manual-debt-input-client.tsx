@@ -93,7 +93,6 @@ type SortKey =
   | "insurancePrice"
   | "income"
   | "paymentAmount"
-  | "note"
   | "paymentMethod"
 
 type SortState = {
@@ -248,8 +247,6 @@ function getRowSortValue(
       return row.ticket_true_income
     case "paymentAmount":
       return row.linked_payment_amount
-    case "note":
-      return row.linked_payment_note
     case "paymentMethod":
       return getRowPaymentMethod(row)
   }
@@ -281,7 +278,7 @@ function compareSortValues(
 }
 
 function getDefaultSortDirection(sortKey: SortKey): SortDirection {
-  return sortKey === "description" || sortKey === "note" || sortKey === "paymentMethod"
+  return sortKey === "description" || sortKey === "paymentMethod"
     ? "asc"
     : "desc"
 }
@@ -2578,15 +2575,9 @@ export function ManualDebtInputClient({
                     >
                       {t("manualDebts.table.columns.paymentMethod")}
                     </SortableTableHead>
-                    <SortableTableHead
-                      className={styles.headerNote}
-                      label={t("manualDebts.table.columns.note")}
-                      onSort={handleSort}
-                      sortKey="note"
-                      sortState={sortState}
-                    >
+                    <TableHead className={styles.headerNote}>
                       {t("manualDebts.table.columns.note")}
-                    </SortableTableHead>
+                    </TableHead>
                     <TableHead className={styles.headerStickyRight}>
                       {t("manualDebts.table.columns.actions")}
                     </TableHead>

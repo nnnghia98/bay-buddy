@@ -134,16 +134,28 @@ describe("manualDebtFormSchema", () => {
     }
   })
 
-  it("requires a payment amount when a type is selected", () => {
-    const result = manualDebtFormSchema.safeParse({
+  it("allows a selected payment type without an amount", () => {
+    const parsed = manualDebtFormSchema.parse({
       ...validManualDebtInput,
       payment_amount: "",
       payment_method: "AST",
     })
 
+    expect(parsed.payment_amount).toBe(0)
+    expect(parsed.payment_method).toBe("AST")
+  })
+
+  it("requires a payment type when a payment date is entered", () => {
+    const result = manualDebtFormSchema.safeParse({
+      ...validManualDebtInput,
+      payment_amount: "",
+      payment_method: "",
+      payment_date: "2026-07-28",
+    })
+
     expect(result.success).toBe(false)
     if (!result.success) {
-      expect(result.error.flatten().fieldErrors.payment_amount).toBeDefined()
+      expect(result.error.flatten().fieldErrors.payment_method).toBeDefined()
     }
   })
 

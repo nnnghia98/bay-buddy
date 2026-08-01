@@ -180,6 +180,7 @@ export async function createManualDebtFromFormData(
         values.web_price,
         values.insurance_price,
       ),
+      payment_method: values.payment_method ?? null,
       payment,
     }),
     cache: "no-store",

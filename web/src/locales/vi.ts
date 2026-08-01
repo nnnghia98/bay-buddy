@@ -491,7 +491,7 @@ export default {
       paymentAmountPlaceholder: "Để trống nếu chưa thanh toán",
       paymentMethodPlaceholder: "Chọn loại thanh toán",
       paymentHint:
-        "Chọn loại thanh toán để bật ngày thanh toán. Khoản thanh toán sẽ được liên kết với vé mới và lưu cùng công nợ.",
+        "Chọn loại thanh toán để bật ngày thanh toán. Có thể để trống số tiền nếu chưa thanh toán; phương thức vẫn được lưu cùng công nợ, còn ngày thanh toán chỉ lưu khi có số tiền.",
       paymentNote: "Thanh toán khi ghi nhận công nợ",
       unsavedConfirm: "Bỏ các thông tin công nợ chưa lưu?",
       fields: {
@@ -624,8 +624,6 @@ export default {
       sellingPriceMin: "Giá bán phải lớn hơn hoặc bằng 0.",
       discountMin: "Chiết khấu phải lớn hơn hoặc bằng 0.",
       paymentAmountMin: "Số tiền thanh toán phải lớn hơn hoặc bằng 0.",
-      paymentAmountRequired:
-        "Vui lòng nhập số tiền khi đã chọn loại thanh toán.",
       paymentMethodRequired:
         "Vui lòng chọn loại thanh toán khi nhập số tiền.",
       sellingPriceFormula: "Giá bán phải lớn hơn hoặc bằng giá gốc.",

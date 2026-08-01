@@ -109,6 +109,7 @@ describe("createManualDebtFromFormData", () => {
       note: "Thanh toán khi ghi nhận công nợ",
       occurred_at: "2026-07-28T00:00:00.000Z",
     })
+    expect(payload.payment_method).toBe("THF")
     expect(result).toMatchObject({
       status: "success",
       message: "Debt and payment saved",
@@ -132,13 +133,18 @@ describe("createManualDebtFromFormData", () => {
     vi.stubGlobal("fetch", fetchSpy)
 
     const result = await createManualDebtFromFormData(
-      createFormData({ paymentAmount: "" }),
+      createFormData({
+        paymentAmount: "",
+        paymentDate: "2026-07-28",
+        paymentMethod: "AST",
+      }),
       translate,
     )
 
     const [, request] = fetchSpy.mock.calls[0] as [string, RequestInit]
     const payload = JSON.parse(String(request.body))
 
+    expect(payload.payment_method).toBe("AST")
     expect(payload.payment).toBeNull()
     expect(result.message).toBe("Debt saved")
   })

@@ -225,10 +225,12 @@ Bay Buddy follows the project's Next.js App Router patterns, Bay Buddy DNA, and 
 
 The `/debts/input` workbench may include an optional payment amount, method, and
 real-world payment date. The method starts empty; choosing one enables the optional
-date input. When supplied, the ticket charge and linked payment must be committed
-atomically by the ticket confirmation flow so a partial save cannot create only one
-side. Ticket rows may show the total linked payment and its note; tickets without a
-linked payment keep those cells empty.
+date input. A selected method is stored on the ticket charge even when no amount is
+entered; an amount greater than zero additionally creates a linked payment. The
+ticket charge and linked payment must be committed atomically by the ticket
+confirmation flow so a partial save cannot create only one side. Ticket rows may
+show the total linked payment and its note; tickets without a linked payment keep
+those cells empty while still showing a selected charge method.
 
 ### Workbook Editor v2 integrity rules
 
