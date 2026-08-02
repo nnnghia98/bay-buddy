@@ -21,6 +21,7 @@ import {
 import { expireStoredSession } from "@/lib/auth-storage"
 import { SESSION_EXPIRED_LOGIN_PATH } from "@/lib/auth-token"
 import { formatCurrency } from "@/lib/formatters"
+import { paymentMethodOptions } from "@/schemas"
 import {
   buildReportWorkbookBytes,
   createXlsxBlob,
@@ -181,7 +182,18 @@ function getRowPaymentMethod(row: LedgerReportRow): string {
     return row.linked_payment_methods.join(", ")
   }
 
-  return row.transaction_method ?? ""
+  return paymentMethodOptions.includes(
+    row.transaction_method as (typeof paymentMethodOptions)[number],
+  )
+    ? row.transaction_method ?? ""
+    : ""
+}
+
+function getDisplayedPaymentMethod(
+  row: LedgerReportRow,
+  unpaidLabel: string,
+): string {
+  return getRowPaymentMethod(row) || unpaidLabel
 }
 
 function normalizeSearch(value: string): string {
@@ -193,7 +205,7 @@ function normalizeSearch(value: string): string {
     .replace(/đ/g, "d")
 }
 
-function getRowSearchText(row: LedgerReportRow): string {
+function getRowSearchText(row: LedgerReportRow, unpaidLabel: string): string {
   return normalizeSearch(
     [
       row.customer_name,
@@ -205,7 +217,7 @@ function getRowSearchText(row: LedgerReportRow): string {
       row.airline,
       row.route,
       row.ticket_status,
-      getRowPaymentMethod(row),
+      getDisplayedPaymentMethod(row, unpaidLabel),
       row.linked_payment_note,
       row.booked_at ? formatDate(row.booked_at) : "",
       formatDate(row.created_at),
@@ -292,8 +304,13 @@ function getWorkbookCellValue(
   row: LedgerReportRow,
   column: ColumnDefinition,
   index: number,
+  unpaidLabel: string,
 ): ReportWorkbookCell {
   const value = column.getValue(row, index)
+
+  if (column.key === "payment_method" && !value) {
+    return unpaidLabel
+  }
 
   return column.align === "right"
     ? Number(value)
@@ -304,9 +321,12 @@ async function downloadExcelPreview(
   rows: LedgerReportRow[],
   selectedColumns: ColumnDefinition[],
   labels: Record<ColumnKey, string>,
+  unpaidLabel: string,
 ): Promise<void> {
   const workbookRows = rows.map((row, index) =>
-    selectedColumns.map((column) => getWorkbookCellValue(row, column, index)),
+    selectedColumns.map((column) =>
+      getWorkbookCellValue(row, column, index, unpaidLabel),
+    ),
   )
   const numericColumnIndexes = selectedColumns.flatMap((column, index) =>
     column.align === "right" ? [index] : [],
@@ -383,6 +403,7 @@ export function LedgerReportClient({
   const [isExporting, setIsExporting] = React.useState(false)
   const [filterError, setFilterError] = React.useState<string | null>(null)
   const [exportError, setExportError] = React.useState<string | null>(null)
+  const unpaidPaymentLabel = t("report.paymentNotRecorded")
 
   const columnLabels = React.useMemo(
     () =>
@@ -406,9 +427,9 @@ export function LedgerReportClient({
     }
 
     return reportRows.filter((row) =>
-      getRowSearchText(row).includes(normalizedQuery),
+      getRowSearchText(row, unpaidPaymentLabel).includes(normalizedQuery),
     )
-  }, [reportRows, searchValue])
+  }, [reportRows, searchValue, unpaidPaymentLabel])
   const summary = React.useMemo(
     () => getReportSummary(filteredRows),
     [filteredRows],
@@ -479,7 +500,12 @@ export function LedgerReportClient({
     setExportError(null)
 
     try {
-      await downloadExcelPreview(filteredRows, visibleColumns, columnLabels)
+      await downloadExcelPreview(
+        filteredRows,
+        visibleColumns,
+        columnLabels,
+        unpaidPaymentLabel,
+      )
     } catch {
       setExportError(t("report.exportFailure"))
     } finally {
@@ -679,7 +705,11 @@ export function LedgerReportClient({
                 filteredRows.map((row, rowIndex) => (
                   <TableRow key={row.id}>
                     {visibleColumns.map((column) => {
-                      const value = formatCellValue(row, column.key, rowIndex)
+                      const rawValue = formatCellValue(row, column.key, rowIndex)
+                      const value =
+                        column.key === "payment_method" && !rawValue
+                          ? unpaidPaymentLabel
+                          : rawValue
 
                       return (
                         <TableCell

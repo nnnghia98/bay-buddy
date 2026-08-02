@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { AppShell as AstryxAppShell, useAppShellMobile } from "@astryxdesign/core/AppShell"
-import { Avatar } from "@astryxdesign/core/Avatar"
 import { BreadcrumbItem, Breadcrumbs } from "@astryxdesign/core/Breadcrumbs"
 import {
   DropdownMenu,
@@ -514,7 +513,6 @@ export function AppShell({ children }: AppShellProps) {
           endContent={
             <DropdownMenu
               button={{
-                icon: <Avatar name={userName} size="md" tooltip={false} />,
                 label: `${userName} · ${userRole}`,
                 variant: "ghost",
               }}

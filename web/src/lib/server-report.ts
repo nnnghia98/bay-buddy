@@ -229,7 +229,10 @@ export function mapLedgerToReportRows(
       ticket_status: ticket?.status ?? null,
       transaction_id: transaction?.id ?? null,
       transaction_category: transaction?.category ?? null,
-      transaction_method: transaction?.method ?? null,
+      transaction_method:
+        ticket && transaction?.category === "TICKET_PURCHASE"
+          ? ticketPaymentMethod
+          : transaction?.method ?? null,
       evidence_url: transaction?.evidence_url ?? null,
       linked_payment_amount: linkedPaymentSummary?.amount ?? null,
       linked_payment_note:

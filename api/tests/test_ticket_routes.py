@@ -247,6 +247,24 @@ def test_confirm_ticket_allows_null_pnr(
         assert f"ticket {ticket.id}" in transaction.note
 
 
+def test_confirm_ticket_leaves_ticket_charge_method_empty_without_payment(
+    test_client,
+    test_engine,
+):
+    response = test_client.post("/api/v1/tickets/confirm", json=_confirm_payload())
+
+    assert response.status_code == 201
+
+    with Session(test_engine) as session:
+        ticket_id = uuid.UUID(response.json()["data"]["ticket"]["id"])
+        transaction = session.exec(
+            select(Transaction).where(Transaction.linked_ticket_id == ticket_id)
+        ).one()
+
+        assert transaction.category == TransactionCategory.TICKET_PURCHASE
+        assert transaction.method is None
+
+
 def test_confirm_ticket_records_optional_payment_atomically(
     test_client,
     test_engine,

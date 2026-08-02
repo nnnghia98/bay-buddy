@@ -45,7 +45,7 @@ const TransactionBaseSchema = z.object({
   category: TransactionCategorySchema.default("TICKET_PURCHASE"),
 
   /**
-   * Payment method label.
+   * Payment method label for manually created transactions.
    * Maps to Python: method
    * Examples: "Bank Transfer", "Cash", "Momo"
    */
@@ -92,6 +92,15 @@ export type TransactionCreate = z.infer<typeof TransactionCreateSchema>;
 // ---------------------------------------------------------------------------
 
 export const TransactionReadSchema = TransactionBaseSchema.extend({
+  /**
+   * Ticket debt rows may have no payment method until a payment is recorded.
+   */
+  method: z
+    .string()
+    .min(1, "Payment method must not be empty.")
+    .max(100, "Method must be at most 100 characters.")
+    .nullable(),
+
   /** UUID assigned by the backend. Read-only. */
   id: z.string().uuid(),
 

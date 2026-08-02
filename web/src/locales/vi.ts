@@ -396,6 +396,7 @@ export default {
     exporting: "Đang xuất...",
     exportFailure: "Không thể tạo tệp Excel.",
     emptyValue: "Chưa có",
+    paymentNotRecorded: "Chưa thanh toán",
     empty: "Chưa có dòng công nợ vé nào.",
     searchEmpty: "Không tìm thấy dòng công nợ phù hợp.",
     filters: {

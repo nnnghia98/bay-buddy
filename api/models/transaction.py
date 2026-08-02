@@ -50,9 +50,14 @@ class TransactionBase(SQLModel):
             "TICKET_PURCHASE | PAYMENT | DISCOUNT | ADDITIONAL_FEE | REFUND."
         ),
     )
-    method: str = Field(
+    method: Optional[str] = Field(
+        default=None,
         max_length=100,
-        description='Payment method label, e.g. "Bank Transfer", "Cash", "Momo".',
+        nullable=True,
+        description=(
+            "Optional payment method label. Ticket debt rows without a payment "
+            "method keep this field null."
+        ),
     )
     note: Optional[str] = Field(
         default=None,
@@ -172,7 +177,11 @@ class Transaction(TransactionBase, table=True):
 
 class TransactionCreate(TransactionBase):
     """Payload accepted by POST /transactions."""
-    pass
+
+    method: str = Field(
+        max_length=100,
+        description='Payment method label, e.g. "Bank Transfer", "Cash", "Momo".',
+    )
 
 
 class TransactionRead(TransactionBase):

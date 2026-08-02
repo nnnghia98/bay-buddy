@@ -486,7 +486,7 @@ def get_customer_ledger(
                 id=transaction.id,
                 entry_type=entry_type,
                 created_at=_normalize_ledger_datetime(transaction.created_at),
-                content=(transaction.note or transaction.method).strip(),
+                content=(transaction.note or transaction.method or "").strip(),
                 amount=amount,
                 running_balance=0,
                 transaction=TransactionRead.model_validate(transaction),

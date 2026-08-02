@@ -753,7 +753,7 @@ function LedgerRecordCorrectionDialog({
                   <Input
                     id={`method-${entry.id}`}
                     name="method"
-                    defaultValue={transaction.method}
+                    defaultValue={transaction.method ?? ""}
                   />
                 </div>
               </div>

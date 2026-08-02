@@ -715,7 +715,7 @@ def create_ticket_with_transaction(
         amount=selling_price,
         type=TransactionType.CHARGE,
         category=TransactionCategory.TICKET_PURCHASE,
-        method=payload.payment_method or "Ticket",
+        method=payload.payment_method,
         note=(
             f"Auto-debt for ticket {payload.pnr or ticket.id} – {payload.itinerary} "
             f"on {payload.flight_date.date()} by user {actor_user_id}"

@@ -396,6 +396,7 @@ export default {
     exporting: "Exporting...",
     exportFailure: "Unable to create the Excel file.",
     emptyValue: "Not set",
+    paymentNotRecorded: "Not paid",
     empty: "No ticket debt rows are available.",
     searchEmpty: "No matching debt rows were found.",
     filters: {

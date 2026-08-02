@@ -10,4 +10,8 @@ describe("transaction note schemas", () => {
     expect(TransactionReadSchema.shape.note.safeParse(null).success).toBe(true)
     expect(TransactionUpdateSchema.shape.note.safeParse(null).success).toBe(true)
   })
+
+  it("accepts an unpaid ticket transaction without a method", () => {
+    expect(TransactionReadSchema.shape.method.safeParse(null).success).toBe(true)
+  })
 })
