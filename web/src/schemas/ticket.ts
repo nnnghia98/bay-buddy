@@ -27,6 +27,7 @@
 import { z } from "zod";
 import { calculateServiceFee } from "@/lib/finance-core";
 import { AirlineSchema, TicketStatusSchema } from "./enums";
+import { PaginationSchema } from "./pagination";
 
 // ---------------------------------------------------------------------------
 // Shared base – fields common to all ticket schema variants
@@ -197,6 +198,13 @@ export const TicketReadSchema = TicketBaseSchema.extend({
 });
 
 export type TicketRead = z.infer<typeof TicketReadSchema>;
+
+export const TicketPageSchema = z.object({
+  items: z.array(TicketReadSchema),
+  pagination: PaginationSchema,
+});
+
+export type TicketPage = z.infer<typeof TicketPageSchema>;
 
 // ---------------------------------------------------------------------------
 // TicketUpdate – PATCH /tickets/:id (all fields optional)

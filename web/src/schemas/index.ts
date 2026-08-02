@@ -71,6 +71,7 @@ export type {
 export {
   CustomerCreateSchema,
   CustomerDirectoryItemSchema,
+  CustomerDirectoryPageSchema,
   CustomerReadSchema,
   CustomerUpdateSchema,
   CustomerLedgerSchema,
@@ -80,6 +81,7 @@ export {
 export type {
   CustomerCreate,
   CustomerDirectoryItem,
+  CustomerDirectoryPage,
   CustomerLedger,
   CustomerRead,
   CustomerUpdate,
@@ -87,15 +89,18 @@ export type {
   LedgerEntry,
   RecordPayment,
 } from "./customer";
+export { PaginationSchema } from "./pagination";
+export type { Pagination } from "./pagination";
 
 // Ticket
 export {
   TicketCreateSchema,
+  TicketPageSchema,
   TicketReadSchema,
   TicketUpdateSchema,
   computeServiceFee,
 } from "./ticket";
-export type { TicketCreate, TicketRead, TicketUpdate } from "./ticket";
+export type { TicketCreate, TicketPage, TicketRead, TicketUpdate } from "./ticket";
 
 // Manual debt
 export {
@@ -155,11 +160,13 @@ export type {
 // Transaction
 export {
   TransactionCreateSchema,
+  TransactionPageSchema,
   TransactionReadSchema,
   TransactionUpdateSchema,
 } from "./transaction";
 export type {
   TransactionCreate,
+  TransactionPage,
   TransactionRead,
   TransactionUpdate,
 } from "./transaction";

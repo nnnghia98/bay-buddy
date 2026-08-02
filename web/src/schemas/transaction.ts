@@ -10,6 +10,7 @@
 
 import { z } from "zod";
 import { TransactionCategorySchema, TransactionTypeSchema } from "./enums";
+import { PaginationSchema } from "./pagination";
 
 // ---------------------------------------------------------------------------
 // Shared base
@@ -119,6 +120,13 @@ export const TransactionReadSchema = TransactionBaseSchema.extend({
 });
 
 export type TransactionRead = z.infer<typeof TransactionReadSchema>;
+
+export const TransactionPageSchema = z.object({
+  items: z.array(TransactionReadSchema),
+  pagination: PaginationSchema,
+});
+
+export type TransactionPage = z.infer<typeof TransactionPageSchema>;
 
 // ---------------------------------------------------------------------------
 // TransactionUpdate – PATCH /transactions/:id (all fields optional)

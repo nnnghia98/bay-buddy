@@ -14,7 +14,11 @@ from models.invoice import (
     InvoiceUpdate,
 )
 from models.quote import QuoteCreate
-from services.finance_service import list_ticket_debt_rows
+from services.finance_service import (
+    list_ticket_debt_export_rows,
+    list_ticket_debt_page,
+    list_ticket_debt_rows,
+)
 from services.invoice_service import (
     convert_quote_to_invoice,
     create_invoice,
@@ -33,9 +37,37 @@ router = APIRouter()
 async def list_ticket_debt_rows_route(
     session: SessionDep,
     current_user: CurrentUserDep,
+    page: int | None = Query(default=None, ge=1),
+    page_size: int | None = Query(default=None, ge=1, le=100),
+    q: str | None = Query(default=None, max_length=100),
+    from_value: str | None = Query(default=None, alias="from"),
+    to_value: str | None = Query(default=None, alias="to"),
+    export_all: bool = Query(default=False, alias="all"),
 ):
-    """Return every active confirmed ticket as one table-ready debt row."""
+    """Return debt rows, optionally as one filtered paginated page."""
     del current_user
+
+    if export_all:
+        return success_response(
+            list_ticket_debt_export_rows(
+                session=session,
+                query=q,
+                from_value=from_value,
+                to_value=to_value,
+            )
+        )
+
+    if page is not None or page_size is not None or q or from_value or to_value:
+        page_data = list_ticket_debt_page(
+            session=session,
+            page=page,
+            page_size=page_size,
+            query=q,
+            from_value=from_value,
+            to_value=to_value,
+        )
+        return success_response(page_data)
+
     rows = list_ticket_debt_rows(session=session)
     return success_response([row.model_dump(mode="json") for row in rows])
 

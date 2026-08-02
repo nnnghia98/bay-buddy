@@ -7,6 +7,7 @@ import {
   getEnvelopeData,
 } from "@/lib/server-api"
 import { paymentMethodOptions, type CustomerLedger } from "@/schemas"
+import { PaginationSchema } from "@/schemas/pagination"
 
 export type LedgerReportRow = {
   id: string
@@ -90,6 +91,27 @@ const ticketDebtReportRowSchema = z.object({
 })
 
 const ticketDebtReportRowsSchema = z.array(ticketDebtReportRowSchema)
+const ticketDebtReportSummarySchema = z.object({
+  rows: z.number().int().nonnegative(),
+  customers: z.number().int().nonnegative(),
+  total_selling_price: z.number(),
+  total_income: z.number(),
+})
+const ticketDebtReportPageSchema = z.object({
+  items: ticketDebtReportRowsSchema,
+  pagination: PaginationSchema,
+  summary: ticketDebtReportSummarySchema,
+})
+
+export type TicketDebtReportSummary = z.infer<
+  typeof ticketDebtReportSummarySchema
+>
+
+export type TicketDebtReportPage = {
+  items: LedgerReportRow[]
+  pagination: z.infer<typeof PaginationSchema>
+  summary: TicketDebtReportSummary
+}
 
 function getTicketRoute(ticket: CustomerLedger["entries"][number]["ticket"]): string | null {
   if (!ticket) {
@@ -315,6 +337,58 @@ export async function fetchTicketDebtRows(
   return filterRowsByRange(rows, range).sort((first, second) =>
     second.created_at.localeCompare(first.created_at),
   )
+}
+
+export type TicketDebtPageQuery = LedgerReportRange & {
+  page?: number
+  page_size?: number
+  q?: string
+}
+
+export async function fetchTicketDebtPage(
+  query: TicketDebtPageQuery = {},
+): Promise<TicketDebtReportPage> {
+  const params = new URLSearchParams()
+  params.set("page", String(query.page ?? 1))
+  params.set("page_size", String(query.page_size ?? 50))
+  if (query.q?.trim()) {
+    params.set("q", query.q.trim())
+  }
+  if (query.from) {
+    params.set("from", query.from)
+  }
+  if (query.to) {
+    params.set("to", query.to)
+  }
+
+  const payload = await fetchAuthenticatedApiPayload(
+    `/finance/ticket-debts?${params.toString()}`,
+    "Unable to load ticket debts.",
+  )
+
+  return ticketDebtReportPageSchema.parse(getEnvelopeData(payload))
+}
+
+export async function fetchTicketDebtExportRows(
+  query: TicketDebtPageQuery = {},
+): Promise<LedgerReportRow[]> {
+  const params = new URLSearchParams({ all: "true" })
+  if (query.q?.trim()) {
+    params.set("q", query.q.trim())
+  }
+  if (query.from) {
+    params.set("from", query.from)
+  }
+  if (query.to) {
+    params.set("to", query.to)
+  }
+
+  const payload = await fetchAuthenticatedApiPayload(
+    `/finance/ticket-debts?${params.toString()}`,
+    "Unable to load ticket debt export.",
+  )
+
+  return ticketDebtReportRowsSchema.parse(getEnvelopeData(payload))
 }
 
 /** @deprecated Use fetchTicketDebtRows for global ticket debt rows. */

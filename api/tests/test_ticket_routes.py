@@ -224,6 +224,58 @@ def test_ticket_debt_report_returns_each_ticket_for_one_customer(
     assert all(row["entry_type"] == "ticket" for row in rows)
 
 
+def test_ticket_debt_report_supports_pagination(
+    test_client,
+):
+    first_response = test_client.post("/api/v1/tickets/confirm", json=_confirm_payload())
+    second_response = test_client.post(
+        "/api/v1/tickets/confirm",
+        json=_confirm_payload()
+        | {
+            "pnr": "DEF456",
+            "ticket_number": "7382319992102",
+            "passengers": ["TRAN THI B"],
+        },
+    )
+
+    assert first_response.status_code == 201
+    assert second_response.status_code == 201
+
+    response = test_client.get(
+        "/api/v1/finance/ticket-debts",
+        params={"page": 1, "page_size": 1},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()["data"]
+    assert len(payload["items"]) == 1
+    assert payload["pagination"] == {
+        "page": 1,
+        "page_size": 1,
+        "total": 2,
+        "total_pages": 2,
+        "has_next": True,
+    }
+    assert payload["summary"]["rows"] == 2
+
+
+def test_ticket_list_supports_search_pagination(test_client):
+    response = test_client.post("/api/v1/tickets/confirm", json=_confirm_payload())
+
+    assert response.status_code == 201
+
+    response = test_client.get(
+        "/api/v1/tickets",
+        params={"page": 1, "page_size": 1, "q": "ABC123"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()["data"]
+    assert len(payload["items"]) == 1
+    assert payload["items"][0]["pnr"] == "ABC123"
+    assert payload["pagination"]["total"] == 1
+
+
 def test_confirm_ticket_allows_null_pnr(
     test_client,
     test_engine,

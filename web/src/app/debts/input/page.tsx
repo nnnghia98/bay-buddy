@@ -1,12 +1,17 @@
 import { ManualDebtInputClient } from "@/app/debts/input/manual-debt-input-client"
-import { fetchCustomerDirectory } from "@/lib/server-customers"
-import { fetchTicketDebtRows } from "@/lib/server-report"
+import { fetchCustomerDirectoryPage } from "@/lib/server-customers"
+import { fetchTicketDebtPage } from "@/lib/server-report"
 
 export default async function ManualDebtInputPage() {
-  const [customers, reportRows] = await Promise.all([
-    fetchCustomerDirectory(10_000),
-    fetchTicketDebtRows(),
+  const [customerPage, reportPage] = await Promise.all([
+    fetchCustomerDirectoryPage({ page: 1, page_size: 50 }),
+    fetchTicketDebtPage({ page: 1, page_size: 50 }),
   ])
 
-  return <ManualDebtInputClient customers={customers} rows={reportRows} />
+  return (
+    <ManualDebtInputClient
+      customers={customerPage.items}
+      initialPage={reportPage}
+    />
+  )
 }

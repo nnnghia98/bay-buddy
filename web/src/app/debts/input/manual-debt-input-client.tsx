@@ -13,6 +13,8 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
+  ChevronLeft,
+  ChevronRight,
   ChevronsUpDown,
   CircleDollarSign,
   Eye,
@@ -36,7 +38,7 @@ import {
   EmptyState,
   Panel,
 } from "@/components/command-center"
-import { selectInputClassName } from "@/components/operations-ui"
+import { selectInputClassName, TableStateRow } from "@/components/operations-ui"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -49,6 +51,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
+import { expireStoredSession } from "@/lib/auth-storage"
+import { SESSION_EXPIRED_LOGIN_PATH } from "@/lib/auth-token"
 import {
   formatCurrency,
   formatCurrencyInput,
@@ -56,7 +60,11 @@ import {
   parseCurrencyInput,
   parseSignedCurrencyInput,
 } from "@/lib/formatters"
-import type { LedgerReportRow } from "@/lib/server-report"
+import { apiFetchData } from "@/lib/api"
+import type {
+  LedgerReportRow,
+  TicketDebtReportPage,
+} from "@/lib/server-report"
 import { cn } from "@/lib/utils"
 import {
   AIRLINE_LABELS,
@@ -64,6 +72,7 @@ import {
   paymentMethodOptions,
   type Airline,
   type CustomerDirectoryItem,
+  type CustomerDirectoryPage,
   type ManualDebtActionState,
   type ManualDebtFormValues,
   type PaymentMethod,
@@ -73,7 +82,7 @@ import styles from "./manual-debt-input.module.css"
 
 type ManualDebtInputClientProps = {
   customers: CustomerDirectoryItem[]
-  rows: LedgerReportRow[]
+  initialPage: TicketDebtReportPage
 }
 
 type ManualDebtField = keyof ManualDebtFormValues
@@ -168,37 +177,6 @@ function getRowPaymentMethod(row: LedgerReportRow): string {
   return paymentMethodOptions.includes(row.transaction_method as PaymentMethod)
     ? row.transaction_method ?? ""
     : ""
-}
-
-function getRowSearchText(row: LedgerReportRow): string {
-  return normalizeSearch(
-    [
-      row.customer_name,
-      row.customer_phone,
-      row.passenger_names,
-      row.content,
-      row.pnr,
-      row.ticket_number,
-      row.airline,
-      row.route,
-      row.ticket_status,
-      row.linked_payment_note,
-      getRowPaymentMethod(row),
-      row.booked_at ? formatDate(row.booked_at) : "",
-      formatDate(row.created_at),
-      row.ticket_selling_price,
-      row.ticket_discount,
-      row.ticket_ev_price,
-      row.ticket_ast_price,
-      row.ticket_thf_price,
-      row.ticket_web_price,
-      row.ticket_insurance_price,
-      row.ticket_true_income,
-      row.linked_payment_amount,
-    ]
-      .filter((value) => value !== null && value !== undefined)
-      .join(" "),
-  )
 }
 
 function getRowSortValue(
@@ -321,11 +299,33 @@ function CustomerAutocomplete({
   const [value, setValue] = React.useState("")
   const [isOpen, setIsOpen] = React.useState(false)
   const [activeIndex, setActiveIndex] = React.useState(0)
+  const [remoteCustomers, setRemoteCustomers] = React.useState<
+    CustomerDirectoryItem[] | null
+  >(null)
+
+  React.useEffect(() => {
+    const normalizedValue = value.trim()
+
+    if (!normalizedValue) {
+      setRemoteCustomers(null)
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void apiFetchData<CustomerDirectoryPage>(
+        `/customers?page=1&page_size=20&q=${encodeURIComponent(normalizedValue)}`,
+      )
+        .then((page) => setRemoteCustomers(page.items))
+        .catch(() => setRemoteCustomers([]))
+    }, 250)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [value])
 
   const matchingCustomers = React.useMemo(() => {
     const normalizedValue = normalizeSearch(value)
     const source = normalizedValue
-      ? customers.filter((customer) => {
+      ? (remoteCustomers ?? customers).filter((customer) => {
           const normalizedName = normalizeSearch(customer.full_name)
           const normalizedPhone = normalizeSearch(customer.phone ?? "")
 
@@ -337,7 +337,7 @@ function CustomerAutocomplete({
       : customers
 
     return source.slice(0, 8)
-  }, [customers, value])
+  }, [customers, remoteCustomers, value])
 
   const hasMatches = matchingCustomers.length > 0
 
@@ -1575,12 +1575,22 @@ function ManualDebtTableRow({
 }
 
 function TableHorizontalControls({
+  isLoading,
+  onPageChange,
   onTableViewChange,
+  pagination,
   resultCount,
   scrollContainerRef,
   tableView,
 }: {
+  isLoading: boolean
+  onPageChange: (page: number) => void
   onTableViewChange: (view: TableView) => void
+  pagination: {
+    page: number
+    total_pages: number
+    has_next: boolean
+  }
   resultCount: number
   scrollContainerRef: React.RefObject<HTMLDivElement | null>
   tableView: TableView
@@ -1664,6 +1674,36 @@ function TableHorizontalControls({
         <span>{t("manualDebts.table.results")}</span>
       </div>
       <div className={styles.tableViewControls}>
+        <div className={styles.paginationControls}>
+          <Button
+            aria-label={t("manualDebts.table.pagination.previous")}
+            disabled={isLoading || pagination.page <= 1}
+            onClick={() => onPageChange(pagination.page - 1)}
+            size="icon"
+            title={t("manualDebts.table.pagination.previous")}
+            type="button"
+            variant="outline"
+          >
+            <ChevronLeft className={patterns.iconCompact} />
+          </Button>
+          <span className={styles.pageLabel}>
+            {t("manualDebts.table.pagination.page", {
+              page: pagination.page,
+              totalPages: pagination.total_pages,
+            })}
+          </span>
+          <Button
+            aria-label={t("manualDebts.table.pagination.next")}
+            disabled={isLoading || !pagination.has_next}
+            onClick={() => onPageChange(pagination.page + 1)}
+            size="icon"
+            title={t("manualDebts.table.pagination.next")}
+            type="button"
+            variant="outline"
+          >
+            <ChevronRight className={patterns.iconCompact} />
+          </Button>
+        </div>
         <div
           aria-label={t("manualDebts.table.view.label")}
           className={styles.viewSwitcher}
@@ -1723,12 +1763,13 @@ function TableHorizontalControls({
 
 export function ManualDebtInputClient({
   customers,
-  rows,
+  initialPage,
 }: ManualDebtInputClientProps) {
   const t = useI18n()
   const router = useRouter()
   const formRef = React.useRef<HTMLFormElement>(null)
   const tableScrollRef = React.useRef<HTMLDivElement>(null)
+  const reportRequestIdRef = React.useRef(0)
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [isFormDirty, setIsFormDirty] = React.useState(false)
   const [isSubmitPending, setIsSubmitPending] = React.useState(false)
@@ -1739,8 +1780,14 @@ export function ManualDebtInputClient({
   const [actionState, setActionState] = React.useState<ManualDebtActionState>(
     initialManualDebtActionState,
   )
+  const [reportRows, setReportRows] = React.useState(initialPage.items)
+  const [reportPagination, setReportPagination] = React.useState(
+    initialPage.pagination,
+  )
   const [searchValue, setSearchValue] = React.useState("")
-  const deferredSearchValue = React.useDeferredValue(searchValue)
+  const [appliedSearch, setAppliedSearch] = React.useState("")
+  const [isRowsLoading, setIsRowsLoading] = React.useState(false)
+  const [rowsError, setRowsError] = React.useState<string | null>(null)
   const [sortState, setSortState] = React.useState<SortState>({
     key: "createdAt",
     direction: "desc",
@@ -1801,14 +1848,81 @@ export function ManualDebtInputClient({
     t,
   ])
 
+  const loadReportPage = React.useCallback(
+    async (page: number, query: string) => {
+      const requestId = reportRequestIdRef.current + 1
+      reportRequestIdRef.current = requestId
+      setIsRowsLoading(true)
+      setRowsError(null)
+
+      try {
+        const params = new URLSearchParams({
+          page: String(page),
+          page_size: "50",
+        })
+        if (query.trim()) {
+          params.set("q", query.trim())
+        }
+
+        const response = await fetch(`/report/data?${params.toString()}`, {
+          cache: "no-store",
+        })
+
+        if (response.status === 401) {
+          expireStoredSession("unauthorized")
+          router.replace(SESSION_EXPIRED_LOGIN_PATH)
+          return
+        }
+
+        if (!response.ok) {
+          throw new Error("Unable to refresh debt rows.")
+        }
+
+        const payload = (await response.json()) as TicketDebtReportPage
+        if (requestId !== reportRequestIdRef.current) {
+          return
+        }
+        setReportRows(payload.items)
+        setReportPagination(payload.pagination)
+        setAppliedSearch(query.trim())
+      } catch {
+        if (requestId !== reportRequestIdRef.current) {
+          return
+        }
+        setRowsError(t("manualDebts.table.loadFailure"))
+      } finally {
+        if (requestId === reportRequestIdRef.current) {
+          setIsRowsLoading(false)
+        }
+      }
+    },
+    [router, t],
+  )
+
+  React.useEffect(() => {
+    const nextSearch = searchValue.trim()
+
+    if (nextSearch === appliedSearch) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void loadReportPage(1, nextSearch)
+    }, 300)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [appliedSearch, loadReportPage, searchValue])
+
+  React.useEffect(() => {
+    setReportRows(initialPage.items)
+    setReportPagination(initialPage.pagination)
+    setAppliedSearch("")
+    setSearchValue("")
+    setRowsError(null)
+  }, [initialPage])
+
   const filteredRows = React.useMemo(() => {
-    const normalizedQuery = normalizeSearch(deferredSearchValue)
-
-    const matchingRows = rows.filter((row) => {
-      return !normalizedQuery || getRowSearchText(row).includes(normalizedQuery)
-    })
-
-    return matchingRows
+    return reportRows
       .map((row, index) => ({ row, index }))
       .sort((first, second) => {
         const comparison = compareSortValues(
@@ -1823,7 +1937,7 @@ export function ManualDebtInputClient({
         return first.index - second.index
       })
       .map(({ row }) => row)
-  }, [deferredSearchValue, rows, sortState])
+  }, [reportRows, sortState])
 
   const trueIncome =
     sellingPrice + discount - (evPrice + astPrice + thfPrice + webPrice + insurancePrice)
@@ -2327,14 +2441,29 @@ export function ManualDebtInputClient({
                 {t("manualDebts.actions.openForm")}
               </Button>
             </div>
+            {rowsError ? (
+              <p className={styles.tableError} role="alert">
+                {rowsError}
+              </p>
+            ) : null}
+            {isRowsLoading ? (
+              <span aria-live="polite" className={styles.loadingStatus} role="status">
+                <Loader2 className={`${patterns.iconSmall} ${patterns.spinner}`} />
+                {t("manualDebts.table.loading")}
+              </span>
+            ) : null}
             <TableHorizontalControls
+              isLoading={isRowsLoading}
+              onPageChange={(page) => void loadReportPage(page, appliedSearch)}
               onTableViewChange={setTableView}
-              resultCount={filteredRows.length}
+              pagination={reportPagination}
+              resultCount={reportPagination.total}
               scrollContainerRef={tableScrollRef}
               tableView={tableView}
             />
             <div className={styles.tableArea}>
               <Table
+                aria-busy={isRowsLoading}
                 className={cn(
                   styles.ledgerTable,
                   tableView === "full"
@@ -2504,12 +2633,22 @@ export function ManualDebtInputClient({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRows.length === 0 ? (
+                  {isRowsLoading && filteredRows.length === 0 ? (
+                    <TableStateRow
+                      colSpan={tableView === "full" ? 15 : 7}
+                      message={t("manualDebts.table.loading")}
+                      state="loading"
+                    />
+                  ) : filteredRows.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={tableView === "full" ? 15 : 7}>
                         <EmptyState
                           icon={ReceiptText}
-                          message={t("manualDebts.table.empty")}
+                          message={
+                            appliedSearch
+                              ? t("manualDebts.table.searchEmpty")
+                              : t("manualDebts.table.empty")
+                          }
                         />
                       </TableCell>
                     </TableRow>

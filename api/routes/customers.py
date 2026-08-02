@@ -1,10 +1,12 @@
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status
-from sqlmodel import select
+from fastapi import APIRouter, HTTPException, Query, status
+from sqlalchemy import func, or_
+from sqlmodel import Session, select
 
 from core.auth import CurrentUserDep, require_user_roles
+from core.pagination import build_pagination, normalize_page, normalize_page_size
 from core.responses import success_response
 from database import SessionDep
 from models.customer import (
@@ -29,27 +31,34 @@ from services.finance_service import (
 router = APIRouter()
 
 
-def _calculate_customer_active_balance(
+def _calculate_customer_active_balances(
     *,
-    session: SessionDep,
-    customer_id: uuid.UUID,
+    session: Session,
+    customer_ids: list[uuid.UUID],
     base_datetime: datetime,
-) -> float:
+) -> dict[uuid.UUID, float]:
+    """Calculate a page of customer balances with one transaction query."""
+
+    if not customer_ids:
+        return {}
+
     transactions = session.exec(
         select(Transaction).where(
-            Transaction.customer_id == customer_id,
+            Transaction.customer_id.in_(customer_ids),
             Transaction.occurred_at >= base_datetime,
         )
     ).all()
-    return sum(
-        get_transaction_balance_delta(
+    balances = dict.fromkeys(customer_ids, 0.0)
+
+    for transaction in transactions:
+        balances[transaction.customer_id] += get_transaction_balance_delta(
             amount=transaction.amount,
             transaction_category=transaction.category,
             transaction_type=transaction.type,
             linked_ticket_id=transaction.linked_ticket_id,
         )
-        for transaction in transactions
-    )
+
+    return balances
 
 @router.post("/", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def create_customer(
@@ -66,24 +75,60 @@ async def create_customer(
 
 @router.get("/", response_model=dict)
 async def list_customers(
-    session: SessionDep, current_user: CurrentUserDep, skip: int = 0, limit: int = 100
+    session: SessionDep,
+    current_user: CurrentUserDep,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=1000),
+    q: str | None = Query(default=None, max_length=100),
+    page: int | None = Query(default=None, ge=1),
+    page_size: int | None = Query(default=None, ge=1, le=100),
 ):
-    """List all customers for the directory page."""
+    """List customers with optional search and pagination."""
     del current_user
     base_datetime = get_app_base_datetime(session=session)
-    statement = select(Customer).order_by(Customer.name).offset(skip).limit(limit)
+
+    normalized_query = q.strip() if q else ""
+    filters = []
+    if normalized_query:
+        search_pattern = f"%{normalized_query}%"
+        filters.append(
+            or_(
+                Customer.name.ilike(search_pattern),
+                Customer.phone.ilike(search_pattern),
+            )
+        )
+
+    is_paged = page is not None or page_size is not None
+    page_number = normalize_page(page)
+    effective_page_size = normalize_page_size(page_size, fallback=limit)
+    offset = (page_number - 1) * effective_page_size if is_paged else skip
+    query = select(Customer)
+    if filters:
+        query = query.where(*filters)
+
+    statement = (
+        query.order_by(Customer.name, Customer.id)
+        .offset(offset)
+        .limit(effective_page_size)
+    )
     customers = session.exec(statement).all()
+    customer_ids = [customer.id for customer in customers if customer.id is not None]
+    active_balances = (
+        _calculate_customer_active_balances(
+            session=session,
+            customer_ids=customer_ids,
+            base_datetime=base_datetime,
+        )
+        if base_datetime is not None
+        else {}
+    )
     customer_directory = [
         CustomerDirectoryItem(
             id=customer.id,
             full_name=customer.name,
             phone=customer.phone,
             current_balance=(
-                _calculate_customer_active_balance(
-                    session=session,
-                    customer_id=customer.id,
-                    base_datetime=base_datetime,
-                )
+                active_balances.get(customer.id, 0.0)
                 if base_datetime is not None
                 else customer.balance
             ),
@@ -91,7 +136,25 @@ async def list_customers(
         ).model_dump(mode="json")
         for customer in customers
     ]
-    return success_response(customer_directory)
+
+    if not is_paged:
+        return success_response(customer_directory)
+
+    count_query = select(func.count()).select_from(Customer)
+    if filters:
+        count_query = count_query.where(*filters)
+    total = session.exec(count_query).one()
+
+    return success_response(
+        {
+            "items": customer_directory,
+            "pagination": build_pagination(
+                page=page_number,
+                page_size=effective_page_size,
+                total=total,
+            ),
+        }
+    )
 
 @router.get("/{customer_id}", response_model=dict)
 async def get_customer(

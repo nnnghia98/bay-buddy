@@ -1,8 +1,14 @@
 import { LedgerReportClient } from "@/app/report/report-client"
-import { fetchTicketDebtRows } from "@/lib/server-report"
+import { fetchTicketDebtPage } from "@/lib/server-report"
 
 export default async function ReportPage() {
-  const rows = await fetchTicketDebtRows()
+  const reportPage = await fetchTicketDebtPage({ page: 1, page_size: 50 })
 
-  return <LedgerReportClient initialFrom="" initialTo="" rows={rows} />
+  return (
+    <LedgerReportClient
+      initialFrom=""
+      initialPage={reportPage}
+      initialTo=""
+    />
+  )
 }

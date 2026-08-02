@@ -184,6 +184,26 @@
   white-space: normal;
 }
 
+.loadingTable {
+  display: grid;
+  gap: var(--spacing-2);
+  padding: var(--spacing-5);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  border-block-start: var(--border-width) solid var(--color-border);
+  padding: var(--spacing-3) var(--spacing-5);
+}
+
+.paginationControls {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
 @media (min-width: 40rem) {
   .filters {
     grid-template-columns: repeat(2, minmax(8rem, 1fr)) minmax(14rem, 2fr) auto auto;
@@ -215,7 +235,8 @@
 
 @media (max-width: 39.99rem) {
   .summaryHeader,
-  .tableToolbar {
+  .tableToolbar,
+  .pagination {
     align-items: flex-start;
     flex-direction: column;
   }

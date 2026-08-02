@@ -13,14 +13,17 @@ Service:        services/ticket_service.py
 """
 
 import uuid
+from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
+from sqlalchemy import String, cast, func, or_
 from sqlmodel import select
 
 from core.auth import CurrentUserDep, require_user_roles
+from core.pagination import build_pagination, normalize_page, normalize_page_size
 from database import SessionDep
 from core.responses import success_response
-from models.enums import UserRole
+from models.enums import TicketStatus, UserRole
 from models.ticket import Ticket, TicketCreate, TicketRead, TicketUpdate
 from services.ticket_service import (
     TicketConfirmPayload,
@@ -134,18 +137,93 @@ async def create_ticket(
 
 @router.get("/", response_model=dict)
 async def list_tickets(
-    session: SessionDep, current_user: CurrentUserDep, skip: int = 0, limit: int = 100
+    session: SessionDep,
+    current_user: CurrentUserDep,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=1000),
+    q: str | None = Query(default=None, max_length=100),
+    status_filter: TicketStatus | None = Query(default=None, alias="status"),
+    from_value: datetime | None = Query(default=None, alias="from"),
+    to_value: datetime | None = Query(default=None, alias="to"),
+    page: int | None = Query(default=None, ge=1),
+    page_size: int | None = Query(default=None, ge=1, le=100),
 ):
-    """List all tickets (paginated)."""
+    """List tickets with optional filters and page metadata."""
     del current_user
+
+    filters = []
+    if q and q.strip():
+        search_pattern = f"%{q.strip()}%"
+        filters.append(
+            or_(
+                Ticket.pnr.ilike(search_pattern),
+                Ticket.ticket_number.ilike(search_pattern),
+                Ticket.itinerary.ilike(search_pattern),
+                Ticket.departure_place.ilike(search_pattern),
+                Ticket.arrival_place.ilike(search_pattern),
+                Ticket.departure_code.ilike(search_pattern),
+                Ticket.arrival_code.ilike(search_pattern),
+                cast(Ticket.passengers, String).ilike(search_pattern),
+            )
+        )
+    if status_filter is not None:
+        filters.append(Ticket.status == status_filter)
+    if from_value is not None:
+        filters.append(
+            Ticket.updated_at
+            >= (
+                from_value.astimezone(timezone.utc).replace(tzinfo=None)
+                if from_value.tzinfo
+                else from_value
+            )
+        )
+    if to_value is not None:
+        filters.append(
+            Ticket.updated_at
+            <= (
+                to_value.astimezone(timezone.utc).replace(tzinfo=None)
+                if to_value.tzinfo
+                else to_value
+            )
+        )
+
+    is_paged = page is not None or page_size is not None
+    page_number = normalize_page(page)
+    effective_page_size = normalize_page_size(page_size, fallback=limit)
+    offset = (page_number - 1) * effective_page_size if is_paged else skip
+    statement = select(Ticket)
+    if filters:
+        statement = statement.where(*filters)
     statement = apply_app_base_datetime(
         session=session,
-        statement=select(Ticket),
+        statement=statement,
         column=Ticket.updated_at,
-    ).order_by(Ticket.updated_at, Ticket.id).offset(skip).limit(limit)
+    ).order_by(Ticket.updated_at, Ticket.id).offset(offset).limit(effective_page_size)
     tickets = session.exec(statement).all()
     tickets_data = [TicketRead.model_validate(t).model_dump() for t in tickets]
-    return success_response(tickets_data)
+
+    if not is_paged:
+        return success_response(tickets_data)
+
+    count_statement = select(func.count()).select_from(Ticket)
+    if filters:
+        count_statement = count_statement.where(*filters)
+    count_statement = apply_app_base_datetime(
+        session=session,
+        statement=count_statement,
+        column=Ticket.updated_at,
+    )
+    total = session.exec(count_statement).one()
+    return success_response(
+        {
+            "items": tickets_data,
+            "pagination": build_pagination(
+                page=page_number,
+                page_size=effective_page_size,
+                total=total,
+            ),
+        }
+    )
 
 
 # ---------------------------------------------------------------------------

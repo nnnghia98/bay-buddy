@@ -424,6 +424,11 @@ export default {
       description:
         "Thời gian ghi dùng mốc cập nhật công nợ; ngày giờ bay chỉ là thông tin chuyến bay.",
       results: "dòng",
+      pagination: {
+        page: "Trang {page} / {totalPages}",
+        previous: "Trang trước",
+        next: "Trang sau",
+      },
       view: {
         label: "Chế độ xem bảng",
         summary: "Tóm tắt",
@@ -534,7 +539,15 @@ export default {
       horizontalScrollControls: "Điều hướng cột",
       scrollLeft: "Xem các cột bên trái",
       scrollRight: "Xem các cột bên phải",
+      loading: "Đang tải dòng công nợ...",
+      loadFailure: "Không thể tải lại dòng công nợ.",
+      searchEmpty: "Không tìm thấy dòng công nợ phù hợp.",
       results: "dòng",
+      pagination: {
+        page: "Trang {page} / {totalPages}",
+        previous: "Trang trước",
+        next: "Trang sau",
+      },
       view: {
         label: "Chế độ xem bảng",
         summary: "Tóm tắt",

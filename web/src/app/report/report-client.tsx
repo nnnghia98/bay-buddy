@@ -4,7 +4,13 @@ import patterns from "@/styles/ui-patterns.module.css"
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { Download, Loader2, Search } from "lucide-react"
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Loader2,
+  Search,
+} from "lucide-react"
 
 import { TableScrollArea } from "@/components/command-center"
 import { TableStateRow } from "@/components/operations-ui"
@@ -28,7 +34,10 @@ import {
   getMonthlyDebtReportFilename,
   type ReportWorkbookCell,
 } from "@/lib/report-export"
-import type { LedgerReportRow } from "@/lib/server-report"
+import type {
+  LedgerReportRow,
+  TicketDebtReportPage,
+} from "@/lib/server-report"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
 import styles from "./report.module.css"
@@ -36,7 +45,7 @@ import styles from "./report.module.css"
 type LedgerReportClientProps = {
   initialFrom: string
   initialTo: string
-  rows: LedgerReportRow[]
+  initialPage: TicketDebtReportPage
 }
 
 type TableView = "summary" | "full"
@@ -189,52 +198,6 @@ function getRowPaymentMethod(row: LedgerReportRow): string {
     : ""
 }
 
-function getDisplayedPaymentMethod(
-  row: LedgerReportRow,
-  unpaidLabel: string,
-): string {
-  return getRowPaymentMethod(row) || unpaidLabel
-}
-
-function normalizeSearch(value: string): string {
-  return value
-    .trim()
-    .toLocaleLowerCase("vi-VN")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-}
-
-function getRowSearchText(row: LedgerReportRow, unpaidLabel: string): string {
-  return normalizeSearch(
-    [
-      row.customer_name,
-      row.customer_phone,
-      row.passenger_names,
-      row.content,
-      row.pnr,
-      row.ticket_number,
-      row.airline,
-      row.route,
-      row.ticket_status,
-      getDisplayedPaymentMethod(row, unpaidLabel),
-      row.linked_payment_note,
-      row.booked_at ? formatDate(row.booked_at) : "",
-      formatDate(row.created_at),
-      row.ticket_selling_price,
-      row.ticket_discount,
-      row.ticket_ev_price,
-      row.ticket_ast_price,
-      row.ticket_thf_price,
-      row.ticket_web_price,
-      row.ticket_insurance_price,
-      row.ticket_true_income,
-    ]
-      .filter((value) => value !== null && value !== undefined)
-      .join(" "),
-  )
-}
-
 function formatDate(value: string): string {
   const date = new Date(value)
 
@@ -347,10 +310,6 @@ async function downloadExcelPreview(
   URL.revokeObjectURL(url)
 }
 
-type ReportRowsResponse = {
-  rows: LedgerReportRow[]
-}
-
 type ReportSummary = {
   rows: number
   customers: number
@@ -358,15 +317,14 @@ type ReportSummary = {
   totalIncome: number
 }
 
-function getReportSummary(rows: LedgerReportRow[]): ReportSummary {
+function mapReportSummary(
+  summary: TicketDebtReportPage["summary"],
+): ReportSummary {
   return {
-    rows: rows.length,
-    customers: new Set(rows.map((row) => row.customer_id)).size,
-    totalSellingPrice: rows.reduce(
-      (sum, row) => sum + row.ticket_selling_price,
-      0,
-    ),
-    totalIncome: rows.reduce((sum, row) => sum + row.ticket_true_income, 0),
+    rows: summary.rows,
+    customers: summary.customers,
+    totalSellingPrice: summary.total_selling_price,
+    totalIncome: summary.total_income,
   }
 }
 
@@ -388,16 +346,21 @@ function SummaryMetric({
 export function LedgerReportClient({
   initialFrom,
   initialTo,
-  rows,
+  initialPage,
 }: LedgerReportClientProps) {
   const t = useI18n()
   const router = useRouter()
-  const [reportRows, setReportRows] = React.useState(rows)
+  const [reportRows, setReportRows] = React.useState(initialPage.items)
+  const [pagination, setPagination] = React.useState(initialPage.pagination)
+  const [summary, setSummary] = React.useState<ReportSummary>(() =>
+    mapReportSummary(initialPage.summary),
+  )
   const [fromValue, setFromValue] = React.useState(initialFrom)
   const [toValue, setToValue] = React.useState(initialTo)
   const [appliedFrom, setAppliedFrom] = React.useState(initialFrom)
   const [appliedTo, setAppliedTo] = React.useState(initialTo)
   const [searchValue, setSearchValue] = React.useState("")
+  const [appliedSearch, setAppliedSearch] = React.useState("")
   const [tableView, setTableView] = React.useState<TableView>("summary")
   const [isApplying, setIsApplying] = React.useState(false)
   const [isExporting, setIsExporting] = React.useState(false)
@@ -419,33 +382,71 @@ export function LedgerReportClient({
     () => getColumnsForView(tableView),
     [tableView],
   )
-  const filteredRows = React.useMemo(() => {
-    const normalizedQuery = normalizeSearch(searchValue)
-
-    if (!normalizedQuery) {
-      return reportRows
-    }
-
-    return reportRows.filter((row) =>
-      getRowSearchText(row, unpaidPaymentLabel).includes(normalizedQuery),
-    )
-  }, [reportRows, searchValue, unpaidPaymentLabel])
-  const summary = React.useMemo(
-    () => getReportSummary(filteredRows),
-    [filteredRows],
-  )
   const scopeLabel =
     appliedFrom || appliedTo
       ? t("report.metrics.scopeFiltered")
       : t("report.metrics.scopeAll")
 
   React.useEffect(() => {
-    setReportRows(rows)
+    setReportRows(initialPage.items)
+    setPagination(initialPage.pagination)
+    setSummary(mapReportSummary(initialPage.summary))
     setFromValue(initialFrom)
     setToValue(initialTo)
     setAppliedFrom(initialFrom)
     setAppliedTo(initialTo)
-  }, [initialFrom, initialTo, rows])
+    setAppliedSearch("")
+    setSearchValue("")
+  }, [initialFrom, initialPage, initialTo])
+
+  const loadReportPage = React.useCallback(
+    async ({
+      from,
+      page,
+      q,
+      to,
+    }: {
+      from: string
+      page: number
+      q: string
+      to: string
+    }) => {
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: "50",
+      })
+      if (from) {
+        params.set("from", from)
+      }
+      if (to) {
+        params.set("to", to)
+      }
+      if (q.trim()) {
+        params.set("q", q.trim())
+      }
+
+      const response = await fetch(`/report/data?${params.toString()}`, {
+        cache: "no-store",
+      })
+
+      if (response.status === 401) {
+        expireStoredSession("unauthorized")
+        router.replace(SESSION_EXPIRED_LOGIN_PATH)
+        return null
+      }
+
+      if (!response.ok) {
+        throw new Error("Unable to refresh report rows.")
+      }
+
+      const payload = (await response.json()) as TicketDebtReportPage
+      setReportRows(payload.items)
+      setPagination(payload.pagination)
+      setSummary(mapReportSummary(payload.summary))
+      return payload
+    },
+    [router],
+  )
 
   const handleApplyFilters = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -461,33 +462,37 @@ export function LedgerReportClient({
         return
       }
 
-      const params = new URLSearchParams()
-      if (fromValue) {
-        params.set("from", fromValue)
-      }
-      if (toValue) {
-        params.set("to", toValue)
-      }
-
-      const query = params.toString()
-      const response = await fetch(`/report/data${query ? `?${query}` : ""}`, {
-        cache: "no-store",
+      await loadReportPage({
+        from: fromValue,
+        page: 1,
+        q: searchValue,
+        to: toValue,
       })
-
-      if (response.status === 401) {
-        expireStoredSession("unauthorized")
-        router.replace(SESSION_EXPIRED_LOGIN_PATH)
-        return
-      }
-
-      if (!response.ok) {
-        throw new Error("Unable to refresh report rows.")
-      }
-
-      const payload = (await response.json()) as ReportRowsResponse
-      setReportRows(payload.rows)
       setAppliedFrom(fromValue)
       setAppliedTo(toValue)
+      setAppliedSearch(searchValue)
+    } catch {
+      setFilterError(t("report.filters.failure"))
+    } finally {
+      setIsApplying(false)
+    }
+  }
+
+  const handlePageChange = async (page: number) => {
+    if (page < 1 || page > pagination.total_pages || isApplying) {
+      return
+    }
+
+    setIsApplying(true)
+    setFilterError(null)
+
+    try {
+      await loadReportPage({
+        from: appliedFrom,
+        page,
+        q: appliedSearch,
+        to: appliedTo,
+      })
     } catch {
       setFilterError(t("report.filters.failure"))
     } finally {
@@ -500,8 +505,34 @@ export function LedgerReportClient({
     setExportError(null)
 
     try {
+      const params = new URLSearchParams({ all: "1" })
+      if (appliedFrom) {
+        params.set("from", appliedFrom)
+      }
+      if (appliedTo) {
+        params.set("to", appliedTo)
+      }
+      if (appliedSearch.trim()) {
+        params.set("q", appliedSearch.trim())
+      }
+
+      const response = await fetch(`/report/data?${params.toString()}`, {
+        cache: "no-store",
+      })
+
+      if (response.status === 401) {
+        expireStoredSession("unauthorized")
+        router.replace(SESSION_EXPIRED_LOGIN_PATH)
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error("Unable to load report export rows.")
+      }
+
+      const payload = (await response.json()) as { rows: LedgerReportRow[] }
       await downloadExcelPreview(
-        filteredRows,
+        payload.rows,
         visibleColumns,
         columnLabels,
         unpaidPaymentLabel,
@@ -576,7 +607,7 @@ export function LedgerReportClient({
               )}
             </Button>
             <Button
-              disabled={isExporting || filteredRows.length === 0}
+              disabled={isExporting || reportRows.length === 0}
               onClick={handleExport}
               type="button"
             >
@@ -671,6 +702,7 @@ export function LedgerReportClient({
 
         <TableScrollArea>
           <Table
+            aria-busy={isApplying}
             className={cn(
               styles.table,
               tableView === "full" && styles.fullTable,
@@ -692,17 +724,17 @@ export function LedgerReportClient({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRows.length === 0 ? (
+              {reportRows.length === 0 ? (
                 <TableStateRow
                   colSpan={visibleColumns.length}
                   message={
-                    reportRows.length === 0
-                      ? t("report.empty")
-                      : t("report.searchEmpty")
+                    appliedSearch
+                      ? t("report.searchEmpty")
+                      : t("report.empty")
                   }
                 />
               ) : (
-                filteredRows.map((row, rowIndex) => (
+                reportRows.map((row, rowIndex) => (
                   <TableRow key={row.id}>
                     {visibleColumns.map((column) => {
                       const rawValue = formatCellValue(row, column.key, rowIndex)
@@ -741,6 +773,38 @@ export function LedgerReportClient({
             </TableBody>
           </Table>
         </TableScrollArea>
+        <div className={styles.pagination}>
+          <span className={patterns.supportingText}>
+            {t("report.table.pagination.page", {
+              page: pagination.page,
+              totalPages: pagination.total_pages,
+            })}
+          </span>
+          <div className={styles.paginationControls}>
+            <Button
+              aria-label={t("report.table.pagination.previous")}
+              disabled={isApplying || pagination.page <= 1}
+              onClick={() => void handlePageChange(pagination.page - 1)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <ChevronLeft className={patterns.iconSmall} />
+              {t("report.table.pagination.previous")}
+            </Button>
+            <Button
+              aria-label={t("report.table.pagination.next")}
+              disabled={isApplying || !pagination.has_next}
+              onClick={() => void handlePageChange(pagination.page + 1)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              {t("report.table.pagination.next")}
+              <ChevronRight className={patterns.iconSmall} />
+            </Button>
+          </div>
+        </div>
       </section>
     </div>
   )

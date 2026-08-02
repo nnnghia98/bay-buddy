@@ -13,13 +13,15 @@ from __future__ import annotations
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Literal, Optional
 
 from fastapi import HTTPException, status
 from pydantic import BaseModel, Field, model_validator
+from sqlalchemy import func
 from sqlmodel import Session, select
 
+from core.pagination import build_pagination, normalize_page, normalize_page_size
 from models.customer import Customer, CustomerRead
 from models.enums import (
     Airline,
@@ -145,7 +147,11 @@ def _manual_ticket_note(value: Optional[str]) -> Optional[str]:
     return note
 
 
-def list_ticket_debt_rows(*, session: Session) -> list[TicketDebtReportRow]:
+def list_ticket_debt_rows(
+    *,
+    session: Session,
+    ticket_ids: set[uuid.UUID] | None = None,
+) -> list[TicketDebtReportRow]:
     """Return every active confirmed ticket as one global debt row.
 
     This intentionally uses bulk queries instead of loading one ledger per
@@ -154,6 +160,10 @@ def list_ticket_debt_rows(*, session: Session) -> list[TicketDebtReportRow]:
     """
 
     ticket_statement = select(Ticket).where(Ticket.status == TicketStatus.CONFIRMED)
+    if ticket_ids is not None:
+        if not ticket_ids:
+            return []
+        ticket_statement = ticket_statement.where(Ticket.id.in_(ticket_ids))
     ticket_statement = apply_app_base_datetime(
         session=session,
         statement=ticket_statement,
@@ -166,7 +176,24 @@ def list_ticket_debt_rows(*, session: Session) -> list[TicketDebtReportRow]:
     if not tickets:
         return []
 
+    visible_ticket_ids = {ticket.id for ticket in tickets if ticket.id is not None}
     customer_ids = {ticket.customer_id for ticket in tickets}
+
+    all_tickets = tickets
+    if ticket_ids is not None:
+        all_ticket_statement = select(Ticket).where(
+            Ticket.status == TicketStatus.CONFIRMED,
+            Ticket.customer_id.in_(customer_ids),
+        )
+        all_ticket_statement = apply_app_base_datetime(
+            session=session,
+            statement=all_ticket_statement,
+            column=Ticket.updated_at,
+        )
+        all_tickets = session.exec(
+            all_ticket_statement.order_by(Ticket.updated_at, Ticket.id)
+        ).all()
+
     customers = session.exec(
         select(Customer).where(Customer.id.in_(customer_ids))
     ).all()
@@ -184,7 +211,7 @@ def list_ticket_debt_rows(*, session: Session) -> list[TicketDebtReportRow]:
         transaction_statement.order_by(Transaction.created_at, Transaction.id)
     ).all()
 
-    ticket_by_id = {ticket.id: ticket for ticket in tickets}
+    ticket_by_id = {ticket.id: ticket for ticket in all_tickets}
     ticket_charges: dict[uuid.UUID, Transaction] = {}
     linked_payment_summaries: dict[uuid.UUID, _LinkedPaymentSummary] = {}
     events_by_customer: dict[uuid.UUID, list[_LedgerEvent]] = defaultdict(list)
@@ -236,7 +263,7 @@ def list_ticket_debt_rows(*, session: Session) -> list[TicketDebtReportRow]:
                 summary.methods.append(method)
             summary.transaction_ids.append(transaction_id)
 
-    for ticket in tickets:
+    for ticket in all_tickets:
         ticket_id = ticket.id
         if ticket_id is None:
             continue
@@ -263,7 +290,11 @@ def list_ticket_debt_rows(*, session: Session) -> list[TicketDebtReportRow]:
         for event in events:
             running_balance += event.amount
             ticket = event.ticket
-            if ticket is None or ticket.id is None:
+            if (
+                ticket is None
+                or ticket.id is None
+                or ticket.id not in visible_ticket_ids
+            ):
                 continue
 
             charge = ticket_charges.get(ticket.id)
@@ -326,6 +357,210 @@ def list_ticket_debt_rows(*, session: Session) -> list[TicketDebtReportRow]:
 
     rows.sort(key=lambda row: (row.created_at, str(row.id)), reverse=True)
     return rows
+
+
+def _parse_report_datetime(
+    value: str | None,
+    *,
+    boundary: Literal["start", "end"],
+) -> datetime | None:
+    """Parse a report date in the same Vietnam-time contract as the web UI."""
+
+    if not value:
+        return None
+
+    date_only_match = value.strip().split("T", 1)[0]
+    try:
+        year, month, day = (int(part) for part in date_only_match.split("-"))
+    except ValueError:
+        return None
+
+    try:
+        if boundary == "start":
+            return datetime(
+                year,
+                month,
+                day,
+                tzinfo=timezone.utc,
+            ) - timedelta(hours=7)
+
+        return datetime(
+            year,
+            month,
+            day,
+            23,
+            59,
+            59,
+            999999,
+            tzinfo=timezone.utc,
+        ) - timedelta(hours=7)
+    except ValueError:
+        return None
+
+
+def _filter_ticket_debt_rows(
+    rows: list[TicketDebtReportRow],
+    *,
+    query: str | None,
+    from_value: str | None,
+    to_value: str | None,
+) -> list[TicketDebtReportRow]:
+    """Apply report filters to the already reconciled ticket rows."""
+
+    normalized_query = (query or "").strip().casefold()
+    from_datetime = _parse_report_datetime(from_value, boundary="start")
+    to_datetime = _parse_report_datetime(to_value, boundary="end")
+
+    def matches(row: TicketDebtReportRow) -> bool:
+        row_datetime = row.created_at
+        if row_datetime.tzinfo is None:
+            row_datetime = row_datetime.replace(tzinfo=timezone.utc)
+
+        if from_datetime and row_datetime < from_datetime:
+            return False
+        if to_datetime and row_datetime > to_datetime:
+            return False
+
+        if not normalized_query:
+            return True
+
+        searchable_values = (
+            row.customer_name,
+            row.customer_phone,
+            row.passenger_names,
+            row.content,
+            row.pnr,
+            row.ticket_number,
+            row.airline.value if row.airline else None,
+            row.route,
+            row.ticket_status.value if row.ticket_status else None,
+            row.transaction_method,
+            row.linked_payment_note,
+            *(row.linked_payment_methods or []),
+        )
+        return normalized_query in " ".join(
+            value.casefold() for value in searchable_values if value
+        )
+
+    return [row for row in rows if matches(row)]
+
+
+def list_ticket_debt_export_rows(
+    *,
+    session: Session,
+    query: str | None = None,
+    from_value: str | None = None,
+    to_value: str | None = None,
+) -> list[dict[str, object]]:
+    """Return all filtered rows for an explicit report export request."""
+
+    rows = _filter_ticket_debt_rows(
+        list_ticket_debt_rows(session=session),
+        query=query,
+        from_value=from_value,
+        to_value=to_value,
+    )
+    return [row.model_dump(mode="json") for row in rows]
+
+
+def list_ticket_debt_page(
+    *,
+    session: Session,
+    page: int | None = None,
+    page_size: int | None = None,
+    query: str | None = None,
+    from_value: str | None = None,
+    to_value: str | None = None,
+) -> dict[str, object]:
+    """Return one filtered page and summary for the debt workbench."""
+
+    page_number = normalize_page(page)
+    effective_page_size = normalize_page_size(page_size)
+
+    if not (query or "").strip():
+        from_datetime = _parse_report_datetime(from_value, boundary="start")
+        to_datetime = _parse_report_datetime(to_value, boundary="end")
+        ticket_filters = [Ticket.status == TicketStatus.CONFIRMED]
+        base_datetime = get_app_base_datetime(session=session)
+        if base_datetime is not None:
+            ticket_filters.append(Ticket.updated_at >= base_datetime)
+        if from_datetime is not None:
+            ticket_filters.append(
+                Ticket.updated_at >= _normalize_ledger_datetime(from_datetime)
+            )
+        if to_datetime is not None:
+            ticket_filters.append(
+                Ticket.updated_at <= _normalize_ledger_datetime(to_datetime)
+            )
+
+        summary_statement = select(
+            func.count(Ticket.id),
+            func.count(func.distinct(Ticket.customer_id)),
+            func.coalesce(func.sum(Ticket.selling_price), 0),
+            func.coalesce(func.sum(Ticket.true_income), 0),
+        ).where(*ticket_filters)
+        total, customers, total_selling_price, total_income = session.exec(
+            summary_statement
+        ).one()
+
+        start = (page_number - 1) * effective_page_size
+        ticket_id_statement = (
+            select(Ticket.id)
+            .where(*ticket_filters)
+            .order_by(Ticket.updated_at.desc(), Ticket.id.desc())
+            .offset(start)
+            .limit(effective_page_size)
+        )
+        selected_ticket_ids = {
+            ticket_id
+            for ticket_id in session.exec(ticket_id_statement).all()
+            if ticket_id is not None
+        }
+        rows = list_ticket_debt_rows(
+            session=session,
+            ticket_ids=selected_ticket_ids,
+        )
+        total = int(total or 0)
+
+        return {
+            "items": [row.model_dump(mode="json") for row in rows],
+            "pagination": build_pagination(
+                page=page_number,
+                page_size=effective_page_size,
+                total=total,
+            ),
+            "summary": {
+                "rows": total,
+                "customers": int(customers or 0),
+                "total_selling_price": float(total_selling_price or 0),
+                "total_income": float(total_income or 0),
+            },
+        }
+
+    rows = _filter_ticket_debt_rows(
+        list_ticket_debt_rows(session=session),
+        query=query,
+        from_value=from_value,
+        to_value=to_value,
+    )
+    start = (page_number - 1) * effective_page_size
+    page_rows = rows[start : start + effective_page_size]
+    total = len(rows)
+
+    return {
+        "items": [row.model_dump(mode="json") for row in page_rows],
+        "pagination": build_pagination(
+            page=page_number,
+            page_size=effective_page_size,
+            total=total,
+        ),
+        "summary": {
+            "rows": total,
+            "customers": len({row.customer_id for row in rows}),
+            "total_selling_price": sum(row.ticket_selling_price for row in rows),
+            "total_income": sum(row.ticket_true_income for row in rows),
+        },
+    }
 
 
 class RecordPaymentPayload(BaseModel):

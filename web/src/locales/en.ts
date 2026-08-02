@@ -424,6 +424,11 @@ export default {
       description:
         "Recorded time uses the debt update timestamp; flight datetime is ticket information only.",
       results: "rows",
+      pagination: {
+        page: "Page {page} of {totalPages}",
+        previous: "Previous",
+        next: "Next",
+      },
       view: {
         label: "Table view",
         summary: "Summary",
@@ -534,7 +539,15 @@ export default {
       horizontalScrollControls: "Column navigation",
       scrollLeft: "View columns on the left",
       scrollRight: "View columns on the right",
+      loading: "Loading debt rows...",
+      loadFailure: "Unable to reload debt rows.",
+      searchEmpty: "No matching debt rows were found.",
       results: "rows",
+      pagination: {
+        page: "Page {page} of {totalPages}",
+        previous: "Previous",
+        next: "Next",
+      },
       view: {
         label: "Table view",
         summary: "Summary",

@@ -8,8 +8,10 @@ import {
 } from "@/lib/server-api"
 import {
   CustomerDirectoryItemSchema,
+  CustomerDirectoryPageSchema,
   CustomerLedgerSchema,
   type CustomerDirectoryItem,
+  type CustomerDirectoryPage,
   type CustomerLedger,
 } from "@/schemas"
 
@@ -24,6 +26,30 @@ export async function fetchCustomerDirectory(
   )
 
   return customerDirectorySchema.parse(getEnvelopeData(payload))
+}
+
+export type CustomerDirectoryQuery = {
+  page?: number
+  page_size?: number
+  q?: string
+}
+
+export async function fetchCustomerDirectoryPage(
+  query: CustomerDirectoryQuery = {},
+): Promise<CustomerDirectoryPage> {
+  const params = new URLSearchParams()
+  params.set("page", String(query.page ?? 1))
+  params.set("page_size", String(query.page_size ?? 50))
+  if (query.q?.trim()) {
+    params.set("q", query.q.trim())
+  }
+
+  const payload = await fetchAuthenticatedApiPayload(
+    `/customers?${params.toString()}`,
+    "Unable to load customers.",
+  )
+
+  return CustomerDirectoryPageSchema.parse(getEnvelopeData(payload))
 }
 
 export async function fetchCustomerLedger(

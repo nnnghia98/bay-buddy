@@ -1,12 +1,15 @@
 import uuid
+from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
+from sqlalchemy import String, cast, func, or_
 from sqlmodel import select
 
 from core.auth import CurrentUserDep, require_user_roles
+from core.pagination import build_pagination, normalize_page, normalize_page_size
 from core.responses import success_response
 from database import SessionDep
-from models.enums import UserRole
+from models.enums import TransactionCategory, UserRole
 from models.customer import Customer
 from models.enums import get_transaction_balance_delta
 from models.ticket import Ticket
@@ -88,19 +91,90 @@ async def create_transaction(
 
 @router.get("/", response_model=dict)
 async def list_transactions(
-    session: SessionDep, current_user: CurrentUserDep, skip: int = 0, limit: int = 100
+    session: SessionDep,
+    current_user: CurrentUserDep,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=1000),
+    q: str | None = Query(default=None, max_length=100),
+    category: TransactionCategory | None = Query(default=None),
+    from_value: datetime | None = Query(default=None, alias="from"),
+    to_value: datetime | None = Query(default=None, alias="to"),
+    page: int | None = Query(default=None, ge=1),
+    page_size: int | None = Query(default=None, ge=1, le=100),
 ):
-    """List all transactions."""
+    """List transactions with optional filters and page metadata."""
     del current_user
+
+    filters = []
+    if q and q.strip():
+        search_pattern = f"%{q.strip()}%"
+        filters.append(
+            or_(
+                Transaction.method.ilike(search_pattern),
+                Transaction.note.ilike(search_pattern),
+                cast(Transaction.category, String).ilike(search_pattern),
+                cast(Transaction.type, String).ilike(search_pattern),
+            )
+        )
+    if category is not None:
+        filters.append(Transaction.category == category)
+    if from_value is not None:
+        filters.append(
+            Transaction.created_at
+            >= (
+                from_value.astimezone(timezone.utc).replace(tzinfo=None)
+                if from_value.tzinfo
+                else from_value
+            )
+        )
+    if to_value is not None:
+        filters.append(
+            Transaction.created_at
+            <= (
+                to_value.astimezone(timezone.utc).replace(tzinfo=None)
+                if to_value.tzinfo
+                else to_value
+            )
+        )
+
+    is_paged = page is not None or page_size is not None
+    page_number = normalize_page(page)
+    effective_page_size = normalize_page_size(page_size, fallback=limit)
+    offset = (page_number - 1) * effective_page_size if is_paged else skip
+    statement = select(Transaction)
+    if filters:
+        statement = statement.where(*filters)
     statement = apply_app_base_datetime(
         session=session,
-        statement=select(Transaction),
+        statement=statement,
         column=Transaction.created_at,
     ).order_by(Transaction.created_at, Transaction.id)
-    statement = statement.offset(skip).limit(limit)
+    statement = statement.offset(offset).limit(effective_page_size)
     transactions = session.exec(statement).all()
     tx_data = [TransactionRead.model_validate(tx).model_dump() for tx in transactions]
-    return success_response(tx_data)
+
+    if not is_paged:
+        return success_response(tx_data)
+
+    count_statement = select(func.count()).select_from(Transaction)
+    if filters:
+        count_statement = count_statement.where(*filters)
+    count_statement = apply_app_base_datetime(
+        session=session,
+        statement=count_statement,
+        column=Transaction.created_at,
+    )
+    total = session.exec(count_statement).one()
+    return success_response(
+        {
+            "items": tx_data,
+            "pagination": build_pagination(
+                page=page_number,
+                page_size=effective_page_size,
+                total=total,
+            ),
+        }
+    )
 
 
 @router.patch("/{transaction_id}", response_model=dict)

@@ -171,6 +171,31 @@ def test_list_customers_includes_archive_status() -> None:
     assert archived_row["is_active"] is False
 
 
+def test_list_customers_supports_search_pagination() -> None:
+    client, session = create_test_client(role=UserRole.ADMIN)
+    seed_customer(session, name="Active Customer")
+    seed_customer(session, name="Another Customer")
+
+    response = client.get(
+        "/api/v1/customers/",
+        params={"page": 1, "page_size": 1, "q": "Active"},
+    )
+
+    clear_overrides()
+
+    assert response.status_code == 200
+    payload = response.json()["data"]
+    assert len(payload["items"]) == 1
+    assert payload["items"][0]["full_name"] == "Active Customer"
+    assert payload["pagination"] == {
+        "page": 1,
+        "page_size": 1,
+        "total": 1,
+        "total_pages": 1,
+        "has_next": False,
+    }
+
+
 def test_admin_can_correct_transaction_and_rebalance_customer() -> None:
     client, session = create_test_client(role=UserRole.ADMIN)
     customer = seed_customer(session)

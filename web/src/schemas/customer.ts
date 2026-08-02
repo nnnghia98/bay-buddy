@@ -13,6 +13,7 @@ import { z } from "zod";
 import { CustomerTypeSchema } from "./enums";
 import { TicketReadSchema } from "./ticket";
 import { TransactionReadSchema } from "./transaction";
+import { PaginationSchema } from "./pagination";
 
 // ---------------------------------------------------------------------------
 // Shared base
@@ -143,3 +144,10 @@ export const CustomerDirectoryItemSchema = z.object({
 });
 
 export type CustomerDirectoryItem = z.infer<typeof CustomerDirectoryItemSchema>;
+
+export const CustomerDirectoryPageSchema = z.object({
+  items: z.array(CustomerDirectoryItemSchema),
+  pagination: PaginationSchema,
+});
+
+export type CustomerDirectoryPage = z.infer<typeof CustomerDirectoryPageSchema>;
