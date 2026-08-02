@@ -1,0 +1,87 @@
+name: API Migration Safety
+
+on:
+  pull_request:
+    paths:
+      - "api/migrations/**"
+      - "api/models/**"
+      - "api/alembic.ini"
+      - "api/migrations/env.py"
+      - "api/pyproject.toml"
+      - "api/poetry.lock"
+      - "api/scripts/check_migration_safety.py"
+      - "api/scripts/migration_fixture.py"
+      - "api/scripts/production_migrate.py"
+      - "api/tests/test_migration_safety.py"
+      - ".github/workflows/api-migration-safety.yml"
+  workflow_dispatch:
+
+jobs:
+  verify-migrations:
+    name: Verify API migrations
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: bay_buddy
+          POSTGRES_PASSWORD: migration_test_password
+          POSTGRES_DB: bay_buddy
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bay_buddy -d bay_buddy"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup Poetry
+        uses: abatilo/actions-poetry@v3
+        with:
+          poetry-version: "2.1.3"
+
+      - name: Install API dependencies
+        run: poetry install --no-interaction --no-ansi
+        working-directory: ./api
+
+      - name: Check migration safety
+        run: poetry run python scripts/check_migration_safety.py
+        working-directory: ./api
+
+      - name: Check migration heads
+        run: test "$(poetry run alembic heads | grep -c '(head)')" -eq 1
+        working-directory: ./api
+
+      - name: Create base schema for preservation test
+        run: poetry run alembic upgrade 7738bf9c9793
+        working-directory: ./api
+        env:
+          DATABASE_URL: postgresql+psycopg2://bay_buddy:migration_test_password@localhost:5432/bay_buddy
+
+      - name: Seed existing data fixture
+        run: poetry run python scripts/migration_fixture.py seed
+        working-directory: ./api
+        env:
+          DATABASE_URL: postgresql+psycopg2://bay_buddy:migration_test_password@localhost:5432/bay_buddy
+
+      - name: Apply all migrations to PostgreSQL
+        run: poetry run python scripts/production_migrate.py
+        working-directory: ./api
+        env:
+          DATABASE_URL: postgresql+psycopg2://bay_buddy:migration_test_password@localhost:5432/bay_buddy
+
+      - name: Verify existing data survived the upgrade
+        run: poetry run python scripts/migration_fixture.py verify
+        working-directory: ./api
+        env:
+          DATABASE_URL: postgresql+psycopg2://bay_buddy:migration_test_password@localhost:5432/bay_buddy

@@ -1,6 +1,8 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "deploy": {
-    "preDeployCommand": ["alembic upgrade head"]
+    "preDeployCommand": ["python scripts/production_migrate.py"],
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 30
   }
 }
