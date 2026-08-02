@@ -27,6 +27,18 @@ const validManualDebtInput = {
 }
 
 describe("manualDebtFormSchema", () => {
+  it("requires a customer", () => {
+    const result = manualDebtFormSchema.safeParse({
+      ...validManualDebtInput,
+      customer_name: "",
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.customer_name).toBeDefined()
+    }
+  })
+
   it("allows blank PNR for manual debt entry", () => {
     const parsed = manualDebtFormSchema.parse({
       ...validManualDebtInput,

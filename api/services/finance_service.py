@@ -11,6 +11,8 @@ Business rules reference: docs/BUSINESS.md
 from __future__ import annotations
 
 import uuid
+from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Literal, Optional
 
@@ -20,6 +22,7 @@ from sqlmodel import Session, select
 
 from models.customer import Customer, CustomerRead
 from models.enums import (
+    Airline,
     TransactionCategory,
     TicketStatus,
     TransactionType,
@@ -62,6 +65,267 @@ def _normalize_ledger_datetime(value: datetime) -> datetime:
     if value.tzinfo is None:
         return value
     return value.astimezone(timezone.utc).replace(tzinfo=None)
+
+
+class TicketDebtReportRow(BaseModel):
+    """One confirmed ticket debt row for global operational tables."""
+
+    id: uuid.UUID
+    customer_id: uuid.UUID
+    customer_name: str
+    customer_phone: Optional[str] = None
+    passenger_names: str
+    entry_type: Literal["ticket"] = "ticket"
+    issued_at: datetime
+    created_at: datetime
+    booked_at: Optional[datetime] = None
+    content: str
+    amount: float
+    running_balance: float
+    ticket_id: uuid.UUID
+    pnr: Optional[str] = None
+    ticket_number: Optional[str] = None
+    ticket_selling_price: float
+    ticket_discount: float
+    ticket_ev_price: float
+    ticket_ast_price: float
+    ticket_thf_price: float
+    ticket_web_price: float
+    ticket_insurance_price: float
+    ticket_true_income: float
+    airline: Optional[Airline] = None
+    route: Optional[str] = None
+    flight_date: Optional[datetime] = None
+    ticket_status: Optional[TicketStatus] = None
+    transaction_id: Optional[uuid.UUID] = None
+    transaction_category: Optional[TransactionCategory] = None
+    transaction_method: Optional[str] = None
+    evidence_url: Optional[str] = None
+    linked_payment_amount: Optional[float] = None
+    linked_payment_note: Optional[str] = None
+    linked_payment_methods: list[str] = Field(default_factory=list)
+    linked_payment_transaction_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class _LedgerEvent:
+    """Internal event used to calculate a customer's running balance."""
+
+    customer_id: uuid.UUID
+    created_at: datetime
+    priority: int
+    id: uuid.UUID
+    amount: float
+    ticket: Optional[Ticket] = None
+
+
+@dataclass
+class _LinkedPaymentSummary:
+    amount: float = 0.0
+    notes: list[str] | None = None
+    methods: list[str] | None = None
+    transaction_ids: list[uuid.UUID] | None = None
+
+    def __post_init__(self) -> None:
+        self.notes = self.notes or []
+        self.methods = self.methods or []
+        self.transaction_ids = self.transaction_ids or []
+
+
+def _ticket_route(ticket: Ticket) -> Optional[str]:
+    if ticket.departure_code and ticket.arrival_code:
+        return f"{ticket.departure_code}-{ticket.arrival_code}"
+    return ticket.itinerary
+
+
+def _manual_ticket_note(value: Optional[str]) -> Optional[str]:
+    note = (value or "").strip()
+    if not note or note.startswith("Auto-debt for ticket "):
+        return None
+    return note
+
+
+def list_ticket_debt_rows(*, session: Session) -> list[TicketDebtReportRow]:
+    """Return every active confirmed ticket as one global debt row.
+
+    This intentionally uses bulk queries instead of loading one ledger per
+    customer. Ticket rows remain visible even when a customer has many tickets
+    or the customer directory contains more than the UI page size.
+    """
+
+    ticket_statement = select(Ticket).where(Ticket.status == TicketStatus.CONFIRMED)
+    ticket_statement = apply_app_base_datetime(
+        session=session,
+        statement=ticket_statement,
+        column=Ticket.updated_at,
+    )
+    tickets = session.exec(
+        ticket_statement.order_by(Ticket.updated_at, Ticket.id)
+    ).all()
+
+    if not tickets:
+        return []
+
+    customer_ids = {ticket.customer_id for ticket in tickets}
+    customers = session.exec(
+        select(Customer).where(Customer.id.in_(customer_ids))
+    ).all()
+    customers_by_id = {customer.id: customer for customer in customers}
+
+    transaction_statement = select(Transaction).where(
+        Transaction.customer_id.in_(customer_ids),
+    )
+    transaction_statement = apply_app_base_datetime(
+        session=session,
+        statement=transaction_statement,
+        column=Transaction.created_at,
+    )
+    transactions = session.exec(
+        transaction_statement.order_by(Transaction.created_at, Transaction.id)
+    ).all()
+
+    ticket_by_id = {ticket.id: ticket for ticket in tickets}
+    ticket_charges: dict[uuid.UUID, Transaction] = {}
+    linked_payment_summaries: dict[uuid.UUID, _LinkedPaymentSummary] = {}
+    events_by_customer: dict[uuid.UUID, list[_LedgerEvent]] = defaultdict(list)
+
+    for transaction in transactions:
+        if (
+            transaction.category == TransactionCategory.TICKET_PURCHASE
+            and transaction.linked_ticket_id is not None
+        ):
+            ticket_charges[transaction.linked_ticket_id] = transaction
+            continue
+
+        transaction_id = transaction.id
+        if transaction_id is None:
+            continue
+
+        events_by_customer[transaction.customer_id].append(
+            _LedgerEvent(
+                customer_id=transaction.customer_id,
+                created_at=_normalize_ledger_datetime(transaction.created_at),
+                priority=1,
+                id=transaction_id,
+                amount=get_transaction_balance_delta(
+                    amount=transaction.amount,
+                    transaction_category=transaction.category,
+                    transaction_type=transaction.type,
+                    linked_ticket_id=transaction.linked_ticket_id,
+                ),
+            )
+        )
+
+        if (
+            transaction.category == TransactionCategory.PAYMENT
+            and transaction.linked_ticket_id in ticket_by_id
+        ):
+            linked_ticket_id = transaction.linked_ticket_id
+            if linked_ticket_id is None:
+                continue
+            summary = linked_payment_summaries.setdefault(
+                linked_ticket_id,
+                _LinkedPaymentSummary(),
+            )
+            summary.amount += transaction.amount
+            note = (transaction.note or "").strip()
+            method = (transaction.method or "").strip()
+            if note and note not in summary.notes:
+                summary.notes.append(note)
+            if method and method not in summary.methods:
+                summary.methods.append(method)
+            summary.transaction_ids.append(transaction_id)
+
+    for ticket in tickets:
+        ticket_id = ticket.id
+        if ticket_id is None:
+            continue
+        events_by_customer[ticket.customer_id].append(
+            _LedgerEvent(
+                customer_id=ticket.customer_id,
+                created_at=_normalize_ledger_datetime(ticket.updated_at),
+                priority=0,
+                id=ticket_id,
+                amount=ticket.selling_price,
+                ticket=ticket,
+            )
+        )
+
+    rows: list[TicketDebtReportRow] = []
+    for customer_id, events in events_by_customer.items():
+        customer = customers_by_id.get(customer_id)
+        if customer is None:
+            continue
+
+        events.sort(key=lambda event: (event.created_at, event.priority, str(event.id)))
+        running_balance = 0.0
+
+        for event in events:
+            running_balance += event.amount
+            ticket = event.ticket
+            if ticket is None or ticket.id is None:
+                continue
+
+            charge = ticket_charges.get(ticket.id)
+            payment_summary = linked_payment_summaries.get(ticket.id)
+            created_at = event.created_at
+            linked_payment_note = (
+                "; ".join(payment_summary.notes)
+                if payment_summary and payment_summary.notes
+                else _manual_ticket_note(charge.note if charge else None)
+            )
+
+            rows.append(
+                TicketDebtReportRow(
+                    id=ticket.id,
+                    customer_id=customer_id,
+                    customer_name=customer.name,
+                    customer_phone=customer.phone,
+                    passenger_names=", ".join(ticket.passengers),
+                    issued_at=created_at,
+                    created_at=created_at,
+                    booked_at=(
+                        _normalize_ledger_datetime(ticket.booked_at)
+                        if ticket.booked_at
+                        else None
+                    ),
+                    content=ticket.pnr or str(ticket.id),
+                    amount=ticket.selling_price,
+                    running_balance=running_balance,
+                    ticket_id=ticket.id,
+                    pnr=ticket.pnr,
+                    ticket_number=ticket.ticket_number,
+                    ticket_selling_price=ticket.selling_price,
+                    ticket_discount=ticket.discount,
+                    ticket_ev_price=ticket.ev_price,
+                    ticket_ast_price=ticket.ast_price,
+                    ticket_thf_price=ticket.thf_price,
+                    ticket_web_price=ticket.web_price,
+                    ticket_insurance_price=ticket.insurance_price,
+                    ticket_true_income=ticket.true_income,
+                    airline=ticket.airline,
+                    route=_ticket_route(ticket),
+                    flight_date=_normalize_ledger_datetime(ticket.flight_date),
+                    ticket_status=ticket.status,
+                    transaction_id=charge.id if charge else None,
+                    transaction_category=charge.category if charge else None,
+                    transaction_method=charge.method if charge else None,
+                    evidence_url=charge.evidence_url if charge else None,
+                    linked_payment_amount=(
+                        payment_summary.amount if payment_summary else None
+                    ),
+                    linked_payment_note=linked_payment_note,
+                    linked_payment_methods=(
+                        payment_summary.methods if payment_summary else []
+                    ),
+                    linked_payment_transaction_ids=(
+                        payment_summary.transaction_ids if payment_summary else []
+                    ),
+                )
+            )
+
+    rows.sort(key=lambda row: (row.created_at, str(row.id)), reverse=True)
+    return rows
 
 
 class RecordPaymentPayload(BaseModel):

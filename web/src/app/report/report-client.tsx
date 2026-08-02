@@ -4,9 +4,9 @@ import patterns from "@/styles/ui-patterns.module.css"
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { Download, Loader2 } from "lucide-react"
+import { Download, Loader2, Search } from "lucide-react"
 
-import { StatusChip, TableScrollArea } from "@/components/command-center"
+import { TableScrollArea } from "@/components/command-center"
 import { TableStateRow } from "@/components/operations-ui"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,24 +38,19 @@ type LedgerReportClientProps = {
   rows: LedgerReportRow[]
 }
 
+type TableView = "summary" | "full"
+
 type ColumnKey =
   | "order"
-  | "customer_code"
-  | "customer_name"
-  | "customer_phone"
-  | "entry_type"
-  | "issued_at"
-  | "booked_at"
   | "created_at"
+  | "booked_at"
   | "description"
-  | "content"
-  | "amount"
-  | "paid"
-  | "outcome"
-  | "debt"
-  | "running_balance"
   | "pnr"
   | "ticket_number"
+  | "airline"
+  | "route"
+  | "flight_date"
+  | "ticket_status"
   | "selling_price"
   | "discount"
   | "ev_price"
@@ -64,17 +59,12 @@ type ColumnKey =
   | "web_price"
   | "insurance_price"
   | "true_income"
-  | "airline"
-  | "route"
-  | "flight_date"
-  | "ticket_status"
-  | "transaction_category"
-  | "transaction_method"
-  | "evidence_url"
+  | "payment_method"
+  | "note"
 
 type ColumnDefinition = {
   key: ColumnKey
-  align?: "left" | "right"
+  align?: "right"
   getValue: (row: LedgerReportRow, index: number) => string
 }
 
@@ -84,45 +74,19 @@ const columns: ColumnDefinition[] = [
     align: "right",
     getValue: (_row, index) => (index + 1).toString(),
   },
-  { key: "booked_at", getValue: (row) => row.booked_at ?? "" },
-  { key: "customer_code", getValue: (row) => `#${row.customer_id.slice(0, 8)}` },
-  { key: "customer_name", getValue: (row) => row.customer_name },
-  { key: "customer_phone", getValue: (row) => row.customer_phone ?? "" },
-  { key: "entry_type", getValue: (row) => row.entry_type },
-  { key: "issued_at", getValue: (row) => row.issued_at },
   { key: "created_at", getValue: (row) => row.created_at },
-  { key: "description", getValue: (row) => row.passenger_names },
-  { key: "content", getValue: (row) => row.content },
+  { key: "booked_at", getValue: (row) => row.booked_at ?? "" },
   {
-    key: "amount",
-    align: "right",
-    getValue: (row) => row.amount.toString(),
-  },
-  {
-    key: "paid",
-    align: "right",
+    key: "description",
     getValue: (row) =>
-      row.transaction_category === "PAYMENT"
-        ? Math.abs(row.amount).toString()
-        : "0",
-  },
-  {
-    key: "outcome",
-    align: "right",
-    getValue: (row) => (row.amount > 0 ? row.amount : 0).toString(),
-  },
-  {
-    key: "debt",
-    align: "right",
-    getValue: (row) => row.running_balance.toString(),
-  },
-  {
-    key: "running_balance",
-    align: "right",
-    getValue: (row) => row.running_balance.toString(),
+      [row.passenger_names, row.customer_name].filter(Boolean).join(" · "),
   },
   { key: "pnr", getValue: (row) => row.pnr ?? "" },
   { key: "ticket_number", getValue: (row) => row.ticket_number ?? "" },
+  { key: "airline", getValue: (row) => row.airline ?? "" },
+  { key: "route", getValue: (row) => row.route ?? "" },
+  { key: "flight_date", getValue: (row) => row.flight_date ?? "" },
+  { key: "ticket_status", getValue: (row) => row.ticket_status ?? "" },
   {
     key: "selling_price",
     align: "right",
@@ -163,27 +127,32 @@ const columns: ColumnDefinition[] = [
     align: "right",
     getValue: (row) => row.ticket_true_income.toString(),
   },
-  { key: "airline", getValue: (row) => row.airline ?? "" },
-  { key: "route", getValue: (row) => row.route ?? "" },
-  { key: "flight_date", getValue: (row) => row.flight_date ?? "" },
-  { key: "ticket_status", getValue: (row) => row.ticket_status ?? "" },
   {
-    key: "transaction_category",
-    getValue: (row) => row.transaction_category ?? "",
+    key: "payment_method",
+    getValue: (row) => getRowPaymentMethod(row),
   },
-  {
-    key: "transaction_method",
-    getValue: (row) => row.transaction_method ?? "",
-  },
-  { key: "evidence_url", getValue: (row) => row.evidence_url ?? "" },
+  { key: "note", getValue: (row) => row.linked_payment_note ?? "" },
 ]
 
-const defaultColumnKeys: ColumnKey[] = [
-  "order",
+const summaryColumnKeys: ColumnKey[] = [
   "booked_at",
-  "customer_name",
   "description",
-  "debt",
+  "selling_price",
+  "true_income",
+  "payment_method",
+  "note",
+]
+
+const fullColumnKeys: ColumnKey[] = [
+  "created_at",
+  "booked_at",
+  "description",
+  "pnr",
+  "ticket_number",
+  "airline",
+  "route",
+  "flight_date",
+  "ticket_status",
   "selling_price",
   "discount",
   "ev_price",
@@ -192,15 +161,81 @@ const defaultColumnKeys: ColumnKey[] = [
   "web_price",
   "insurance_price",
   "true_income",
+  "payment_method",
+  "note",
 ]
 
+const moneyColumnKeys = new Set<ColumnKey>([
+  "selling_price",
+  "discount",
+  "ev_price",
+  "ast_price",
+  "thf_price",
+  "web_price",
+  "insurance_price",
+  "true_income",
+])
+
+function getRowPaymentMethod(row: LedgerReportRow): string {
+  if (row.linked_payment_methods.length > 0) {
+    return row.linked_payment_methods.join(", ")
+  }
+
+  return row.transaction_method ?? ""
+}
+
+function normalizeSearch(value: string): string {
+  return value
+    .trim()
+    .toLocaleLowerCase("vi-VN")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+}
+
+function getRowSearchText(row: LedgerReportRow): string {
+  return normalizeSearch(
+    [
+      row.customer_name,
+      row.customer_phone,
+      row.passenger_names,
+      row.content,
+      row.pnr,
+      row.ticket_number,
+      row.airline,
+      row.route,
+      row.ticket_status,
+      getRowPaymentMethod(row),
+      row.linked_payment_note,
+      row.booked_at ? formatDate(row.booked_at) : "",
+      formatDate(row.created_at),
+      row.ticket_selling_price,
+      row.ticket_discount,
+      row.ticket_ev_price,
+      row.ticket_ast_price,
+      row.ticket_thf_price,
+      row.ticket_web_price,
+      row.ticket_insurance_price,
+      row.ticket_true_income,
+    ]
+      .filter((value) => value !== null && value !== undefined)
+      .join(" "),
+  )
+}
+
 function formatDate(value: string): string {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return ""
+  }
+
   return new Intl.DateTimeFormat("vi-VN", {
     timeZone: "Asia/Ho_Chi_Minh",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).format(new Date(value))
+  }).format(date)
 }
 
 function parseDateFilter(value: string, boundary: "start" | "end"): Date | null {
@@ -224,81 +259,33 @@ function formatCellValue(
   key: ColumnKey,
   index: number,
 ): string {
-  if (key === "issued_at") {
-    return formatDate(row.issued_at)
-  }
-
-  if (key === "booked_at") {
-    return row.booked_at ? formatDate(row.booked_at) : ""
+  if (key === "order") {
+    return (index + 1).toString()
   }
 
   if (key === "created_at") {
     return formatDate(row.created_at)
   }
 
-  if (key === "flight_date" && row.flight_date) {
-    return formatDate(row.flight_date)
+  if (key === "booked_at" || key === "flight_date") {
+    return row[key] ? formatDate(row[key]) : ""
   }
 
-  if (key === "amount") {
-    return formatCurrency(row.amount)
-  }
-
-  if (key === "paid") {
-    return row.transaction_category === "PAYMENT"
-      ? formatCurrency(Math.abs(row.amount))
-      : formatCurrency(0)
-  }
-
-  if (key === "outcome") {
-    return row.amount > 0 ? formatCurrency(row.amount) : ""
-  }
-
-  if (key === "debt") {
-    return formatCurrency(row.running_balance)
-  }
-
-  if (key === "selling_price") {
-    return row.ticket_selling_price > 0
-      ? formatCurrency(row.ticket_selling_price)
-      : formatCurrency(0)
-  }
-
-  if (key === "discount") {
-    return row.ticket_discount > 0
-      ? formatCurrency(row.ticket_discount)
-      : formatCurrency(0)
-  }
-
-  if (key === "ev_price") {
-    return formatCurrency(row.ticket_ev_price)
-  }
-
-  if (key === "ast_price") {
-    return formatCurrency(row.ticket_ast_price)
-  }
-
-  if (key === "thf_price") {
-    return formatCurrency(row.ticket_thf_price)
-  }
-
-  if (key === "web_price") {
-    return formatCurrency(row.ticket_web_price)
-  }
-
-  if (key === "insurance_price") {
-    return formatCurrency(row.ticket_insurance_price)
-  }
-
-  if (key === "true_income") {
-    return formatCurrency(row.ticket_true_income)
-  }
-
-  if (key === "running_balance") {
-    return formatCurrency(row.running_balance)
+  if (moneyColumnKeys.has(key)) {
+    const column = columns.find((item) => item.key === key)
+    return column ? formatCurrency(Number(column.getValue(row, index))) : ""
   }
 
   return columns.find((column) => column.key === key)?.getValue(row, index) ?? ""
+}
+
+function getColumnsForView(tableView: TableView): ColumnDefinition[] {
+  const keys = tableView === "summary" ? summaryColumnKeys : fullColumnKeys
+
+  return keys.flatMap((key) => {
+    const column = columns.find((item) => item.key === key)
+    return column ? [column] : []
+  })
 }
 
 function getWorkbookCellValue(
@@ -307,6 +294,7 @@ function getWorkbookCellValue(
   index: number,
 ): ReportWorkbookCell {
   const value = column.getValue(row, index)
+
   return column.align === "right"
     ? Number(value)
     : formatCellValue(row, column.key, index)
@@ -339,60 +327,26 @@ async function downloadExcelPreview(
   URL.revokeObjectURL(url)
 }
 
-function getEntryTone(
-  entryType: LedgerReportRow["entry_type"],
-): "neutral" | "info" | "warning" {
-  if (entryType === "ticket") return "warning"
-  if (entryType === "adjustment") return "neutral"
-  return "info"
-}
-
 type ReportRowsResponse = {
   rows: LedgerReportRow[]
 }
 
 type ReportSummary = {
+  rows: number
+  customers: number
   totalSellingPrice: number
-  totalPaid: number
   totalIncome: number
-  totalDebt: number
 }
 
 function getReportSummary(rows: LedgerReportRow[]): ReportSummary {
-  const latestBalanceByCustomer = new Map<
-    string,
-    { issuedAt: number; balance: number }
-  >()
-
-  for (const row of rows) {
-    const issuedAt = new Date(row.issued_at).getTime()
-    const current = latestBalanceByCustomer.get(row.customer_id)
-
-    if (!current || issuedAt > current.issuedAt) {
-      latestBalanceByCustomer.set(row.customer_id, {
-        issuedAt,
-        balance: row.running_balance,
-      })
-    }
-  }
-
   return {
+    rows: rows.length,
+    customers: new Set(rows.map((row) => row.customer_id)).size,
     totalSellingPrice: rows.reduce(
       (sum, row) => sum + row.ticket_selling_price,
       0,
     ),
-    totalPaid: rows.reduce(
-      (sum, row) =>
-        row.transaction_category === "PAYMENT"
-          ? sum + Math.abs(row.amount)
-          : sum,
-      0,
-    ),
     totalIncome: rows.reduce((sum, row) => sum + row.ticket_true_income, 0),
-    totalDebt: Array.from(latestBalanceByCustomer.values()).reduce(
-      (sum, item) => sum + item.balance,
-      0,
-    ),
   }
 }
 
@@ -405,12 +359,8 @@ function SummaryMetric({
 }) {
   return (
     <div className={styles.metric}>
-      <p className={patterns.eyebrow}>
-        {label}
-      </p>
-      <p className={styles.metricValue}>
-        {value}
-      </p>
+      <p className={patterns.eyebrow}>{label}</p>
+      <p className={styles.metricValue}>{value}</p>
     </div>
   )
 }
@@ -427,13 +377,13 @@ export function LedgerReportClient({
   const [toValue, setToValue] = React.useState(initialTo)
   const [appliedFrom, setAppliedFrom] = React.useState(initialFrom)
   const [appliedTo, setAppliedTo] = React.useState(initialTo)
+  const [searchValue, setSearchValue] = React.useState("")
+  const [tableView, setTableView] = React.useState<TableView>("summary")
   const [isApplying, setIsApplying] = React.useState(false)
   const [isExporting, setIsExporting] = React.useState(false)
   const [filterError, setFilterError] = React.useState<string | null>(null)
   const [exportError, setExportError] = React.useState<string | null>(null)
-  const [selectedKeys, setSelectedKeys] = React.useState<ColumnKey[]>(
-    defaultColumnKeys,
-  )
+
   const columnLabels = React.useMemo(
     () =>
       Object.fromEntries(
@@ -444,13 +394,24 @@ export function LedgerReportClient({
       ) as Record<ColumnKey, string>,
     [t],
   )
-  const selectedColumns = React.useMemo(
-    () => columns.filter((column) => selectedKeys.includes(column.key)),
-    [selectedKeys],
+  const visibleColumns = React.useMemo(
+    () => getColumnsForView(tableView),
+    [tableView],
   )
+  const filteredRows = React.useMemo(() => {
+    const normalizedQuery = normalizeSearch(searchValue)
+
+    if (!normalizedQuery) {
+      return reportRows
+    }
+
+    return reportRows.filter((row) =>
+      getRowSearchText(row).includes(normalizedQuery),
+    )
+  }, [reportRows, searchValue])
   const summary = React.useMemo(
-    () => getReportSummary(reportRows),
-    [reportRows],
+    () => getReportSummary(filteredRows),
+    [filteredRows],
   )
   const scopeLabel =
     appliedFrom || appliedTo
@@ -465,14 +426,6 @@ export function LedgerReportClient({
     setAppliedTo(initialTo)
   }, [initialFrom, initialTo, rows])
 
-  const toggleColumn = (key: ColumnKey) => {
-    setSelectedKeys((current) =>
-      current.includes(key)
-        ? current.filter((currentKey) => currentKey !== key)
-        : [...current, key],
-    )
-  }
-
   const handleApplyFilters = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsApplying(true)
@@ -480,7 +433,7 @@ export function LedgerReportClient({
 
     try {
       const fromDate = parseDateFilter(fromValue, "start")
-      const toDate = parseDateFilter(toValue, "start")
+      const toDate = parseDateFilter(toValue, "end")
 
       if (fromDate && toDate && fromDate > toDate) {
         setFilterError(t("report.filters.invalidRange"))
@@ -526,7 +479,7 @@ export function LedgerReportClient({
     setExportError(null)
 
     try {
-      await downloadExcelPreview(reportRows, selectedColumns, columnLabels)
+      await downloadExcelPreview(filteredRows, visibleColumns, columnLabels)
     } catch {
       setExportError(t("report.exportFailure"))
     } finally {
@@ -539,23 +492,14 @@ export function LedgerReportClient({
       <section className={styles.report}>
         <div className={styles.header}>
           <div className={patterns.minWidthZero}>
-            <p className={patterns.accentEyebrow}>
-              {t("report.eyebrow")}
-            </p>
-            <h1 className={styles.title}>
-              {t("report.previewTitle")}
-            </h1>
+            <p className={patterns.accentEyebrow}>{t("report.eyebrow")}</p>
+            <h1 className={styles.title}>{t("report.title")}</h1>
+            <p className={styles.description}>{t("report.description")}</p>
           </div>
 
-          <form
-            className={styles.filters}
-            onSubmit={handleApplyFilters}
-          >
+          <form className={styles.filters} onSubmit={handleApplyFilters}>
             <div className={patterns.fieldStack}>
-              <label
-                className={patterns.eyebrow}
-                htmlFor="report-from"
-              >
+              <label className={patterns.eyebrow} htmlFor="report-from">
                 {t("report.filters.from")}
               </label>
               <Input
@@ -567,10 +511,7 @@ export function LedgerReportClient({
               />
             </div>
             <div className={patterns.fieldStack}>
-              <label
-                className={patterns.eyebrow}
-                htmlFor="report-to"
-              >
+              <label className={patterns.eyebrow} htmlFor="report-to">
                 {t("report.filters.to")}
               </label>
               <Input
@@ -581,11 +522,24 @@ export function LedgerReportClient({
                 value={toValue}
               />
             </div>
-            <Button
-              disabled={isApplying}
-              type="submit"
-              variant="outline"
-            >
+            <div className={cn(patterns.fieldStack, styles.searchField)}>
+              <label className={patterns.eyebrow} htmlFor="report-search">
+                {t("report.filters.searchLabel")}
+              </label>
+              <div className={styles.searchInput}>
+                <Search aria-hidden="true" className={styles.searchIcon} />
+                <Input
+                  aria-label={t("report.filters.searchLabel")}
+                  id="report-search"
+                  name="search"
+                  onChange={(event) => setSearchValue(event.target.value)}
+                  placeholder={t("report.filters.searchPlaceholder")}
+                  type="search"
+                  value={searchValue}
+                />
+              </div>
+            </div>
+            <Button disabled={isApplying} type="submit" variant="outline">
               {isApplying ? (
                 <>
                   <Loader2 className={`${patterns.iconSmall} ${patterns.spinner}`} />
@@ -596,11 +550,7 @@ export function LedgerReportClient({
               )}
             </Button>
             <Button
-              disabled={
-                isExporting ||
-                reportRows.length === 0 ||
-                selectedColumns.length === 0
-              }
+              disabled={isExporting || filteredRows.length === 0}
               onClick={handleExport}
               type="button"
             >
@@ -627,63 +577,108 @@ export function LedgerReportClient({
 
         <div className={styles.summary}>
           <div className={styles.summaryHeader}>
-            <p className={patterns.accentEyebrow}>
-              {t("report.metrics.summary")}
-            </p>
-            <span className={patterns.supportingText}>{scopeLabel}</span>
+            <div>
+              <p className={patterns.accentEyebrow}>
+                {t("report.metrics.summary")}
+              </p>
+              <span className={patterns.supportingText}>{scopeLabel}</span>
+            </div>
+            <span className={styles.resultCount}>
+              {summary.rows} {t("report.table.results")}
+            </span>
           </div>
           <div className={styles.metrics}>
+            <SummaryMetric
+              label={t("report.metrics.rows")}
+              value={summary.rows.toLocaleString("vi-VN")}
+            />
+            <SummaryMetric
+              label={t("report.metrics.customers")}
+              value={summary.customers.toLocaleString("vi-VN")}
+            />
             <SummaryMetric
               label={t("report.metrics.totalSellingPrice")}
               value={formatCurrency(summary.totalSellingPrice)}
             />
             <SummaryMetric
-              label={t("report.metrics.totalPaid")}
-              value={formatCurrency(summary.totalPaid)}
-            />
-            <SummaryMetric
               label={t("report.metrics.totalIncome")}
               value={formatCurrency(summary.totalIncome)}
-            />
-            <SummaryMetric
-              label={t("report.metrics.totalDebt")}
-              value={formatCurrency(summary.totalDebt)}
             />
           </div>
         </div>
 
+        <div className={styles.tableToolbar}>
+          <div>
+            <p className={patterns.accentEyebrow}>
+              {t("report.table.eyebrow")}
+            </p>
+            <p className={patterns.supportingText}>
+              {t("report.table.description")}
+            </p>
+          </div>
+          <div className={styles.viewControls}>
+            <span className={patterns.eyebrow}>
+              {t("report.table.view.label")}
+            </span>
+            <div aria-label={t("report.table.view.label")} className={styles.viewButtons} role="group">
+              <Button
+                aria-pressed={tableView === "summary"}
+                onClick={() => setTableView("summary")}
+                size="sm"
+                type="button"
+                variant={tableView === "summary" ? "default" : "outline"}
+              >
+                {t("report.table.view.summary")}
+              </Button>
+              <Button
+                aria-pressed={tableView === "full"}
+                onClick={() => setTableView("full")}
+                size="sm"
+                type="button"
+                variant={tableView === "full" ? "default" : "outline"}
+              >
+                {t("report.table.view.full")}
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <TableScrollArea>
-          <Table className={styles.table}>
+          <Table
+            className={cn(
+              styles.table,
+              tableView === "full" && styles.fullTable,
+            )}
+          >
             <TableHeader>
               <TableRow>
-                {selectedColumns.length === 0 ? (
-                  <TableHead>{t("report.noColumns")}</TableHead>
-                ) : (
-                  selectedColumns.map((column) => (
-                    <TableHead
-                      className={cn(
-                        styles.tableHead,
-                      )}
-                      key={column.key}
-                    >
-                      {columnLabels[column.key]}
-                    </TableHead>
-                  ))
-                )}
+                {visibleColumns.map((column) => (
+                  <TableHead
+                    className={cn(
+                      styles.tableHead,
+                      column.align === "right" && styles.numericCell,
+                    )}
+                    key={column.key}
+                  >
+                    {columnLabels[column.key]}
+                  </TableHead>
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {reportRows.length === 0 ? (
+              {filteredRows.length === 0 ? (
                 <TableStateRow
-                  colSpan={Math.max(selectedColumns.length, 1)}
-                  message={t("report.empty")}
+                  colSpan={visibleColumns.length}
+                  message={
+                    reportRows.length === 0
+                      ? t("report.empty")
+                      : t("report.searchEmpty")
+                  }
                 />
-              ) : selectedColumns.length === 0 ? (
-                <TableStateRow colSpan={1} message={t("report.noColumns")} />
               ) : (
-                reportRows.map((row, rowIndex) => (
+                filteredRows.map((row, rowIndex) => (
                   <TableRow key={row.id}>
-                    {selectedColumns.map((column) => {
+                    {visibleColumns.map((column) => {
                       const value = formatCellValue(row, column.key, rowIndex)
 
                       return (
@@ -691,13 +686,19 @@ export function LedgerReportClient({
                           className={cn(
                             styles.tableCell,
                             column.align === "right" && styles.numericCell,
+                            column.key === "note" && styles.noteCell,
                           )}
                           key={`${row.id}-${column.key}`}
                         >
-                          {column.key === "entry_type" ? (
-                            <StatusChip tone={getEntryTone(row.entry_type)}>
-                              {t(`report.entryTypes.${row.entry_type}`)}
-                            </StatusChip>
+                          {column.key === "description" ? (
+                            <div className={styles.recordContext}>
+                              <span className={styles.recordPrimary}>
+                                {row.passenger_names || t("report.emptyValue")}
+                              </span>
+                              <span className={styles.recordSecondary}>
+                                {row.customer_name}
+                              </span>
+                            </div>
                           ) : (
                             value
                           )}
@@ -711,58 +712,6 @@ export function LedgerReportClient({
           </Table>
         </TableScrollArea>
       </section>
-
-      <details className={styles.columnPicker}>
-        <summary className={styles.columnSummary}>
-          <span>
-            <span className={patterns.accentEyebrow}>
-              {t("report.columnsTitle")}
-            </span>
-            <span className={styles.columnCount}>
-              {selectedColumns.length}/{columns.length}
-            </span>
-          </span>
-          <span className={styles.columnDescription}>
-            {t("report.columnsDescription")}
-          </span>
-        </summary>
-
-        <div className={styles.columnContent}>
-          <div className={styles.columnActions}>
-            <Button
-              onClick={() => setSelectedKeys(columns.map((column) => column.key))}
-              type="button"
-              variant="outline"
-            >
-              {t("report.selectAll")}
-            </Button>
-            <Button
-              onClick={() => setSelectedKeys([])}
-              type="button"
-              variant="outline"
-            >
-              {t("report.clearSelection")}
-            </Button>
-          </div>
-
-          <div className={styles.columnGrid}>
-            {columns.map((column) => (
-              <label
-                className={styles.columnOption}
-                key={column.key}
-              >
-                <input
-                  checked={selectedKeys.includes(column.key)}
-                  className={styles.checkbox}
-                  onChange={() => toggleColumn(column.key)}
-                  type="checkbox"
-                />
-                <span>{columnLabels[column.key]}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      </details>
     </div>
   )
 }

@@ -241,6 +241,9 @@ show a clear in-flight label.
 - Use Astryx form components or the shared `Input`, `Textarea`, `Label`, and
   token-based select style.
 - Labels are required; placeholders are examples, not labels.
+- Required fields must use the field wrapper's `isRequired` state, a visible
+  semantic marker, and native input validation. Optional fields must not show a
+  required marker.
 - Keep errors next to the field and use `role="alert"` when appropriate.
 - Use the same Zod schema across client and server boundaries.
 - Use semantic state styling for parsed or selected fields.

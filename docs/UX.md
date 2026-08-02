@@ -21,6 +21,23 @@ The UI must prioritize repeat work over presentation. It should feel calm, dense
 
 The `/debts/input` page is the reference pattern for function-first operations UI: one focused form, one adjacent table, the primary action attached to the form, minimal framing, and no redundant title/header cards.
 
+### Manual debt entry contract
+
+Keep the `/debts/input` form stable around this validation contract:
+
+- `Khách hàng` is the only always-required field. Its label must show the
+  required state and its input must use native required validation.
+- PNR, airline, ticket number, passengers, route, flight date, ticket issue
+  date, pricing fields, and payment details are optional. Blank numeric values
+  are treated as `0`, and the date inputs default to today in the UI.
+- PNR must contain exactly six characters when provided.
+- A payment method is required when a payment amount or payment date is
+  entered. Selecting a method without an amount is allowed and stores the
+  method on the debt charge.
+- Keep this contract in the shared Zod schema and the server action. Do not
+  make another field required without updating this section and both validation
+  boundaries.
+
 ## 2. Product Personality
 
 Bay Buddy should feel:

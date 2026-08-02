@@ -1,5 +1,3 @@
-import Link from "next/link"
-
 import {
   Panel,
   PanelHeaderRow,
@@ -64,7 +62,6 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
                 {t(`financeDocuments.statuses.invoice.${invoice.status}`)}
               </StatusChip>
               <Button
-                as={Link}
                 href={`/invoices/${invoice.id}/public`}
                 variant="outline"
                 size="sm"

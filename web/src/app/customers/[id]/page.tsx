@@ -1,5 +1,4 @@
 import { cookies } from "next/headers"
-import Link from "next/link"
 import { redirect } from "next/navigation"
 
 import {
@@ -83,7 +82,7 @@ export default async function CustomerLedgerPage({ params }: PageProps) {
   return (
     <div className={patterns.sectionStack}>
       <div>
-        <Button as={Link} href="/customers" variant="outline">
+        <Button href="/customers" variant="outline">
           {t("customers.ledger.back")}
         </Button>
       </div>
@@ -99,10 +98,7 @@ export default async function CustomerLedgerPage({ params }: PageProps) {
           title={t("customers.ledger.invoices.title")}
           description={t("customers.ledger.invoices.description")}
           action={
-            <Button
-              as={Link}
-              href={`/invoices?customer_id=${encodeURIComponent(customerId)}`}
-            >
+            <Button href={`/invoices?customer_id=${encodeURIComponent(customerId)}`}>
               {t("customers.ledger.invoices.open")}
             </Button>
           }

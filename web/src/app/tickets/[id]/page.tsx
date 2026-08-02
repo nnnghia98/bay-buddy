@@ -1,4 +1,3 @@
-import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { TicketDetailClient } from "@/app/tickets/[id]/ticket-detail-client"
@@ -39,7 +38,6 @@ export default async function TicketDetailPage({ params }: PageProps) {
     <div className={patterns.sectionStack}>
       <div>
         <Button
-          as={Link}
           href={`/customers/${ticketResult.customer_id}`}
           variant="outline"
         >

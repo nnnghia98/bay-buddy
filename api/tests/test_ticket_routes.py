@@ -195,6 +195,35 @@ def test_confirm_ticket_allows_shared_pnr_for_group_passengers(
         assert customer.balance == pytest.approx(2400000)
 
 
+def test_ticket_debt_report_returns_each_ticket_for_one_customer(
+    test_client,
+):
+    first_response = test_client.post("/api/v1/tickets/confirm", json=_confirm_payload())
+    second_response = test_client.post(
+        "/api/v1/tickets/confirm",
+        json=_confirm_payload()
+        | {
+            "pnr": "DEF456",
+            "ticket_number": "7382319992102",
+            "passengers": ["TRAN THI B"],
+        },
+    )
+
+    assert first_response.status_code == 201
+    assert second_response.status_code == 201
+
+    response = test_client.get("/api/v1/finance/ticket-debts")
+
+    assert response.status_code == 200
+    rows = response.json()["data"]
+    assert len(rows) == 2
+    assert {row["pnr"] for row in rows} == {"ABC123", "DEF456"}
+    assert {row["customer_id"] for row in rows} == {
+        first_response.json()["data"]["customer"]["id"]
+    }
+    assert all(row["entry_type"] == "ticket" for row in rows)
+
+
 def test_confirm_ticket_allows_null_pnr(
     test_client,
     test_engine,

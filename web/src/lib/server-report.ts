@@ -1,6 +1,11 @@
 import "server-only"
 
-import { fetchCustomerDirectory, fetchCustomerLedger } from "@/lib/server-customers"
+import { z } from "zod"
+
+import {
+  fetchAuthenticatedApiPayload,
+  getEnvelopeData,
+} from "@/lib/server-api"
 import { paymentMethodOptions, type CustomerLedger } from "@/schemas"
 
 export type LedgerReportRow = {
@@ -45,6 +50,46 @@ export type LedgerReportRange = {
   from?: string
   to?: string
 }
+
+const ticketDebtReportRowSchema = z.object({
+  id: z.string().uuid(),
+  customer_id: z.string().uuid(),
+  customer_name: z.string(),
+  customer_phone: z.string().nullable(),
+  passenger_names: z.string(),
+  entry_type: z.literal("ticket"),
+  issued_at: z.string(),
+  created_at: z.string(),
+  booked_at: z.string().nullable(),
+  content: z.string(),
+  amount: z.number(),
+  running_balance: z.number(),
+  ticket_id: z.string().uuid(),
+  pnr: z.string().nullable(),
+  ticket_number: z.string().nullable(),
+  ticket_selling_price: z.number(),
+  ticket_discount: z.number(),
+  ticket_ev_price: z.number(),
+  ticket_ast_price: z.number(),
+  ticket_thf_price: z.number(),
+  ticket_web_price: z.number(),
+  ticket_insurance_price: z.number(),
+  ticket_true_income: z.number(),
+  airline: z.string().nullable(),
+  route: z.string().nullable(),
+  flight_date: z.string().nullable(),
+  ticket_status: z.string().nullable(),
+  transaction_id: z.string().uuid().nullable(),
+  transaction_category: z.string().nullable(),
+  transaction_method: z.string().nullable(),
+  evidence_url: z.string().nullable(),
+  linked_payment_amount: z.number().nullable(),
+  linked_payment_note: z.string().nullable(),
+  linked_payment_methods: z.array(z.string()),
+  linked_payment_transaction_ids: z.array(z.string().uuid()),
+})
+
+const ticketDebtReportRowsSchema = z.array(ticketDebtReportRowSchema)
 
 function getTicketRoute(ticket: CustomerLedger["entries"][number]["ticket"]): string | null {
   if (!ticket) {
@@ -161,10 +206,7 @@ export function mapLedgerToReportRows(
       customer_phone: ledger.customer.phone ?? null,
       passenger_names: ticket?.passengers.join(", ") ?? entry.content,
       entry_type: entry.entry_type,
-      issued_at:
-        ticket?.created_at.toISOString() ??
-        transaction?.created_at.toISOString() ??
-        entry.created_at.toISOString(),
+      issued_at: entry.created_at.toISOString(),
       created_at: entry.created_at.toISOString(),
       booked_at: ticket?.booked_at?.toISOString() ?? null,
       content: entry.content,
@@ -244,7 +286,7 @@ function filterRowsByRange(
   const toDate = parseDateOnlyRange(range.to, "end")
 
   return rows.filter((row) => {
-    const rowDate = new Date(row.issued_at)
+    const rowDate = new Date(row.created_at)
 
     if (fromDate && rowDate < fromDate) {
       return false
@@ -258,37 +300,23 @@ function filterRowsByRange(
   })
 }
 
-function isNextRedirectError(error: unknown): boolean {
-  return (
-    error !== null &&
-    typeof error === "object" &&
-    "digest" in error &&
-    typeof (error as { digest?: unknown }).digest === "string" &&
-    (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
+export async function fetchTicketDebtRows(
+  range: LedgerReportRange = {},
+): Promise<LedgerReportRow[]> {
+  const payload = await fetchAuthenticatedApiPayload(
+    "/finance/ticket-debts",
+    "Unable to load ticket debts.",
+  )
+  const rows = ticketDebtReportRowsSchema.parse(getEnvelopeData(payload))
+
+  return filterRowsByRange(rows, range).sort((first, second) =>
+    second.created_at.localeCompare(first.created_at),
   )
 }
 
+/** @deprecated Use fetchTicketDebtRows for global ticket debt rows. */
 export async function fetchLedgerReportRows(
   range: LedgerReportRange = {},
 ): Promise<LedgerReportRow[]> {
-  const customers = await fetchCustomerDirectory(500)
-  const settledLedgers = await Promise.allSettled(
-    customers.map((customer) => fetchCustomerLedger(customer.id)),
-  )
-  const redirectResult = settledLedgers.find(
-    (result) =>
-      result.status === "rejected" && isNextRedirectError(result.reason),
-  )
-
-  if (redirectResult?.status === "rejected") {
-    throw redirectResult.reason
-  }
-
-  const rows = settledLedgers
-    .flatMap((result) =>
-      result.status === "fulfilled" ? mapLedgerToReportRows(result.value) : [],
-    )
-    .sort((first, second) => second.created_at.localeCompare(first.created_at))
-
-  return filterRowsByRange(rows, range)
+  return fetchTicketDebtRows(range)
 }

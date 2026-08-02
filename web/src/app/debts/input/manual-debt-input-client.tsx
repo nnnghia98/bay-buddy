@@ -16,7 +16,6 @@ import {
   ChevronsUpDown,
   CircleDollarSign,
   Eye,
-  Filter,
   Info,
   Pencil,
   Loader2,
@@ -145,22 +144,6 @@ function formatDateLocal(value: string | null | undefined): string {
   return formatDateInputValue(date)
 }
 
-function parseDateFilter(value: string, boundary: "start" | "end"): Date | null {
-  if (!value) {
-    return null
-  }
-
-  const [year, month, day] = value.split("-").map(Number)
-
-  if (!year || !month || !day) {
-    return null
-  }
-
-  return boundary === "start"
-    ? new Date(Date.UTC(year, month - 1, day, -7, 0, 0, 0))
-    : new Date(Date.UTC(year, month - 1, day, 16, 59, 59, 999))
-}
-
 function getFieldError(
   fieldErrors: Partial<Record<ManualDebtField, string>>,
   field: ManualDebtField,
@@ -286,11 +269,13 @@ function getDefaultSortDirection(sortKey: SortKey): SortDirection {
 function FormField({
   children,
   error,
+  isRequired = false,
   label,
   htmlFor,
 }: {
   children: React.ReactNode
   error?: string
+  isRequired?: boolean
   label: string
   htmlFor: string
 }) {
@@ -301,6 +286,11 @@ function FormField({
         htmlFor={htmlFor}
       >
         {label}
+        {isRequired ? (
+          <span aria-hidden="true" className={styles.requiredMark}>
+            *
+          </span>
+        ) : null}
       </Label>
       {children}
       {error ? (
@@ -318,12 +308,14 @@ function CustomerAutocomplete({
   name,
   noResultsLabel,
   placeholder,
+  required = false,
 }: {
   customers: CustomerDirectoryItem[]
   id: string
   name: string
   noResultsLabel: string
   placeholder: string
+  required?: boolean
 }) {
   const listboxId = React.useId()
   const [value, setValue] = React.useState("")
@@ -415,6 +407,7 @@ function CustomerAutocomplete({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         role="combobox"
+        required={required}
         value={value}
       />
       <ChevronsUpDown
@@ -1746,17 +1739,12 @@ export function ManualDebtInputClient({
   const [actionState, setActionState] = React.useState<ManualDebtActionState>(
     initialManualDebtActionState,
   )
-  const [fromValue, setFromValue] = React.useState("")
-  const [toValue, setToValue] = React.useState("")
-  const [appliedFrom, setAppliedFrom] = React.useState("")
-  const [appliedTo, setAppliedTo] = React.useState("")
   const [searchValue, setSearchValue] = React.useState("")
   const deferredSearchValue = React.useDeferredValue(searchValue)
   const [sortState, setSortState] = React.useState<SortState>({
     key: "createdAt",
     direction: "desc",
   })
-  const [filterError, setFilterError] = React.useState<string | null>(null)
   const [sellingPrice, setSellingPrice] = React.useState(0)
   const [discount, setDiscount] = React.useState(0)
   const [evPrice, setEvPrice] = React.useState(0)
@@ -1814,21 +1802,9 @@ export function ManualDebtInputClient({
   ])
 
   const filteredRows = React.useMemo(() => {
-    const fromDate = parseDateFilter(appliedFrom, "start")
-    const toDate = parseDateFilter(appliedTo, "end")
     const normalizedQuery = normalizeSearch(deferredSearchValue)
 
     const matchingRows = rows.filter((row) => {
-      const rowDate = new Date(row.created_at)
-
-      if (fromDate && rowDate < fromDate) {
-        return false
-      }
-
-      if (toDate && rowDate > toDate) {
-        return false
-      }
-
       return !normalizedQuery || getRowSearchText(row).includes(normalizedQuery)
     })
 
@@ -1847,7 +1823,7 @@ export function ManualDebtInputClient({
         return first.index - second.index
       })
       .map(({ row }) => row)
-  }, [appliedFrom, appliedTo, deferredSearchValue, rows, sortState])
+  }, [deferredSearchValue, rows, sortState])
 
   const trueIncome =
     sellingPrice + discount - (evPrice + astPrice + thfPrice + webPrice + insurancePrice)
@@ -1875,22 +1851,6 @@ export function ManualDebtInputClient({
   const openManualDebtForm = () => {
     resetManualDebtForm()
     setIsFormOpen(true)
-  }
-
-  const handleApplyFilters = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setFilterError(null)
-
-    const fromDate = parseDateFilter(fromValue, "start")
-    const toDate = parseDateFilter(toValue, "start")
-
-    if (fromDate && toDate && fromDate > toDate) {
-      setFilterError(t("manualDebts.filters.invalidRange"))
-      return
-    }
-
-    setAppliedFrom(fromValue)
-    setAppliedTo(toValue)
   }
 
   const handleSort = React.useCallback((sortKey: SortKey) => {
@@ -1992,6 +1952,7 @@ export function ManualDebtInputClient({
                   <FormField
                     error={getFieldError(fieldErrors, "customer_name")}
                     htmlFor="manual-debt-customer"
+                    isRequired
                     label={t("manualDebts.form.fields.customer")}
                   >
                     <CustomerAutocomplete
@@ -2000,6 +1961,7 @@ export function ManualDebtInputClient({
                       name="customer_name"
                       noResultsLabel={t("manualDebts.form.customerNoResults")}
                       placeholder={t("manualDebts.form.customerPlaceholder")}
+                      required
                     />
                   </FormField>
 
@@ -2330,42 +2292,8 @@ export function ManualDebtInputClient({
       <div className={styles.tableColumn}>
         <Panel className={styles.tablePanel}>
             <div className={styles.filterHeader}>
-              <form
-                className={styles.filterForm}
-                onSubmit={handleApplyFilters}
-              >
-                <div className={patterns.fieldStack}>
-                  <Label
-                    className={patterns.eyebrow}
-                    htmlFor="manual-debt-from"
-                  >
-                    {t("manualDebts.filters.from")}
-                  </Label>
-                  <Input
-                    id="manual-debt-from"
-                    onChange={(event) => setFromValue(event.target.value)}
-                    type="date"
-                    value={fromValue}
-                  />
-                </div>
-                <div className={patterns.fieldStack}>
-                  <Label
-                    className={patterns.eyebrow}
-                    htmlFor="manual-debt-to"
-                  >
-                    {t("manualDebts.filters.to")}
-                  </Label>
-                  <Input
-                    id="manual-debt-to"
-                    onChange={(event) => setToValue(event.target.value)}
-                    type="date"
-                    value={toValue}
-                  />
-                </div>
-                <Button className={styles.filterButton} type="submit" variant="outline">
-                  <Filter className={patterns.iconSmall} />
-                  {t("manualDebts.filters.apply")}
-                </Button>
+              {/* TODO: Reintroduce the date range filter with a shared timezone contract. */}
+              <div className={styles.filterForm}>
                 <div className={styles.searchField}>
                   <Label
                     className={patterns.eyebrow}
@@ -2389,7 +2317,7 @@ export function ManualDebtInputClient({
                     />
                   </div>
                 </div>
-              </form>
+              </div>
               <Button
                 className={styles.openFormButton}
                 onClick={openManualDebtForm}
@@ -2399,14 +2327,6 @@ export function ManualDebtInputClient({
                 {t("manualDebts.actions.openForm")}
               </Button>
             </div>
-            {filterError ? (
-              <p
-                className={styles.filterError}
-                role="alert"
-              >
-                {filterError}
-              </p>
-            ) : null}
             <TableHorizontalControls
               onTableViewChange={setTableView}
               resultCount={filteredRows.length}

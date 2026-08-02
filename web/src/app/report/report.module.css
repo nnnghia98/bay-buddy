@@ -14,8 +14,7 @@
   font-weight: var(--font-weight-semibold);
 }
 
-.report,
-.columnPicker {
+.report {
   overflow: hidden;
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-container);
@@ -28,7 +27,7 @@
   flex-direction: column;
   gap: var(--spacing-4);
   border-block-end: var(--border-width) solid var(--color-border);
-  padding: var(--spacing-3) var(--spacing-5);
+  padding: var(--spacing-4) var(--spacing-5);
 }
 
 .title {
@@ -38,9 +37,40 @@
   font-weight: var(--text-heading-3-weight);
 }
 
+.description {
+  max-width: 42rem;
+  margin-block-start: var(--spacing-2);
+  color: var(--color-text-secondary);
+  font-size: var(--text-supporting-size);
+}
+
 .filters {
   display: grid;
   gap: var(--spacing-3);
+}
+
+.searchField {
+  min-width: 0;
+}
+
+.searchInput {
+  position: relative;
+}
+
+.searchInput input {
+  padding-inline-start: var(--spacing-9);
+}
+
+.searchIcon {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: var(--spacing-3);
+  width: var(--spacing-4);
+  height: var(--spacing-4);
+  color: var(--color-text-secondary);
+  pointer-events: none;
+  transform: translateY(-50%);
 }
 
 .error {
@@ -55,22 +85,54 @@
   background: var(--color-background-muted);
 }
 
-.summaryHeader {
+.summaryHeader,
+.tableToolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-3);
+  gap: var(--spacing-4);
+  padding: var(--spacing-3) var(--spacing-5);
+}
+
+.summaryHeader {
   border-block-end: var(--border-width) solid var(--color-border);
-  padding: var(--spacing-2) var(--spacing-5);
+}
+
+.resultCount {
+  color: var(--color-text-secondary);
+  font-size: var(--text-supporting-size);
+  white-space: nowrap;
 }
 
 .metrics {
   display: grid;
 }
 
+.tableToolbar {
+  align-items: flex-end;
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.viewControls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.viewButtons {
+  display: flex;
+  gap: var(--spacing-1);
+}
+
 .table {
-  min-width: 48rem;
+  min-width: 68rem;
   border-collapse: collapse;
+}
+
+.fullTable {
+  min-width: 112rem;
 }
 
 .tableHead,
@@ -94,86 +156,47 @@
 }
 
 .numericCell {
+  font-variant-numeric: tabular-nums;
   font-weight: var(--font-weight-semibold);
   text-align: end;
 }
 
-.columnSummary {
+.recordContext {
   display: flex;
-  cursor: pointer;
-  list-style: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-3);
-  padding: var(--spacing-3) var(--spacing-5);
+  min-width: 13rem;
+  flex-direction: column;
+  gap: var(--spacing-0-5);
+  white-space: normal;
 }
 
-.columnSummary::-webkit-details-marker {
-  display: none;
-}
-
-.columnCount {
-  display: block;
-  margin-block-start: var(--spacing-1);
-  color: var(--color-text-secondary);
-}
-
-.columnDescription {
-  color: var(--color-text-accent);
-  font-weight: var(--font-weight-medium);
-}
-
-.columnContent {
-  border-block-start: var(--border-width) solid var(--color-border);
-  padding: var(--spacing-4) var(--spacing-5);
-}
-
-.columnActions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--spacing-2);
-  padding-block-end: var(--spacing-4);
-}
-
-.columnGrid {
-  display: grid;
-  gap: var(--spacing-2);
-}
-
-.columnOption {
-  display: flex;
-  min-height: var(--spacing-10);
-  align-items: center;
-  gap: var(--spacing-3);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-element);
-  background: var(--color-background-muted);
+.recordPrimary {
   color: var(--color-text-primary);
-  padding-inline: var(--spacing-3);
   font-weight: var(--font-weight-medium);
 }
 
-.checkbox {
-  width: var(--spacing-4);
-  height: var(--spacing-4);
-  accent-color: var(--color-accent);
+.recordSecondary {
+  color: var(--color-text-secondary);
+  font-size: var(--text-supporting-size);
+}
+
+.noteCell {
+  max-width: 18rem;
+  white-space: normal;
 }
 
 @media (min-width: 40rem) {
   .filters {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;
+    grid-template-columns: repeat(2, minmax(8rem, 1fr)) minmax(14rem, 2fr) auto auto;
     align-items: end;
   }
 
-  .metrics,
-  .columnGrid {
+  .metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 64rem) {
-  .columnGrid {
+  .metrics {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -185,7 +208,19 @@
     justify-content: space-between;
   }
 
-  .metrics {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+  .filters {
+    min-width: min(62rem, 70%);
+  }
+}
+
+@media (max-width: 39.99rem) {
+  .summaryHeader,
+  .tableToolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .viewControls {
+    justify-content: flex-start;
   }
 }

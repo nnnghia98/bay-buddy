@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
-import { fetchLedgerReportRows } from "@/lib/server-report"
+import { fetchTicketDebtRows } from "@/lib/server-report"
 
 function isNextRedirectError(error: unknown): boolean {
   return (
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   const from = url.searchParams.get("from") ?? undefined
   const to = url.searchParams.get("to") ?? undefined
   try {
-    const rows = await fetchLedgerReportRows({ from, to })
+    const rows = await fetchTicketDebtRows({ from, to })
 
     return NextResponse.json({ rows })
   } catch (error) {

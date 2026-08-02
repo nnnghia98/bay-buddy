@@ -1,5 +1,4 @@
 import patterns from "@/styles/ui-patterns.module.css"
-import Link from "next/link"
 import { ArrowLeft, FileText } from "lucide-react"
 
 import { EmptyState, Panel, StatusChip, TableScrollArea } from "@/components/command-center"
@@ -51,7 +50,7 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
                 {t("financeDocuments.invoices.list.emptyScopeDescription")}
               </p>
             </div>
-            <Button as={Link} href="/customers" variant="outline" size="sm">
+            <Button href="/customers" variant="outline" size="sm">
               <ArrowLeft className={patterns.iconSmall} />
               {t("financeDocuments.common.backToCustomer")}
             </Button>
@@ -116,7 +115,6 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
                     <TableCell className={styles.actionsCell}>
                       <div className={patterns.endRow}>
                         <Button
-                          as={Link}
                           href={`/invoices/${invoice.id}`}
                           variant="ghost"
                           size="sm"
@@ -124,7 +122,6 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
                           {t("financeDocuments.common.viewDetail")}
                         </Button>
                         <Button
-                          as={Link}
                           href={`/invoices/${invoice.id}/public`}
                           size="sm"
                         >

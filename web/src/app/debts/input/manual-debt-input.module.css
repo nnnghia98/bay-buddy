@@ -4,6 +4,11 @@
   font-weight: var(--font-weight-medium);
 }
 
+.requiredMark {
+  margin-inline-start: var(--spacing-0-5);
+  color: var(--color-error);
+}
+
 .comboIcon {
   position: absolute;
   inset-inline-end: var(--spacing-3);
@@ -452,20 +457,9 @@
   padding-inline-start: var(--spacing-9);
 }
 
-.filterButton {
-  align-self: end;
-}
-
 .openFormButton {
   flex: 0 0 auto;
   white-space: nowrap;
-}
-
-.filterError {
-  border-block-end: 1px solid var(--color-border);
-  color: var(--color-error);
-  padding: var(--spacing-3) var(--spacing-5);
-  font-size: var(--text-body-size);
 }
 
 .tableArea {
@@ -705,13 +699,6 @@
   padding: var(--spacing-3);
   font-size: var(--text-body-size);
   line-height: var(--text-body-leading);
-}
-
-@media (min-width: 40rem) {
-
-  .filterForm {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
-  }
 }
 
 @media (min-width: 64rem) {

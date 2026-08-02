@@ -14,6 +14,7 @@ from models.invoice import (
     InvoiceUpdate,
 )
 from models.quote import QuoteCreate
+from services.finance_service import list_ticket_debt_rows
 from services.invoice_service import (
     convert_quote_to_invoice,
     create_invoice,
@@ -26,6 +27,17 @@ from services.invoice_service import (
 from services.quote_service import create_quote, get_quote_detail
 
 router = APIRouter()
+
+
+@router.get("/ticket-debts", response_model=dict)
+async def list_ticket_debt_rows_route(
+    session: SessionDep,
+    current_user: CurrentUserDep,
+):
+    """Return every active confirmed ticket as one table-ready debt row."""
+    del current_user
+    rows = list_ticket_debt_rows(session=session)
+    return success_response([row.model_dump(mode="json") for row in rows])
 
 
 @router.post("/invoices", response_model=dict, status_code=status.HTTP_201_CREATED)

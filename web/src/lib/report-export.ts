@@ -35,11 +35,11 @@ export async function buildReportWorkbookBytes(
   rows.forEach((row) => worksheet.addRow(row))
 
   const headerRow = worksheet.getRow(1)
-  headerRow.font = { bold: true, color: { argb: "FF172B4D" } }
+  headerRow.font = { bold: true, color: { argb: "FF202222" } }
   headerRow.fill = {
     type: "pattern",
     pattern: "solid",
-    fgColor: { argb: "FFEEF4FB" },
+    fgColor: { argb: "FFF0F1F0" },
   }
   headerRow.alignment = { vertical: "middle" }
   headerRow.height = 22
