@@ -5753,9 +5753,9 @@
         "properties": {
           "amount": {
             "type": "number",
-            "exclusiveMinimum": 0.0,
+            "minimum": 0.0,
             "title": "Amount",
-            "description": "Transaction amount. Must be a positive value (direction is encoded in `type`)."
+            "description": "Transaction amount. May be zero when the related debt is optional; direction is encoded in `type`."
           },
           "type": {
             "$ref": "#/components/schemas/TransactionType",
@@ -5873,7 +5873,7 @@
             "anyOf": [
               {
                 "type": "number",
-                "exclusiveMinimum": 0.0
+                "minimum": 0.0
               },
               {
                 "type": "null"

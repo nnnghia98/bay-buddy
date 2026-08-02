@@ -98,7 +98,7 @@ const transactionCategoryToType = {
 const transactionCorrectionSchema = z.object({
   customer_id: z.string().uuid(),
   transaction_id: z.string().uuid(),
-  amount: z.coerce.number().positive(),
+  amount: z.coerce.number().nonnegative(),
   category: z.enum([
     "TICKET_PURCHASE",
     "PAYMENT",

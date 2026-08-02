@@ -25,12 +25,13 @@ const NullableEvidenceUrlSchema = z
 
 const TransactionBaseSchema = z.object({
   /**
-   * Transaction amount. Must be positive; direction is encoded in `type`.
+   * Transaction amount. May be zero for optional debt rows; direction is
+   * encoded in `type`.
    * Maps to Python: amount
    */
   amount: z
     .number({ message: "Amount is required." })
-    .positive("Amount must be a positive number."),
+    .nonnegative("Amount must not be negative."),
 
   /**
    * PAYMENT | CHARGE | REFUND.
@@ -134,7 +135,7 @@ export type TransactionPage = z.infer<typeof TransactionPageSchema>;
 // ---------------------------------------------------------------------------
 
 export const TransactionUpdateSchema = z.object({
-  amount: z.number().positive().optional(),
+  amount: z.number().nonnegative().optional(),
   type: TransactionTypeSchema.optional(),
   category: TransactionCategorySchema.optional(),
   method: z.string().min(1).max(100).optional(),

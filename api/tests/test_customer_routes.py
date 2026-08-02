@@ -231,6 +231,29 @@ def test_admin_can_correct_transaction_and_rebalance_customer() -> None:
     assert payload["customer_new_balance"] == -300000
 
 
+def test_transaction_list_returns_zero_amount_optional_debt_rows() -> None:
+    client, session = create_test_client(role=UserRole.ADMIN)
+    customer = seed_customer(session)
+    transaction = Transaction(
+        amount=0,
+        type=TransactionType.CHARGE,
+        category=TransactionCategory.TICKET_PURCHASE,
+        method=None,
+        note="Optional ticket debt",
+        customer_id=customer.id,
+        created_by=uuid.uuid4(),
+    )
+    session.add(transaction)
+    session.commit()
+
+    response = client.get("/api/v1/transactions/", params={"limit": 500})
+
+    clear_overrides()
+
+    assert response.status_code == 200
+    assert response.json()["data"][0]["amount"] == 0
+
+
 def test_admin_can_correct_ticket_payment_method_without_rebalancing() -> None:
     client, session = create_test_client(role=UserRole.ADMIN)
     customer = seed_customer(session)

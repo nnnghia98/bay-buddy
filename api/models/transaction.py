@@ -37,8 +37,11 @@ class TransactionBase(SQLModel):
     """Fields shared between create/read schemas and the DB table."""
 
     amount: float = Field(
-        gt=0,
-        description="Transaction amount. Must be a positive value (direction is encoded in `type`).",
+        ge=0,
+        description=(
+            "Transaction amount. May be zero when the related debt is optional; "
+            "direction is encoded in `type`."
+        ),
     )
     type: TransactionType = Field(
         description="Legacy direction enum kept in sync with category.",
@@ -195,7 +198,7 @@ class TransactionRead(TransactionBase):
 class TransactionUpdate(SQLModel):
     """All fields optional for partial PATCH payloads (typically only `note` or `method` changes)."""
 
-    amount: Optional[float] = Field(default=None, gt=0)
+    amount: Optional[float] = Field(default=None, ge=0)
     type: Optional[TransactionType] = None
     category: Optional[TransactionCategory] = None
     method: Optional[str] = Field(default=None, max_length=100)

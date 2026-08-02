@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy.pool import StaticPool
@@ -15,9 +16,22 @@ from models.enums import (
     UserRole,
 )
 from models.ticket import Ticket
-from models.transaction import Transaction
+from models.transaction import Transaction, TransactionRead
 from models.user import User
 from services.finance_service import get_customer_ledger
+
+
+def test_transaction_read_accepts_zero_for_optional_debt_rows() -> None:
+    transaction = Transaction(
+        amount=0,
+        type=TransactionType.CHARGE,
+        category=TransactionCategory.TICKET_PURCHASE,
+        method=None,
+        customer_id=uuid.uuid4(),
+        created_by=uuid.uuid4(),
+    )
+
+    assert TransactionRead.model_validate(transaction).amount == 0
 
 
 def test_customer_ledger_uses_audit_timestamps_for_sorting() -> None:
