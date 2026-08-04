@@ -32,7 +32,7 @@ export default function RootLayout({
     <html
       data-astryx-theme="neutral"
       data-scroll-behavior="smooth"
-      lang="vi"
+      lang="vi-VN"
       suppressHydrationWarning
     >
       <head>

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { manualDebtFormSchema } from "@/schemas/manual-debt"
+import {
+  manualDebtFormSchema,
+  manualDebtRowUpdateSchema,
+} from "@/schemas/manual-debt"
 
 const validManualDebtInput = {
   customer_name: "Nguyen Van A",
@@ -192,5 +195,79 @@ describe("manualDebtFormSchema", () => {
     })
 
     expect(result.success).toBe(false)
+  })
+})
+
+describe("manualDebtRowUpdateSchema", () => {
+  const validRowUpdate = {
+    customer_id: "550e8400-e29b-41d4-a716-446655440000",
+    ticket_id: "550e8400-e29b-41d4-a716-446655440001",
+    pnr: "abc123",
+    airline: "vna",
+    ticket_number: "7381234567890",
+    booked_at: "2026-08-04",
+    flight_date: "2026-08-05T10:30",
+    passengers: "Nguyen Van A, Tran Thi B",
+    itinerary: "HAN-SGN",
+    net_price: "1.000.000",
+    selling_price: "1.200.000",
+    discount: "50.000",
+    ev_price: "700.000",
+    ast_price: "0",
+    thf_price: "0",
+    web_price: "0",
+    insurance_price: "100.000",
+    true_income: "-25.000",
+    true_income_override: "true",
+    payment_method: "Chuyển khoản",
+    payment_method_changed: "true",
+    payment_amount: "500.000",
+    payment_amount_changed: "true",
+    payment_occurred_at: "2026-08-04",
+    payment_occurred_at_changed: "true",
+    payment_note: "  Da thanh toan  ",
+    payment_note_changed: "true",
+    payment_transaction_ids: ["550e8400-e29b-41d4-a716-446655440002"],
+  }
+
+  it("normalizes formatted drawer values", () => {
+    const parsed = manualDebtRowUpdateSchema.parse(validRowUpdate)
+
+    expect(parsed.passengers).toEqual(["Nguyen Van A", "Tran Thi B"])
+    expect(parsed.pnr).toBe("ABC123")
+    expect(parsed.airline).toBe("VNA")
+    expect(parsed.flight_date).toBeInstanceOf(Date)
+    expect(parsed.net_price).toBe(1_000_000)
+    expect(parsed.selling_price).toBe(1_200_000)
+    expect(parsed.true_income).toBe(-25_000)
+    expect(parsed.payment_note).toBe("Da thanh toan")
+  })
+
+  it("allows empty optional date and payment values", () => {
+    const parsed = manualDebtRowUpdateSchema.parse({
+      ...validRowUpdate,
+      booked_at: "",
+      payment_method: "",
+      payment_note: "",
+      payment_transaction_ids: [],
+    })
+
+    expect(parsed.booked_at).toBeNull()
+    expect(parsed.flight_date).toBeInstanceOf(Date)
+    expect(parsed.payment_method).toBeUndefined()
+    expect(parsed.payment_note).toBe("")
+  })
+
+  it("requires a payment date when its value is changed", () => {
+    const result = manualDebtRowUpdateSchema.safeParse({
+      ...validRowUpdate,
+      payment_occurred_at: "",
+      payment_occurred_at_changed: "true",
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.payment_occurred_at).toBeDefined()
+    }
   })
 })

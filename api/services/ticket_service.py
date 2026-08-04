@@ -530,10 +530,24 @@ def correct_confirmed_ticket(
             if passenger.strip()
         ]
 
-    departure_code = update_data.get("departure_code", ticket.departure_code)
-    arrival_code = update_data.get("arrival_code", ticket.arrival_code)
-    if departure_code and arrival_code:
-        update_data["itinerary"] = f"{departure_code}-{arrival_code}"
+    if "itinerary" in update_data and not (
+        "departure_code" in update_data or "arrival_code" in update_data
+    ):
+        itinerary = (update_data["itinerary"] or "").strip().upper() or None
+        route_parts = [
+            part.strip().upper()
+            for part in (itinerary or "").split("-")
+            if part.strip()
+        ]
+        update_data["itinerary"] = itinerary
+        update_data["departure_code"] = route_parts[0] if len(route_parts) >= 2 else None
+        update_data["arrival_code"] = route_parts[-1] if len(route_parts) >= 2 else None
+
+    if "departure_code" in update_data or "arrival_code" in update_data:
+        departure_code = update_data.get("departure_code", ticket.departure_code)
+        arrival_code = update_data.get("arrival_code", ticket.arrival_code)
+        if departure_code and arrival_code:
+            update_data["itinerary"] = f"{departure_code}-{arrival_code}"
 
     for field_name, value in update_data.items():
         setattr(ticket, field_name, value)

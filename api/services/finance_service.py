@@ -80,6 +80,7 @@ class TicketDebtReportRow(BaseModel):
     entry_type: Literal["ticket"] = "ticket"
     issued_at: datetime
     created_at: datetime
+    updated_at: datetime
     booked_at: Optional[datetime] = None
     content: str
     amount: float
@@ -87,6 +88,7 @@ class TicketDebtReportRow(BaseModel):
     ticket_id: uuid.UUID
     pnr: Optional[str] = None
     ticket_number: Optional[str] = None
+    ticket_net_price: float
     ticket_selling_price: float
     ticket_discount: float
     ticket_ev_price: float
@@ -97,6 +99,8 @@ class TicketDebtReportRow(BaseModel):
     ticket_true_income: float
     airline: Optional[Airline] = None
     route: Optional[str] = None
+    itinerary: Optional[str] = None
+    linked_payment_occurred_at: Optional[datetime] = None
     flight_date: Optional[datetime] = None
     ticket_status: Optional[TicketStatus] = None
     transaction_id: Optional[uuid.UUID] = None
@@ -127,11 +131,13 @@ class _LinkedPaymentSummary:
     notes: list[str] | None = None
     methods: list[str] | None = None
     transaction_ids: list[uuid.UUID] | None = None
+    occurred_ats: list[datetime] | None = None
 
     def __post_init__(self) -> None:
         self.notes = self.notes or []
         self.methods = self.methods or []
         self.transaction_ids = self.transaction_ids or []
+        self.occurred_ats = self.occurred_ats or []
 
 
 def _ticket_route(ticket: Ticket) -> Optional[str]:
@@ -262,6 +268,9 @@ def list_ticket_debt_rows(
             if method and method not in summary.methods:
                 summary.methods.append(method)
             summary.transaction_ids.append(transaction_id)
+            summary.occurred_ats.append(
+                _normalize_ledger_datetime(transaction.occurred_at)
+            )
 
     for ticket in all_tickets:
         ticket_id = ticket.id
@@ -299,7 +308,8 @@ def list_ticket_debt_rows(
 
             charge = ticket_charges.get(ticket.id)
             payment_summary = linked_payment_summaries.get(ticket.id)
-            created_at = event.created_at
+            created_at = _normalize_ledger_datetime(ticket.created_at)
+            updated_at = _normalize_ledger_datetime(ticket.updated_at)
             linked_payment_note = (
                 "; ".join(payment_summary.notes)
                 if payment_summary and payment_summary.notes
@@ -315,6 +325,7 @@ def list_ticket_debt_rows(
                     passenger_names=", ".join(ticket.passengers),
                     issued_at=created_at,
                     created_at=created_at,
+                    updated_at=updated_at,
                     booked_at=(
                         _normalize_ledger_datetime(ticket.booked_at)
                         if ticket.booked_at
@@ -326,6 +337,7 @@ def list_ticket_debt_rows(
                     ticket_id=ticket.id,
                     pnr=ticket.pnr,
                     ticket_number=ticket.ticket_number,
+                    ticket_net_price=ticket.net_price,
                     ticket_selling_price=ticket.selling_price,
                     ticket_discount=ticket.discount,
                     ticket_ev_price=ticket.ev_price,
@@ -336,6 +348,13 @@ def list_ticket_debt_rows(
                     ticket_true_income=ticket.true_income,
                     airline=ticket.airline,
                     route=_ticket_route(ticket),
+                    itinerary=ticket.itinerary,
+                    linked_payment_occurred_at=(
+                        payment_summary.occurred_ats[0]
+                        if payment_summary
+                        and len(payment_summary.occurred_ats) == 1
+                        else None
+                    ),
                     flight_date=_normalize_ledger_datetime(ticket.flight_date),
                     ticket_status=ticket.status,
                     transaction_id=charge.id if charge else None,
@@ -412,7 +431,7 @@ def _filter_ticket_debt_rows(
     to_datetime = _parse_report_datetime(to_value, boundary="end")
 
     def matches(row: TicketDebtReportRow) -> bool:
-        row_datetime = row.created_at
+        row_datetime = row.updated_at
         if row_datetime.tzinfo is None:
             row_datetime = row_datetime.replace(tzinfo=timezone.utc)
 
@@ -507,7 +526,7 @@ def list_ticket_debt_page(
         ticket_id_statement = (
             select(Ticket.id)
             .where(*ticket_filters)
-            .order_by(Ticket.updated_at.desc(), Ticket.id.desc())
+            .order_by(Ticket.created_at.desc(), Ticket.id.desc())
             .offset(start)
             .limit(effective_page_size)
         )

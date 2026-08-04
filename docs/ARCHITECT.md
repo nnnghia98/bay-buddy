@@ -232,6 +232,15 @@ confirmation flow so a partial save cannot create only one side. Ticket rows may
 show the total linked payment and its note; tickets without a linked payment keep
 those cells empty while still showing a selected charge method.
 
+### Ticket Debt Workbench Timestamp Contract
+
+- `GET /api/v1/finance/ticket-debts` returns `created_at` from
+  `Ticket.created_at` and `updated_at` from `Ticket.updated_at` as separate fields.
+- Active-window and report date filters continue to use `Ticket.updated_at`.
+- Default pagination and row order use `Ticket.created_at` descending, with the
+  ticket ID as a stable tie-breaker. Inline corrections therefore do not move a
+  row under the default sort.
+
 ### Workbook Editor v2 integrity rules
 
 - Workbook sessions persist the selected sheet's meaningful row and column bounds. Formatting-only Excel dimensions must not expand later reads, saves, previews, or structural mutations.

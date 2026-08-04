@@ -38,6 +38,24 @@ Keep the `/debts/input` form stable around this validation contract:
   make another field required without updating this section and both validation
   boundaries.
 
+### Manual debt edit drawer contract
+
+The `/debts/input` edit drawer must keep the manual entry priority order so staff
+can review and correct a row without searching through database-shaped fields:
+
+1. Customer context, ticket issue date, and passengers.
+2. Pricing: EV, AST, THF, WEB, insurance, selling price, airline discount, net
+   price correction, and true income.
+3. Optional payment details.
+4. Route.
+5. Low-priority ticket metadata: PNR, ticket number, airline, and flight
+   datetime.
+6. Read-only ticket status and audit timestamps.
+
+Customer and ticket status are not editable. Created and updated timestamps are
+also read-only audit metadata. Every other supported ticket, pricing, route, and
+payment field exposed by the correction action remains editable.
+
 ## 2. Product Personality
 
 Bay Buddy should feel:
@@ -173,6 +191,12 @@ Table requirements:
 - Align money values to the right.
 - Keep dates scannable in `DD/MM/YYYY` format.
 - Keep running balance visible where relevant.
+- Use stable default ordering for editable tables. The ticket debt workbench
+  sorts by immutable ticket `created_at` descending, so saving an edit does not
+  move the active row. A user-selected sort may reorder rows normally.
+- On `/debts/input`, the pencil action opens the right-side edit drawer. Keep
+  table cells read-only, use an explicit save action, and keep validation or
+  mutation failures visible in the drawer.
 - Use sticky or repeated context where long tables would separate rows from the current customer/document.
 - On mobile, use horizontal scroll or stacked row cards. Tables must not break the viewport.
 - Use icon-only row actions for high-frequency repeated operations when the icon is familiar. Keep accessible names with `aria-label` and `title`.

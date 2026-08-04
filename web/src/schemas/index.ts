@@ -105,13 +105,20 @@ export type { TicketCreate, TicketPage, TicketRead, TicketUpdate } from "./ticke
 // Manual debt
 export {
   createManualDebtFormSchema,
+  createManualDebtRowUpdateSchema,
   getManualDebtValidationMessages,
+  getManualDebtRowUpdateValidationMessages,
   initialManualDebtActionState,
+  initialManualDebtRowUpdateActionState,
   manualDebtFormSchema,
+  manualDebtRowUpdateSchema,
 } from "./manual-debt"
 export type {
   ManualDebtActionState,
   ManualDebtFormValues,
+  ManualDebtRowUpdateActionState,
+  ManualDebtRowUpdateFormValues,
+  ManualDebtRowUpdateValidationMessages,
   ManualDebtValidationMessages,
 } from "./manual-debt"
 

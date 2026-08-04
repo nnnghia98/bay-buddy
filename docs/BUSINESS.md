@@ -35,6 +35,7 @@ Each ticket parsed into the system follows a specific lifecycle. Status changes 
 - `flight_date` is the scheduled flight datetime. It can be in the past and must not be blocked by the app base date time.
 - Ticket `created_at` / `updated_at` are audit timestamps for when Bay Buddy recorded or changed the ticket.
 - App base date-time filtering applies to ticket `updated_at`, not to `flight_date`; on untouched records, `updated_at` is the original creation timestamp.
+- The ticket debt workbench defaults to `created_at` descending so an edit does not move the active row. It keeps `updated_at` separate for active-window filtering and audit context.
 - Logs, histories, recent activity lists, and audit-style views must show `created_at` / `updated_at`; `flight_date` belongs only in flight-detail context.
 - Route data should be captured explicitly with:
   - `departure_place`

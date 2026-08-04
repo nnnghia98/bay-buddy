@@ -308,6 +308,8 @@ describe("mapLedgerToReportRows", () => {
 describe("fetchTicketDebtRows", () => {
   it("loads all ticket rows from the global endpoint and keeps the end date inclusive", async () => {
     const ticket = createTicket(ticketId)
+    ticket.created_at = new Date("2026-07-20T12:00:00.000Z")
+    ticket.updated_at = new Date("2026-07-28T12:00:00.000Z")
     const ledger: CustomerLedger = {
       customer: {
         id: customerId,
@@ -323,7 +325,7 @@ describe("fetchTicketDebtRows", () => {
         {
           id: ticket.id,
           entry_type: "ticket",
-          created_at: new Date("2026-07-28T12:00:00.000Z"),
+          created_at: ticket.updated_at,
           content: ticket.pnr,
           amount: ticket.selling_price,
           running_balance: ticket.selling_price,
@@ -347,6 +349,8 @@ describe("fetchTicketDebtRows", () => {
 
     expect(rows).toHaveLength(1)
     expect(rows[0].id).toBe(ticketId)
+    expect(rows[0].created_at).toBe("2026-07-20T12:00:00.000Z")
+    expect(rows[0].updated_at).toBe("2026-07-28T12:00:00.000Z")
     expect(mockFetchAuthenticatedApiPayload).toHaveBeenCalledWith(
       "/finance/ticket-debts",
       "Unable to load ticket debts.",

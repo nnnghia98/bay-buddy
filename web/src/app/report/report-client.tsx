@@ -53,6 +53,7 @@ type TableView = "summary" | "full"
 type ColumnKey =
   | "order"
   | "created_at"
+  | "updated_at"
   | "booked_at"
   | "description"
   | "pnr"
@@ -85,6 +86,7 @@ const columns: ColumnDefinition[] = [
     getValue: (_row, index) => (index + 1).toString(),
   },
   { key: "created_at", getValue: (row) => row.created_at },
+  { key: "updated_at", getValue: (row) => row.updated_at },
   { key: "booked_at", getValue: (row) => row.booked_at ?? "" },
   {
     key: "description",
@@ -155,6 +157,7 @@ const summaryColumnKeys: ColumnKey[] = [
 
 const fullColumnKeys: ColumnKey[] = [
   "created_at",
+  "updated_at",
   "booked_at",
   "description",
   "pnr",
@@ -238,8 +241,8 @@ function formatCellValue(
     return (index + 1).toString()
   }
 
-  if (key === "created_at") {
-    return formatDate(row.created_at)
+  if (key === "created_at" || key === "updated_at") {
+    return formatDate(row[key])
   }
 
   if (key === "booked_at" || key === "flight_date") {

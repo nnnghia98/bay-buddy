@@ -96,7 +96,10 @@ def _seed_confirmed_ticket(
     *,
     customer: Customer,
     selling_price: float,
+    created_at: datetime | None = None,
+    updated_at: datetime | None = None,
 ) -> Ticket:
+    recorded_at = created_at or datetime.now(timezone.utc)
     ticket = Ticket(
         pnr="XYZ789",
         airline=Airline.VJ,
@@ -113,6 +116,8 @@ def _seed_confirmed_ticket(
         selling_price=selling_price,
         status=TicketStatus.CONFIRMED,
         customer_id=customer.id,
+        created_at=recorded_at,
+        updated_at=updated_at or recorded_at,
     )
     with Session(test_engine) as session:
         session.add(ticket)
@@ -257,6 +262,94 @@ def test_ticket_debt_report_supports_pagination(
         "has_next": True,
     }
     assert payload["summary"]["rows"] == 2
+
+
+def test_ticket_debt_pagination_keeps_creation_order_after_correction(
+    test_client,
+    test_engine,
+):
+    customer = _seed_customer(test_engine, balance=2400000.0)
+    older_ticket = _seed_confirmed_ticket(
+        test_engine,
+        customer=customer,
+        selling_price=1200000.0,
+        created_at=datetime(2026, 7, 1, 8, 0, tzinfo=timezone.utc),
+    )
+    newer_ticket = _seed_confirmed_ticket(
+        test_engine,
+        customer=customer,
+        selling_price=1200000.0,
+        created_at=datetime(2026, 7, 2, 8, 0, tzinfo=timezone.utc),
+    )
+    _seed_ticket_purchase_transaction(
+        test_engine,
+        customer=customer,
+        ticket=older_ticket,
+        amount=1200000.0,
+    )
+    _seed_ticket_purchase_transaction(
+        test_engine,
+        customer=customer,
+        ticket=newer_ticket,
+        amount=1200000.0,
+    )
+
+    correction_response = test_client.patch(
+        f"/api/v1/tickets/{older_ticket.id}/correction",
+        json={"passengers": ["UPDATED PASSENGER"]},
+    )
+
+    assert correction_response.status_code == 200
+
+    first_page_response = test_client.get(
+        "/api/v1/finance/ticket-debts",
+        params={"page": 1, "page_size": 1},
+    )
+    second_page_response = test_client.get(
+        "/api/v1/finance/ticket-debts",
+        params={"page": 2, "page_size": 1},
+    )
+
+    assert first_page_response.status_code == 200
+    assert second_page_response.status_code == 200
+    first_row = first_page_response.json()["data"]["items"][0]
+    edited_row = second_page_response.json()["data"]["items"][0]
+    assert first_row["ticket_id"] == str(newer_ticket.id)
+    assert edited_row["ticket_id"] == str(older_ticket.id)
+    assert edited_row["created_at"].startswith("2026-07-01T08:00:00")
+    assert edited_row["updated_at"] != edited_row["created_at"]
+
+
+def test_ticket_debt_search_date_filter_uses_updated_at(
+    test_client,
+    test_engine,
+):
+    customer = _seed_customer(test_engine)
+    ticket = _seed_confirmed_ticket(
+        test_engine,
+        customer=customer,
+        selling_price=1200000.0,
+        created_at=datetime(2026, 7, 1, 8, 0, tzinfo=timezone.utc),
+        updated_at=datetime(2026, 7, 5, 8, 0, tzinfo=timezone.utc),
+    )
+
+    response = test_client.get(
+        "/api/v1/finance/ticket-debts",
+        params={
+            "page": 1,
+            "page_size": 50,
+            "q": "XYZ789",
+            "from": "2026-07-04",
+            "to": "2026-07-06",
+        },
+    )
+
+    assert response.status_code == 200
+    rows = response.json()["data"]["items"]
+    assert len(rows) == 1
+    assert rows[0]["ticket_id"] == str(ticket.id)
+    assert rows[0]["created_at"].startswith("2026-07-01T08:00:00")
+    assert rows[0]["updated_at"].startswith("2026-07-05T08:00:00")
 
 
 def test_ticket_list_supports_search_pagination(test_client):
@@ -735,6 +828,35 @@ def test_admin_ticket_correction_allows_income_override(
         persisted_ticket = session.get(Ticket, ticket.id)
         assert persisted_ticket is not None
         assert persisted_ticket.true_income == pytest.approx(-45000)
+
+
+def test_admin_ticket_correction_updates_itinerary_without_route_codes(
+    test_client,
+    test_engine,
+):
+    customer = _seed_customer(test_engine, balance=1200000.0)
+    ticket = _seed_confirmed_ticket(
+        test_engine,
+        customer=customer,
+        selling_price=1200000.0,
+    )
+    _seed_ticket_purchase_transaction(
+        test_engine,
+        customer=customer,
+        ticket=ticket,
+        amount=1200000.0,
+    )
+
+    response = test_client.patch(
+        f"/api/v1/tickets/{ticket.id}/correction",
+        json={"itinerary": "DAD-SGN"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()["data"]["ticket"]
+    assert payload["itinerary"] == "DAD-SGN"
+    assert payload["departure_code"] == "DAD"
+    assert payload["arrival_code"] == "SGN"
 
 
 def test_admin_ticket_removal_deletes_ticket_purchase_and_reverses_balance(

@@ -142,41 +142,6 @@
   font-size: var(--text-body-size);
 }
 
-.editableMoney {
-  width: 8rem;
-  margin-inline-start: auto;
-  text-align: end;
-  font-weight: var(--font-weight-semibold);
-}
-
-.editableIncome {
-  width: 9rem;
-}
-
-.editableDate {
-  min-width: 13rem;
-}
-
-.editableText {
-  width: 100%;
-  min-width: 0;
-  font-weight: var(--font-weight-medium);
-}
-
-.editableNote {
-  width: 100%;
-  min-width: 16rem;
-  min-height: 4.5rem;
-  resize: vertical;
-  font-size: var(--text-supporting-size);
-  line-height: var(--text-supporting-leading);
-}
-
-.editablePaymentMethod {
-  min-width: 10rem;
-  font-weight: var(--font-weight-medium);
-}
-
 .tableRow:hover .stickyCell,
 .tableRow:hover .stickyContextCell {
   background: var(--color-background-muted);
@@ -232,7 +197,7 @@
 
 .noteCell {
   position: sticky;
-  inset-inline-end: 9.75rem;
+  inset-inline-end: var(--manual-debt-actions-width);
   z-index: 11;
   width: 16rem;
   min-width: 16rem;
@@ -244,7 +209,7 @@
 
 .paymentMethodCell {
   position: sticky;
-  inset-inline-end: calc(9.75rem + 16rem);
+  inset-inline-end: calc(var(--manual-debt-actions-width) + 16rem);
   z-index: 11;
   min-width: 12rem;
   color: var(--color-text-primary);
@@ -303,8 +268,8 @@
   position: sticky;
   inset-inline-end: 0;
   z-index: 10;
-  width: 9.75rem;
-  min-width: 9.75rem;
+  width: var(--manual-debt-actions-width);
+  min-width: var(--manual-debt-actions-width);
   background: var(--color-background-surface);
   text-align: end;
   box-shadow: var(--shadow-sticky-right, -8px 0 14px rgb(0 0 0 / 4%));
@@ -394,6 +359,10 @@
 .manualForm,
 .tablePanel {
   min-width: 0;
+}
+
+.tablePanel {
+  --manual-debt-actions-width: 7.25rem;
 }
 
 .manualForm {
@@ -598,7 +567,7 @@
 
 .headerNote {
   position: sticky;
-  inset-inline-end: 9.75rem;
+  inset-inline-end: var(--manual-debt-actions-width);
   z-index: 31;
   width: 16rem;
   min-width: 16rem;
@@ -609,7 +578,7 @@
 
 .headerPaymentMethod {
   position: sticky;
-  inset-inline-end: calc(9.75rem + 16rem);
+  inset-inline-end: calc(var(--manual-debt-actions-width) + 16rem);
   z-index: 31;
   min-width: 12rem;
   background: var(--color-background-muted);
@@ -640,8 +609,8 @@
 
 .headerStickyRight {
   inset-inline-end: 0;
-  width: 9.75rem;
-  min-width: 9.75rem;
+  width: var(--manual-debt-actions-width);
+  min-width: var(--manual-debt-actions-width);
   box-shadow: var(--shadow-sticky-right, -8px 0 14px rgb(0 0 0 / 4%));
 }
 
@@ -661,7 +630,7 @@
   border-end-end-radius: var(--radius-container);
 }
 
-.detailDrawer {
+.editorDrawer {
   border-start-start-radius: var(--radius-container);
   border-end-start-radius: var(--radius-container);
 }
@@ -678,18 +647,28 @@
   overflow-y: auto;
 }
 
-.detailSections {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-6);
+.editorForm {
+  height: 100%;
 }
 
-.detailSectionTitle {
-  margin: 0 0 var(--spacing-3);
-  color: var(--color-text-primary);
-  font-size: var(--text-heading-4-size);
-  font-weight: var(--text-heading-4-weight);
-  line-height: var(--text-heading-4-leading);
+.editorDrawerContent {
+  overflow-y: auto;
+}
+
+.editorBody,
+.editorSectionContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.editorBody {
+  padding: var(--spacing-4);
+}
+
+.editorMoneyInput {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
 }
 
 .detailGrid {
@@ -723,17 +702,6 @@
 .detailNumber {
   text-align: end;
   font-variant-numeric: tabular-nums;
-}
-
-.detailNote {
-  margin: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-element);
-  background: var(--color-background-muted);
-  color: var(--color-text-primary);
-  padding: var(--spacing-3);
-  font-size: var(--text-body-size);
-  line-height: var(--text-body-leading);
 }
 
 @media (min-width: 64rem) {
@@ -779,6 +747,10 @@
 }
 
 @media (max-width: 48rem) {
+  .tablePanel {
+    --manual-debt-actions-width: 6.5rem;
+  }
+
   .headerNote,
   .noteCell,
   .headerPaymentMethod,
@@ -807,15 +779,10 @@
     padding-inline: var(--spacing-2);
   }
 
-  .editableNote {
-    min-width: 0;
-    max-width: 100%;
-  }
-
   .actionsCell,
   .headerStickyRight {
-    width: 8rem;
-    min-width: 8rem;
+    width: var(--manual-debt-actions-width);
+    min-width: var(--manual-debt-actions-width);
     padding-inline: var(--spacing-2);
   }
 

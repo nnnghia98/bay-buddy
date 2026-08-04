@@ -32,6 +32,7 @@ Before implementing any feature or modifying code, you **MUST** reference this f
 - **UI Skill Standard**: For any UI, layout, styling, dashboard, form, table, or design-system task, follow `frontend-design` for general design craft while treating `docs/DESIGN.md` and `docs/UX.md` as the Bay Buddy source of truth.
 - **Design/UX Standard**: For UI work, `docs/DESIGN.md` and `docs/UX.md` are mandatory references. If generic frontend guidance conflicts with Bay Buddy DNA, Bay Buddy DNA wins.
 - **Operational Workbench Standard**: Authenticated work pages should follow the `/debts/input` pattern when staff are entering data beside a record table: simple two-column workbench, primary action close to the form it submits, scroll-contained long forms, dense tables, and no redundant title/header/summary cards unless they add immediate operational value.
+- **Manual Debt Edit Template**: The `/debts/input` edit drawer follows the same priority as manual debt entry: read-only customer context, ticket issue date, passengers, pricing in `EV → AST → THF → WEB → insurance → selling price → airline discount → net price correction → true income` order, payment, route, and low-priority ticket metadata (`PNR`, ticket number, airline, and flight datetime). Customer and ticket status are business read-only; created and updated timestamps are read-only audit metadata. All other supported fields remain editable.
 
 ### Current Skill Inventory
 

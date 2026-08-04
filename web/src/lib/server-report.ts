@@ -18,6 +18,7 @@ export type LedgerReportRow = {
   entry_type: CustomerLedger["entries"][number]["entry_type"]
   issued_at: string
   created_at: string
+  updated_at: string
   booked_at: string | null
   content: string
   amount: number
@@ -25,6 +26,7 @@ export type LedgerReportRow = {
   ticket_id: string | null
   pnr: string | null
   ticket_number: string | null
+  ticket_net_price: number
   ticket_selling_price: number
   ticket_discount: number
   ticket_ev_price: number
@@ -35,6 +37,8 @@ export type LedgerReportRow = {
   ticket_true_income: number
   airline: string | null
   route: string | null
+  itinerary: string | null
+  linked_payment_occurred_at: string | null
   flight_date: string | null
   ticket_status: string | null
   transaction_id: string | null
@@ -61,6 +65,7 @@ const ticketDebtReportRowSchema = z.object({
   entry_type: z.literal("ticket"),
   issued_at: z.string(),
   created_at: z.string(),
+  updated_at: z.string(),
   booked_at: z.string().nullable(),
   content: z.string(),
   amount: z.number(),
@@ -68,6 +73,7 @@ const ticketDebtReportRowSchema = z.object({
   ticket_id: z.string().uuid(),
   pnr: z.string().nullable(),
   ticket_number: z.string().nullable(),
+  ticket_net_price: z.number(),
   ticket_selling_price: z.number(),
   ticket_discount: z.number(),
   ticket_ev_price: z.number(),
@@ -78,6 +84,8 @@ const ticketDebtReportRowSchema = z.object({
   ticket_true_income: z.number(),
   airline: z.string().nullable(),
   route: z.string().nullable(),
+  itinerary: z.string().nullable(),
+  linked_payment_occurred_at: z.string().nullable(),
   flight_date: z.string().nullable(),
   ticket_status: z.string().nullable(),
   transaction_id: z.string().uuid().nullable(),
@@ -130,6 +138,7 @@ type LinkedPaymentSummary = {
   notes: string[]
   methods: string[]
   transaction_ids: string[]
+  occurred_at: string[]
 }
 
 function isPaymentMethod(value: string | null | undefined): boolean {
@@ -171,6 +180,7 @@ function getLinkedPaymentSummaries(
       notes: [],
       methods: [],
       transaction_ids: [],
+      occurred_at: [],
     }
     const note = transaction.note?.trim()
     const method = transaction.method?.trim()
@@ -183,6 +193,7 @@ function getLinkedPaymentSummaries(
       summary.methods.push(method)
     }
     summary.transaction_ids.push(transaction.id)
+    summary.occurred_at.push(transaction.occurred_at.toISOString())
 
     summaries.set(linkedTicketId, summary)
   })
@@ -215,6 +226,8 @@ export function mapLedgerToReportRows(
       ticket && transaction?.category === "TICKET_PURCHASE"
         ? getManualTicketNote(transaction.note)
         : null
+    const createdAt = ticket?.created_at ?? entry.created_at
+    const updatedAt = ticket?.updated_at ?? entry.created_at
 
     if (paymentMethods.length === 0 && ticketPaymentMethod) {
       paymentMethods.push(ticketPaymentMethod)
@@ -228,8 +241,9 @@ export function mapLedgerToReportRows(
       customer_phone: ledger.customer.phone ?? null,
       passenger_names: ticket?.passengers.join(", ") ?? entry.content,
       entry_type: entry.entry_type,
-      issued_at: entry.created_at.toISOString(),
-      created_at: entry.created_at.toISOString(),
+      issued_at: createdAt.toISOString(),
+      created_at: createdAt.toISOString(),
+      updated_at: updatedAt.toISOString(),
       booked_at: ticket?.booked_at?.toISOString() ?? null,
       content: entry.content,
       amount: entry.amount,
@@ -237,6 +251,7 @@ export function mapLedgerToReportRows(
       ticket_id: ticket?.id ?? null,
       pnr: ticket?.pnr ?? null,
       ticket_number: ticket?.ticket_number ?? null,
+      ticket_net_price: ticket?.net_price ?? 0,
       ticket_selling_price: ticket?.selling_price ?? 0,
       ticket_discount: ticket?.discount ?? 0,
       ticket_ev_price: ticket?.ev_price ?? 0,
@@ -247,6 +262,11 @@ export function mapLedgerToReportRows(
       ticket_true_income: ticket?.true_income ?? 0,
       airline: ticket?.airline ?? null,
       route: getTicketRoute(ticket),
+      itinerary: ticket?.itinerary ?? null,
+      linked_payment_occurred_at:
+        linkedPaymentSummary?.occurred_at.length === 1
+          ? linkedPaymentSummary.occurred_at[0]
+          : null,
       flight_date: ticket?.flight_date.toISOString() ?? null,
       ticket_status: ticket?.status ?? null,
       transaction_id: transaction?.id ?? null,
@@ -311,7 +331,7 @@ function filterRowsByRange(
   const toDate = parseDateOnlyRange(range.to, "end")
 
   return rows.filter((row) => {
-    const rowDate = new Date(row.created_at)
+    const rowDate = new Date(row.updated_at)
 
     if (fromDate && rowDate < fromDate) {
       return false
