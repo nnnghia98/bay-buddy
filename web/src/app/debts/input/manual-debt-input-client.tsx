@@ -1770,6 +1770,7 @@ export function ManualDebtInputClient({
   const formRef = React.useRef<HTMLFormElement>(null)
   const tableScrollRef = React.useRef<HTMLDivElement>(null)
   const reportRequestIdRef = React.useRef(0)
+  const previousInitialPageRef = React.useRef(initialPage)
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [isFormDirty, setIsFormDirty] = React.useState(false)
   const [isSubmitPending, setIsSubmitPending] = React.useState(false)
@@ -1914,12 +1915,21 @@ export function ManualDebtInputClient({
   }, [appliedSearch, loadReportPage, searchValue])
 
   React.useEffect(() => {
-    setReportRows(initialPage.items)
-    setReportPagination(initialPage.pagination)
-    setAppliedSearch("")
-    setSearchValue("")
-    setRowsError(null)
-  }, [initialPage])
+    if (previousInitialPageRef.current === initialPage) {
+      return
+    }
+
+    previousInitialPageRef.current = initialPage
+
+    if (reportPagination.page === 1 && !appliedSearch) {
+      setReportRows(initialPage.items)
+      setReportPagination(initialPage.pagination)
+      setRowsError(null)
+      return
+    }
+
+    void loadReportPage(reportPagination.page, appliedSearch)
+  }, [appliedSearch, initialPage, loadReportPage, reportPagination.page])
 
   const filteredRows = React.useMemo(() => {
     return reportRows
