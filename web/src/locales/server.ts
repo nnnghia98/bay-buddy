@@ -20,6 +20,24 @@ export function getI18n() {
   return serverI18n.getI18n()
 }
 
+const defaultLocaleContent = vi as Record<string, unknown>
+
+export function getActionI18n() {
+  return (key: string): string => {
+    const value = key
+      .split(".")
+      .reduce<unknown>(
+        (current, segment) =>
+          current && typeof current === "object"
+            ? (current as Record<string, unknown>)[segment]
+            : undefined,
+        defaultLocaleContent,
+      )
+
+    return typeof value === "string" ? value : key
+  }
+}
+
 export function getScopedI18n<Scope extends Parameters<typeof serverI18n.getScopedI18n>[0]>(
   scope: Scope,
 ) {

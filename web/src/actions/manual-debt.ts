@@ -7,7 +7,7 @@ import { z } from "zod"
 import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
 import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
 import { createManualDebtFromFormData } from "@/lib/server-manual-debt"
-import { getI18n } from "@/locales/server"
+import { getActionI18n } from "@/locales/server"
 import {
   createManualDebtRowUpdateSchema,
   getManualDebtRowUpdateValidationMessages,
@@ -33,7 +33,7 @@ export async function createManualDebtAction(
   formData: FormData,
 ): Promise<ManualDebtActionState> {
   void previousState
-  return createManualDebtFromFormData(formData)
+  return createManualDebtFromFormData(formData, getActionI18n())
 }
 
 export async function updateManualDebtRowAction(
@@ -42,7 +42,7 @@ export async function updateManualDebtRowAction(
 ): Promise<ManualDebtRowUpdateActionState> {
   void previousState
 
-  const t = await getI18n()
+  const t = getActionI18n()
   const schema = createManualDebtRowUpdateSchema(
     getManualDebtRowUpdateValidationMessages((key) => t(key)),
   )

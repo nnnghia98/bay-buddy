@@ -22,7 +22,7 @@ vi.mock("@/lib/server-manual-debt", () => ({
 }))
 
 vi.mock("@/locales/server", () => ({
-  getI18n: async () => (key: string) => {
+  getActionI18n: () => (key: string) => {
     const translations: Record<string, string> = {
       "manualDebts.table.actions.invalidUpdate": "Invalid update",
       "manualDebts.table.actions.updateSuccess": "Update saved",
