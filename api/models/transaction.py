@@ -78,6 +78,14 @@ class TransactionBase(SQLModel):
         default_factory=lambda: datetime.now(timezone.utc),
         description="UTC timestamp of when the business event actually happened.",
     )
+    payment_occurred_at: Optional[datetime] = Field(
+        default=None,
+        nullable=True,
+        description=(
+            "Optional payment date metadata stored on a ticket charge when "
+            "staff records a payment date without a payment amount."
+        ),
+    )
 
     # FK – resolved at the DB layer.
     customer_id: uuid.UUID = Field(foreign_key="customer.id", index=True)
@@ -133,6 +141,14 @@ class TransactionBase(SQLModel):
         ):
             raise ValueError(
                 "note is required for manual payments and manual adjustments."
+            )
+
+        if (
+            self.payment_occurred_at is not None
+            and self.category != TransactionCategory.TICKET_PURCHASE
+        ):
+            raise ValueError(
+                "payment_occurred_at is only valid for ticket purchase charges."
             )
 
         return self
@@ -205,5 +221,6 @@ class TransactionUpdate(SQLModel):
     note: Optional[str] = None
     evidence_url: Optional[str] = Field(default=None, max_length=2048)
     occurred_at: Optional[datetime] = None
+    payment_occurred_at: Optional[datetime] = None
     linked_ticket_id: Optional[uuid.UUID] = None
     is_refund_confirmed: Optional[bool] = None

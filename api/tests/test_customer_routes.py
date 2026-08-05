@@ -285,9 +285,13 @@ def test_admin_can_correct_ticket_payment_method_without_rebalancing() -> None:
     session.commit()
     session.refresh(transaction)
 
+    payment_occurred_at = datetime(2026, 4, 3, tzinfo=timezone.utc)
     response = client.patch(
         f"/api/v1/transactions/{transaction.id}",
-        json={"method": "AST"},
+        json={
+            "method": "AST",
+            "payment_occurred_at": payment_occurred_at.isoformat(),
+        },
     )
 
     clear_overrides()
@@ -296,6 +300,9 @@ def test_admin_can_correct_ticket_payment_method_without_rebalancing() -> None:
     assert response.json()["data"]["transaction"]["method"] == "AST"
     session.refresh(transaction)
     assert transaction.method == "AST"
+    assert transaction.payment_occurred_at == payment_occurred_at.replace(
+        tzinfo=None
+    )
 
 
 def test_admin_can_correct_ticket_note_without_rebalancing() -> None:

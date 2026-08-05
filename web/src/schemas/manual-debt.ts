@@ -377,6 +377,7 @@ export function createManualDebtRowUpdateSchema(
         normalizeNullableDate,
         z.coerce.date({ error: messages.paymentDateInvalid }).nullable(),
       ),
+      payment_date_uses_charge: z.preprocess(normalizeBoolean, z.boolean()),
       payment_method_changed: z.preprocess(normalizeBoolean, z.boolean()),
       payment_note: z.preprocess(
         (value) => (typeof value === "string" ? value.trim() : ""),

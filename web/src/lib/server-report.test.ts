@@ -95,6 +95,7 @@ function createTicketCharge(id: string, method: string) {
     is_refund_confirmed: false,
     created_at: new Date("2026-07-28T01:00:00.000Z"),
     occurred_at: new Date("2026-07-28T01:00:00.000Z"),
+    payment_occurred_at: null as Date | null,
     created_by: userId,
   }
 }
@@ -193,6 +194,7 @@ describe("mapLedgerToReportRows", () => {
       "6ba7b815-9dad-11d1-80b4-00c04fd430c8",
       "AST",
     )
+    charge.payment_occurred_at = new Date("2026-07-27T00:00:00.000Z")
     const ledger: CustomerLedger = {
       customer: {
         id: customerId,
@@ -222,6 +224,7 @@ describe("mapLedgerToReportRows", () => {
 
     expect(row).toMatchObject({
       linked_payment_note: null,
+      linked_payment_occurred_at: "2026-07-27T00:00:00.000Z",
       linked_payment_methods: ["AST"],
       linked_payment_transaction_ids: [charge.id],
     })

@@ -1462,6 +1462,16 @@ export interface components {
             /** @description Optional customer payment saved atomically with the ticket and linked to the new ticket. */
             payment?: components["schemas"]["TicketPaymentPayload"] | null;
             /**
+             * Payment Method
+             * @description Optional payment method selected for this debt. It is stored on the ticket charge when no payment amount is recorded.
+             */
+            payment_method?: string | null;
+            /**
+             * Payment Occurred At
+             * @description Optional payment date stored on the ticket charge when staff records no payment amount. Use payment.occurred_at when a linked payment is created.
+             */
+            payment_occurred_at?: string | null;
+            /**
              * Pnr
              * @description Optional 6-character PNR booking reference code.
              */
@@ -1830,6 +1840,11 @@ export interface components {
              * @description UTC timestamp of when the business event actually happened.
              */
             occurred_at?: string;
+            /**
+             * Payment Occurred At
+             * @description Optional payment date metadata stored on a ticket charge when staff records a payment date without a payment amount.
+             */
+            payment_occurred_at?: string | null;
             /** @description Legacy direction enum kept in sync with category. */
             type: components["schemas"]["TransactionType"];
         };
@@ -1859,6 +1874,8 @@ export interface components {
             note?: string | null;
             /** Occurred At */
             occurred_at?: string | null;
+            /** Payment Occurred At */
+            payment_occurred_at?: string | null;
             type?: components["schemas"]["TransactionType"] | null;
         };
         /**

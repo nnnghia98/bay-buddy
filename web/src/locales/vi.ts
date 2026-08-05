@@ -482,10 +482,9 @@ export default {
       routeGroup: "Hành trình",
       pricingGroup: "Giá và thu nhập",
       paymentGroup: "Thanh toán (tùy chọn)",
-      paymentAmountPlaceholder: "Để trống nếu chưa thanh toán",
       paymentMethodPlaceholder: "Chọn loại thanh toán",
       paymentHint:
-        "Chọn loại thanh toán để bật ngày thanh toán. Có thể để trống số tiền nếu chưa thanh toán; phương thức vẫn được lưu cùng công nợ, còn ngày thanh toán chỉ lưu khi có số tiền.",
+        "Chọn loại thanh toán để bật ngày thanh toán. Phương thức và ngày được lưu cùng công nợ.",
       paymentNote: "Thanh toán khi ghi nhận công nợ",
       unsavedConfirm: "Bỏ các thông tin công nợ chưa lưu?",
       fields: {
@@ -511,7 +510,6 @@ export default {
         discount: "Chiết khấu hãng",
         serviceFee: "Phí dịch vụ",
         trueIncome: "Thu nhập thực",
-        paymentAmount: "Số tiền thanh toán",
         paymentMethod: "Loại thanh toán",
         paymentDate: "Ngày thanh toán",
       },

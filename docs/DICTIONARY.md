@@ -25,6 +25,7 @@
 | Giao dịch | Transaction | `transaction` |
 | Số tiền | Amount | `amount` |
 | Phương thức thanh toán | Payment Method | `method` |
+| Ngày thanh toán | Payment Date | `payment_occurred_at` |
 | Trạng thái | Status | `status` |
 | Ghi chú | Note | `note` |
 

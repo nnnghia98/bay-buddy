@@ -231,6 +231,14 @@ class TicketConfirmPayload(BaseModel):
             "the ticket charge when no payment amount is recorded."
         ),
     )
+    payment_occurred_at: Optional[datetime] = Field(
+        default=None,
+        description=(
+            "Optional payment date stored on the ticket charge when staff "
+            "records no payment amount. Use payment.occurred_at when a linked "
+            "payment is created."
+        ),
+    )
     payment: Optional[TicketPaymentPayload] = Field(
         default=None,
         description=(
@@ -244,6 +252,18 @@ class TicketConfirmPayload(BaseModel):
         """
         Compute selling_price and true_income from the ticket pricing fields.
         """
+        if (
+            self.payment_occurred_at is not None
+            and not (self.payment_method or "").strip()
+        ):
+            raise ValueError(
+                "A payment method is required when a payment date is provided."
+            )
+        if self.payment_occurred_at is not None and self.payment is not None:
+            raise ValueError(
+                "Use payment.occurred_at when a payment amount is provided."
+            )
+
         computed = self.net_price + self.service_fee
         if self.selling_price is None:
             # Auto-derive selling_price from the formula.
@@ -730,6 +750,7 @@ def create_ticket_with_transaction(
         type=TransactionType.CHARGE,
         category=TransactionCategory.TICKET_PURCHASE,
         method=payload.payment_method,
+        payment_occurred_at=payload.payment_occurred_at,
         note=(
             f"Auto-debt for ticket {payload.pnr or ticket.id} – {payload.itinerary} "
             f"on {payload.flight_date.date()} by user {actor_user_id}"

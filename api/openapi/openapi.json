@@ -5063,6 +5063,32 @@
             "title": "True Income",
             "description": "Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price)."
           },
+          "payment_method": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Method",
+            "description": "Optional payment method selected for this debt. It is stored on the ticket charge when no payment amount is recorded."
+          },
+          "payment_occurred_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Occurred At",
+            "description": "Optional payment date stored on the ticket charge when staff records no payment amount. Use payment.occurred_at when a linked payment is created."
+          },
           "payment": {
             "anyOf": [
               {
@@ -5803,6 +5829,19 @@
             "title": "Occurred At",
             "description": "UTC timestamp of when the business event actually happened."
           },
+          "payment_occurred_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Occurred At",
+            "description": "Optional payment date metadata stored on a ticket charge when staff records a payment date without a payment amount."
+          },
           "customer_id": {
             "type": "string",
             "format": "uuid",
@@ -5947,6 +5986,18 @@
               }
             ],
             "title": "Occurred At"
+          },
+          "payment_occurred_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Occurred At"
           },
           "linked_ticket_id": {
             "anyOf": [

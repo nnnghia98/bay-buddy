@@ -31,9 +31,9 @@ Keep the `/debts/input` form stable around this validation contract:
   date, pricing fields, and payment details are optional. Blank numeric values
   are treated as `0`, and the date inputs default to today in the UI.
 - PNR must contain exactly six characters when provided.
-- A payment method is required when a payment amount or payment date is
-  entered. Selecting a method without an amount is allowed and stores the
-  method on the debt charge.
+- The manual debt form does not record a payment amount. A payment method is
+  required when a payment date is entered. The selected method and date are
+  stored on the debt charge; the row stays unpaid.
 - Keep this contract in the shared Zod schema and the server action. Do not
   make another field required without updating this section and both validation
   boundaries.
@@ -46,7 +46,8 @@ can review and correct a row without searching through database-shaped fields:
 1. Customer context, ticket issue date, and passengers.
 2. Pricing: EV, AST, THF, WEB, insurance, selling price, airline discount, net
    price correction, and true income.
-3. Optional payment details.
+3. Optional payment method, date, and note details. Payment amount is recorded
+   through the customer payment flow, not this drawer.
 4. Route.
 5. Low-priority ticket metadata: PNR, ticket number, airline, and flight
    datetime.

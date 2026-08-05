@@ -81,6 +81,7 @@ function createValidFormData(): FormData {
   formData.set("payment_amount_changed", "true")
   formData.set("payment_occurred_at", "2026-08-04")
   formData.set("payment_occurred_at_changed", "true")
+  formData.set("payment_date_uses_charge", "false")
   formData.set("payment_note", "Da thanh toan")
   formData.set("payment_note_changed", "true")
   formData.append("payment_transaction_id", paymentId)
@@ -158,6 +159,29 @@ describe("manual debt row update action", () => {
     })
     expect(revalidatePath).toHaveBeenCalledWith("/debts/input")
     expect(revalidatePath).toHaveBeenCalledWith(`/tickets/${ticketId}`)
+  })
+
+  it("updates a method-only payment date on the ticket charge", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: true })
+    vi.stubGlobal("fetch", fetchMock)
+    const formData = createValidFormData()
+    formData.set("payment_amount", "")
+    formData.set("payment_amount_changed", "false")
+    formData.set("payment_method_changed", "false")
+    formData.set("payment_note", "")
+    formData.set("payment_note_changed", "false")
+    formData.set("payment_date_uses_charge", "true")
+
+    const result = await updateManualDebtRowAction(undefined, formData)
+
+    expect(result.status).toBe("success")
+    const chargeRequest = fetchMock.mock.calls[1]?.[1]
+    expect(JSON.parse(String(chargeRequest?.body))).toEqual({
+      payment_occurred_at: "2026-08-04T00:00:00.000Z",
+    })
   })
 
   it("keeps the drawer in an error state when the API update fails", async () => {

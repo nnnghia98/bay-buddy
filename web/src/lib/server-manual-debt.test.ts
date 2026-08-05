@@ -118,7 +118,7 @@ describe("createManualDebtFromFormData", () => {
     expect(revalidatePath).toHaveBeenCalledWith(`/customers/${customerId}`)
   })
 
-  it("omits payment creation when the amount is blank", async () => {
+  it("stores the payment date on the charge when the amount is blank", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       text: async () =>
@@ -145,6 +145,7 @@ describe("createManualDebtFromFormData", () => {
     const payload = JSON.parse(String(request.body))
 
     expect(payload.payment_method).toBe("AST")
+    expect(payload.payment_occurred_at).toBe("2026-07-28T00:00:00.000Z")
     expect(payload.payment).toBeNull()
     expect(result.message).toBe("Debt saved")
   })

@@ -353,7 +353,15 @@ def list_ticket_debt_rows(
                         payment_summary.occurred_ats[0]
                         if payment_summary
                         and len(payment_summary.occurred_ats) == 1
-                        else None
+                        else (
+                            _normalize_ledger_datetime(
+                                charge.payment_occurred_at
+                            )
+                            if payment_summary is None
+                            and charge
+                            and charge.payment_occurred_at
+                            else None
+                        )
                     ),
                     flight_date=_normalize_ledger_datetime(ticket.flight_date),
                     ticket_status=ticket.status,
@@ -874,7 +882,9 @@ def update_transaction_for_admin(
         transaction.category == TransactionCategory.TICKET_PURCHASE
         and transaction.linked_ticket_id is not None
         and bool(update_data)
-        and set(update_data).issubset({"method", "note"})
+        and set(update_data).issubset(
+            {"method", "note", "payment_occurred_at"}
+        )
     )
     _ensure_transaction_is_mutable(
         transaction,

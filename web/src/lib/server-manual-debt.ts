@@ -143,6 +143,10 @@ export async function createManualDebtFromFormData(
           occurred_at: values.payment_date?.toISOString() ?? null,
         }
       : null
+  const chargePaymentOccurredAt =
+    values.payment_amount === 0 && values.payment_method
+      ? values.payment_date?.toISOString() ?? null
+      : null
   const response = await fetch(buildUrl("/tickets/confirm"), {
     method: "POST",
     headers: {
@@ -181,6 +185,7 @@ export async function createManualDebtFromFormData(
         values.insurance_price,
       ),
       payment_method: values.payment_method ?? null,
+      payment_occurred_at: chargePaymentOccurredAt,
       payment,
     }),
     cache: "no-store",

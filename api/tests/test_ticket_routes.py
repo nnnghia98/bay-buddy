@@ -468,13 +468,25 @@ def test_confirm_ticket_records_optional_payment_atomically(
         assert payment.occurred_at == payment_occurred_at.replace(tzinfo=None)
 
 
-def test_confirm_ticket_preserves_selected_method_without_payment_amount(
+def test_confirm_ticket_preserves_payment_details_without_payment_amount(
     test_client,
     test_engine,
 ):
+    payment_occurred_at = datetime(
+        2026,
+        4,
+        21,
+        0,
+        0,
+        tzinfo=timezone.utc,
+    )
     response = test_client.post(
         "/api/v1/tickets/confirm",
-        json=_confirm_payload() | {"payment_method": " AST "},
+        json=_confirm_payload()
+        | {
+            "payment_method": " AST ",
+            "payment_occurred_at": payment_occurred_at.isoformat(),
+        },
     )
 
     assert response.status_code == 201
@@ -492,6 +504,15 @@ def test_confirm_ticket_preserves_selected_method_without_payment_amount(
         assert len(transactions) == 1
         assert transactions[0].category == TransactionCategory.TICKET_PURCHASE
         assert transactions[0].method == "AST"
+        assert transactions[0].payment_occurred_at == (
+            payment_occurred_at.replace(tzinfo=None)
+        )
+
+    report_response = test_client.get("/api/v1/finance/ticket-debts")
+    assert report_response.status_code == 200
+    [row] = report_response.json()["data"]
+    assert row["linked_payment_amount"] is None
+    assert row["linked_payment_occurred_at"].startswith("2026-04-21T00:00:00")
 
 
 def test_confirm_ticket_allows_shared_ticket_numbers_for_return_flights(

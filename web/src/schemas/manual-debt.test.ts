@@ -225,6 +225,7 @@ describe("manualDebtRowUpdateSchema", () => {
     payment_amount_changed: "true",
     payment_occurred_at: "2026-08-04",
     payment_occurred_at_changed: "true",
+    payment_date_uses_charge: "false",
     payment_note: "  Da thanh toan  ",
     payment_note_changed: "true",
     payment_transaction_ids: ["550e8400-e29b-41d4-a716-446655440002"],

@@ -838,7 +838,7 @@ function CurrencyEditField({
   error?: string
   id: string
   label: string
-  name: EditablePricingField | "true_income" | "payment_amount"
+  name: EditablePricingField | "true_income"
   onChange: (value: number) => void
   signed?: boolean
   value: number
@@ -948,9 +948,6 @@ function ManualDebtEditorForm({
   const [paymentNote, setPaymentNote] = React.useState(
     row.linked_payment_note?.trim() ?? "",
   )
-  const [paymentAmount, setPaymentAmount] = React.useState(
-    row.linked_payment_amount ?? 0,
-  )
   const [paymentOccurredAt, setPaymentOccurredAt] = React.useState(
     formatDateLocal(row.linked_payment_occurred_at),
   )
@@ -992,10 +989,13 @@ function ManualDebtEditorForm({
       ? calculatedIncome
       : row.ticket_true_income
   const canEditPayment = paymentTransactionIds.length > 0
-  const canEditLinkedPayment = row.linked_payment_transaction_ids.length === 1
+  const hasSingleLinkedPayment =
+    row.linked_payment_transaction_ids.length === 1
+  const paymentDateUsesCharge =
+    row.linked_payment_transaction_ids.length === 0 && row.transaction_id !== null
+  const canEditPaymentDate = hasSingleLinkedPayment || paymentDateUsesCharge
   const originalPaymentMethod = getEditablePaymentMethod(row)
   const originalPaymentNote = row.linked_payment_note?.trim() ?? ""
-  const originalPaymentAmount = row.linked_payment_amount ?? 0
   const originalPaymentOccurredAt = formatDateLocal(
     row.linked_payment_occurred_at,
   )
@@ -1052,6 +1052,7 @@ function ManualDebtEditorForm({
       payment_occurred_at_changed: formData.get(
         "payment_occurred_at_changed",
       ),
+      payment_date_uses_charge: formData.get("payment_date_uses_charge"),
       payment_note: formData.get("payment_note"),
       payment_note_changed: formData.get("payment_note_changed"),
       payment_transaction_ids: formData.getAll("payment_transaction_id"),
@@ -1113,22 +1114,18 @@ function ManualDebtEditorForm({
         value={paymentMethod === originalPaymentMethod ? "false" : "true"}
       />
       <input
-        name="payment_amount_changed"
+        name="payment_occurred_at_changed"
         type="hidden"
         value={
-          canEditLinkedPayment && paymentAmount !== originalPaymentAmount
+          canEditPaymentDate && paymentOccurredAt !== originalPaymentOccurredAt
             ? "true"
             : "false"
         }
       />
       <input
-        name="payment_occurred_at_changed"
+        name="payment_date_uses_charge"
         type="hidden"
-        value={
-          canEditLinkedPayment && paymentOccurredAt !== originalPaymentOccurredAt
-            ? "true"
-            : "false"
-        }
+        value={paymentDateUsesCharge ? "true" : "false"}
       />
       <input
         name="payment_note_changed"
@@ -1294,63 +1291,40 @@ function ManualDebtEditorForm({
 
               <FormSection icon={Wallet} title={t("manualDebts.form.paymentGroup")}>
                 <div className={styles.editorSectionContent}>
-                  <div className={patterns.twoColumnGrid}>
-                    {canEditLinkedPayment ? (
-                      <CurrencyEditField
-                        error={getError("payment_amount")}
-                        id={`edit-payment-amount-${row.id}`}
-                        label={t("manualDebts.table.columns.paymentAmount")}
-                        name="payment_amount"
-                        onChange={setPaymentAmount}
-                        value={paymentAmount}
-                      />
-                    ) : (
-                      <dl className={styles.detailGrid}>
-                        <DetailItem
-                          label={t("manualDebts.table.columns.paymentAmount")}
-                          numeric
-                          value={
-                            row.linked_payment_amount === null
-                              ? t("manualDebts.emptyValue")
-                              : formatCurrency(row.linked_payment_amount)
-                          }
-                        />
-                      </dl>
-                    )}
-                    <FormField
-                      error={getError("payment_method")}
-                      htmlFor={`edit-payment-method-${row.id}`}
-                      label={t("manualDebts.form.fields.paymentMethod")}
+                  <FormField
+                    error={getError("payment_method")}
+                    htmlFor={`edit-payment-method-${row.id}`}
+                    label={t("manualDebts.form.fields.paymentMethod")}
+                  >
+                    <select
+                      className={selectInputClassName}
+                      disabled={!canEditPayment}
+                      id={`edit-payment-method-${row.id}`}
+                      name="payment_method"
+                      onChange={(event) =>
+                        setPaymentMethod(event.target.value as PaymentMethod | "")
+                      }
+                      value={paymentMethod}
                     >
-                      <select
-                        className={selectInputClassName}
-                        disabled={!canEditPayment}
-                        id={`edit-payment-method-${row.id}`}
-                        name="payment_method"
-                        onChange={(event) =>
-                          setPaymentMethod(event.target.value as PaymentMethod | "")
-                        }
-                        value={paymentMethod}
-                      >
-                        <option value="">
-                          {t("manualDebts.form.paymentMethodPlaceholder")}
+                      <option value="">
+                        {t("manualDebts.form.paymentMethodPlaceholder")}
+                      </option>
+                      {paymentMethodOptions.map((method) => (
+                        <option key={method} value={method}>
+                          {paymentMethodLabels[method]}
                         </option>
-                        {paymentMethodOptions.map((method) => (
-                          <option key={method} value={method}>
-                            {paymentMethodLabels[method]}
-                          </option>
-                        ))}
-                      </select>
-                    </FormField>
-                  </div>
+                      ))}
+                    </select>
+                  </FormField>
                   <div className={styles.sectionOffset}>
-                    {canEditLinkedPayment ? (
+                    {canEditPaymentDate ? (
                       <FormField
                         error={getError("payment_occurred_at")}
                         htmlFor={`edit-payment-date-${row.id}`}
                         label={t("manualDebts.form.fields.paymentDate")}
                       >
                         <Input
+                          disabled={!paymentMethod}
                           id={`edit-payment-date-${row.id}`}
                           name="payment_occurred_at"
                           onChange={(event) =>
@@ -1937,7 +1911,6 @@ export function ManualDebtInputClient({
   const [thfPrice, setThfPrice] = React.useState(0)
   const [webPrice, setWebPrice] = React.useState(0)
   const [insurancePrice, setInsurancePrice] = React.useState(0)
-  const [paymentAmount, setPaymentAmount] = React.useState(0)
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod | "">(
     "",
   )
@@ -1960,7 +1933,6 @@ export function ManualDebtInputClient({
     setThfPrice(0)
     setWebPrice(0)
     setInsurancePrice(0)
-    setPaymentAmount(0)
     setPaymentMethod("")
     setPaymentDate("")
     setIsFormDirty(false)
@@ -2379,63 +2351,37 @@ export function ManualDebtInputClient({
                   icon={Wallet}
                   title={t("manualDebts.form.paymentGroup")}
                 >
-                  <div className={patterns.twoColumnGrid}>
-                    <FormField
-                      error={getFieldError(fieldErrors, "payment_amount")}
-                      htmlFor="manual-debt-payment-amount"
-                      label={t("manualDebts.form.fields.paymentAmount")}
-                    >
-                      <Input
-                        id="manual-debt-payment-amount"
-                        inputMode="numeric"
-                        min={0}
-                        name="payment_amount"
-                        onChange={(event) =>
-                          setPaymentAmount(parseCurrencyInput(event.target.value))
-                        }
-                        placeholder={t(
-                          "manualDebts.form.paymentAmountPlaceholder",
-                        )}
-                        type="text"
-                        value={
-                          paymentAmount > 0
-                            ? formatCurrencyInput(paymentAmount)
-                            : ""
-                        }
-                      />
-                    </FormField>
-                    <FormField
-                      error={getFieldError(fieldErrors, "payment_method")}
-                      htmlFor="manual-debt-payment-method"
-                      label={t("manualDebts.form.fields.paymentMethod")}
-                    >
-                      <select
-                        className={selectInputClassName}
-                        id="manual-debt-payment-method"
-                        name="payment_method"
-                        onChange={(event) => {
-                          const nextMethod = event.target.value as
-                            | PaymentMethod
-                            | ""
+                  <FormField
+                    error={getFieldError(fieldErrors, "payment_method")}
+                    htmlFor="manual-debt-payment-method"
+                    label={t("manualDebts.form.fields.paymentMethod")}
+                  >
+                    <select
+                      className={selectInputClassName}
+                      id="manual-debt-payment-method"
+                      name="payment_method"
+                      onChange={(event) => {
+                        const nextMethod = event.target.value as
+                          | PaymentMethod
+                          | ""
 
-                          setPaymentMethod(nextMethod)
-                          if (!nextMethod) {
-                            setPaymentDate("")
-                          }
-                        }}
-                        value={paymentMethod}
-                      >
-                        <option value="">
-                          {t("manualDebts.form.paymentMethodPlaceholder")}
+                        setPaymentMethod(nextMethod)
+                        if (!nextMethod) {
+                          setPaymentDate("")
+                        }
+                      }}
+                      value={paymentMethod}
+                    >
+                      <option value="">
+                        {t("manualDebts.form.paymentMethodPlaceholder")}
+                      </option>
+                      {paymentMethodOptions.map((method) => (
+                        <option key={method} value={method}>
+                          {paymentMethodLabels[method]}
                         </option>
-                        {paymentMethodOptions.map((method) => (
-                          <option key={method} value={method}>
-                            {paymentMethodLabels[method]}
-                          </option>
-                        ))}
-                      </select>
-                    </FormField>
-                  </div>
+                      ))}
+                    </select>
+                  </FormField>
                   <div className={styles.sectionOffset}>
                     <FormField
                       error={getFieldError(fieldErrors, "payment_date")}

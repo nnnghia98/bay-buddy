@@ -482,10 +482,9 @@ export default {
       routeGroup: "Route",
       pricingGroup: "Price and income",
       paymentGroup: "Payment (optional)",
-      paymentAmountPlaceholder: "Leave blank when unpaid",
       paymentMethodPlaceholder: "Choose payment type",
       paymentHint:
-        "Choose a payment type to enable the payment date. You can leave the amount blank when unpaid; the method is still saved with the debt, while the payment date is saved only with an amount.",
+        "Choose a payment type to enable the payment date. The method and date are saved with the debt.",
       paymentNote: "Payment recorded with manual debt",
       unsavedConfirm: "Discard the unsaved debt details?",
       fields: {
@@ -511,7 +510,6 @@ export default {
         discount: "Airline discount",
         serviceFee: "Service fee",
         trueIncome: "True income",
-        paymentAmount: "Payment amount",
         paymentMethod: "Payment type",
         paymentDate: "Payment date",
       },

@@ -93,6 +93,7 @@
 - `invoice_id`: UUID Nullable (FK to Invoice for duplicate-billing prevention)
 - `created_by`: UUID (FK to User for audit trail ownership)
 - `occurred_at`: DateTime (Real-world event timestamp)
+- `payment_occurred_at`: DateTime Nullable (Payment date metadata on a ticket charge when no payment amount is recorded)
 - `created_at`: DateTime (UTC auto-stamp)
 
 ### Transaction Time Rule
@@ -223,14 +224,13 @@ Bay Buddy follows the project's Next.js App Router patterns, Bay Buddy DNA, and 
 7. `recordPaymentAction` must call `revalidatePath('/customers/[id]')` so the RSC ledger refreshes after a successful mutation, instead of manually refetching on the client.
 8. After the Server Action completes, the optimistic row is reconciled with the persisted transaction or rolled back if validation/authentication fails.
 
-The `/debts/input` workbench may include an optional payment amount, method, and
-real-world payment date. The method starts empty; choosing one enables the optional
-date input. A selected method is stored on the ticket charge even when no amount is
-entered; an amount greater than zero additionally creates a linked payment. The
-ticket charge and linked payment must be committed atomically by the ticket
-confirmation flow so a partial save cannot create only one side. Ticket rows may
-show the total linked payment and its note; tickets without a linked payment keep
-those cells empty while still showing a selected charge method.
+The `/debts/input` workbench captures an optional payment method and real-world
+payment date, but it does not record payment amounts. The method starts empty;
+choosing one enables the optional date input. The selected method is stored on the
+ticket charge, and its date is stored as `payment_occurred_at`. This metadata does
+not create a linked payment or change the customer balance. Payment amounts are
+recorded through the customer payment flow. Ticket rows may still show existing
+linked payment totals while also showing the selected charge method and date.
 
 ### Ticket Debt Workbench Timestamp Contract
 

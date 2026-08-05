@@ -74,6 +74,7 @@ export async function updateManualDebtRowAction(
     payment_occurred_at_changed: formData.get(
       "payment_occurred_at_changed",
     ),
+    payment_date_uses_charge: formData.get("payment_date_uses_charge"),
     payment_note: formData.get("payment_note"),
     payment_note_changed: formData.get("payment_note_changed"),
     payment_transaction_ids: formData.getAll("payment_transaction_id"),
@@ -143,6 +144,7 @@ export async function updateManualDebtRowAction(
     payment_amount_changed,
     payment_occurred_at,
     payment_occurred_at_changed,
+    payment_date_uses_charge,
     payment_note,
     payment_note_changed,
     payment_transaction_ids,
@@ -189,7 +191,9 @@ export async function updateManualDebtRowAction(
         ...(payment_transaction_ids.length === 1 &&
         payment_occurred_at_changed &&
         payment_occurred_at
-          ? { occurred_at: payment_occurred_at.toISOString() }
+          ? payment_date_uses_charge
+            ? { payment_occurred_at: payment_occurred_at.toISOString() }
+            : { occurred_at: payment_occurred_at.toISOString() }
           : {}),
       }
 

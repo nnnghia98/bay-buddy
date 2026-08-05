@@ -266,7 +266,9 @@ export function mapLedgerToReportRows(
       linked_payment_occurred_at:
         linkedPaymentSummary?.occurred_at.length === 1
           ? linkedPaymentSummary.occurred_at[0]
-          : null,
+          : linkedPaymentSummary
+            ? null
+            : transaction?.payment_occurred_at?.toISOString() ?? null,
       flight_date: ticket?.flight_date.toISOString() ?? null,
       ticket_status: ticket?.status ?? null,
       transaction_id: transaction?.id ?? null,

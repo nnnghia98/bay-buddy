@@ -72,6 +72,9 @@ const TransactionBaseSchema = z.object({
    */
   evidence_url: NullableEvidenceUrlSchema,
 
+  /** Optional payment date metadata for a ticket charge without a payment amount. */
+  payment_occurred_at: z.coerce.date().nullable().optional(),
+
   /** Foreign key to the owning Customer. Maps to Python: customer_id */
   customer_id: z.string().uuid("customer_id must be a valid UUID."),
 
@@ -142,6 +145,7 @@ export const TransactionUpdateSchema = z.object({
   note: z.string().max(2000).nullable().optional(),
   evidence_url: z.string().url().max(2048).nullable().optional(),
   occurred_at: z.coerce.date().optional(),
+  payment_occurred_at: z.coerce.date().nullable().optional(),
   linked_ticket_id: z.string().uuid().nullable().optional(),
   is_refund_confirmed: z.boolean().optional(),
 });
