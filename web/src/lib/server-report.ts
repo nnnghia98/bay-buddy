@@ -56,6 +56,8 @@ export type LedgerReportRange = {
   to?: string
 }
 
+export type TicketDebtDateBasis = "updated_at" | "booked_at"
+
 const ticketDebtReportRowSchema = z.object({
   id: z.string().uuid(),
   customer_id: z.string().uuid(),
@@ -362,6 +364,7 @@ export async function fetchTicketDebtRows(
 }
 
 export type TicketDebtPageQuery = LedgerReportRange & {
+  date_basis?: TicketDebtDateBasis
   page?: number
   page_size?: number
   q?: string
@@ -381,6 +384,9 @@ export async function fetchTicketDebtPage(
   }
   if (query.to) {
     params.set("to", query.to)
+  }
+  if (query.date_basis) {
+    params.set("date_basis", query.date_basis)
   }
 
   const payload = await fetchAuthenticatedApiPayload(
@@ -403,6 +409,9 @@ export async function fetchTicketDebtExportRows(
   }
   if (query.to) {
     params.set("to", query.to)
+  }
+  if (query.date_basis) {
+    params.set("date_basis", query.date_basis)
   }
 
   const payload = await fetchAuthenticatedApiPayload(

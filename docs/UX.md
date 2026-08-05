@@ -195,6 +195,9 @@ Table requirements:
 - Use stable default ordering for editable tables. The ticket debt workbench
   sorts by immutable ticket `created_at` descending, so saving an edit does not
   move the active row. A user-selected sort may reorder rows normally.
+- The debt report date range, pagination, default table order, and Excel export
+  use ticket `booked_at` (`Ngày xuất vé`) descending. Keep the report filter
+  labels explicit about this date basis.
 - On `/debts/input`, the pencil action opens the right-side edit drawer. Keep
   table cells read-only, use an explicit save action, and keep validation or
   mutation failures visible in the drawer.

@@ -75,6 +75,7 @@
 
 ### Ticket Time Rule
 - `flight_date` is the scheduled departure datetime. It may be earlier than the app base date time.
+- `booked_at` is the real-world ticket issue datetime (`Ngày xuất vé`) used for debt reporting.
 - `created_at` and `updated_at` are the audit timestamps used for app history, logs, and recent activity. Ticket active-window filtering uses `updated_at`, which is equal to `created_at` until the ticket is changed.
 - Do not use `flight_date` to decide whether a ticket is active in the current app window.
 
@@ -236,10 +237,13 @@ linked payment totals while also showing the selected charge method and date.
 
 - `GET /api/v1/finance/ticket-debts` returns `created_at` from
   `Ticket.created_at` and `updated_at` from `Ticket.updated_at` as separate fields.
-- Active-window and report date filters continue to use `Ticket.updated_at`.
-- Default pagination and row order use `Ticket.created_at` descending, with the
-  ticket ID as a stable tie-breaker. Inline corrections therefore do not move a
-  row under the default sort.
+- The `/debts/input` active window uses `Ticket.updated_at`; its default
+  pagination and row order use `Ticket.created_at` descending, with ticket ID
+  as a stable tie-breaker. Inline corrections therefore do not move a row.
+- The `/report` page requests `date_basis=booked_at`. Its active window,
+  explicit date range, pagination, table order, and Excel export all use
+  `Ticket.booked_at` descending. Rows without `booked_at` sort last when no
+  explicit range is selected and do not match an explicit issue-date range.
 
 ### Workbook Editor v2 integrity rules
 

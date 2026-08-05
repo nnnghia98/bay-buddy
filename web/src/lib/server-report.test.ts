@@ -11,6 +11,8 @@ vi.mock("@/lib/server-api", () => ({
 }))
 
 import {
+  fetchTicketDebtExportRows,
+  fetchTicketDebtPage,
   fetchTicketDebtRows,
   mapLedgerToReportRows,
 } from "@/lib/server-report"
@@ -357,6 +359,59 @@ describe("fetchTicketDebtRows", () => {
     expect(mockFetchAuthenticatedApiPayload).toHaveBeenCalledWith(
       "/finance/ticket-debts",
       "Unable to load ticket debts.",
+    )
+  })
+})
+
+describe("ticket debt report requests", () => {
+  it("forwards the ticket issue date basis to page and export requests", async () => {
+    mockFetchAuthenticatedApiPayload
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          items: [],
+          pagination: {
+            page: 1,
+            page_size: 50,
+            total: 0,
+            total_pages: 0,
+            has_next: false,
+          },
+          summary: {
+            rows: 0,
+            customers: 0,
+            total_selling_price: 0,
+            total_income: 0,
+          },
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        data: [],
+        error: null,
+      })
+
+    await fetchTicketDebtPage({
+      date_basis: "booked_at",
+      from: "2026-07-01",
+      to: "2026-07-31",
+    })
+    await fetchTicketDebtExportRows({
+      date_basis: "booked_at",
+      from: "2026-07-01",
+      to: "2026-07-31",
+    })
+
+    expect(mockFetchAuthenticatedApiPayload).toHaveBeenNthCalledWith(
+      1,
+      "/finance/ticket-debts?page=1&page_size=50&from=2026-07-01&to=2026-07-31&date_basis=booked_at",
+      "Unable to load ticket debts.",
+    )
+    expect(mockFetchAuthenticatedApiPayload).toHaveBeenNthCalledWith(
+      2,
+      "/finance/ticket-debts?all=true&from=2026-07-01&to=2026-07-31&date_basis=booked_at",
+      "Unable to load ticket debt export.",
     )
   })
 })

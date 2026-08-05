@@ -26,11 +26,17 @@ export async function GET(request: Request) {
   const exportAll = url.searchParams.get("all") === "1"
   try {
     if (exportAll) {
-      const rows = await fetchTicketDebtExportRows({ from, q: query, to })
+      const rows = await fetchTicketDebtExportRows({
+        date_basis: "booked_at",
+        from,
+        q: query,
+        to,
+      })
       return NextResponse.json({ rows })
     }
 
     const reportPage = await fetchTicketDebtPage({
+      date_basis: "booked_at",
       from,
       page: Number.isFinite(page) && page > 0 ? page : 1,
       page_size:

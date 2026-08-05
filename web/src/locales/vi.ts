@@ -400,8 +400,8 @@ export default {
     empty: "Chưa có dòng công nợ vé nào.",
     searchEmpty: "Không tìm thấy dòng công nợ phù hợp.",
     filters: {
-      from: "Từ",
-      to: "Đến",
+      from: "Từ ngày xuất vé",
+      to: "Đến ngày xuất vé",
       searchLabel: "Tìm kiếm",
       searchPlaceholder:
         "Tìm khách hàng, hành khách, mã chỗ, số vé hoặc ghi chú",
@@ -414,15 +414,15 @@ export default {
       summary: "Tổng hợp",
       rows: "Số dòng",
       customers: "Khách hàng",
-      scopeAll: "Toàn bộ thời gian",
-      scopeFiltered: "Theo thời gian đã chọn",
+      scopeAll: "Toàn bộ ngày xuất vé",
+      scopeFiltered: "Theo ngày xuất vé đã chọn",
       totalSellingPrice: "Tổng giá bán",
       totalIncome: "Tổng doanh thu",
     },
     table: {
       eyebrow: "Dòng công nợ từ vé",
       description:
-        "Bộ lọc ngày dùng lần cập nhật gần nhất; thứ tự mặc định dùng thời gian ghi. Ngày giờ bay chỉ là thông tin chuyến bay.",
+        "Bộ lọc ngày, thứ tự bảng và tệp Excel đều dùng Ngày xuất vé, mới nhất trước.",
       results: "dòng",
       pagination: {
         page: "Trang {page} / {totalPages}",

@@ -400,8 +400,8 @@ export default {
     empty: "No ticket debt rows are available.",
     searchEmpty: "No matching debt rows were found.",
     filters: {
-      from: "From",
-      to: "To",
+      from: "Issue date from",
+      to: "Issue date to",
       searchLabel: "Search",
       searchPlaceholder:
         "Search customer, passenger, PNR, ticket number, or note",
@@ -414,15 +414,15 @@ export default {
       summary: "Summary",
       rows: "Rows",
       customers: "Customers",
-      scopeAll: "All time",
-      scopeFiltered: "Selected time",
+      scopeAll: "All issue dates",
+      scopeFiltered: "Selected issue dates",
       totalSellingPrice: "Total selling price",
       totalIncome: "Total revenue",
     },
     table: {
       eyebrow: "Ticket debt rows",
       description:
-        "Date filters use the latest update; default order uses recorded time. Flight datetime is ticket information only.",
+        "The date filter, table order, and Excel export use ticket issue date, newest first.",
       results: "rows",
       pagination: {
         page: "Page {page} of {totalPages}",

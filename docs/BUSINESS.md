@@ -33,9 +33,11 @@ Each ticket parsed into the system follows a specific lifecycle. Status changes 
 - Every ticket should store the airline `ticket_number` when available.
 - `ticket_number` is not a unique business key. Multiple rows may share the same number for return-trip scenarios or different legs.
 - `flight_date` is the scheduled flight datetime. It can be in the past and must not be blocked by the app base date time.
+- `booked_at` is the ticket issue datetime (`Ngày xuất vé`) and is the business date for debt reports and Excel exports.
 - Ticket `created_at` / `updated_at` are audit timestamps for when Bay Buddy recorded or changed the ticket.
-- App base date-time filtering applies to ticket `updated_at`, not to `flight_date`; on untouched records, `updated_at` is the original creation timestamp.
+- Operational active-window filtering, including `/debts/input`, applies to ticket `updated_at`, not to `flight_date`; on untouched records, `updated_at` is the original creation timestamp.
 - The ticket debt workbench defaults to `created_at` descending so an edit does not move the active row. It keeps `updated_at` separate for active-window filtering and audit context.
+- The debt report filters, paginates, sorts, and exports by `booked_at` descending so reporting periods follow `Ngày xuất vé` rather than audit activity.
 - Logs, histories, recent activity lists, and audit-style views must show `created_at` / `updated_at`; `flight_date` belongs only in flight-detail context.
 - Route data should be captured explicitly with:
   - `departure_place`

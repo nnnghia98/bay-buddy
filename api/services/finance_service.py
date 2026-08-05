@@ -40,6 +40,8 @@ from services.system_settings_service import (
     get_app_base_datetime,
 )
 
+TicketDebtDateBasis = Literal["updated_at", "booked_at"]
+
 
 class LedgerEntry(BaseModel):
     """A table-ready customer ledger row ordered by business event time."""
@@ -153,10 +155,21 @@ def _manual_ticket_note(value: Optional[str]) -> Optional[str]:
     return note
 
 
+def _ticket_debt_sort_key(
+    row: TicketDebtReportRow,
+    date_basis: TicketDebtDateBasis,
+) -> tuple[bool, datetime, str]:
+    """Sort reports by issue date while keeping workbench creation order."""
+
+    value = row.booked_at if date_basis == "booked_at" else row.created_at
+    return value is not None, value or datetime.min, str(row.id)
+
+
 def list_ticket_debt_rows(
     *,
     session: Session,
     ticket_ids: set[uuid.UUID] | None = None,
+    date_basis: TicketDebtDateBasis = "updated_at",
 ) -> list[TicketDebtReportRow]:
     """Return every active confirmed ticket as one global debt row.
 
@@ -170,10 +183,13 @@ def list_ticket_debt_rows(
         if not ticket_ids:
             return []
         ticket_statement = ticket_statement.where(Ticket.id.in_(ticket_ids))
+    ticket_date_column = (
+        Ticket.booked_at if date_basis == "booked_at" else Ticket.updated_at
+    )
     ticket_statement = apply_app_base_datetime(
         session=session,
         statement=ticket_statement,
-        column=Ticket.updated_at,
+        column=ticket_date_column,
     )
     tickets = session.exec(
         ticket_statement.order_by(Ticket.updated_at, Ticket.id)
@@ -194,7 +210,7 @@ def list_ticket_debt_rows(
         all_ticket_statement = apply_app_base_datetime(
             session=session,
             statement=all_ticket_statement,
-            column=Ticket.updated_at,
+            column=ticket_date_column,
         )
         all_tickets = session.exec(
             all_ticket_statement.order_by(Ticket.updated_at, Ticket.id)
@@ -382,7 +398,10 @@ def list_ticket_debt_rows(
                 )
             )
 
-    rows.sort(key=lambda row: (row.created_at, str(row.id)), reverse=True)
+    rows.sort(
+        key=lambda row: _ticket_debt_sort_key(row, date_basis),
+        reverse=True,
+    )
     return rows
 
 
@@ -431,6 +450,7 @@ def _filter_ticket_debt_rows(
     query: str | None,
     from_value: str | None,
     to_value: str | None,
+    date_basis: TicketDebtDateBasis = "updated_at",
 ) -> list[TicketDebtReportRow]:
     """Apply report filters to the already reconciled ticket rows."""
 
@@ -439,14 +459,20 @@ def _filter_ticket_debt_rows(
     to_datetime = _parse_report_datetime(to_value, boundary="end")
 
     def matches(row: TicketDebtReportRow) -> bool:
-        row_datetime = row.updated_at
-        if row_datetime.tzinfo is None:
-            row_datetime = row_datetime.replace(tzinfo=timezone.utc)
+        row_datetime = (
+            row.booked_at if date_basis == "booked_at" else row.updated_at
+        )
+        if row_datetime is None:
+            if from_datetime or to_datetime:
+                return False
+        else:
+            if row_datetime.tzinfo is None:
+                row_datetime = row_datetime.replace(tzinfo=timezone.utc)
 
-        if from_datetime and row_datetime < from_datetime:
-            return False
-        if to_datetime and row_datetime > to_datetime:
-            return False
+            if from_datetime and row_datetime < from_datetime:
+                return False
+            if to_datetime and row_datetime > to_datetime:
+                return False
 
         if not normalized_query:
             return True
@@ -478,14 +504,16 @@ def list_ticket_debt_export_rows(
     query: str | None = None,
     from_value: str | None = None,
     to_value: str | None = None,
+    date_basis: TicketDebtDateBasis = "updated_at",
 ) -> list[dict[str, object]]:
     """Return all filtered rows for an explicit report export request."""
 
     rows = _filter_ticket_debt_rows(
-        list_ticket_debt_rows(session=session),
+        list_ticket_debt_rows(session=session, date_basis=date_basis),
         query=query,
         from_value=from_value,
         to_value=to_value,
+        date_basis=date_basis,
     )
     return [row.model_dump(mode="json") for row in rows]
 
@@ -498,8 +526,9 @@ def list_ticket_debt_page(
     query: str | None = None,
     from_value: str | None = None,
     to_value: str | None = None,
+    date_basis: TicketDebtDateBasis = "updated_at",
 ) -> dict[str, object]:
-    """Return one filtered page and summary for the debt workbench."""
+    """Return one filtered page and summary for a ticket debt view."""
 
     page_number = normalize_page(page)
     effective_page_size = normalize_page_size(page_size)
@@ -508,16 +537,19 @@ def list_ticket_debt_page(
         from_datetime = _parse_report_datetime(from_value, boundary="start")
         to_datetime = _parse_report_datetime(to_value, boundary="end")
         ticket_filters = [Ticket.status == TicketStatus.CONFIRMED]
+        date_column = (
+            Ticket.booked_at if date_basis == "booked_at" else Ticket.updated_at
+        )
         base_datetime = get_app_base_datetime(session=session)
         if base_datetime is not None:
-            ticket_filters.append(Ticket.updated_at >= base_datetime)
+            ticket_filters.append(date_column >= base_datetime)
         if from_datetime is not None:
             ticket_filters.append(
-                Ticket.updated_at >= _normalize_ledger_datetime(from_datetime)
+                date_column >= _normalize_ledger_datetime(from_datetime)
             )
         if to_datetime is not None:
             ticket_filters.append(
-                Ticket.updated_at <= _normalize_ledger_datetime(to_datetime)
+                date_column <= _normalize_ledger_datetime(to_datetime)
             )
 
         summary_statement = select(
@@ -531,12 +563,20 @@ def list_ticket_debt_page(
         ).one()
 
         start = (page_number - 1) * effective_page_size
-        ticket_id_statement = (
-            select(Ticket.id)
-            .where(*ticket_filters)
-            .order_by(Ticket.created_at.desc(), Ticket.id.desc())
-            .offset(start)
-            .limit(effective_page_size)
+        ticket_id_statement = select(Ticket.id).where(*ticket_filters)
+        if date_basis == "booked_at":
+            ticket_id_statement = ticket_id_statement.order_by(
+                Ticket.booked_at.is_(None),
+                Ticket.booked_at.desc(),
+                Ticket.id.desc(),
+            )
+        else:
+            ticket_id_statement = ticket_id_statement.order_by(
+                Ticket.created_at.desc(),
+                Ticket.id.desc(),
+            )
+        ticket_id_statement = ticket_id_statement.offset(start).limit(
+            effective_page_size
         )
         selected_ticket_ids = {
             ticket_id
@@ -546,6 +586,7 @@ def list_ticket_debt_page(
         rows = list_ticket_debt_rows(
             session=session,
             ticket_ids=selected_ticket_ids,
+            date_basis=date_basis,
         )
         total = int(total or 0)
 
@@ -565,10 +606,11 @@ def list_ticket_debt_page(
         }
 
     rows = _filter_ticket_debt_rows(
-        list_ticket_debt_rows(session=session),
+        list_ticket_debt_rows(session=session, date_basis=date_basis),
         query=query,
         from_value=from_value,
         to_value=to_value,
+        date_basis=date_basis,
     )
     start = (page_number - 1) * effective_page_size
     page_rows = rows[start : start + effective_page_size]

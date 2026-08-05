@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 import uuid
 
 from fastapi import APIRouter, Query, status
@@ -42,6 +43,9 @@ async def list_ticket_debt_rows_route(
     q: str | None = Query(default=None, max_length=100),
     from_value: str | None = Query(default=None, alias="from"),
     to_value: str | None = Query(default=None, alias="to"),
+    date_basis: Literal["updated_at", "booked_at"] = Query(
+        default="updated_at"
+    ),
     export_all: bool = Query(default=False, alias="all"),
 ):
     """Return debt rows, optionally as one filtered paginated page."""
@@ -54,6 +58,7 @@ async def list_ticket_debt_rows_route(
                 query=q,
                 from_value=from_value,
                 to_value=to_value,
+                date_basis=date_basis,
             )
         )
 
@@ -65,10 +70,11 @@ async def list_ticket_debt_rows_route(
             query=q,
             from_value=from_value,
             to_value=to_value,
+            date_basis=date_basis,
         )
         return success_response(page_data)
 
-    rows = list_ticket_debt_rows(session=session)
+    rows = list_ticket_debt_rows(session=session, date_basis=date_basis)
     return success_response([row.model_dump(mode="json") for row in rows])
 
 

@@ -5,6 +5,7 @@
 | :--- | :--- | :--- |
 | Mã đặt chỗ | PNR / Booking Code | `pnr` |
 | Số vé | Ticket Number | `ticket_number` |
+| Ngày xuất vé | Ticket Issue Date | `booked_at` |
 | Giá gốc | Net Price | `net_price` |
 | Giá EV | EV Price | `ev_price` |
 | Giá AST | AST Price | `ast_price` |

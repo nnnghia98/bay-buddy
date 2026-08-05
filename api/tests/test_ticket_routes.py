@@ -96,6 +96,7 @@ def _seed_confirmed_ticket(
     *,
     customer: Customer,
     selling_price: float,
+    booked_at: datetime | None = None,
     created_at: datetime | None = None,
     updated_at: datetime | None = None,
 ) -> Ticket:
@@ -111,7 +112,7 @@ def _seed_confirmed_ticket(
         arrival_code="SGN",
         itinerary="HAN-SGN",
         flight_date=datetime(2026, 4, 22, 10, 30, tzinfo=timezone.utc),
-        booked_at=datetime(2026, 4, 20, 8, 15, tzinfo=timezone.utc),
+        booked_at=booked_at or datetime(2026, 4, 20, 8, 15, tzinfo=timezone.utc),
         net_price=1000000,
         selling_price=selling_price,
         status=TicketStatus.CONFIRMED,
@@ -350,6 +351,58 @@ def test_ticket_debt_search_date_filter_uses_updated_at(
     assert rows[0]["ticket_id"] == str(ticket.id)
     assert rows[0]["created_at"].startswith("2026-07-01T08:00:00")
     assert rows[0]["updated_at"].startswith("2026-07-05T08:00:00")
+
+
+def test_ticket_debt_report_uses_issue_date_for_filter_order_and_export(
+    test_client,
+    test_engine,
+):
+    customer = _seed_customer(test_engine)
+    earlier_issue = _seed_confirmed_ticket(
+        test_engine,
+        customer=customer,
+        selling_price=1200000.0,
+        booked_at=datetime(2026, 7, 2, 8, 0, tzinfo=timezone.utc),
+        created_at=datetime(2026, 7, 20, 8, 0, tzinfo=timezone.utc),
+    )
+    later_issue = _seed_confirmed_ticket(
+        test_engine,
+        customer=customer,
+        selling_price=1200000.0,
+        booked_at=datetime(2026, 7, 5, 8, 0, tzinfo=timezone.utc),
+        created_at=datetime(2026, 7, 10, 8, 0, tzinfo=timezone.utc),
+    )
+    _seed_confirmed_ticket(
+        test_engine,
+        customer=customer,
+        selling_price=1200000.0,
+        booked_at=datetime(2026, 7, 1, 8, 0, tzinfo=timezone.utc),
+        created_at=datetime(2026, 7, 30, 8, 0, tzinfo=timezone.utc),
+    )
+    report_params = {
+        "date_basis": "booked_at",
+        "from": "2026-07-02",
+        "to": "2026-07-05",
+    }
+
+    page_response = test_client.get(
+        "/api/v1/finance/ticket-debts",
+        params=report_params | {"page": 1, "page_size": 50},
+    )
+    export_response = test_client.get(
+        "/api/v1/finance/ticket-debts",
+        params=report_params | {"all": True},
+    )
+
+    assert page_response.status_code == 200
+    assert export_response.status_code == 200
+    expected_ticket_ids = [str(later_issue.id), str(earlier_issue.id)]
+    assert [
+        row["ticket_id"] for row in page_response.json()["data"]["items"]
+    ] == expected_ticket_ids
+    assert [
+        row["ticket_id"] for row in export_response.json()["data"]
+    ] == expected_ticket_ids
 
 
 def test_ticket_list_supports_search_pagination(test_client):

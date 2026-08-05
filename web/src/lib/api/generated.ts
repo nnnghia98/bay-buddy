@@ -108,7 +108,7 @@ export interface paths {
         };
         /**
          * List Customers
-         * @description List all customers for the directory page.
+         * @description List customers with optional search and pagination.
          */
         get: operations["list_customers_api_v1_customers__get"];
         put?: never;
@@ -390,6 +390,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/finance/ticket-debts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Ticket Debt Rows Route
+         * @description Return debt rows, optionally as one filtered paginated page.
+         */
+        get: operations["list_ticket_debt_rows_route_api_v1_finance_ticket_debts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings/base-date-time": {
         parameters: {
             query?: never;
@@ -503,7 +523,7 @@ export interface paths {
         };
         /**
          * List Tickets
-         * @description List all tickets (paginated).
+         * @description List tickets with optional filters and page metadata.
          */
         get: operations["list_tickets_api_v1_tickets__get"];
         put?: never;
@@ -658,7 +678,7 @@ export interface paths {
         };
         /**
          * List Transactions
-         * @description List all transactions.
+         * @description List transactions with optional filters and page metadata.
          */
         get: operations["list_transactions_api_v1_transactions__get"];
         put?: never;
@@ -1784,7 +1804,7 @@ export interface components {
         TransactionCreate: {
             /**
              * Amount
-             * @description Transaction amount. Must be a positive value (direction is encoded in `type`).
+             * @description Transaction amount. May be zero when the related debt is optional; direction is encoded in `type`.
              */
             amount: number;
             /**
@@ -2853,6 +2873,9 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                page?: number | null;
+                page_size?: number | null;
+                q?: string | null;
                 skip?: number;
             };
             header?: never;
@@ -3506,6 +3529,45 @@ export interface operations {
             };
         };
     };
+    list_ticket_debt_rows_route_api_v1_finance_ticket_debts_get: {
+        parameters: {
+            query?: {
+                all?: boolean;
+                date_basis?: "updated_at" | "booked_at";
+                from?: string | null;
+                page?: number | null;
+                page_size?: number | null;
+                q?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_base_date_time_settings_api_v1_settings_base_date_time_get: {
         parameters: {
             query?: never;
@@ -3701,8 +3763,14 @@ export interface operations {
     list_tickets_api_v1_tickets__get: {
         parameters: {
             query?: {
+                from?: string | null;
                 limit?: number;
+                page?: number | null;
+                page_size?: number | null;
+                q?: string | null;
                 skip?: number;
+                status?: components["schemas"]["TicketStatus"] | null;
+                to?: string | null;
             };
             header?: never;
             path?: never;
@@ -4052,8 +4120,14 @@ export interface operations {
     list_transactions_api_v1_transactions__get: {
         parameters: {
             query?: {
+                category?: components["schemas"]["TransactionCategory"] | null;
+                from?: string | null;
                 limit?: number;
+                page?: number | null;
+                page_size?: number | null;
+                q?: string | null;
                 skip?: number;
+                to?: string | null;
             };
             header?: never;
             path?: never;
