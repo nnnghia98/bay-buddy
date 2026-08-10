@@ -5,6 +5,7 @@ import {
   fetchTicketDebtExportRows,
   fetchTicketDebtPage,
 } from "@/lib/server-report"
+import { getTicketDebtFiltersFromSearchParams } from "@/lib/ticket-debt-filters"
 
 function isNextRedirectError(error: unknown): boolean {
   return (
@@ -21,6 +22,7 @@ export async function GET(request: Request) {
   const page = Number(url.searchParams.get("page") ?? "1")
   const pageSize = Number(url.searchParams.get("page_size") ?? "50")
   const query = url.searchParams.get("q") ?? undefined
+  const filters = getTicketDebtFiltersFromSearchParams(url.searchParams)
   const from = url.searchParams.get("from") ?? undefined
   const to = url.searchParams.get("to") ?? undefined
   const exportAll = url.searchParams.get("all") === "1"
@@ -28,6 +30,7 @@ export async function GET(request: Request) {
     if (exportAll) {
       const rows = await fetchTicketDebtExportRows({
         date_basis: "booked_at",
+        filters,
         from,
         q: query,
         to,
@@ -37,6 +40,7 @@ export async function GET(request: Request) {
 
     const reportPage = await fetchTicketDebtPage({
       date_basis: "booked_at",
+      filters,
       from,
       page: Number.isFinite(page) && page > 0 ? page : 1,
       page_size:

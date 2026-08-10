@@ -3533,12 +3533,20 @@ export interface operations {
         parameters: {
             query?: {
                 all?: boolean;
+                ast_price?: ("zero" | "positive") | null;
+                booked_at?: string | null;
                 date_basis?: "updated_at" | "booked_at";
+                ev_price?: ("zero" | "positive") | null;
                 from?: string | null;
+                insurance_price?: ("zero" | "positive") | null;
                 page?: number | null;
                 page_size?: number | null;
+                payment_method?: ("none" | "Chuyển khoản" | "Tiền mặt" | "AST" | "THF") | null;
                 q?: string | null;
+                selling_price?: ("zero" | "positive") | null;
+                thf_price?: ("zero" | "positive") | null;
                 to?: string | null;
+                web_price?: ("zero" | "positive") | null;
             };
             header?: never;
             path?: never;

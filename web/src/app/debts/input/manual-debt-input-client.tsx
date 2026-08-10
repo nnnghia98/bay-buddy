@@ -24,7 +24,6 @@ import {
   Plus,
   ReceiptText,
   Route,
-  Search,
   Trash2,
   Wallet,
 } from "lucide-react"
@@ -65,6 +64,12 @@ import type {
   LedgerReportRow,
   TicketDebtReportPage,
 } from "@/lib/server-report"
+import {
+  appendTicketDebtFilters,
+  getTicketDebtFilterCount,
+  getTicketDebtFiltersKey,
+  type TicketDebtFilters,
+} from "@/lib/ticket-debt-filters"
 import { cn } from "@/lib/utils"
 import {
   AIRLINE_LABELS,
@@ -82,6 +87,7 @@ import {
   type PaymentMethod,
 } from "@/schemas"
 import { useI18n } from "@/locales/client"
+import { ManualDebtFilterBar } from "./manual-debt-filter-bar"
 import styles from "./manual-debt-input.module.css"
 
 type ManualDebtInputClientProps = {
@@ -1800,7 +1806,7 @@ function TableHorizontalControls({
           <span className={styles.pageLabel}>
             {t("manualDebts.table.pagination.page", {
               page: pagination.page,
-              totalPages: pagination.total_pages,
+              totalPages: Math.max(pagination.total_pages, 1),
             })}
           </span>
           <Button
@@ -1898,6 +1904,9 @@ export function ManualDebtInputClient({
   )
   const [searchValue, setSearchValue] = React.useState("")
   const [appliedSearch, setAppliedSearch] = React.useState("")
+  const [filters, setFilters] = React.useState<TicketDebtFilters>({})
+  const [appliedFilters, setAppliedFilters] =
+    React.useState<TicketDebtFilters>({})
   const [isRowsLoading, setIsRowsLoading] = React.useState(false)
   const [rowsError, setRowsError] = React.useState<string | null>(null)
   const [sortState, setSortState] = React.useState<SortState>({
@@ -1959,7 +1968,11 @@ export function ManualDebtInputClient({
   ])
 
   const loadReportPage = React.useCallback(
-    async (page: number, query: string) => {
+    async (
+      page: number,
+      query: string,
+      nextFilters: TicketDebtFilters,
+    ) => {
       const requestId = reportRequestIdRef.current + 1
       reportRequestIdRef.current = requestId
       setIsRowsLoading(true)
@@ -1973,6 +1986,7 @@ export function ManualDebtInputClient({
         if (query.trim()) {
           params.set("q", query.trim())
         }
+        appendTicketDebtFilters(params, nextFilters)
 
         const response = await fetch(`/report/data?${params.toString()}`, {
           cache: "no-store",
@@ -1995,6 +2009,7 @@ export function ManualDebtInputClient({
         setReportRows(payload.items)
         setReportPagination(payload.pagination)
         setAppliedSearch(query.trim())
+        setAppliedFilters(nextFilters)
       } catch {
         if (requestId !== reportRequestIdRef.current) {
           return
@@ -2012,16 +2027,20 @@ export function ManualDebtInputClient({
   React.useEffect(() => {
     const nextSearch = searchValue.trim()
 
-    if (nextSearch === appliedSearch) {
+    if (
+      nextSearch === appliedSearch &&
+      getTicketDebtFiltersKey(filters) ===
+        getTicketDebtFiltersKey(appliedFilters)
+    ) {
       return
     }
 
     const timeoutId = window.setTimeout(() => {
-      void loadReportPage(1, nextSearch)
+      void loadReportPage(1, nextSearch, filters)
     }, 300)
 
     return () => window.clearTimeout(timeoutId)
-  }, [appliedSearch, loadReportPage, searchValue])
+  }, [appliedFilters, appliedSearch, filters, loadReportPage, searchValue])
 
   React.useEffect(() => {
     if (previousInitialPageRef.current === initialPage) {
@@ -2030,15 +2049,29 @@ export function ManualDebtInputClient({
 
     previousInitialPageRef.current = initialPage
 
-    if (reportPagination.page === 1 && !appliedSearch) {
+    if (
+      reportPagination.page === 1 &&
+      !appliedSearch &&
+      getTicketDebtFilterCount(appliedFilters) === 0
+    ) {
       setReportRows(initialPage.items)
       setReportPagination(initialPage.pagination)
       setRowsError(null)
       return
     }
 
-    void loadReportPage(reportPagination.page, appliedSearch)
-  }, [appliedSearch, initialPage, loadReportPage, reportPagination.page])
+    void loadReportPage(
+      reportPagination.page,
+      appliedSearch,
+      appliedFilters,
+    )
+  }, [
+    appliedFilters,
+    appliedSearch,
+    initialPage,
+    loadReportPage,
+    reportPagination.page,
+  ])
 
   const filteredRows = React.useMemo(() => {
     return reportRows
@@ -2500,31 +2533,12 @@ export function ManualDebtInputClient({
         <Panel className={styles.tablePanel}>
             <div className={styles.filterHeader}>
               {/* TODO: Reintroduce the date range filter with a shared timezone contract. */}
-              <div className={styles.filterForm}>
-                <div className={styles.searchField}>
-                  <Label
-                    className={patterns.eyebrow}
-                    htmlFor="manual-debt-search"
-                  >
-                    {t("manualDebts.filters.searchLabel")}
-                  </Label>
-                  <div className={styles.searchInputWrap}>
-                    <Search
-                      aria-hidden="true"
-                      className={styles.searchIcon}
-                    />
-                    <Input
-                      aria-label={t("manualDebts.filters.searchLabel")}
-                      className={styles.searchInput}
-                      id="manual-debt-search"
-                      onChange={(event) => setSearchValue(event.target.value)}
-                      placeholder={t("manualDebts.filters.searchPlaceholder")}
-                      type="search"
-                      value={searchValue}
-                    />
-                  </div>
-                </div>
-              </div>
+              <ManualDebtFilterBar
+                filters={filters}
+                onFiltersChange={setFilters}
+                onSearchChange={setSearchValue}
+                searchValue={searchValue}
+              />
               <Button
                 className={styles.openFormButton}
                 onClick={openManualDebtForm}
@@ -2547,7 +2561,9 @@ export function ManualDebtInputClient({
             ) : null}
             <TableHorizontalControls
               isLoading={isRowsLoading}
-              onPageChange={(page) => void loadReportPage(page, appliedSearch)}
+              onPageChange={(page) =>
+                void loadReportPage(page, appliedSearch, appliedFilters)
+              }
               onTableViewChange={setTableView}
               pagination={reportPagination}
               resultCount={reportPagination.total}
@@ -2738,7 +2754,8 @@ export function ManualDebtInputClient({
                         <EmptyState
                           icon={ReceiptText}
                           message={
-                            appliedSearch
+                            appliedSearch ||
+                            getTicketDebtFilterCount(appliedFilters) > 0
                               ? t("manualDebts.table.searchEmpty")
                               : t("manualDebts.table.empty")
                           }

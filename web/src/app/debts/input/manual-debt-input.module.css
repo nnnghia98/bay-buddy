@@ -411,40 +411,6 @@
   background: var(--color-background-surface);
 }
 
-.filterForm {
-  display: grid;
-  min-width: 0;
-  flex: 1 1 auto;
-  gap: var(--spacing-3);
-}
-
-.searchField {
-  display: grid;
-  grid-column: 1 / -1;
-  gap: var(--spacing-1);
-  min-width: 0;
-}
-
-.searchInputWrap {
-  position: relative;
-}
-
-.searchIcon {
-  position: absolute;
-  inset-inline-start: var(--spacing-3);
-  top: 50%;
-  z-index: 1;
-  width: var(--spacing-4);
-  height: var(--spacing-4);
-  color: var(--color-text-secondary);
-  pointer-events: none;
-  transform: translateY(-50%);
-}
-
-.searchInput {
-  padding-inline-start: var(--spacing-9);
-}
-
 .openFormButton {
   flex: 0 0 auto;
   white-space: nowrap;

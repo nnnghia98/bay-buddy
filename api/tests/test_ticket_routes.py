@@ -353,6 +353,197 @@ def test_ticket_debt_search_date_filter_uses_updated_at(
     assert rows[0]["updated_at"].startswith("2026-07-05T08:00:00")
 
 
+def test_ticket_debt_structured_filters_apply_before_pagination_summary_and_export(
+    test_client,
+):
+    no_payment_response = test_client.post(
+        "/api/v1/tickets/confirm",
+        json=_confirm_payload()
+        | {
+            "pnr": "AAA111",
+            "ticket_number": "7382319993001",
+            "booked_at": "2026-06-30T18:00:00+00:00",
+            "net_price": 0,
+            "service_fee": 0,
+            "selling_price": 0,
+            "discount": 0,
+            "true_income": 0,
+        },
+    )
+    paid_response = test_client.post(
+        "/api/v1/tickets/confirm",
+        json=_confirm_payload()
+        | {
+            "pnr": "BBB222",
+            "ticket_number": "7382319993002",
+            "booked_at": "2026-06-30T20:00:00+00:00",
+            "net_price": 0,
+            "service_fee": 0,
+            "ev_price": 100,
+            "ast_price": 200,
+            "thf_price": 300,
+            "web_price": 400,
+            "insurance_price": 500,
+            "selling_price": 1200000,
+            "discount": 0,
+            "true_income": 1198500,
+            "payment_method": "Chuyển khoản",
+            "payment": {
+                "amount": 100000,
+                "method": "Tiền mặt",
+                "note": "Paid in cash",
+            },
+        },
+    )
+    ast_response = test_client.post(
+        "/api/v1/tickets/confirm",
+        json=_confirm_payload()
+        | {
+            "pnr": "CCC333",
+            "ticket_number": "7382319993003",
+            "booked_at": "2026-07-01T18:00:00+00:00",
+            "payment_method": "AST",
+        },
+    )
+
+    assert no_payment_response.status_code == 201
+    assert paid_response.status_code == 201
+    assert ast_response.status_code == 201
+    paid_ticket_id = paid_response.json()["data"]["ticket"]["id"]
+
+    filters = {
+        "booked_at": "2026-07-01",
+        "payment_method": "Tiền mặt",
+        "ev_price": "positive",
+        "ast_price": "positive",
+        "thf_price": "positive",
+        "web_price": "positive",
+        "insurance_price": "positive",
+        "selling_price": "positive",
+    }
+    paged_response = test_client.get(
+        "/api/v1/finance/ticket-debts",
+        params=filters | {"page": 2, "page_size": 1},
+    )
+    export_response = test_client.get(
+        "/api/v1/finance/ticket-debts",
+        params=filters | {"all": True},
+    )
+
+    assert paged_response.status_code == 200
+    paged_payload = paged_response.json()["data"]
+    assert paged_payload["items"] == []
+    assert paged_payload["pagination"]["total"] == 1
+    assert paged_payload["summary"]["rows"] == 1
+    assert paged_payload["summary"]["customers"] == 1
+    assert paged_payload["summary"]["total_selling_price"] == 1200000
+
+    assert export_response.status_code == 200
+    assert [row["ticket_id"] for row in export_response.json()["data"]] == [
+        paid_ticket_id
+    ]
+
+
+def test_ticket_debt_filters_use_effective_payment_and_validate(
+    test_client,
+):
+    zero_prices = {
+        "ev_price": 0,
+        "ast_price": 0,
+        "thf_price": 0,
+        "web_price": 0,
+        "insurance_price": 0,
+        "true_income": 1210000,
+    }
+    no_payment_response = test_client.post(
+        "/api/v1/tickets/confirm",
+        json=_confirm_payload()
+        | zero_prices
+        | {"pnr": "AAA111", "ticket_number": "7382319993001"},
+    )
+    cash_payment_response = test_client.post(
+        "/api/v1/tickets/confirm",
+        json=_confirm_payload()
+        | zero_prices
+        | {
+            "pnr": "BBB222",
+            "ticket_number": "7382319993002",
+            "payment_method": "Chuyển khoản",
+            "payment": {
+                "amount": 100000,
+                "method": "Tiền mặt",
+                "note": "Paid in cash",
+            },
+        },
+    )
+    ast_response = test_client.post(
+        "/api/v1/tickets/confirm",
+        json=_confirm_payload()
+        | zero_prices
+        | {
+            "pnr": "CCC333",
+            "ticket_number": "7382319993003",
+            "payment_method": "AST",
+        },
+    )
+
+    assert no_payment_response.status_code == 201
+    assert cash_payment_response.status_code == 201
+    assert ast_response.status_code == 201
+    no_payment_ticket_id = no_payment_response.json()["data"]["ticket"]["id"]
+    cash_ticket_id = cash_payment_response.json()["data"]["ticket"]["id"]
+    ast_ticket_id = ast_response.json()["data"]["ticket"]["id"]
+
+    for payment_method, expected_ticket_ids in {
+        "none": [no_payment_ticket_id],
+        "Tiền mặt": [cash_ticket_id],
+        "Chuyển khoản": [],
+        "AST": [ast_ticket_id],
+    }.items():
+        response = test_client.get(
+            "/api/v1/finance/ticket-debts",
+            params={"page": 1, "page_size": 50, "payment_method": payment_method},
+        )
+
+        assert response.status_code == 200
+        assert [row["ticket_id"] for row in response.json()["data"]["items"]] == (
+            expected_ticket_ids
+        )
+
+    zero_prices_response = test_client.get(
+        "/api/v1/finance/ticket-debts",
+        params={
+            "page": 1,
+            "page_size": 50,
+            "ev_price": "zero",
+            "ast_price": "zero",
+            "thf_price": "zero",
+            "web_price": "zero",
+            "insurance_price": "zero",
+        },
+    )
+    invalid_method_response = test_client.get(
+        "/api/v1/finance/ticket-debts",
+        params={"payment_method": "Momo"},
+    )
+    invalid_money_response = test_client.get(
+        "/api/v1/finance/ticket-debts",
+        params={"ev_price": "negative"},
+    )
+    invalid_date_response = test_client.get(
+        "/api/v1/finance/ticket-debts",
+        params={"booked_at": "2026-07-01T08:00:00"},
+    )
+
+    assert zero_prices_response.status_code == 200
+    assert {
+        row["ticket_id"] for row in zero_prices_response.json()["data"]["items"]
+    } == {no_payment_ticket_id, cash_ticket_id, ast_ticket_id}
+    assert invalid_method_response.status_code == 422
+    assert invalid_money_response.status_code == 422
+    assert invalid_date_response.status_code == 422
+
+
 def test_ticket_debt_report_uses_issue_date_for_filter_order_and_export(
     test_client,
     test_engine,

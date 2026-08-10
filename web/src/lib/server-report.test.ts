@@ -414,4 +414,44 @@ describe("ticket debt report requests", () => {
       "Unable to load ticket debt export.",
     )
   })
+
+  it("forwards structured filters with the broad search query", async () => {
+    mockFetchAuthenticatedApiPayload.mockResolvedValue({
+      success: true,
+      data: {
+        items: [],
+        pagination: {
+          page: 1,
+          page_size: 50,
+          total: 0,
+          total_pages: 0,
+          has_next: false,
+        },
+        summary: {
+          rows: 0,
+          customers: 0,
+          total_selling_price: 0,
+          total_income: 0,
+        },
+      },
+      error: null,
+    })
+
+    await fetchTicketDebtPage({
+      filters: {
+        booked_at: "2026-08-05",
+        payment_method: "AST",
+        ev_price: "positive",
+        selling_price: "zero",
+      },
+      page: 2,
+      page_size: 25,
+      q: "Nguyen",
+    })
+
+    expect(mockFetchAuthenticatedApiPayload).toHaveBeenCalledWith(
+      "/finance/ticket-debts?page=2&page_size=25&q=Nguyen&booked_at=2026-08-05&payment_method=AST&ev_price=positive&selling_price=zero",
+      "Unable to load ticket debts.",
+    )
+  })
 })

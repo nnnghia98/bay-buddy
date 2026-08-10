@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 import uuid
 
@@ -16,6 +16,8 @@ from models.invoice import (
 )
 from models.quote import QuoteCreate
 from services.finance_service import (
+    TicketDebtMoneyFilter,
+    TicketDebtPaymentMethod,
     list_ticket_debt_export_rows,
     list_ticket_debt_page,
     list_ticket_debt_rows,
@@ -46,6 +48,14 @@ async def list_ticket_debt_rows_route(
     date_basis: Literal["updated_at", "booked_at"] = Query(
         default="updated_at"
     ),
+    booked_at: date | None = Query(default=None),
+    payment_method: TicketDebtPaymentMethod | None = Query(default=None),
+    ev_price: TicketDebtMoneyFilter | None = Query(default=None),
+    ast_price: TicketDebtMoneyFilter | None = Query(default=None),
+    thf_price: TicketDebtMoneyFilter | None = Query(default=None),
+    web_price: TicketDebtMoneyFilter | None = Query(default=None),
+    insurance_price: TicketDebtMoneyFilter | None = Query(default=None),
+    selling_price: TicketDebtMoneyFilter | None = Query(default=None),
     export_all: bool = Query(default=False, alias="all"),
 ):
     """Return debt rows, optionally as one filtered paginated page."""
@@ -59,10 +69,32 @@ async def list_ticket_debt_rows_route(
                 from_value=from_value,
                 to_value=to_value,
                 date_basis=date_basis,
+                booked_at=booked_at,
+                payment_method=payment_method,
+                ev_price=ev_price,
+                ast_price=ast_price,
+                thf_price=thf_price,
+                web_price=web_price,
+                insurance_price=insurance_price,
+                selling_price=selling_price,
             )
         )
 
-    if page is not None or page_size is not None or q or from_value or to_value:
+    if (
+        page is not None
+        or page_size is not None
+        or q
+        or from_value
+        or to_value
+        or booked_at is not None
+        or payment_method is not None
+        or ev_price is not None
+        or ast_price is not None
+        or thf_price is not None
+        or web_price is not None
+        or insurance_price is not None
+        or selling_price is not None
+    ):
         page_data = list_ticket_debt_page(
             session=session,
             page=page,
@@ -71,6 +103,14 @@ async def list_ticket_debt_rows_route(
             from_value=from_value,
             to_value=to_value,
             date_basis=date_basis,
+            booked_at=booked_at,
+            payment_method=payment_method,
+            ev_price=ev_price,
+            ast_price=ast_price,
+            thf_price=thf_price,
+            web_price=web_price,
+            insurance_price=insurance_price,
+            selling_price=selling_price,
         )
         return success_response(page_data)
 

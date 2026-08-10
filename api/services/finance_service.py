@@ -13,7 +13,7 @@ from __future__ import annotations
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Literal, Optional
 
 from fastapi import HTTPException, status
@@ -41,6 +41,16 @@ from services.system_settings_service import (
 )
 
 TicketDebtDateBasis = Literal["updated_at", "booked_at"]
+TicketDebtPaymentMethod = Literal[
+    "none",
+    "Chuyển khoản",
+    "Tiền mặt",
+    "AST",
+    "THF",
+]
+TicketDebtMoneyFilter = Literal["zero", "positive"]
+
+_VIETNAM_TIMEZONE = timezone(timedelta(hours=7))
 
 
 class LedgerEntry(BaseModel):
@@ -444,6 +454,65 @@ def _parse_report_datetime(
         return None
 
 
+def _vietnam_calendar_date(value: datetime) -> date:
+    """Return a stored UTC timestamp's calendar date in Vietnam."""
+
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(_VIETNAM_TIMEZONE).date()
+
+
+def _effective_ticket_debt_payment_methods(
+    row: TicketDebtReportRow,
+) -> tuple[str, ...]:
+    """Return the payment method values shown to staff for a debt row."""
+
+    if row.linked_payment_methods:
+        return tuple(row.linked_payment_methods)
+    if row.transaction_method:
+        return (row.transaction_method,)
+    return ()
+
+
+def _matches_ticket_debt_money_filter(
+    value: float,
+    filter_value: TicketDebtMoneyFilter | None,
+) -> bool:
+    """Match the two user-facing money states."""
+
+    if filter_value is None:
+        return True
+    if filter_value == "zero":
+        return value == 0
+    return value > 0
+
+
+def _has_ticket_debt_structured_filters(
+    *,
+    booked_at: date | None,
+    payment_method: TicketDebtPaymentMethod | None,
+    ev_price: TicketDebtMoneyFilter | None,
+    ast_price: TicketDebtMoneyFilter | None,
+    thf_price: TicketDebtMoneyFilter | None,
+    web_price: TicketDebtMoneyFilter | None,
+    insurance_price: TicketDebtMoneyFilter | None,
+    selling_price: TicketDebtMoneyFilter | None,
+) -> bool:
+    return any(
+        value is not None
+        for value in (
+            booked_at,
+            payment_method,
+            ev_price,
+            ast_price,
+            thf_price,
+            web_price,
+            insurance_price,
+            selling_price,
+        )
+    )
+
+
 def _filter_ticket_debt_rows(
     rows: list[TicketDebtReportRow],
     *,
@@ -451,6 +520,14 @@ def _filter_ticket_debt_rows(
     from_value: str | None,
     to_value: str | None,
     date_basis: TicketDebtDateBasis = "updated_at",
+    booked_at: date | None = None,
+    payment_method: TicketDebtPaymentMethod | None = None,
+    ev_price: TicketDebtMoneyFilter | None = None,
+    ast_price: TicketDebtMoneyFilter | None = None,
+    thf_price: TicketDebtMoneyFilter | None = None,
+    web_price: TicketDebtMoneyFilter | None = None,
+    insurance_price: TicketDebtMoneyFilter | None = None,
+    selling_price: TicketDebtMoneyFilter | None = None,
 ) -> list[TicketDebtReportRow]:
     """Apply report filters to the already reconciled ticket rows."""
 
@@ -474,25 +551,58 @@ def _filter_ticket_debt_rows(
             if to_datetime and row_datetime > to_datetime:
                 return False
 
-        if not normalized_query:
-            return True
+        if normalized_query:
+            searchable_values = (
+                row.customer_name,
+                row.customer_phone,
+                row.passenger_names,
+                row.content,
+                row.pnr,
+                row.ticket_number,
+                row.airline.value if row.airline else None,
+                row.route,
+                row.ticket_status.value if row.ticket_status else None,
+                row.transaction_method,
+                row.linked_payment_note,
+                *(row.linked_payment_methods or []),
+            )
+            if normalized_query not in " ".join(
+                value.casefold() for value in searchable_values if value
+            ):
+                return False
 
-        searchable_values = (
-            row.customer_name,
-            row.customer_phone,
-            row.passenger_names,
-            row.content,
-            row.pnr,
-            row.ticket_number,
-            row.airline.value if row.airline else None,
-            row.route,
-            row.ticket_status.value if row.ticket_status else None,
-            row.transaction_method,
-            row.linked_payment_note,
-            *(row.linked_payment_methods or []),
-        )
-        return normalized_query in " ".join(
-            value.casefold() for value in searchable_values if value
+        if booked_at is not None:
+            if (
+                row.booked_at is None
+                or _vietnam_calendar_date(row.booked_at) != booked_at
+            ):
+                return False
+
+        effective_payment_methods = _effective_ticket_debt_payment_methods(row)
+        if payment_method == "none":
+            if effective_payment_methods:
+                return False
+        elif (
+            payment_method is not None
+            and payment_method not in effective_payment_methods
+        ):
+            return False
+
+        return all(
+            (
+                _matches_ticket_debt_money_filter(row.ticket_ev_price, ev_price),
+                _matches_ticket_debt_money_filter(row.ticket_ast_price, ast_price),
+                _matches_ticket_debt_money_filter(row.ticket_thf_price, thf_price),
+                _matches_ticket_debt_money_filter(row.ticket_web_price, web_price),
+                _matches_ticket_debt_money_filter(
+                    row.ticket_insurance_price,
+                    insurance_price,
+                ),
+                _matches_ticket_debt_money_filter(
+                    row.ticket_selling_price,
+                    selling_price,
+                ),
+            )
         )
 
     return [row for row in rows if matches(row)]
@@ -505,6 +615,14 @@ def list_ticket_debt_export_rows(
     from_value: str | None = None,
     to_value: str | None = None,
     date_basis: TicketDebtDateBasis = "updated_at",
+    booked_at: date | None = None,
+    payment_method: TicketDebtPaymentMethod | None = None,
+    ev_price: TicketDebtMoneyFilter | None = None,
+    ast_price: TicketDebtMoneyFilter | None = None,
+    thf_price: TicketDebtMoneyFilter | None = None,
+    web_price: TicketDebtMoneyFilter | None = None,
+    insurance_price: TicketDebtMoneyFilter | None = None,
+    selling_price: TicketDebtMoneyFilter | None = None,
 ) -> list[dict[str, object]]:
     """Return all filtered rows for an explicit report export request."""
 
@@ -514,6 +632,14 @@ def list_ticket_debt_export_rows(
         from_value=from_value,
         to_value=to_value,
         date_basis=date_basis,
+        booked_at=booked_at,
+        payment_method=payment_method,
+        ev_price=ev_price,
+        ast_price=ast_price,
+        thf_price=thf_price,
+        web_price=web_price,
+        insurance_price=insurance_price,
+        selling_price=selling_price,
     )
     return [row.model_dump(mode="json") for row in rows]
 
@@ -527,13 +653,30 @@ def list_ticket_debt_page(
     from_value: str | None = None,
     to_value: str | None = None,
     date_basis: TicketDebtDateBasis = "updated_at",
+    booked_at: date | None = None,
+    payment_method: TicketDebtPaymentMethod | None = None,
+    ev_price: TicketDebtMoneyFilter | None = None,
+    ast_price: TicketDebtMoneyFilter | None = None,
+    thf_price: TicketDebtMoneyFilter | None = None,
+    web_price: TicketDebtMoneyFilter | None = None,
+    insurance_price: TicketDebtMoneyFilter | None = None,
+    selling_price: TicketDebtMoneyFilter | None = None,
 ) -> dict[str, object]:
     """Return one filtered page and summary for a ticket debt view."""
 
     page_number = normalize_page(page)
     effective_page_size = normalize_page_size(page_size)
 
-    if not (query or "").strip():
+    if not (query or "").strip() and not _has_ticket_debt_structured_filters(
+        booked_at=booked_at,
+        payment_method=payment_method,
+        ev_price=ev_price,
+        ast_price=ast_price,
+        thf_price=thf_price,
+        web_price=web_price,
+        insurance_price=insurance_price,
+        selling_price=selling_price,
+    ):
         from_datetime = _parse_report_datetime(from_value, boundary="start")
         to_datetime = _parse_report_datetime(to_value, boundary="end")
         ticket_filters = [Ticket.status == TicketStatus.CONFIRMED]
@@ -611,6 +754,14 @@ def list_ticket_debt_page(
         from_value=from_value,
         to_value=to_value,
         date_basis=date_basis,
+        booked_at=booked_at,
+        payment_method=payment_method,
+        ev_price=ev_price,
+        ast_price=ast_price,
+        thf_price=thf_price,
+        web_price=web_price,
+        insurance_price=insurance_price,
+        selling_price=selling_price,
     )
     start = (page_number - 1) * effective_page_size
     page_rows = rows[start : start + effective_page_size]

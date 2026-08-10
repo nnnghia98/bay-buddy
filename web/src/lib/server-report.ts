@@ -6,6 +6,10 @@ import {
   fetchAuthenticatedApiPayload,
   getEnvelopeData,
 } from "@/lib/server-api"
+import {
+  appendTicketDebtFilters,
+  type TicketDebtFilters,
+} from "@/lib/ticket-debt-filters"
 import { paymentMethodOptions, type CustomerLedger } from "@/schemas"
 import { PaginationSchema } from "@/schemas/pagination"
 
@@ -365,6 +369,7 @@ export async function fetchTicketDebtRows(
 
 export type TicketDebtPageQuery = LedgerReportRange & {
   date_basis?: TicketDebtDateBasis
+  filters?: TicketDebtFilters
   page?: number
   page_size?: number
   q?: string
@@ -379,6 +384,7 @@ export async function fetchTicketDebtPage(
   if (query.q?.trim()) {
     params.set("q", query.q.trim())
   }
+  appendTicketDebtFilters(params, query.filters)
   if (query.from) {
     params.set("from", query.from)
   }
@@ -404,6 +410,7 @@ export async function fetchTicketDebtExportRows(
   if (query.q?.trim()) {
     params.set("q", query.q.trim())
   }
+  appendTicketDebtFilters(params, query.filters)
   if (query.from) {
     params.set("from", query.from)
   }
