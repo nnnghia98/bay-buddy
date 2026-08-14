@@ -102,6 +102,16 @@ Required dashboard sections:
 - **Recent Work**: latest tickets, payments, invoices, and quotes.
 - **Primary Shortcuts**: record payment, capture ticket, open customers, open invoices.
 
+Dashboard data rules:
+
+- Use `GET /api/v1/finance/dashboard-summary` as the homepage read source.
+- Show the active data scope so staff know whether totals cover all data or a
+  configured base date-time window.
+- Treat a confirmed ticket and its automatic debt transaction as one recent
+  activity. Never show the auto-debt note as a duplicate ticket event.
+- Use `Giá trị vé đã bán` for confirmed selling-price totals and `Thu nhập thực`
+  for `true_income`. Do not call `true_income` net profit.
+
 ### Customers
 
 Customer views should make the current debt state obvious.

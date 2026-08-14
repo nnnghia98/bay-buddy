@@ -22,6 +22,7 @@ from services.finance_service import (
     list_ticket_debt_page,
     list_ticket_debt_rows,
 )
+from services.dashboard_service import get_dashboard_summary
 from services.invoice_service import (
     convert_quote_to_invoice,
     create_invoice,
@@ -34,6 +35,17 @@ from services.invoice_service import (
 from services.quote_service import create_quote, get_quote_detail
 
 router = APIRouter()
+
+
+@router.get("/dashboard-summary", response_model=dict)
+async def get_dashboard_summary_route(
+    session: SessionDep,
+    current_user: CurrentUserDep,
+):
+    """Return the backend-owned command-center snapshot."""
+    del current_user
+    summary = get_dashboard_summary(session=session)
+    return success_response(summary.model_dump(mode="json"))
 
 
 @router.get("/ticket-debts", response_model=dict)

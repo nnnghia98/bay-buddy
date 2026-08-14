@@ -15,6 +15,8 @@
 | Giá bán | Selling Price | `selling_price` |
 | Chiết khấu hãng | Airline Discount | `discount` |
 | Thu nhập thực / Doanh thu | True Income / Revenue | `true_income` |
+| Giá trị vé đã bán | Ticket Sales | `total_ticket_sales` |
+| Tổng thu nhập thực | Total True Income | `total_true_income` |
 | Phí dịch vụ | Service Fee | `service_fee` |
 | Công nợ | Balance / Debt | `balance` |
 | Hành trình | Itinerary | `itinerary` |

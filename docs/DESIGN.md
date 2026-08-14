@@ -286,6 +286,8 @@ show a clear in-flight label.
 - Lead with work that needs attention.
 - Use metrics only for receivables, credit/deposit, revenue, or margin that
   affect daily decisions.
+- Label confirmed ticket `selling_price` totals as ticket sales and
+  `true_income` totals as true income. Do not present true income as net profit.
 - Keep recent activity in a dense table.
 - Shortcuts use `ClickableCard`, not decorative cards.
 

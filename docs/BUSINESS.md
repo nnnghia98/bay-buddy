@@ -66,6 +66,22 @@ The system distinguishes between what the airline charges and what the customer 
 
 > **Note**: Taxes and airport fees are usually included in the `net_price` during AI parsing unless specified otherwise.
 
+### Dashboard Financial Terms
+
+- **Ticket Sales / Giá trị vé đã bán**: Sum of `selling_price` for `CONFIRMED`
+  tickets in the active app window.
+- **True Income / Thu nhập thực**: Sum of `true_income` for the same confirmed
+  ticket set.
+- **Income Rate / Tỷ lệ thu nhập**: `total_true_income / total_ticket_sales`.
+  Return `0` when ticket sales are `0`.
+- Do not label `true_income` as net profit. Bay Buddy does not yet subtract
+  operating costs, salaries, tax, or other overhead needed to calculate net
+  profit.
+- Dashboard receivables and held credit use the same customer balance scope as
+  the customer directory. When an app base date-time is set, transaction
+  inclusion uses the audit timestamp `created_at`, not the business event time
+  `occurred_at`.
+
 ## 3. Debt Management (Công Nợ)
 
 Bay Buddy is a debt-first system. Every confirmed ticket is a debt entry.

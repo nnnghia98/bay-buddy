@@ -177,3 +177,19 @@ export type {
   TransactionRead,
   TransactionUpdate,
 } from "./transaction";
+
+// Dashboard
+export {
+  DashboardActionQueueSchema,
+  DashboardFinancialSummarySchema,
+  DashboardRecentActivitySchema,
+  DashboardSummarySchema,
+  DashboardTopDebtorSchema,
+} from "./dashboard"
+export type {
+  DashboardActionQueue,
+  DashboardFinancialSummary,
+  DashboardRecentActivity,
+  DashboardSummary,
+  DashboardTopDebtor,
+} from "./dashboard"

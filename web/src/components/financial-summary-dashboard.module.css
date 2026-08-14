@@ -1,3 +1,10 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+  padding-block-end: var(--spacing-12);
+}
+
 .unavailable {
   padding: var(--spacing-8) var(--spacing-5);
 }
@@ -8,22 +15,372 @@
   color: var(--color-text-secondary);
 }
 
-.dashboardGrid {
-  display: grid;
-  gap: var(--spacing-6);
-}
-
-.primaryColumn,
-.secondaryColumn {
+.pageHeader {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-6);
+  gap: var(--spacing-4);
+  padding-block: var(--spacing-1) var(--spacing-2);
+}
+
+.pageHeadingCopy {
+  min-width: 0;
+}
+
+.pageTitle {
+  margin-block-start: var(--spacing-1);
+  color: var(--color-text-primary);
+  font-size: var(--text-heading-2-size);
+  font-weight: var(--text-heading-2-weight);
+  line-height: var(--text-heading-2-leading);
+}
+
+.pageDescription {
+  max-width: 42rem;
+  margin-block-start: var(--spacing-2);
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+}
+
+.scopeBlock {
+  display: flex;
+  min-width: 13rem;
+  flex-direction: column;
+  gap: var(--spacing-0-5);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-code);
+  font-size: var(--text-supporting-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.scopeBlock > span {
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.scopeBlock strong {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-body);
+  font-size: var(--text-body-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.priorityGrid,
+.operationsGrid {
+  display: grid;
+  gap: var(--spacing-5);
+}
+
+.priorityPanel,
+.shortcutsPanel,
+.snapshotPanel {
+  overflow: hidden;
+}
+
+.panelHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4) var(--spacing-5);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.panelHeading h2 {
+  margin-block-start: var(--spacing-1);
+  color: var(--color-text-primary);
+  font-size: var(--text-heading-4-size);
+  font-weight: var(--text-heading-4-weight);
+  line-height: var(--text-heading-4-leading);
+}
+
+.panelHeading > span {
+  color: var(--color-text-secondary);
+  font-size: var(--text-supporting-size);
+  white-space: nowrap;
+}
+
+.queueList,
+.debtorList {
+  display: flex;
+  flex-direction: column;
+}
+
+.queueRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--spacing-2) var(--spacing-4);
+  min-height: 4rem;
+  padding: var(--spacing-3) var(--spacing-5);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color var(--duration-fast);
+}
+
+.queueRow + .queueRow,
+.debtorRow + .debtorRow {
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.queueRow:hover,
+.debtorRow:hover {
+  background: var(--color-overlay-hover);
+}
+
+.queueRow:focus-visible,
+.shortcut:focus-visible,
+.debtorRow:focus-visible,
+.customerLink:focus-visible,
+.sectionLink:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: -2px;
+}
+
+.queueCopy {
+  min-width: 0;
+}
+
+.queueCopy strong,
+.queueCopy span {
+  display: block;
+}
+
+.queueCopy strong {
+  color: var(--color-text-primary);
+  font-size: var(--text-body-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.queueCopy span {
+  margin-block-start: var(--spacing-0-5);
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--text-supporting-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queueCount,
+.queueAmount {
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-code);
+  font-size: var(--text-supporting-size);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  white-space: nowrap;
+}
+
+.queueAmount {
+  grid-column: 1;
+  color: var(--color-text-primary);
+  font-size: var(--text-body-size);
+  font-weight: var(--font-weight-semibold);
+  text-align: start;
+}
+
+.shortcutGrid {
+  display: grid;
+  gap: var(--spacing-2);
+  padding: var(--spacing-4) var(--spacing-5) var(--spacing-5);
+}
+
+.shortcut {
+  min-height: 3.25rem;
+  height: 100%;
+  transition:
+    background-color var(--duration-fast),
+    border-color var(--duration-fast);
+}
+
+.shortcut:hover {
+  border-color: var(--color-border-blue);
+  background: var(--color-background-blue);
+}
+
+.checksumStrip {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4) var(--spacing-5);
+  border: var(--border-width) solid var(--color-text-primary);
+  border-radius: var(--radius-container);
+  background: var(--color-text-primary);
+  color: var(--color-background-surface);
+}
+
+.checksumLabel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-0-5);
+  font-family: var(--font-family-code);
+  font-size: var(--text-supporting-size);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.checksumLabel > span {
+  opacity: 0.7;
+}
+
+.checksumLabel strong {
+  font-size: var(--text-body-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.checksumFlow {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-family: var(--font-family-code);
+  font-size: var(--text-supporting-size);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--text-body-leading);
+}
+
+.checksumFlow svg {
+  width: var(--spacing-4);
+  height: var(--spacing-4);
+  flex: none;
+  opacity: 0.5;
+}
+
+.checksumConfirmed,
+.checksumIncome {
+  color: var(--color-background-green);
+}
+
+.checksumScope {
+  width: fit-content;
+  padding: var(--spacing-1-5) var(--spacing-2);
+  border: var(--border-width) solid color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: var(--radius-element);
+  font-size: var(--text-supporting-size);
+  white-space: nowrap;
+}
+
+.sectionMeta {
+  color: var(--color-text-secondary);
+  font-size: var(--text-supporting-size);
+}
+
+.metricGrid {
+  display: grid;
+}
+
+.metric {
+  min-width: 0;
+  padding: var(--spacing-4) var(--spacing-5);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.metric:last-child {
+  border-block-end: 0;
+}
+
+.metric > span,
+.metric small {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--text-supporting-size);
+}
+
+.metric strong {
+  display: block;
+  margin-block-start: var(--spacing-2);
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-family: var(--font-family-code);
+  font-size: var(--text-heading-2-size);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-semibold);
+  text-align: end;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metric .incomeValue {
+  color: var(--color-text-green);
+}
+
+.metric small {
+  margin-block-start: var(--spacing-1-5);
+  text-align: end;
+}
+
+.substatList {
+  padding-inline: var(--spacing-5);
+}
+
+.substatRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--spacing-1) var(--spacing-3);
+  min-height: 3.5rem;
+  padding-block: var(--spacing-2);
+}
+
+.substatRow + .substatRow {
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.substatLabel {
+  color: var(--color-text-primary);
+  font-size: var(--text-body-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.substatDetail {
+  grid-column: 1;
+  color: var(--color-text-secondary);
+  font-size: var(--text-supporting-size);
+}
+
+.substatRow > strong {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: var(--color-text-primary);
+  font-family: var(--font-family-code);
+  font-size: var(--text-body-size);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-semibold);
+  text-align: end;
+  white-space: nowrap;
+}
+
+.scopeFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-5);
+  border-block-start: var(--border-width) solid var(--color-border);
+  background: var(--color-background-muted);
+  color: var(--color-text-secondary);
+  font-size: var(--text-supporting-size);
+}
+
+.scopeFooter strong {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-code);
+  font-weight: var(--font-weight-semibold);
+  text-align: end;
+}
+
+.recentColumn,
+.debtorColumn {
+  min-width: 0;
 }
 
 .sectionLink {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: var(--spacing-1);
+  border-radius: var(--radius-element);
   color: var(--color-text-accent);
   font-size: var(--text-supporting-size);
   font-weight: var(--font-weight-semibold);
@@ -32,6 +389,30 @@
 
 .sectionLink:hover {
   text-decoration: underline;
+  text-underline-offset: var(--spacing-1);
+}
+
+.sectionLink svg {
+  width: var(--spacing-3);
+  height: var(--spacing-3);
+}
+
+.tableNote {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-5);
+  border-block-end: var(--border-width) solid var(--color-border);
+  background: var(--color-background-muted);
+  color: var(--color-text-secondary);
+  font-size: var(--text-supporting-size);
+}
+
+.tableNote svg {
+  width: var(--spacing-4);
+  height: var(--spacing-4);
+  flex: none;
+  color: var(--color-icon-accent);
 }
 
 .empty {
@@ -39,129 +420,41 @@
   color: var(--color-text-secondary);
 }
 
-.debtorLink {
-  display: grid;
-  gap: var(--spacing-3);
-  padding: var(--spacing-3) var(--spacing-5);
-  color: inherit;
-  text-decoration: none;
-  transition: background-color var(--duration-fast);
-}
-
-.debtorLink:hover {
-  background: var(--color-overlay-hover);
-}
-
-.debtorNameRow {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-medium);
-}
-
-.debtorRank {
-  display: flex;
-  width: var(--spacing-5);
-  height: var(--spacing-5);
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-full);
-  background: var(--color-background-muted);
-  color: var(--color-text-secondary);
-  font-size: var(--text-supporting-size);
-  font-weight: var(--font-weight-semibold);
-}
-
-.debtorName {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.debtorStatus {
-  display: block;
-  margin-block-start: var(--spacing-2);
-}
-
-.debtorBalance {
-  text-align: start;
-}
-
-.debtorAmount {
-  display: block;
+.customerLink {
   color: var(--color-text-primary);
   font-weight: var(--font-weight-semibold);
-}
-
-.debtorBalanceLabel {
-  display: block;
-  margin-block-start: var(--spacing-0-5);
-  color: var(--color-text-secondary);
-  font-size: var(--text-supporting-size);
-}
-
-.creditPanel {
-  padding: var(--spacing-5);
-}
-
-.creditIcon {
-  display: flex;
-  width: var(--spacing-9);
-  height: var(--spacing-9);
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-element);
-  background: var(--color-background-muted);
-  color: var(--color-icon-accent);
-}
-
-.creditValue {
-  margin-block-start: var(--spacing-1);
-  color: var(--color-text-primary);
-  font-size: var(--text-heading-2-size);
-  font-weight: var(--text-heading-2-weight);
-}
-
-.creditDescription {
-  margin-block-start: var(--spacing-1);
-  color: var(--color-text-secondary);
-  font-size: var(--text-supporting-size);
-}
-
-.activityCell {
-  min-width: 15rem;
-}
-
-.activityLink {
-  display: inline-flex;
-  max-width: 100%;
-  flex-direction: column;
-  gap: var(--spacing-1-5);
-  color: inherit;
   text-decoration: none;
+}
+
+.customerLink:hover {
+  color: var(--color-text-accent);
+  text-decoration: underline;
+  text-underline-offset: var(--spacing-1);
+}
+
+.referenceColumn {
+  min-width: 12rem;
 }
 
 .activityTitle {
+  display: block;
+  max-width: 20rem;
   overflow: hidden;
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .numberCell,
 .dateCell {
-  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
   text-align: end;
   white-space: nowrap;
 }
 
 .numberCell {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-code);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -170,19 +463,226 @@
   font-size: var(--text-supporting-size);
 }
 
+.debtorRow {
+  display: grid;
+  grid-template-columns: var(--spacing-6) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--spacing-2);
+  min-height: 3.75rem;
+  padding: var(--spacing-2) var(--spacing-5);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color var(--duration-fast);
+}
+
+.debtorRank {
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-code);
+  font-size: var(--text-supporting-size);
+}
+
+.debtorCopy {
+  min-width: 0;
+}
+
+.debtorCopy strong,
+.debtorCopy span {
+  display: block;
+}
+
+.debtorCopy strong {
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: var(--text-body-size);
+  font-weight: var(--font-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.debtorCopy span {
+  margin-block-start: var(--spacing-0-5);
+  color: var(--color-text-secondary);
+  font-size: var(--text-supporting-size);
+}
+
+.debtorAmount,
+.creditAmount {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-code);
+  font-size: var(--text-body-size);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-semibold);
+  text-align: end;
+  white-space: nowrap;
+}
+
+.creditSummary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-5);
+  border-block-start: var(--border-width) solid var(--color-border);
+  background: var(--color-background-muted);
+}
+
+.creditIcon {
+  display: flex;
+  width: var(--spacing-8);
+  height: var(--spacing-8);
+  align-items: center;
+  justify-content: center;
+  border: var(--border-width) solid var(--color-border-green);
+  border-radius: var(--radius-element);
+  background: var(--color-background-green);
+  color: var(--color-text-green);
+}
+
+.creditIcon svg {
+  width: var(--spacing-4);
+  height: var(--spacing-4);
+}
+
+.creditCopy {
+  min-width: 0;
+}
+
+.creditCopy strong,
+.creditCopy span {
+  display: block;
+}
+
+.creditCopy strong {
+  color: var(--color-text-primary);
+  font-size: var(--text-supporting-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.creditCopy span {
+  margin-block-start: var(--spacing-0-5);
+  color: var(--color-text-secondary);
+  font-size: var(--text-supporting-size);
+}
+
 @media (min-width: 40rem) {
-  .debtorLink {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
+  .pageHeader {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
   }
 
-  .debtorBalance {
+  .scopeBlock {
+    align-items: flex-end;
     text-align: end;
+  }
+
+  .queueRow {
+    grid-template-columns: minmax(0, 1fr) auto minmax(8rem, auto) auto;
+  }
+
+  .queueAmount {
+    grid-column: auto;
+    text-align: end;
+  }
+
+  .shortcutGrid,
+  .metricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric:nth-child(odd) {
+    border-inline-end: var(--border-width) solid var(--color-border);
+  }
+
+  .metric:nth-last-child(-n + 2) {
+    border-block-end: 0;
+  }
+
+  .substatRow {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .substatDetail,
+  .substatRow > strong {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+@media (min-width: 70rem) {
+  .metricGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .metric,
+  .metric:nth-child(odd),
+  .metric:nth-last-child(-n + 2) {
+    border-block-end: 0;
+  }
+
+  .metric {
+    border-inline-end: var(--border-width) solid var(--color-border);
+  }
+
+  .metric:last-child {
+    border-inline-end: 0;
   }
 }
 
 @media (min-width: 80rem) {
-  .dashboardGrid {
-    grid-template-columns: minmax(0, 1.45fr) minmax(20rem, 0.75fr);
+  .priorityGrid {
+    grid-template-columns: minmax(0, 1.45fr) minmax(21rem, 0.85fr);
+  }
+
+  .operationsGrid {
+    grid-template-columns: minmax(0, 1.7fr) minmax(19rem, 0.8fr);
+  }
+
+  .checksumStrip {
+    grid-template-columns: minmax(9rem, 0.7fr) minmax(0, 2fr) auto;
+    align-items: center;
+  }
+
+  .checksumScope {
+    justify-self: end;
+  }
+}
+
+@media (max-width: 39.99rem) {
+  .panelHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--spacing-1);
+  }
+
+  .queueCount {
+    justify-self: end;
+  }
+
+  .queueRow > :last-child {
+    justify-self: end;
+  }
+
+  .checksumFlow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .checksumFlow svg {
+    display: none;
+  }
+
+  .scopeFooter,
+  .creditSummary {
+    align-items: flex-start;
+  }
+
+  .creditSummary {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .creditAmount {
+    grid-column: 2;
+    text-align: start;
   }
 }

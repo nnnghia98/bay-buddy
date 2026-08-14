@@ -3,25 +3,24 @@
 import patterns from "@/styles/ui-patterns.module.css"
 
 import Link from "next/link"
-import * as React from "react"
 import {
   ArrowRight,
-  CreditCard,
-  Eye,
-  EyeOff,
-  Landmark,
-  TrendingUp,
+  ChartColumn,
+  CircleDollarSign,
+  FileCheck2,
+  Ticket,
+  Users,
   WalletCards,
+  type LucideIcon,
 } from "lucide-react"
 
 import {
-  MetricCard,
+  CommandActionLink,
   Panel,
   SectionHeader,
   StatusChip,
   TableScrollArea,
 } from "@/components/command-center"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -30,14 +29,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { FinancialSummarySnapshot } from "@/lib/dashboard"
 import { formatCurrency, formatSignedCurrency } from "@/lib/formatters"
 import { useI18n } from "@/locales/client"
+import type {
+  DashboardActionQueue,
+  DashboardRecentActivity,
+  DashboardSummary,
+} from "@/schemas/dashboard"
 import styles from "./financial-summary-dashboard.module.css"
 
 type FinancialSummaryDashboardProps = {
-  summary: FinancialSummarySnapshot | null
-  initialRevenueVisible?: boolean
+  summary: DashboardSummary | null
+}
+
+type Shortcut = {
+  href: string
+  icon: LucideIcon
+  label: string
+  description: string
 }
 
 function formatPercent(value: number): string {
@@ -47,7 +56,16 @@ function formatPercent(value: number): string {
   }).format(value)
 }
 
-function formatDateTime(value: string | Date): string {
+function formatDate(value: Date): string {
+  return new Intl.DateTimeFormat("vi-VN", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(value)
+}
+
+function formatDateTime(value: Date): string {
   return new Intl.DateTimeFormat("vi-VN", {
     timeZone: "Asia/Ho_Chi_Minh",
     day: "2-digit",
@@ -56,11 +74,23 @@ function formatDateTime(value: string | Date): string {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(value))
+  }).format(value)
+}
+
+function getQueueHref(key: DashboardActionQueue["key"]): string {
+  return key === "draftTickets" ? "/tickets/input" : "/customers"
+}
+
+function getQueueTone(
+  queue: DashboardActionQueue,
+): "info" | "warning" | "success" {
+  if (queue.count === 0) return "success"
+  if (queue.key === "heldCredit") return "info"
+  return "warning"
 }
 
 function getActivityTone(
-  type: FinancialSummarySnapshot["recentActivity"][number]["type"],
+  type: DashboardRecentActivity["type"],
 ): "neutral" | "info" | "warning" | "danger" {
   if (type === "ticket") return "info"
   if (type === "refund") return "danger"
@@ -70,10 +100,8 @@ function getActivityTone(
 
 export function FinancialSummaryDashboard({
   summary,
-  initialRevenueVisible = false,
 }: FinancialSummaryDashboardProps) {
   const t = useI18n()
-  const [isRevenueVisible, setIsRevenueVisible] = React.useState(initialRevenueVisible)
 
   if (!summary) {
     return (
@@ -90,226 +118,452 @@ export function FinancialSummaryDashboard({
     )
   }
 
-  const getActivityTypeLabel = (
-    type: FinancialSummarySnapshot["recentActivity"][number]["type"],
+  const getQueueLabel = (key: DashboardActionQueue["key"]): string => {
+    if (key === "heldCredit") {
+      return t("dashboard.summary.commandCenter.queues.heldCredit")
+    }
+    if (key === "draftTickets") {
+      return t("dashboard.summary.commandCenter.queues.draftTickets")
+    }
+    return t("dashboard.summary.commandCenter.queues.receivables")
+  }
+
+  const getQueueDescription = (
+    key: DashboardActionQueue["key"],
   ): string => {
-    if (type === "ticket") return t("dashboard.summary.commandCenter.recent.types.ticket")
-    if (type === "adjustment") return t("dashboard.summary.commandCenter.recent.types.adjustment")
-    if (type === "refund") return t("dashboard.summary.commandCenter.recent.types.refund")
+    if (key === "heldCredit") {
+      return t("dashboard.summary.commandCenter.queueDescriptions.heldCredit")
+    }
+    if (key === "draftTickets") {
+      return t("dashboard.summary.commandCenter.queueDescriptions.draftTickets")
+    }
+    return t("dashboard.summary.commandCenter.queueDescriptions.receivables")
+  }
+
+  const getQueueUnit = (key: DashboardActionQueue["key"]): string => {
+    if (key === "heldCredit") {
+      return t("dashboard.summary.commandCenter.queueUnits.balances")
+    }
+    if (key === "draftTickets") {
+      return t("dashboard.summary.commandCenter.queueUnits.tickets")
+    }
+    return t("dashboard.summary.commandCenter.queueUnits.customers")
+  }
+
+  const getActivityTypeLabel = (
+    type: DashboardRecentActivity["type"],
+  ): string => {
+    if (type === "ticket") {
+      return t("dashboard.summary.commandCenter.recent.types.ticket")
+    }
+    if (type === "adjustment") {
+      return t("dashboard.summary.commandCenter.recent.types.adjustment")
+    }
+    if (type === "refund") {
+      return t("dashboard.summary.commandCenter.recent.types.refund")
+    }
     return t("dashboard.summary.commandCenter.recent.types.payment")
   }
 
-  const getActivityTitle = (
-    activity: FinancialSummarySnapshot["recentActivity"][number],
-  ): string => {
+  const getActivityTitle = (activity: DashboardRecentActivity): string => {
     const title = activity.title.trim()
     if (title) return title
-    if (activity.category === "PAYMENT") return t("dashboard.summary.commandCenter.recent.fallbacks.payment")
-    if (activity.category === "DISCOUNT") return t("dashboard.summary.commandCenter.recent.fallbacks.discount")
-    if (activity.category === "ADDITIONAL_FEE") return t("dashboard.summary.commandCenter.recent.fallbacks.additionalFee")
-    if (activity.category === "REFUND") return t("dashboard.summary.commandCenter.recent.fallbacks.refund")
+    if (activity.category === "PAYMENT") {
+      return t("dashboard.summary.commandCenter.recent.fallbacks.payment")
+    }
+    if (activity.category === "DISCOUNT") {
+      return t("dashboard.summary.commandCenter.recent.fallbacks.discount")
+    }
+    if (activity.category === "ADDITIONAL_FEE") {
+      return t("dashboard.summary.commandCenter.recent.fallbacks.additionalFee")
+    }
+    if (activity.category === "REFUND") {
+      return t("dashboard.summary.commandCenter.recent.fallbacks.refund")
+    }
     return t("dashboard.summary.commandCenter.recent.fallbacks.ticketPurchase")
   }
 
+  const scopeLabel = summary.scope_started_at
+    ? t("dashboard.summary.scope.fromDate", {
+        date: formatDate(summary.scope_started_at),
+      })
+    : t("dashboard.summary.scope.allData")
+
+  const shortcuts: Shortcut[] = [
+    {
+      href: "/debts/input",
+      icon: CircleDollarSign,
+      label: t("dashboard.summary.commandCenter.shortcuts.manualDebt"),
+      description: t(
+        "dashboard.summary.commandCenter.shortcuts.manualDebtDescription",
+      ),
+    },
+    {
+      href: "/tickets/input",
+      icon: Ticket,
+      label: t("dashboard.summary.commandCenter.shortcuts.ticket"),
+      description: t(
+        "dashboard.summary.commandCenter.shortcuts.ticketDescription",
+      ),
+    },
+    {
+      href: "/customers",
+      icon: Users,
+      label: t("dashboard.summary.commandCenter.shortcuts.customers"),
+      description: t(
+        "dashboard.summary.commandCenter.shortcuts.customersDescription",
+      ),
+    },
+    {
+      href: "/report",
+      icon: ChartColumn,
+      label: t("dashboard.summary.commandCenter.shortcuts.report"),
+      description: t(
+        "dashboard.summary.commandCenter.shortcuts.reportDescription",
+      ),
+    },
+  ]
+
   return (
-    <div className={patterns.pageStack}>
-      {/* ------------------------------------------------------------------ */}
-      {/* Metric strip                                                        */}
-      {/* ------------------------------------------------------------------ */}
-      <div className={patterns.threeColumnGrid}>
-        {/* Revenue */}
-        <MetricCard
-          action={
-            <Button
-              aria-label={
-                isRevenueVisible
-                  ? t("dashboard.summary.widgets.revenue.hide")
-                  : t("dashboard.summary.widgets.revenue.show")
-              }
-              onClick={() => setIsRevenueVisible((v) => !v)}
-              size="icon"
-              type="button"
-              variant="ghost"
-            >
-              {isRevenueVisible ? (
-                <EyeOff aria-hidden="true" className={patterns.iconSmall} />
-              ) : (
-                <Eye aria-hidden="true" className={patterns.iconSmall} />
-              )}
-            </Button>
-          }
-          description={`${summary.confirmedTickets} ${t("dashboard.summary.widgets.revenue.detail")}`}
-          icon={WalletCards}
-          label={t("dashboard.summary.widgets.revenue.label")}
-          value={isRevenueVisible ? formatCurrency(summary.totalRevenue) : "••••••"}
-        />
-
-        {/* Net Profit */}
-        <MetricCard
-          description={`${formatPercent(summary.averageMarginPercent)}% ${t("dashboard.summary.widgets.profit.detail")}`}
-          icon={TrendingUp}
-          label={t("dashboard.summary.widgets.profit.label")}
-          value={formatCurrency(summary.totalNetProfit)}
-        />
-
-        {/* Receivables */}
-        <MetricCard
-          description={`${summary.customersWithDebt} ${t("dashboard.summary.widgets.receivables.detail")}`}
-          icon={Landmark}
-          label={t("dashboard.summary.widgets.receivables.label")}
-          value={formatCurrency(summary.totalReceivables)}
-        />
-      </div>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Main two-column layout                                              */}
-      {/* ------------------------------------------------------------------ */}
-      <div className={styles.dashboardGrid}>
-
-        {/* Top Debtors */}
-        <div className={styles.primaryColumn}>
-          <div>
-            <SectionHeader
-              title={t("dashboard.summary.analytics.topDebtors.title")}
-              id="dashboard-top-debtors-title"
-              action={
-                <Link
-                  href="/customers"
-                  className={styles.sectionLink}
-                >
-                  {t("appShell.nav.customers")}
-                  <ArrowRight className={patterns.iconCompact} aria-hidden="true" />
-                </Link>
-              }
-            />
-            <Panel aria-labelledby="dashboard-top-debtors-title">
-              {summary.topDebtors.length === 0 ? (
-                <div className={styles.empty}>
-                  {t("dashboard.summary.analytics.topDebtors.empty")}
-                </div>
-              ) : (
-                <div className={patterns.dividerList}>
-                  {summary.topDebtors.map((debtor, index) => (
-                    <Link
-                      key={debtor.id}
-                      href={`/customers/${debtor.id}`}
-                      className={styles.debtorLink}
-                    >
-                      <span className={patterns.minWidthZero}>
-                        <span className={styles.debtorNameRow}>
-                          <span className={styles.debtorRank}>
-                            {index + 1}
-                          </span>
-                          <span className={styles.debtorName}>
-                            {debtor.name}
-                          </span>
-                        </span>
-                        <span className={styles.debtorStatus}>
-                          <StatusChip tone={debtor.status === "high" ? "danger" : "warning"}>
-                            {debtor.status === "high"
-                              ? t("dashboard.summary.analytics.topDebtors.status.high")
-                              : t("dashboard.summary.analytics.topDebtors.status.medium")}
-                          </StatusChip>
-                        </span>
-                      </span>
-                      <span className={styles.debtorBalance}>
-                        <span className={styles.debtorAmount}>
-                          {formatCurrency(debtor.outstandingBalance)}
-                        </span>
-                        <span className={styles.debtorBalanceLabel}>
-                          {t("dashboard.summary.analytics.topDebtors.balanceLabel")}
-                        </span>
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </Panel>
-          </div>
+    <div className={styles.dashboard}>
+      <header className={styles.pageHeader}>
+        <div className={styles.pageHeadingCopy}>
+          <p className={patterns.eyebrow}>{t("dashboard.summary.eyebrow")}</p>
+          <h1 className={styles.pageTitle}>{t("dashboard.summary.title")}</h1>
+          <p className={styles.pageDescription}>
+            {t("dashboard.summary.description")}
+          </p>
         </div>
+        <div className={styles.scopeBlock}>
+          <span>{t("dashboard.summary.scope.current")}</span>
+          <strong>{scopeLabel}</strong>
+          <time dateTime={summary.updated_at.toISOString()}>
+            {t("dashboard.summary.commandCenter.updatedAt")} {" "}
+            {formatDateTime(summary.updated_at)}
+          </time>
+        </div>
+      </header>
 
-        <aside className={styles.secondaryColumn}>
-          <Panel className={styles.creditPanel}>
-            <div className={patterns.rowStart}>
-              <span className={styles.creditIcon}>
-                <CreditCard aria-hidden="true" className={patterns.iconSmall} />
-              </span>
-              <div className={patterns.minWidthZero}>
-                <p className={patterns.accentEyebrow}>
-                  {t("dashboard.summary.metrics.credit.label")}
-                </p>
-                <p className={styles.creditValue}>
-                  {formatCurrency(summary.totalHeldCredit)}
-                </p>
-                <p className={styles.creditDescription}>
-                  {summary.customersWithCredit} {t("dashboard.summary.metrics.credit.detail")}
-                </p>
-              </div>
+      <section
+        aria-label={t("dashboard.summary.commandCenter.priorityAriaLabel")}
+        className={styles.priorityGrid}
+      >
+        <Panel className={styles.priorityPanel}>
+          <div className={styles.panelHeading}>
+            <div>
+              <p className={patterns.eyebrow}>
+                {t("dashboard.summary.commandCenter.queueEyebrow")}
+              </p>
+              <h2>{t("dashboard.summary.commandCenter.needsAction")}</h2>
             </div>
-          </Panel>
-        </aside>
-      </div>
+            <span>{t("dashboard.summary.commandCenter.queueOrder")}</span>
+          </div>
+          <div className={styles.queueList}>
+            {summary.action_queues.map((queue) => (
+              <Link
+                className={styles.queueRow}
+                href={getQueueHref(queue.key)}
+                key={queue.key}
+              >
+                <span className={styles.queueCopy}>
+                  <strong>{getQueueLabel(queue.key)}</strong>
+                  <span>{getQueueDescription(queue.key)}</span>
+                </span>
+                <span className={styles.queueCount}>
+                  {queue.count} {getQueueUnit(queue.key)}
+                </span>
+                <span className={styles.queueAmount}>
+                  {formatCurrency(queue.amount)}
+                </span>
+                <StatusChip tone={getQueueTone(queue)}>
+                  {queue.count === 0
+                    ? t("dashboard.summary.commandCenter.clear")
+                    : t("dashboard.summary.commandCenter.review")}
+                </StatusChip>
+              </Link>
+            ))}
+          </div>
+        </Panel>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Recent Activity — full width                                        */}
-      {/* ------------------------------------------------------------------ */}
-      <div>
+        <Panel className={styles.shortcutsPanel}>
+          <div className={styles.panelHeading}>
+            <div>
+              <p className={patterns.eyebrow}>
+                {t("dashboard.summary.commandCenter.shortcuts.eyebrow")}
+              </p>
+              <h2>{t("dashboard.summary.commandCenter.shortcuts.title")}</h2>
+            </div>
+          </div>
+          <div className={styles.shortcutGrid}>
+            {shortcuts.map((shortcut) => (
+              <CommandActionLink
+                className={styles.shortcut}
+                description={shortcut.description}
+                href={shortcut.href}
+                icon={shortcut.icon}
+                key={shortcut.href}
+                label={shortcut.label}
+              />
+            ))}
+          </div>
+        </Panel>
+      </section>
+
+      <section
+        aria-label={t("dashboard.summary.checksum.ariaLabel")}
+        className={styles.checksumStrip}
+      >
+        <div className={styles.checksumLabel}>
+          <span>{t("dashboard.summary.checksum.label")}</span>
+          <strong>{t("dashboard.summary.checksum.identifier")}</strong>
+        </div>
+        <div className={styles.checksumFlow}>
+          <span className={styles.checksumConfirmed}>
+            {summary.financial.confirmed_tickets} {" "}
+            {t("dashboard.summary.checksum.confirmedTickets")}
+          </span>
+          <ArrowRight aria-hidden="true" />
+          <span>
+            {formatCurrency(summary.financial.total_ticket_sales)} {" "}
+            {t("dashboard.summary.checksum.ticketSales")}
+          </span>
+          <ArrowRight aria-hidden="true" />
+          <span className={styles.checksumIncome}>
+            {formatCurrency(summary.financial.total_true_income)} {" "}
+            {t("dashboard.summary.checksum.trueIncome")}
+          </span>
+        </div>
+        <div className={styles.checksumScope}>
+          {t("dashboard.summary.checksum.scope")} · {scopeLabel}
+        </div>
+      </section>
+
+      <section aria-labelledby="dashboard-financial-title">
         <SectionHeader
-          title={t("dashboard.summary.commandCenter.recent.title")}
-          id="dashboard-recent-activity-title"
+          action={
+            <span className={styles.sectionMeta}>
+              {t("dashboard.summary.financial.source")}
+            </span>
+          }
+          id="dashboard-financial-title"
+          title={t("dashboard.summary.financial.title")}
         />
-        <Panel aria-labelledby="dashboard-recent-activity-title">
-          {summary.recentActivity.length === 0 ? (
-            <div className={styles.empty}>
-              {t("dashboard.summary.commandCenter.recent.empty")}
+        <Panel className={styles.snapshotPanel}>
+          <div className={styles.metricGrid}>
+            <div className={styles.metric}>
+              <span>{t("dashboard.summary.financial.ticketSales.label")}</span>
+              <strong>
+                {formatCurrency(summary.financial.total_ticket_sales)}
+              </strong>
+              <small>{t("dashboard.summary.financial.ticketSales.detail")}</small>
             </div>
-          ) : (
-            <TableScrollArea>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>
-                      {t("dashboard.summary.commandCenter.recent.columns.activity")}
-                    </TableHead>
-                    <TableHead className={patterns.textRight}>
-                      {t("dashboard.summary.commandCenter.recent.columns.amount")}
-                    </TableHead>
-                    <TableHead className={patterns.textRight}>
-                      {t("dashboard.summary.commandCenter.recent.columns.time")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {summary.recentActivity.map((activity) => (
-                    <TableRow key={activity.id}>
-                      <TableCell className={styles.activityCell}>
-                        <Link
-                          className={styles.activityLink}
-                          href={activity.href}
-                        >
+            <div className={styles.metric}>
+              <span>{t("dashboard.summary.financial.trueIncome.label")}</span>
+              <strong className={styles.incomeValue}>
+                {formatCurrency(summary.financial.total_true_income)}
+              </strong>
+              <small>{t("dashboard.summary.financial.trueIncome.detail")}</small>
+            </div>
+            <div className={styles.metric}>
+              <span>{t("dashboard.summary.financial.incomeRate.label")}</span>
+              <strong>
+                {formatPercent(summary.financial.income_rate_percent)}%
+              </strong>
+              <small>{t("dashboard.summary.financial.incomeRate.detail")}</small>
+            </div>
+            <div className={styles.metric}>
+              <span>
+                {t("dashboard.summary.financial.confirmedTickets.label")}
+              </span>
+              <strong>{summary.financial.confirmed_tickets}</strong>
+              <small>
+                {t("dashboard.summary.financial.confirmedTickets.detail")}
+              </small>
+            </div>
+          </div>
+          <div className={styles.substatList}>
+            <div className={styles.substatRow}>
+              <span className={styles.substatLabel}>
+                {t("dashboard.summary.financial.receivables.label")}
+              </span>
+              <span className={styles.substatDetail}>
+                {summary.financial.customers_with_debt} {" "}
+                {t("dashboard.summary.financial.receivables.detail")}
+              </span>
+              <strong>
+                {formatCurrency(summary.financial.total_receivables)}
+              </strong>
+            </div>
+            <div className={styles.substatRow}>
+              <span className={styles.substatLabel}>
+                {t("dashboard.summary.financial.heldCredit.label")}
+              </span>
+              <span className={styles.substatDetail}>
+                {summary.financial.customers_with_credit} {" "}
+                {t("dashboard.summary.financial.heldCredit.detail")}
+              </span>
+              <strong>
+                {formatCurrency(summary.financial.total_held_credit)}
+              </strong>
+            </div>
+          </div>
+          <div className={styles.scopeFooter}>
+            <span>{t("dashboard.summary.scope.label")}</span>
+            <strong>{scopeLabel}</strong>
+          </div>
+        </Panel>
+      </section>
+
+      <section
+        aria-label={t("dashboard.summary.operationsAriaLabel")}
+        className={styles.operationsGrid}
+      >
+        <div className={styles.recentColumn}>
+          <SectionHeader
+            action={
+              <Link className={styles.sectionLink} href="/activities">
+                {t("dashboard.summary.commandCenter.recent.viewAll")}
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            }
+            id="dashboard-recent-activity-title"
+            title={t("dashboard.summary.commandCenter.recent.title")}
+          />
+          <Panel aria-labelledby="dashboard-recent-activity-title">
+            <div className={styles.tableNote}>
+              <FileCheck2 aria-hidden="true" />
+              <span>{t("dashboard.summary.commandCenter.recent.description")}</span>
+            </div>
+            {summary.recent_activity.length === 0 ? (
+              <div className={styles.empty}>
+                {t("dashboard.summary.commandCenter.recent.empty")}
+              </div>
+            ) : (
+              <TableScrollArea>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        {t(
+                          "dashboard.summary.commandCenter.recent.columns.customer",
+                        )}
+                      </TableHead>
+                      <TableHead>
+                        {t(
+                          "dashboard.summary.commandCenter.recent.columns.activity",
+                        )}
+                      </TableHead>
+                      <TableHead className={styles.referenceColumn}>
+                        {t(
+                          "dashboard.summary.commandCenter.recent.columns.reference",
+                        )}
+                      </TableHead>
+                      <TableHead className={patterns.textRight}>
+                        {t(
+                          "dashboard.summary.commandCenter.recent.columns.amount",
+                        )}
+                      </TableHead>
+                      <TableHead className={patterns.textRight}>
+                        {t("dashboard.summary.commandCenter.recent.columns.time")}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {summary.recent_activity.map((activity) => (
+                      <TableRow key={activity.id}>
+                        <TableCell>
+                          <Link
+                            className={styles.customerLink}
+                            href={`/customers/${activity.customer_id}`}
+                          >
+                            {activity.customer_name}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
                           <StatusChip tone={getActivityTone(activity.type)}>
                             {getActivityTypeLabel(activity.type)}
                           </StatusChip>
+                        </TableCell>
+                        <TableCell className={styles.referenceColumn}>
                           <span className={styles.activityTitle}>
                             {getActivityTitle(activity)}
                           </span>
-                        </Link>
-                      </TableCell>
-                      <TableCell className={styles.numberCell}>
-                        {formatSignedCurrency(activity.amount)}
-                      </TableCell>
-                      <TableCell className={styles.dateCell}>
-                        {formatDateTime(activity.createdAt)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableScrollArea>
-          )}
-        </Panel>
-      </div>
+                        </TableCell>
+                        <TableCell className={styles.numberCell}>
+                          {formatSignedCurrency(activity.amount)}
+                        </TableCell>
+                        <TableCell className={styles.dateCell}>
+                          {formatDateTime(activity.created_at)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableScrollArea>
+            )}
+          </Panel>
+        </div>
 
+        <aside className={styles.debtorColumn}>
+          <SectionHeader
+            action={
+              <Link className={styles.sectionLink} href="/customers">
+                {t("appShell.nav.customers")}
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            }
+            id="dashboard-top-debtors-title"
+            title={t("dashboard.summary.analytics.topDebtors.title")}
+          />
+          <Panel aria-labelledby="dashboard-top-debtors-title">
+            {summary.top_debtors.length === 0 ? (
+              <div className={styles.empty}>
+                {t("dashboard.summary.analytics.topDebtors.empty")}
+              </div>
+            ) : (
+              <div className={styles.debtorList}>
+                {summary.top_debtors.map((debtor, index) => (
+                  <Link
+                    className={styles.debtorRow}
+                    href={`/customers/${debtor.customer_id}`}
+                    key={debtor.customer_id}
+                  >
+                    <span className={styles.debtorRank}>
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className={styles.debtorCopy}>
+                      <strong>{debtor.customer_name}</strong>
+                      <span>
+                        {t(
+                          "dashboard.summary.analytics.topDebtors.balanceLabel",
+                        )}
+                      </span>
+                    </span>
+                    <strong className={styles.debtorAmount}>
+                      {formatCurrency(debtor.outstanding_balance)}
+                    </strong>
+                  </Link>
+                ))}
+              </div>
+            )}
+            <div className={styles.creditSummary}>
+              <span className={styles.creditIcon}>
+                <WalletCards aria-hidden="true" />
+              </span>
+              <span className={styles.creditCopy}>
+                <strong>{t("dashboard.summary.financial.heldCredit.label")}</strong>
+                <span>
+                  {summary.financial.customers_with_credit} {" "}
+                  {t("dashboard.summary.financial.heldCredit.detail")}
+                </span>
+              </span>
+              <strong className={styles.creditAmount}>
+                {formatCurrency(summary.financial.total_held_credit)}
+              </strong>
+            </div>
+          </Panel>
+        </aside>
+      </section>
     </div>
   )
 }

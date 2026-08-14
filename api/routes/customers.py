@@ -1,9 +1,8 @@
 import uuid
-from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import func, or_
-from sqlmodel import Session, select
+from sqlmodel import select
 
 from core.auth import CurrentUserDep, require_user_roles
 from core.pagination import build_pagination, normalize_page, normalize_page_size
@@ -16,11 +15,12 @@ from models.customer import (
     CustomerRead,
     CustomerUpdate,
 )
-from models.enums import UserRole, get_transaction_balance_delta
+from models.enums import UserRole
 from models.invoice import Invoice
 from models.quote import Quote
 from models.ticket import Ticket
 from models.transaction import Transaction
+from services.customer_balance_service import get_customer_balances
 from services.system_settings_service import get_app_base_datetime
 from services.finance_service import (
     RecordPaymentPayload,
@@ -30,35 +30,6 @@ from services.finance_service import (
 
 router = APIRouter()
 
-
-def _calculate_customer_active_balances(
-    *,
-    session: Session,
-    customer_ids: list[uuid.UUID],
-    base_datetime: datetime,
-) -> dict[uuid.UUID, float]:
-    """Calculate a page of customer balances with one transaction query."""
-
-    if not customer_ids:
-        return {}
-
-    transactions = session.exec(
-        select(Transaction).where(
-            Transaction.customer_id.in_(customer_ids),
-            Transaction.occurred_at >= base_datetime,
-        )
-    ).all()
-    balances = dict.fromkeys(customer_ids, 0.0)
-
-    for transaction in transactions:
-        balances[transaction.customer_id] += get_transaction_balance_delta(
-            amount=transaction.amount,
-            transaction_category=transaction.category,
-            transaction_type=transaction.type,
-            linked_ticket_id=transaction.linked_ticket_id,
-        )
-
-    return balances
 
 @router.post("/", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def create_customer(
@@ -112,26 +83,17 @@ async def list_customers(
         .limit(effective_page_size)
     )
     customers = session.exec(statement).all()
-    customer_ids = [customer.id for customer in customers if customer.id is not None]
-    active_balances = (
-        _calculate_customer_active_balances(
-            session=session,
-            customer_ids=customer_ids,
-            base_datetime=base_datetime,
-        )
-        if base_datetime is not None
-        else {}
+    customer_balances = get_customer_balances(
+        session=session,
+        customers=customers,
+        base_datetime=base_datetime,
     )
     customer_directory = [
         CustomerDirectoryItem(
             id=customer.id,
             full_name=customer.name,
             phone=customer.phone,
-            current_balance=(
-                active_balances.get(customer.id, 0.0)
-                if base_datetime is not None
-                else customer.balance
-            ),
+            current_balance=customer_balances.get(customer.id, 0.0),
             is_active=customer.is_active,
         ).model_dump(mode="json")
         for customer in customers

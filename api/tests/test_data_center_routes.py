@@ -493,8 +493,14 @@ def test_base_date_time_allows_historical_transaction_event_dates() -> None:
             "customer_id": str(customer.id),
         },
     )
+    customers_response = client.get(
+        "/api/v1/customers/",
+        params={"limit": 500},
+    )
 
     clear_overrides()
 
     assert response.status_code == 201
     assert response.json()["success"] is True
+    assert customers_response.status_code == 200
+    assert customers_response.json()["data"][0]["current_balance"] == -100_000

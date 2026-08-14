@@ -260,6 +260,22 @@ linked payment totals while also showing the selected charge method and date.
 - `GET /api/v1/customers/{id}/ledger` returns the customer ledger used by the ledger detail page.
 - The ledger payload includes the `customer`, the `current_balance`, and an `entries` list that is already table-ready for the frontend.
 
+## 6. Dashboard Endpoint
+
+- `GET /api/v1/finance/dashboard-summary` is the single read contract for the
+  authenticated homepage.
+- The backend owns dashboard totals, queue counts, top debtor ranking, scope,
+  and recent activity. The frontend must not rebuild these values from capped
+  customer, ticket, or transaction list requests.
+- Ticket sales and true income use `CONFIRMED` tickets in the active window,
+  filtered by `Ticket.updated_at` when a base date-time exists.
+- Receivables and held credit use the same customer balance calculation as the
+  customer directory. Active-window transactions are filtered by
+  `Transaction.created_at`.
+- A confirmed ticket and its automatic `TICKET_PURCHASE` transaction represent
+  one recent-work event. The automatic debt row must not appear as a second
+  dashboard activity.
+
 ### Customer Ledger Structure
 - Each ledger row contains `id`, `entry_type`, `created_at`, `content`, `amount`, and `running_balance`.
 - In the ledger payload, `created_at` represents the audit/history timestamp used for chronological display.

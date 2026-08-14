@@ -2014,6 +2014,35 @@
         }
       }
     },
+    "/api/v1/finance/dashboard-summary": {
+      "get": {
+        "tags": [
+          "Finance"
+        ],
+        "summary": "Get Dashboard Summary Route",
+        "description": "Return the backend-owned command-center snapshot.",
+        "operationId": "get_dashboard_summary_route_api_v1_finance_dashboard_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Dashboard Summary Route Api V1 Finance Dashboard Summary Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/finance/ticket-debts": {
       "get": {
         "tags": [

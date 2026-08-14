@@ -924,31 +924,80 @@ export default {
   },
   dashboard: {
     summary: {
-      eyebrow: "Financial overview",
-      title: "Revenue, profit, and receivables in one current snapshot.",
+      eyebrow: "Shift · receivables and tickets",
+      title: "Operations overview",
       description:
-        "This view combines customer ledger balances with confirmed tickets to form the first Phase 5 finance summary slice.",
+        "See who needs attention, where the money stands, and what to do next.",
       primaryAriaLabel: "Primary financial summary metrics",
       secondaryAriaLabel: "Secondary financial summary metrics",
       analyticsAriaLabel: "Revenue chart and top debtors",
+      operationsAriaLabel: "Recent activity and notable receivables",
       unavailableTitle: "Financial overview unavailable",
       unavailableDescription:
-        "We could not read customers or tickets right now. Please try again once the API is available.",
+        "We could not read the operations snapshot. Please try again when the API is available.",
+      scope: {
+        current: "Current scope",
+        label: "Data scope",
+        allData: "All data",
+        fromDate: "From {date}",
+      },
+      checksum: {
+        ariaLabel: "Ledger checksum and data scope",
+        label: "Ledger checksum",
+        identifier: "BB / OPS / 01",
+        confirmedTickets: "confirmed tickets",
+        ticketSales: "ticket sales value",
+        trueIncome: "true income",
+        scope: "Scope",
+      },
+      financial: {
+        title: "Current finances",
+        source: "Metrics from confirmed tickets",
+        ticketSales: {
+          label: "Ticket sales value",
+          detail: "Total selling price of confirmed tickets.",
+        },
+        trueIncome: {
+          label: "True income",
+          detail: "Based on the ticket true-income formula.",
+        },
+        incomeRate: {
+          label: "Income rate",
+          detail: "True income over ticket sales value.",
+        },
+        confirmedTickets: {
+          label: "Confirmed tickets",
+          detail: "One ticket is one business event.",
+        },
+        receivables: {
+          label: "Receivables",
+          detail: "customers have an outstanding balance.",
+        },
+        heldCredit: {
+          label: "Credit / deposit held",
+          detail: "customers have a negative balance.",
+        },
+      },
       commandCenter: {
         title: "Today command center",
         description:
           "Track receivables, tickets, payments, and the next work that needs attention.",
         updatedAt: "Updated",
+        priorityAriaLabel: "Needs attention and work shortcuts",
+        queueEyebrow: "Work queue · 3 flows",
+        queueOrder: "Ordered by next action",
         needsAction: "Needs action",
         openQueue: "Open queue",
         noQueue: "Clear",
+        review: "Review",
+        clear: "Balanced",
         allClear: {
           title: "No work needs attention",
           description:
             "The main queues are clear; continue ticket entry or reconciliation when new data arrives.",
         },
         queues: {
-          receivables: "Customers with receivables",
+          receivables: "Receivables",
           heldCredit: "Credit / deposit held",
           draftTickets: "Draft tickets to review",
         },
@@ -957,9 +1006,17 @@ export default {
           heldCredit: "Track overpayments, deposits, or balances that may need refunding or offsetting.",
           draftTickets: "Review draft tickets before confirming them and recording ledger debt.",
         },
+        queueUnits: {
+          customers: "customers",
+          balances: "balances",
+          tickets: "tickets",
+        },
         shortcuts: {
           title: "Work shortcuts",
-          customers: "Open customers",
+          eyebrow: "Common actions",
+          manualDebt: "Record receivable",
+          manualDebtDescription: "Record a ticket and receivable manually.",
+          customers: "Customers",
           customersDescription: "Review customer ledgers and record payments.",
           ticket: "Record ticket",
           ticketDescription: "Create a ticket and debt entry from confirmed data.",
@@ -971,9 +1028,13 @@ export default {
         recent: {
           eyebrow: "Latest",
           title: "Recent activity",
-          description: "The newest tickets and ledger transactions.",
+          description:
+            "Each row is one business event. System-created debt entries do not repeat their ticket.",
+          viewAll: "View all",
           columns: {
+            customer: "Customer",
             activity: "Activity",
+            reference: "Reference",
             amount: "Amount",
             time: "Time",
           },
@@ -995,14 +1056,14 @@ export default {
       },
       widgets: {
         revenue: {
-          label: "Total revenue",
+          label: "Ticket sales value",
           detail: "confirmed tickets in the system.",
           show: "Show revenue",
           hide: "Hide revenue",
         },
         profit: {
-          label: "Net profit",
-          detail: "average margin.",
+          label: "True income",
+          detail: "income rate over ticket sales value.",
         },
         receivables: {
           label: "Total receivables",
@@ -1043,7 +1104,7 @@ export default {
         },
         topDebtors: {
           eyebrow: "Who Owes Me",
-          title: "Top customers with outstanding debt",
+          title: "Notable receivables",
           description:
             "The 5 highest receivable balances based on total debit minus total credit.",
           columns: {

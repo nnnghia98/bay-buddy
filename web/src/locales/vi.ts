@@ -925,31 +925,80 @@ export default {
   },
   dashboard: {
     summary: {
-      eyebrow: "Tổng quan tài chính",
-      title: "Bức tranh doanh thu, lợi nhuận và công nợ từ sổ cái hiện tại.",
+      eyebrow: "Ca trực · công nợ và vé",
+      title: "Tổng quan điều hành",
       description:
-        "Tổng hợp này ghép số dư công nợ khách hàng với các vé đã xác nhận để tạo ra ảnh chụp nhanh cho giai đoạn đầu của Phase 5.",
+        "Biết ai cần xử lý, dòng tiền đang ở đâu và bước tiếp theo là gì.",
       primaryAriaLabel: "Nhóm chỉ số tài chính chính",
       secondaryAriaLabel: "Nhóm chỉ số tài chính bổ sung",
       analyticsAriaLabel: "Biểu đồ doanh thu và danh sách khách nợ nhiều nhất",
+      operationsAriaLabel: "Hoạt động gần đây và công nợ nổi bật",
       unavailableTitle: "Chưa tải được tổng quan tài chính",
       unavailableDescription:
-        "Không thể đọc dữ liệu khách hàng hoặc vé lúc này. Vui lòng thử lại sau khi kết nối API ổn định.",
+        "Không thể đọc ảnh chụp dữ liệu điều hành lúc này. Vui lòng thử lại khi kết nối API ổn định.",
+      scope: {
+        current: "Phạm vi hiện tại",
+        label: "Phạm vi dữ liệu",
+        allData: "Toàn bộ dữ liệu",
+        fromDate: "Từ {date}",
+      },
+      checksum: {
+        ariaLabel: "Đối soát sổ cái và phạm vi dữ liệu",
+        label: "Đối soát sổ cái",
+        identifier: "BB / OPS / 01",
+        confirmedTickets: "vé đã xác nhận",
+        ticketSales: "giá trị vé đã bán",
+        trueIncome: "thu nhập thực",
+        scope: "Phạm vi",
+      },
+      financial: {
+        title: "Tài chính hiện tại",
+        source: "Chỉ số từ vé đã xác nhận",
+        ticketSales: {
+          label: "Giá trị vé đã bán",
+          detail: "Tổng giá bán của vé đã xác nhận.",
+        },
+        trueIncome: {
+          label: "Thu nhập thực",
+          detail: "Theo công thức thu nhập thực của vé.",
+        },
+        incomeRate: {
+          label: "Tỷ lệ thu nhập",
+          detail: "Thu nhập thực trên giá trị vé đã bán.",
+        },
+        confirmedTickets: {
+          label: "Vé đã xác nhận",
+          detail: "Một vé là một sự kiện kinh doanh.",
+        },
+        receivables: {
+          label: "Công nợ phải thu",
+          detail: "khách hàng còn công nợ.",
+        },
+        heldCredit: {
+          label: "Tiền dư / Đặt cọc",
+          detail: "khách hàng đang có số dư âm.",
+        },
+      },
       commandCenter: {
         title: "Trung tâm vận hành hôm nay",
         description:
           "Theo dõi công nợ, vé, thanh toán và các việc cần xử lý tiếp theo.",
         updatedAt: "Cập nhật",
+        priorityAriaLabel: "Cần xử lý và lối tắt công việc",
+        queueEyebrow: "Hàng chờ công việc · 3 luồng",
+        queueOrder: "Sắp theo bước tiếp theo",
         needsAction: "Cần xử lý",
         openQueue: "Mở hàng chờ",
         noQueue: "Đã ổn",
+        review: "Cần xem",
+        clear: "Đã cân",
         allClear: {
           title: "Chưa có việc cần xử lý",
           description:
             "Các hàng chờ chính đang sạch; có thể tiếp tục nhập vé hoặc đối soát khi có dữ liệu mới.",
         },
         queues: {
-          receivables: "Khách còn công nợ",
+          receivables: "Công nợ phải thu",
           heldCredit: "Tiền dư / Đặt cọc",
           draftTickets: "Vé nháp cần kiểm tra",
         },
@@ -958,9 +1007,17 @@ export default {
           heldCredit: "Theo dõi khoản khách đã trả dư, đặt cọc hoặc cần hoàn/khấu trừ.",
           draftTickets: "Kiểm tra vé nháp trước khi xác nhận và ghi nhận công nợ.",
         },
+        queueUnits: {
+          customers: "khách hàng",
+          balances: "khoản",
+          tickets: "vé",
+        },
         shortcuts: {
           title: "Lối tắt công việc",
-          customers: "Mở khách hàng",
+          eyebrow: "Thao tác thường dùng",
+          manualDebt: "Nhập công nợ",
+          manualDebtDescription: "Ghi nhận vé và công nợ thủ công.",
+          customers: "Khách hàng",
           customersDescription: "Tra cứu sổ công nợ và ghi nhận thanh toán.",
           ticket: "Nhập vé",
           ticketDescription: "Tạo vé và phát sinh công nợ từ dữ liệu đã xác nhận.",
@@ -972,9 +1029,13 @@ export default {
         recent: {
           eyebrow: "Mới nhất",
           title: "Hoạt động gần đây",
-          description: "Vé và giao dịch mới nhất trong hệ thống.",
+          description:
+            "Mỗi dòng là một sự kiện kinh doanh. Giao dịch công nợ do hệ thống tự sinh không lặp lại vé.",
+          viewAll: "Xem toàn bộ",
           columns: {
+            customer: "Khách hàng",
             activity: "Hoạt động",
+            reference: "Tham chiếu",
             amount: "Số tiền",
             time: "Thời gian",
           },
@@ -996,14 +1057,14 @@ export default {
       },
       widgets: {
         revenue: {
-          label: "Tổng doanh thu",
+          label: "Giá trị vé đã bán",
           detail: "vé đã xác nhận trong hệ thống.",
           show: "Hiện doanh thu",
           hide: "Ẩn doanh thu",
         },
         profit: {
-          label: "Lợi nhuận ròng",
-          detail: "biên lợi nhuận bình quân.",
+          label: "Thu nhập thực",
+          detail: "tỷ lệ thu nhập trên giá trị vé đã bán.",
         },
         receivables: {
           label: "Công nợ phải thu",
@@ -1044,7 +1105,7 @@ export default {
         },
         topDebtors: {
           eyebrow: "Khách còn nợ",
-          title: "Top khách hàng còn nợ nhiều nhất",
+          title: "Công nợ nổi bật",
           description:
             "5 khách có số dư công nợ cao nhất dựa trên chênh lệch tổng phát sinh nợ và thanh toán.",
           columns: {
