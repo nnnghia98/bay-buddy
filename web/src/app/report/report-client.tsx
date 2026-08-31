@@ -69,6 +69,7 @@ type ColumnKey =
   | "thf_price"
   | "web_price"
   | "insurance_price"
+  | "add_in_price"
   | "true_income"
   | "payment_method"
   | "note"
@@ -100,16 +101,6 @@ const columns: ColumnDefinition[] = [
   { key: "flight_date", getValue: (row) => row.flight_date ?? "" },
   { key: "ticket_status", getValue: (row) => row.ticket_status ?? "" },
   {
-    key: "selling_price",
-    align: "right",
-    getValue: (row) => row.ticket_selling_price.toString(),
-  },
-  {
-    key: "discount",
-    align: "right",
-    getValue: (row) => row.ticket_discount.toString(),
-  },
-  {
     key: "ev_price",
     align: "right",
     getValue: (row) => row.ticket_ev_price.toString(),
@@ -133,6 +124,21 @@ const columns: ColumnDefinition[] = [
     key: "insurance_price",
     align: "right",
     getValue: (row) => row.ticket_insurance_price.toString(),
+  },
+  {
+    key: "add_in_price",
+    align: "right",
+    getValue: (row) => row.ticket_add_in_price.toString(),
+  },
+  {
+    key: "discount",
+    align: "right",
+    getValue: (row) => row.ticket_discount.toString(),
+  },
+  {
+    key: "selling_price",
+    align: "right",
+    getValue: (row) => row.ticket_selling_price.toString(),
   },
   {
     key: "true_income",
@@ -166,13 +172,14 @@ const fullColumnKeys: ColumnKey[] = [
   "route",
   "flight_date",
   "ticket_status",
-  "selling_price",
-  "discount",
   "ev_price",
   "ast_price",
   "thf_price",
   "web_price",
   "insurance_price",
+  "add_in_price",
+  "discount",
+  "selling_price",
   "true_income",
   "payment_method",
   "note",
@@ -186,6 +193,7 @@ const moneyColumnKeys = new Set<ColumnKey>([
   "thf_price",
   "web_price",
   "insurance_price",
+  "add_in_price",
   "true_income",
 ])
 

@@ -242,6 +242,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/finance/dashboard-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Dashboard Summary Route
+         * @description Return the backend-owned command-center snapshot.
+         */
+        get: operations["get_dashboard_summary_route_api_v1_finance_dashboard_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/finance/invoices": {
         parameters: {
             query?: never;
@@ -660,7 +680,7 @@ export interface paths {
         put?: never;
         /**
          * Confirm & save an AI-parsed ticket
-         * @description Accepts the user-reviewed ticket data from the frontend. Automatically resolves or creates the customer record by name, saves the ticket as CONFIRMED, creates a CHARGE transaction for the debt, optionally records a linked customer payment, and updates the customer balance. All changes are committed atomically. Business rule: true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price) (BUSINESS.md §2).
+         * @description Accepts the user-reviewed ticket data from the frontend. Automatically resolves or creates the customer record by name, saves the ticket as CONFIRMED, creates a CHARGE transaction for the debt, optionally records a linked customer payment, and updates the customer balance. All changes are committed atomically. Business rule: true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price) (BUSINESS.md §2).
          */
         post: operations["confirm_ticket_api_v1_tickets_confirm_post"];
         delete?: never;
@@ -1387,11 +1407,17 @@ export interface components {
          *         create a new one if no match is found.
          *
          *     Pricing (docs/BUSINESS.md §2):
-         *         true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price)
+         *         true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price)
          *         If `selling_price` is omitted, the service derives it from service_fee.
          *         If `true_income` is supplied, it must match the computed income.
          */
         TicketConfirmPayload: {
+            /**
+             * Add In Price
+             * @description Other ticket cost (giá khác). Empty values count as 0.
+             * @default 0
+             */
+            add_in_price: number;
             /** @description Carrier code: VNA | VJ | QH | VU. */
             airline?: components["schemas"]["Airline"] | null;
             /**
@@ -1525,7 +1551,7 @@ export interface components {
             ticket_number?: string | null;
             /**
              * True Income
-             * @description Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price).
+             * @description Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price).
              */
             true_income?: number | null;
             /**
@@ -1540,6 +1566,12 @@ export interface components {
          * @description Payload accepted by POST /tickets (after AI-extraction confirmation).
          */
         TicketCreate: {
+            /**
+             * Add In Price
+             * @description Other ticket cost (giá khác). Empty values count as 0.
+             * @default 0
+             */
+            add_in_price: number;
             /** @description Carrier code: VNA (Vietnam Airlines), VJ (Vietjet), QH (Bamboo), VU (Vietravel). */
             airline?: components["schemas"]["Airline"] | null;
             /**
@@ -1655,7 +1687,7 @@ export interface components {
             ticket_number?: string | null;
             /**
              * True Income
-             * @description Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price).
+             * @description Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price).
              * @default 0
              */
             true_income: number;
@@ -1726,6 +1758,8 @@ export interface components {
          * @description All fields optional for partial PATCH payloads.
          */
         TicketUpdate: {
+            /** Add In Price */
+            add_in_price?: number | null;
             airline?: components["schemas"]["Airline"] | null;
             /** Arrival Code */
             arrival_code?: string | null;
@@ -3217,6 +3251,28 @@ export interface operations {
             };
         };
     };
+    get_dashboard_summary_route_api_v1_finance_dashboard_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
     list_invoices_route_api_v1_finance_invoices_get: {
         parameters: {
             query: {
@@ -3532,6 +3588,7 @@ export interface operations {
     list_ticket_debt_rows_route_api_v1_finance_ticket_debts_get: {
         parameters: {
             query?: {
+                add_in_price?: ("zero" | "positive") | null;
                 all?: boolean;
                 ast_price?: ("zero" | "positive") | null;
                 booked_at?: string | null;

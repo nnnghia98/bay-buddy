@@ -124,6 +124,7 @@ export function ManualDebtFilterBar({
     thf_price: t("manualDebts.table.columns.thfPrice"),
     web_price: t("manualDebts.table.columns.webPrice"),
     insurance_price: t("manualDebts.table.columns.insurancePrice"),
+    add_in_price: t("manualDebts.table.columns.addInPrice"),
     selling_price: t("manualDebts.table.columns.sellingPrice"),
   }
 

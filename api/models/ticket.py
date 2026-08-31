@@ -2,10 +2,10 @@
 Ticket model – represents a booked flight ticket.
 
 Schema reference: docs/ARCHITECT.md § Model: Ticket
-Dictionary:       docs/DICTIONARY.md  (pnr, net_price, ev_price, ast_price, thf_price, web_price, insurance_price, selling_price, discount, true_income, itinerary)
+Dictionary:       docs/DICTIONARY.md  (pnr, net_price, ev_price, ast_price, thf_price, web_price, insurance_price, add_in_price, selling_price, discount, true_income, itinerary)
 Agent output:     docs/AGENT_PARSER.md (fields produced by the AI extraction step)
 
-True income per ticket = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price)
+True income per ticket = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price)
 """
 
 import uuid
@@ -132,6 +132,11 @@ class TicketBase(SQLModel):
         ge=0,
         description="Insurance price (giá bảo hiểm). Empty values count as 0.",
     )
+    add_in_price: float = Field(
+        default=0.0,
+        ge=0,
+        description="Other ticket cost (giá khác). Empty values count as 0.",
+    )
     # Giá bán – price invoiced to the customer.
     selling_price: float = Field(
         ge=0,
@@ -144,7 +149,7 @@ class TicketBase(SQLModel):
     )
     true_income: float = Field(
         default=0.0,
-        description="Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price).",
+        description="Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price).",
     )
 
     status: TicketStatus = Field(
@@ -212,6 +217,7 @@ class Ticket(TicketBase, table=True):
             + self.thf_price
             + self.web_price
             + self.insurance_price
+            + self.add_in_price
         )
 
 
@@ -261,6 +267,7 @@ class TicketUpdate(SQLModel):
     thf_price: Optional[float] = Field(default=None, ge=0)
     web_price: Optional[float] = Field(default=None, ge=0)
     insurance_price: Optional[float] = Field(default=None, ge=0)
+    add_in_price: Optional[float] = Field(default=None, ge=0)
     service_fee: Optional[float] = Field(
         default=None,
         ge=0,

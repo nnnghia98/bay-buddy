@@ -67,6 +67,7 @@ async def list_ticket_debt_rows_route(
     thf_price: TicketDebtMoneyFilter | None = Query(default=None),
     web_price: TicketDebtMoneyFilter | None = Query(default=None),
     insurance_price: TicketDebtMoneyFilter | None = Query(default=None),
+    add_in_price: TicketDebtMoneyFilter | None = Query(default=None),
     selling_price: TicketDebtMoneyFilter | None = Query(default=None),
     export_all: bool = Query(default=False, alias="all"),
 ):
@@ -88,6 +89,7 @@ async def list_ticket_debt_rows_route(
                 thf_price=thf_price,
                 web_price=web_price,
                 insurance_price=insurance_price,
+                add_in_price=add_in_price,
                 selling_price=selling_price,
             )
         )
@@ -105,6 +107,7 @@ async def list_ticket_debt_rows_route(
         or thf_price is not None
         or web_price is not None
         or insurance_price is not None
+        or add_in_price is not None
         or selling_price is not None
     ):
         page_data = list_ticket_debt_page(
@@ -122,6 +125,7 @@ async def list_ticket_debt_rows_route(
             thf_price=thf_price,
             web_price=web_price,
             insurance_price=insurance_price,
+            add_in_price=add_in_price,
             selling_price=selling_price,
         )
         return success_response(page_data)

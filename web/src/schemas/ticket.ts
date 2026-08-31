@@ -18,7 +18,8 @@
  *   thf_price     → Giá Thành Hoàng / THF (host net price from Thành Hoàng)
  *   web_price     → Giá WEB (host net price from WEB)
  *   insurance_price → Bảo hiểm (insurance price)
- *   true_income   → Thu nhập thực (selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price))
+ *   add_in_price  → Khác (other ticket cost)
+ *   true_income   → Thu nhập thực (selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price))
  *   service_fee   → Phí dịch vụ (computed: selling_price - net_price)
  *
  * Agent parser output (docs/AGENT_PARSER.md) feeds directly into TicketCreateSchema.
@@ -118,6 +119,11 @@ const TicketBaseSchema = z.object({
     .min(0, "Insurance price (bảo hiểm) must be ≥ 0.")
     .default(0),
 
+  add_in_price: z
+    .number({ message: "Other price (khác) is required." })
+    .min(0, "Other price (khác) must be ≥ 0.")
+    .default(0),
+
   selling_price: z
     .number({ message: "Selling price (giá bán) is required." })
     .min(0, "Selling price (giá bán) must be ≥ 0."),
@@ -162,11 +168,12 @@ export const TicketCreateSchema = TicketBaseSchema.extend({
             data.ast_price +
             data.thf_price +
             data.web_price +
-            data.insurance_price)),
+            data.insurance_price +
+            data.add_in_price)),
     ) <= 1,
   {
     message:
-      "True income (thu nhập thực) must equal selling price + airline discount - EV/AST/THF/WEB/insurance prices.",
+      "True income (thu nhập thực) must equal selling price + airline discount - EV/AST/THF/WEB/insurance/other costs.",
     path: ["true_income"],
   }
 );
@@ -228,6 +235,7 @@ export const TicketUpdateSchema = z.object({
   thf_price: z.number().min(0).optional(),
   web_price: z.number().min(0).optional(),
   insurance_price: z.number().min(0).optional(),
+  add_in_price: z.number().min(0).optional(),
   selling_price: z.number().min(0).optional(),
   discount: z.number().min(0).optional(),
   true_income: z.number().optional(),
@@ -254,8 +262,9 @@ export const computeTrueIncome = (
   ast_price = 0,
   thf_price = 0,
   web_price = 0,
-  insurance_price = 0
+  insurance_price = 0,
+  add_in_price = 0,
 ): number =>
   selling_price +
   discount -
-  (ev_price + ast_price + thf_price + web_price + insurance_price);
+  (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price);

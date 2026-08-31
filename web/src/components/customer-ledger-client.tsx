@@ -629,16 +629,6 @@ function LedgerRecordCorrectionDialog({
 
               <div className={styles.priceGrid}>
                 <div className={patterns.fieldStack}>
-                  <Label htmlFor={`net-price-${entry.id}`}>{t("customers.ledger.corrections.fields.netPrice")}</Label>
-                  <Input
-                    id={`net-price-${entry.id}`}
-                    name="net_price"
-                    type="number"
-                    min="0"
-                    defaultValue={ticket.net_price}
-                  />
-                </div>
-                <div className={patterns.fieldStack}>
                   <Label htmlFor={`ev-price-${entry.id}`}>{t("customers.ledger.corrections.fields.evPrice")}</Label>
                   <Input
                     id={`ev-price-${entry.id}`}
@@ -689,13 +679,15 @@ function LedgerRecordCorrectionDialog({
                   />
                 </div>
                 <div className={patterns.fieldStack}>
-                  <Label htmlFor={`selling-price-${entry.id}`}>{t("customers.ledger.corrections.fields.sellingPrice")}</Label>
+                  <Label htmlFor={`add-in-price-${entry.id}`}>
+                    {t("customers.ledger.corrections.fields.addInPrice")}
+                  </Label>
                   <Input
-                    id={`selling-price-${entry.id}`}
-                    name="selling_price"
+                    id={`add-in-price-${entry.id}`}
+                    name="add_in_price"
                     type="number"
                     min="0"
-                    defaultValue={ticket.selling_price}
+                    defaultValue={ticket.add_in_price}
                   />
                 </div>
                 <div className={patterns.fieldStack}>
@@ -706,6 +698,26 @@ function LedgerRecordCorrectionDialog({
                     type="number"
                     min="0"
                     defaultValue={ticket.discount}
+                  />
+                </div>
+                <div className={patterns.fieldStack}>
+                  <Label htmlFor={`net-price-${entry.id}`}>{t("customers.ledger.corrections.fields.netPrice")}</Label>
+                  <Input
+                    id={`net-price-${entry.id}`}
+                    name="net_price"
+                    type="number"
+                    min="0"
+                    defaultValue={ticket.net_price}
+                  />
+                </div>
+                <div className={patterns.fieldStack}>
+                  <Label htmlFor={`selling-price-${entry.id}`}>{t("customers.ledger.corrections.fields.sellingPrice")}</Label>
+                  <Input
+                    id={`selling-price-${entry.id}`}
+                    name="selling_price"
+                    type="number"
+                    min="0"
+                    defaultValue={ticket.selling_price}
                   />
                 </div>
               </div>

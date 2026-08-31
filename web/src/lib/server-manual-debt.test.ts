@@ -61,6 +61,7 @@ function createFormData({
   formData.set("thf_price", "0")
   formData.set("web_price", "0")
   formData.set("insurance_price", "0")
+  formData.set("add_in_price", "25000")
   formData.set("selling_price", "1200000")
   formData.set("discount", "0")
   formData.set("payment_amount", paymentAmount)
@@ -110,6 +111,8 @@ describe("createManualDebtFromFormData", () => {
       occurred_at: "2026-07-28T00:00:00.000Z",
     })
     expect(payload.payment_method).toBe("THF")
+    expect(payload.add_in_price).toBe(25000)
+    expect(payload.true_income).toBe(1175000)
     expect(result).toMatchObject({
       status: "success",
       message: "Debt and payment saved",

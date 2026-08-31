@@ -86,6 +86,7 @@ const ticketSchema = z.object({
   route: optionalTextField,
   totalPrice: moneyField,
   sellingPrice: moneyField,
+  addInPrice: moneyField,
   discount: moneyField,
   trueIncome: z.preprocess((val) => Number(val), z.number()),
 }).refine(
@@ -95,9 +96,9 @@ const ticketSchema = z.object({
     path: ["sellingPrice"],
   },
 ).refine(
-  (data) => Math.abs(data.trueIncome - (data.sellingPrice + data.discount - data.totalPrice)) <= 1,
+  (data) => Math.abs(data.trueIncome - (data.sellingPrice + data.discount - data.totalPrice - data.addInPrice)) <= 1,
   {
-    message: "Thu nhập thực phải bằng Giá bán + Chiết khấu hãng - Giá gốc",
+    message: "Thu nhập thực phải bằng Giá bán + Chiết khấu hãng - Giá gốc - Khác",
     path: ["trueIncome"],
   },
 );
@@ -116,6 +117,7 @@ type TicketFormValues = {
   route?: string;
   totalPrice: number;
   sellingPrice: number;
+  addInPrice: number;
   discount: number;
   trueIncome: number;
 };
@@ -190,6 +192,7 @@ async function saveTicket(data: TicketFormValues) {
     insurance_price: 0,
     service_fee: data.sellingPrice - data.totalPrice,
     selling_price: data.sellingPrice,
+    add_in_price: data.addInPrice,
     discount: data.discount,
     true_income: data.trueIncome,
   };
@@ -237,6 +240,7 @@ export default function CaptureTicketPage() {
       route: "",
       totalPrice: 0,
       sellingPrice: 0,
+      addInPrice: 0,
       discount: 0,
       trueIncome: 0,
     },
@@ -265,6 +269,10 @@ export default function CaptureTicketPage() {
   const watchedDiscount = useWatch({
     control: form.control,
     name: "discount",
+  });
+  const watchedAddInPrice = useWatch({
+    control: form.control,
+    name: "addInPrice",
   });
   const watchedTrueIncome = useWatch({
     control: form.control,
@@ -306,12 +314,20 @@ export default function CaptureTicketPage() {
     const netPrice = Number(watchedNetPrice) || 0;
     const sellingPrice = Number(watchedSellingPrice) || 0;
     const discount = Number(watchedDiscount) || 0;
+    const addInPrice = Number(watchedAddInPrice) || 0;
 
-    form.setValue("trueIncome", sellingPrice + discount - netPrice, {
+    form.setValue("trueIncome", sellingPrice + discount - netPrice - addInPrice, {
       shouldDirty: true,
       shouldValidate: true,
     });
-  }, [form, isTrueIncomeEditable, watchedDiscount, watchedNetPrice, watchedSellingPrice]);
+  }, [
+    form,
+    isTrueIncomeEditable,
+    watchedAddInPrice,
+    watchedDiscount,
+    watchedNetPrice,
+    watchedSellingPrice,
+  ]);
 
   const handleToggleTrueIncomeEdit = () => {
     setIsTrueIncomeEditable((current) => {
@@ -319,11 +335,16 @@ export default function CaptureTicketPage() {
         const netPrice = Number(form.getValues("totalPrice")) || 0;
         const sellingPrice = Number(form.getValues("sellingPrice")) || 0;
         const discount = Number(form.getValues("discount")) || 0;
+        const addInPrice = Number(form.getValues("addInPrice")) || 0;
 
-        form.setValue("trueIncome", sellingPrice + discount - netPrice, {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
+        form.setValue(
+          "trueIncome",
+          sellingPrice + discount - netPrice - addInPrice,
+          {
+            shouldDirty: true,
+            shouldValidate: true,
+          },
+        );
       }
 
       return !current;
@@ -331,7 +352,7 @@ export default function CaptureTicketPage() {
   };
 
   const handleMoneyChange = (
-    field: "totalPrice" | "sellingPrice" | "discount",
+    field: "totalPrice" | "addInPrice" | "sellingPrice" | "discount",
     value: string,
   ) => {
     form.setValue(field, parseVndInput(value), {
@@ -348,12 +369,13 @@ export default function CaptureTicketPage() {
     const trueIncome = parseVndInput(event.target.value, true);
     const netPrice = Number(form.getValues("totalPrice")) || 0;
     const discount = Number(form.getValues("discount")) || 0;
+    const addInPrice = Number(form.getValues("addInPrice")) || 0;
 
     form.setValue("trueIncome", trueIncome, {
       shouldDirty: true,
       shouldValidate: true,
     });
-    form.setValue("sellingPrice", trueIncome + netPrice - discount, {
+    form.setValue("sellingPrice", trueIncome + netPrice + addInPrice - discount, {
       shouldDirty: true,
       shouldValidate: true,
     });
@@ -446,6 +468,7 @@ export default function CaptureTicketPage() {
       form.setValue("flightDate", dateStr);
 
       form.setValue("totalPrice", data.net_price);
+      form.setValue("addInPrice", 0);
       form.setValue("sellingPrice", data.net_price);
       form.setValue("discount", 0);
       form.setValue("trueIncome", 0);
@@ -712,32 +735,35 @@ export default function CaptureTicketPage() {
                     </div>
 
                     <div className={patterns.fieldStack}>
-                      <Label htmlFor="sellingPrice" className={patterns.sectionTitle}>Giá bán <span className={styles.required}>*</span></Label>
-                      <div className={patterns.compactStack}>
-                        <div className={styles.moneyField}>
+                      <Label
+                        htmlFor="addInPrice"
+                        className={patterns.sectionTitle}
+                      >
+                        Khác
+                      </Label>
+                      <div className={styles.moneyField}>
                         <Input
-                          id="sellingPrice"
+                          id="addInPrice"
                           type="text"
                           inputMode="numeric"
                           placeholder="0"
                           className={styles.moneyInput}
-                          value={formatVndInput(Number(watchedSellingPrice) || 0)}
-                          onChange={(event) => handleMoneyChange("sellingPrice", event.target.value)}
+                          value={formatVndInput(Number(watchedAddInPrice) || 0)}
+                          onChange={(event) =>
+                            handleMoneyChange("addInPrice", event.target.value)
+                          }
                         />
-                          <span className={styles.currencySuffix}>
-                            VND
-                          </span>
-                        </div>
-                        {form.formState.errors.sellingPrice && (
-                          <p className={patterns.errorSupportingText}>
-                            {form.formState.errors.sellingPrice.message}
-                          </p>
-                        )}
+                        <span className={styles.currencySuffix}>VND</span>
                       </div>
                     </div>
 
                     <div className={patterns.fieldStack}>
-                      <Label htmlFor="discount" className={patterns.sectionTitle}>Chiết khấu hãng</Label>
+                      <Label
+                        htmlFor="discount"
+                        className={patterns.sectionTitle}
+                      >
+                        Chiết khấu hãng
+                      </Label>
                       <div className={patterns.compactStack}>
                         <div className={styles.moneyField}>
                         <Input
@@ -747,7 +773,9 @@ export default function CaptureTicketPage() {
                           placeholder="0"
                           className={styles.moneyInput}
                           value={formatVndInput(Number(watchedDiscount) || 0)}
-                          onChange={(event) => handleMoneyChange("discount", event.target.value)}
+                          onChange={(event) =>
+                            handleMoneyChange("discount", event.target.value)
+                          }
                         />
                           <span className={styles.currencySuffix}>
                             VND
@@ -756,6 +784,38 @@ export default function CaptureTicketPage() {
                         {form.formState.errors.discount && (
                           <p className={patterns.errorSupportingText}>
                             {form.formState.errors.discount.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className={patterns.fieldStack}>
+                      <Label
+                        htmlFor="sellingPrice"
+                        className={patterns.sectionTitle}
+                      >
+                        Giá bán <span className={styles.required}>*</span>
+                      </Label>
+                      <div className={patterns.compactStack}>
+                        <div className={styles.moneyField}>
+                        <Input
+                          id="sellingPrice"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0"
+                          className={styles.moneyInput}
+                          value={formatVndInput(Number(watchedSellingPrice) || 0)}
+                          onChange={(event) =>
+                            handleMoneyChange("sellingPrice", event.target.value)
+                          }
+                        />
+                          <span className={styles.currencySuffix}>
+                            VND
+                          </span>
+                        </div>
+                        {form.formState.errors.sellingPrice && (
+                          <p className={patterns.errorSupportingText}>
+                            {form.formState.errors.sellingPrice.message}
                           </p>
                         )}
                       </div>

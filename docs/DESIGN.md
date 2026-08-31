@@ -240,6 +240,15 @@ show a clear in-flight label.
 
 - Use Astryx form components or the shared `Input`, `Textarea`, `Label`, and
   token-based select style.
+- Ticket pricing forms and full pricing tables keep this order: `EV → AST → THF
+  → WEB → insurance → Khác (add_in_price) → airline discount (when applicable)
+  → net price correction → Giá bán (selling_price) → true income`. Giá bán is
+  always immediately before true income. `add_in_price` is a non-negative
+  other-ticket cost and defaults to `0`.
+- Manual-debt pricing section titles state the active currency. The current
+  currency is `VNĐ` (`VND` in English). Values inside that section use grouped
+  digits without repeating the currency suffix; currency formatting elsewhere
+  remains unchanged.
 - Labels are required; placeholders are examples, not labels.
 - Required fields must use the field wrapper's `isRequired` state, a visible
   semantic marker, and native input validation. Optional fields must not show a

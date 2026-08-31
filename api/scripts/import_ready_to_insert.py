@@ -140,9 +140,10 @@ def run_import(input_path: Path) -> dict[str, int]:
 
                 net_price = float(pricing["system_price_k"])
                 selling_price = float(pricing["customer_paid_n"])
+                add_in_price = float(pricing.get("add_in_price", 0) or 0)
                 discount_raw = float(pricing["discount_m"])
                 discount = abs(discount_raw) if discount_raw < 0 else 0.0
-                true_income = selling_price + discount - net_price
+                true_income = selling_price + discount - net_price - add_in_price
 
                 ticket = Ticket(
                     pnr=(ticket_data.get("pnr") or "UNKNOWN")[:6].upper(),
@@ -158,6 +159,7 @@ def run_import(input_path: Path) -> dict[str, int]:
                     itinerary=itinerary,
                     flight_date=occurred_at,
                     net_price=net_price,
+                    add_in_price=add_in_price,
                     selling_price=selling_price,
                     discount=discount,
                     true_income=true_income,

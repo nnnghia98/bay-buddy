@@ -38,6 +38,7 @@ export type LedgerReportRow = {
   ticket_thf_price: number
   ticket_web_price: number
   ticket_insurance_price: number
+  ticket_add_in_price: number
   ticket_true_income: number
   airline: string | null
   route: string | null
@@ -87,6 +88,7 @@ const ticketDebtReportRowSchema = z.object({
   ticket_thf_price: z.number(),
   ticket_web_price: z.number(),
   ticket_insurance_price: z.number(),
+  ticket_add_in_price: z.number(),
   ticket_true_income: z.number(),
   airline: z.string().nullable(),
   route: z.string().nullable(),
@@ -265,6 +267,7 @@ export function mapLedgerToReportRows(
       ticket_thf_price: ticket?.thf_price ?? 0,
       ticket_web_price: ticket?.web_price ?? 0,
       ticket_insurance_price: ticket?.insurance_price ?? 0,
+      ticket_add_in_price: ticket?.add_in_price ?? 0,
       ticket_true_income: ticket?.true_income ?? 0,
       airline: ticket?.airline ?? null,
       route: getTicketRoute(ticket),

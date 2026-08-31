@@ -384,9 +384,10 @@ def test_ticket_debt_structured_filters_apply_before_pagination_summary_and_expo
             "thf_price": 300,
             "web_price": 400,
             "insurance_price": 500,
+            "add_in_price": 600,
             "selling_price": 1200000,
             "discount": 0,
-            "true_income": 1198500,
+            "true_income": 1197900,
             "payment_method": "Chuyển khoản",
             "payment": {
                 "amount": 100000,
@@ -419,6 +420,7 @@ def test_ticket_debt_structured_filters_apply_before_pagination_summary_and_expo
         "thf_price": "positive",
         "web_price": "positive",
         "insurance_price": "positive",
+        "add_in_price": "positive",
         "selling_price": "positive",
     }
     paged_response = test_client.get(
@@ -442,6 +444,7 @@ def test_ticket_debt_structured_filters_apply_before_pagination_summary_and_expo
     assert [row["ticket_id"] for row in export_response.json()["data"]] == [
         paid_ticket_id
     ]
+    assert export_response.json()["data"][0]["ticket_add_in_price"] == 600
 
 
 def test_ticket_debt_filters_use_effective_payment_and_validate(
@@ -520,6 +523,7 @@ def test_ticket_debt_filters_use_effective_payment_and_validate(
             "thf_price": "zero",
             "web_price": "zero",
             "insurance_price": "zero",
+            "add_in_price": "zero",
         },
     )
     invalid_method_response = test_client.get(
@@ -838,9 +842,10 @@ def test_confirm_ticket_persists_host_prices_and_computes_income(
         "thf_price": 150000,
         "web_price": 50000,
         "insurance_price": 20000,
+        "add_in_price": 10000,
         "selling_price": 1900000,
         "discount": 50000,
-        "true_income": 230000,
+        "true_income": 220000,
     }
 
     response = test_client.post("/api/v1/tickets/confirm", json=payload)
@@ -852,7 +857,8 @@ def test_confirm_ticket_persists_host_prices_and_computes_income(
     assert data["ticket"]["thf_price"] == pytest.approx(150000)
     assert data["ticket"]["web_price"] == pytest.approx(50000)
     assert data["ticket"]["insurance_price"] == pytest.approx(20000)
-    assert data["ticket"]["true_income"] == pytest.approx(230000)
+    assert data["ticket"]["add_in_price"] == pytest.approx(10000)
+    assert data["ticket"]["true_income"] == pytest.approx(220000)
 
     with Session(test_engine) as session:
         ticket = session.exec(select(Ticket).where(Ticket.pnr == "THF123")).one()
@@ -862,7 +868,8 @@ def test_confirm_ticket_persists_host_prices_and_computes_income(
         assert ticket.thf_price == pytest.approx(150000)
         assert ticket.web_price == pytest.approx(50000)
         assert ticket.insurance_price == pytest.approx(20000)
-        assert ticket.true_income == pytest.approx(230000)
+        assert ticket.add_in_price == pytest.approx(10000)
+        assert ticket.true_income == pytest.approx(220000)
 
 
 def test_legacy_ticket_create_endpoint_is_retired(
@@ -1039,6 +1046,7 @@ def test_admin_ticket_correction_updates_debt_transaction_and_balance(
             "net_price": 1500000,
             "selling_price": 1800000,
             "discount": 50000,
+            "add_in_price": 25000,
         },
     )
 
@@ -1046,7 +1054,8 @@ def test_admin_ticket_correction_updates_debt_transaction_and_balance(
     payload = response.json()["data"]
     assert payload["ticket"]["pnr"] == "FIX123"
     assert payload["ticket"]["itinerary"] == "DAD-SGN"
-    assert payload["ticket"]["true_income"] == pytest.approx(350000.0)
+    assert payload["ticket"]["add_in_price"] == pytest.approx(25000.0)
+    assert payload["ticket"]["true_income"] == pytest.approx(325000.0)
     assert payload["customer_new_balance"] == pytest.approx(1800000.0)
 
     with Session(test_engine) as session:

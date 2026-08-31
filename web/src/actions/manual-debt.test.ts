@@ -73,6 +73,7 @@ function createValidFormData(): FormData {
   formData.set("thf_price", "0")
   formData.set("web_price", "0")
   formData.set("insurance_price", "100.000")
+  formData.set("add_in_price", "25.000")
   formData.set("true_income", "450.000")
   formData.set("true_income_override", "false")
   formData.set("payment_method", "Chuyển khoản")
@@ -103,6 +104,7 @@ describe("manual debt row update action", () => {
   it("returns field feedback for invalid drawer input", async () => {
     const formData = createValidFormData()
     formData.set("ticket_id", "not-a-ticket-id")
+    formData.set("add_in_price", "-1")
 
     const result = await updateManualDebtRowAction(undefined, formData)
 
@@ -111,6 +113,7 @@ describe("manual debt row update action", () => {
       message: "Invalid update",
       fieldErrors: {
         ticket_id: "Invalid ticket",
+        add_in_price: "Invalid amount",
       },
     })
   })
@@ -143,6 +146,8 @@ describe("manual debt row update action", () => {
       ticket_number: "7381234567890",
       itinerary: "HAN-SGN",
       net_price: 1_000_000,
+      add_in_price: 25_000,
+      true_income: 425_000,
       passengers: ["Nguyen Van A"],
     })
     expect(fetchMock).toHaveBeenNthCalledWith(

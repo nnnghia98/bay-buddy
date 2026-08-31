@@ -8,6 +8,7 @@ import { AUTH_TOKEN_COOKIE_KEY } from "@/lib/auth-token"
 import { buildApiUrl, getServerApiBaseUrl } from "@/lib/api-base"
 import { createManualDebtFromFormData } from "@/lib/server-manual-debt"
 import { getActionI18n } from "@/locales/server"
+import { computeTrueIncome } from "@/schemas/ticket"
 import {
   createManualDebtRowUpdateSchema,
   getManualDebtRowUpdateValidationMessages,
@@ -64,6 +65,7 @@ export async function updateManualDebtRowAction(
     thf_price: formData.get("thf_price"),
     web_price: formData.get("web_price"),
     insurance_price: formData.get("insurance_price"),
+    add_in_price: formData.get("add_in_price"),
     true_income: formData.get("true_income"),
     true_income_override: formData.get("true_income_override"),
     payment_method: formData.get("payment_method"),
@@ -105,6 +107,7 @@ export async function updateManualDebtRowAction(
         thf_price: flattenedErrors.thf_price?.[0],
         web_price: flattenedErrors.web_price?.[0],
         insurance_price: flattenedErrors.insurance_price?.[0],
+        add_in_price: flattenedErrors.add_in_price?.[0],
         true_income: flattenedErrors.true_income?.[0],
         true_income_override: flattenedErrors.true_income_override?.[0],
         payment_method: flattenedErrors.payment_method?.[0],
@@ -161,7 +164,18 @@ export async function updateManualDebtRowAction(
         ...values,
         flight_date: values.flight_date.toISOString(),
         booked_at: values.booked_at ? values.booked_at.toISOString() : null,
-        ...(true_income_override ? { true_income } : {}),
+        true_income: true_income_override
+          ? true_income
+          : computeTrueIncome(
+              values.selling_price,
+              values.discount,
+              values.ev_price,
+              values.ast_price,
+              values.thf_price,
+              values.web_price,
+              values.insurance_price,
+              values.add_in_price,
+            ),
       }),
       cache: "no-store",
     })

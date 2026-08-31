@@ -95,6 +95,7 @@ export async function createManualDebtFromFormData(
     thf_price: formData.get("thf_price"),
     web_price: formData.get("web_price"),
     insurance_price: formData.get("insurance_price"),
+    add_in_price: formData.get("add_in_price"),
     selling_price: formData.get("selling_price"),
     discount: formData.get("discount"),
     payment_amount: formData.get("payment_amount"),
@@ -173,6 +174,7 @@ export async function createManualDebtFromFormData(
       thf_price: values.thf_price,
       web_price: values.web_price,
       insurance_price: values.insurance_price,
+      add_in_price: values.add_in_price,
       selling_price: values.selling_price,
       discount: values.discount,
       true_income: computeTrueIncome(
@@ -183,6 +185,7 @@ export async function createManualDebtFromFormData(
         values.thf_price,
         values.web_price,
         values.insurance_price,
+        values.add_in_price,
       ),
       payment_method: values.payment_method ?? null,
       payment_occurred_at: chargePaymentOccurredAt,

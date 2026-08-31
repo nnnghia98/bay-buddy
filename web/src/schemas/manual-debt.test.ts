@@ -22,6 +22,7 @@ const validManualDebtInput = {
   thf_price: "0",
   web_price: "0",
   insurance_price: "0",
+  add_in_price: "25000",
   selling_price: "1200000",
   discount: "0",
   payment_amount: "",
@@ -93,6 +94,7 @@ describe("manualDebtFormSchema", () => {
       thf_price: "",
       web_price: "",
       insurance_price: "",
+      add_in_price: "",
       selling_price: "",
       discount: "",
     })
@@ -106,6 +108,7 @@ describe("manualDebtFormSchema", () => {
     expect(parsed.flight_date).toBeUndefined()
     expect(parsed.booked_at).toBeUndefined()
     expect(parsed.selling_price).toBe(0)
+    expect(parsed.add_in_price).toBe(0)
     expect(parsed.payment_amount).toBe(0)
     expect(parsed.payment_method).toBeUndefined()
     expect(parsed.payment_date).toBeUndefined()
@@ -217,6 +220,7 @@ describe("manualDebtRowUpdateSchema", () => {
     thf_price: "0",
     web_price: "0",
     insurance_price: "100.000",
+    add_in_price: "25.000",
     true_income: "-25.000",
     true_income_override: "true",
     payment_method: "Chuyển khoản",
@@ -240,6 +244,7 @@ describe("manualDebtRowUpdateSchema", () => {
     expect(parsed.flight_date).toBeInstanceOf(Date)
     expect(parsed.net_price).toBe(1_000_000)
     expect(parsed.selling_price).toBe(1_200_000)
+    expect(parsed.add_in_price).toBe(25_000)
     expect(parsed.true_income).toBe(-25_000)
     expect(parsed.payment_note).toBe("Da thanh toan")
   })

@@ -271,18 +271,6 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
 
         <div className={styles.priceGrid}>
           <div className={patterns.fieldStack}>
-            <Label htmlFor="ticket-detail-net-price">
-              {t("customers.ledger.corrections.fields.netPrice")}
-            </Label>
-            <Input
-              id="ticket-detail-net-price"
-              name="net_price"
-              type="number"
-              min="0"
-              defaultValue={ticket.net_price}
-            />
-          </div>
-          <div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-ev-price">
               {t("customers.ledger.corrections.fields.evPrice")}
             </Label>
@@ -343,15 +331,15 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
             />
           </div>
           <div className={patterns.fieldStack}>
-            <Label htmlFor="ticket-detail-selling-price">
-              {t("customers.ledger.corrections.fields.sellingPrice")}
+            <Label htmlFor="ticket-detail-add-in-price">
+              {t("customers.ledger.corrections.fields.addInPrice")}
             </Label>
             <Input
-              id="ticket-detail-selling-price"
-              name="selling_price"
+              id="ticket-detail-add-in-price"
+              name="add_in_price"
               type="number"
               min="0"
-              defaultValue={ticket.selling_price}
+              defaultValue={ticket.add_in_price}
             />
           </div>
           <div className={patterns.fieldStack}>
@@ -364,6 +352,30 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               type="number"
               min="0"
               defaultValue={ticket.discount}
+            />
+          </div>
+          <div className={patterns.fieldStack}>
+            <Label htmlFor="ticket-detail-net-price">
+              {t("customers.ledger.corrections.fields.netPrice")}
+            </Label>
+            <Input
+              id="ticket-detail-net-price"
+              name="net_price"
+              type="number"
+              min="0"
+              defaultValue={ticket.net_price}
+            />
+          </div>
+          <div className={patterns.fieldStack}>
+            <Label htmlFor="ticket-detail-selling-price">
+              {t("customers.ledger.corrections.fields.sellingPrice")}
+            </Label>
+            <Input
+              id="ticket-detail-selling-price"
+              name="selling_price"
+              type="number"
+              min="0"
+              defaultValue={ticket.selling_price}
             />
           </div>
         </div>
@@ -487,13 +499,14 @@ export function TicketDetailClient({
             <DetailItem label={t("tickets.detail.fields.airline")} value={ticket.airline ?? t("tickets.detail.emptyValue")} />
             <DetailItem label={t("tickets.detail.fields.departure")} value={`${ticket.departure_place ?? t("tickets.detail.emptyValue")} (${ticket.departure_code ?? "-"})`} />
             <DetailItem label={t("tickets.detail.fields.arrival")} value={`${ticket.arrival_place ?? t("tickets.detail.emptyValue")} (${ticket.arrival_code ?? "-"})`} />
-            <DetailItem label={t("tickets.detail.fields.netPrice")} value={formatCurrency(ticket.net_price)} />
             <DetailItem label={t("tickets.detail.fields.evPrice")} value={formatCurrency(ticket.ev_price)} />
             <DetailItem label={t("tickets.detail.fields.astPrice")} value={formatCurrency(ticket.ast_price)} />
             <DetailItem label={t("tickets.detail.fields.thfPrice")} value={formatCurrency(ticket.thf_price)} />
             <DetailItem label={t("tickets.detail.fields.webPrice")} value={formatCurrency(ticket.web_price)} />
             <DetailItem label={t("tickets.detail.fields.insurancePrice")} value={formatCurrency(ticket.insurance_price)} />
+            <DetailItem label={t("tickets.detail.fields.addInPrice")} value={formatCurrency(ticket.add_in_price)} />
             <DetailItem label={t("tickets.detail.fields.discount")} value={formatCurrency(ticket.discount)} />
+            <DetailItem label={t("tickets.detail.fields.netPrice")} value={formatCurrency(ticket.net_price)} />
             <DetailItem label={t("tickets.detail.fields.serviceFee")} value={formatCurrency(ticket.service_fee)} />
             <DetailItem label={t("tickets.detail.fields.updatedAt")} value={formatDateTime(ticket.updated_at)} />
           </div>

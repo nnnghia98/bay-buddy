@@ -23,6 +23,7 @@ export const ticketDebtFilterColumns = [
   "thf_price",
   "web_price",
   "insurance_price",
+  "add_in_price",
   "selling_price",
 ] as const
 
@@ -35,6 +36,7 @@ export const ticketDebtMoneyFilterColumns = [
   "thf_price",
   "web_price",
   "insurance_price",
+  "add_in_price",
   "selling_price",
 ] as const satisfies readonly TicketDebtFilterColumn[]
 
@@ -42,6 +44,7 @@ export type TicketDebtMoneyFilterColumn =
   (typeof ticketDebtMoneyFilterColumns)[number]
 
 export type TicketDebtFilters = {
+  add_in_price?: TicketDebtMoneyFilter
   ast_price?: TicketDebtMoneyFilter
   booked_at?: string
   ev_price?: TicketDebtMoneyFilter
@@ -100,6 +103,7 @@ export function getTicketDebtFiltersFromSearchParams(
   const thfPrice = params.get("thf_price")
   const webPrice = params.get("web_price")
   const insurancePrice = params.get("insurance_price")
+  const addInPrice = params.get("add_in_price")
   const sellingPrice = params.get("selling_price")
 
   return {
@@ -115,6 +119,9 @@ export function getTicketDebtFiltersFromSearchParams(
     ...(isTicketDebtMoneyFilter(webPrice) ? { web_price: webPrice } : {}),
     ...(isTicketDebtMoneyFilter(insurancePrice)
       ? { insurance_price: insurancePrice }
+      : {}),
+    ...(isTicketDebtMoneyFilter(addInPrice)
+      ? { add_in_price: addInPrice }
       : {}),
     ...(isTicketDebtMoneyFilter(sellingPrice)
       ? { selling_price: sellingPrice }

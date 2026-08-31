@@ -109,6 +109,7 @@ type SortKey =
   | "thfPrice"
   | "webPrice"
   | "insurancePrice"
+  | "addInPrice"
   | "income"
   | "paymentAmount"
   | "paymentMethod"
@@ -239,6 +240,8 @@ function getRowSortValue(
       return row.ticket_web_price
     case "insurancePrice":
       return row.ticket_insurance_price
+    case "addInPrice":
+      return row.ticket_add_in_price
     case "income":
       return row.ticket_true_income
     case "paymentAmount":
@@ -761,6 +764,7 @@ type EditablePricingField =
   | "thf_price"
   | "web_price"
   | "insurance_price"
+  | "add_in_price"
 
 type EditablePricingValues = Record<EditablePricingField, number>
 type RowUpdateErrors = Partial<
@@ -773,9 +777,10 @@ const editablePricingFields: EditablePricingField[] = [
   "thf_price",
   "web_price",
   "insurance_price",
-  "selling_price",
+  "add_in_price",
   "discount",
   "net_price",
+  "selling_price",
 ]
 
 function getEditablePricingValues(row: LedgerReportRow): EditablePricingValues {
@@ -788,6 +793,7 @@ function getEditablePricingValues(row: LedgerReportRow): EditablePricingValues {
     thf_price: row.ticket_thf_price,
     web_price: row.ticket_web_price,
     insurance_price: row.ticket_insurance_price,
+    add_in_price: row.ticket_add_in_price,
   }
 }
 
@@ -988,7 +994,8 @@ function ManualDebtEditorForm({
       pricing.ast_price +
       pricing.thf_price +
       pricing.web_price +
-      pricing.insurance_price)
+      pricing.insurance_price +
+      pricing.add_in_price)
   const displayedIncome = isIncomeOverridden
     ? manualIncome
     : hasPricingChanged
@@ -1048,6 +1055,7 @@ function ManualDebtEditorForm({
       thf_price: formData.get("thf_price"),
       web_price: formData.get("web_price"),
       insurance_price: formData.get("insurance_price"),
+      add_in_price: formData.get("add_in_price"),
       true_income: formData.get("true_income"),
       true_income_override: formData.get("true_income_override"),
       payment_method: formData.get("payment_method"),
@@ -1254,12 +1262,12 @@ function ManualDebtEditorForm({
                     value={pricing.insurance_price}
                   />
                   <CurrencyEditField
-                    error={getError("selling_price")}
-                    id={`edit-selling-price-${row.id}`}
-                    label={t("manualDebts.form.fields.sellingPrice")}
-                    name="selling_price"
-                    onChange={(value) => updatePricing("selling_price", value)}
-                    value={pricing.selling_price}
+                    error={getError("add_in_price")}
+                    id={`edit-add-in-price-${row.id}`}
+                    label={t("manualDebts.form.fields.addInPrice")}
+                    name="add_in_price"
+                    onChange={(value) => updatePricing("add_in_price", value)}
+                    value={pricing.add_in_price}
                   />
                   <CurrencyEditField
                     error={getError("discount")}
@@ -1276,6 +1284,14 @@ function ManualDebtEditorForm({
                     name="net_price"
                     onChange={(value) => updatePricing("net_price", value)}
                     value={pricing.net_price}
+                  />
+                  <CurrencyEditField
+                    error={getError("selling_price")}
+                    id={`edit-selling-price-${row.id}`}
+                    label={t("manualDebts.form.fields.sellingPrice")}
+                    name="selling_price"
+                    onChange={(value) => updatePricing("selling_price", value)}
+                    value={pricing.selling_price}
                   />
                   <CurrencyEditField
                     error={getError("true_income")}
@@ -1573,18 +1589,8 @@ function ManualDebtTableRow({
           {formatDate(row.created_at)}
         </TableCell>
       ) : null}
-      <TableCell className={styles.numberCell}>
-        <span className={styles.displayValue}>
-          {formatCurrency(row.ticket_selling_price)}
-        </span>
-      </TableCell>
       {tableView === "full" ? (
         <>
-          <TableCell className={styles.numberCell}>
-            <span className={styles.displayValue}>
-              {formatCurrency(row.ticket_discount)}
-            </span>
-          </TableCell>
           <TableCell className={styles.numberCell}>
             <span className={styles.displayValue}>
               {formatCurrency(row.ticket_ev_price)}
@@ -1610,8 +1616,23 @@ function ManualDebtTableRow({
               {formatCurrency(row.ticket_insurance_price)}
             </span>
           </TableCell>
+          <TableCell className={styles.numberCell}>
+            <span className={styles.displayValue}>
+              {formatCurrency(row.ticket_add_in_price)}
+            </span>
+          </TableCell>
+          <TableCell className={styles.numberCell}>
+            <span className={styles.displayValue}>
+              {formatCurrency(row.ticket_discount)}
+            </span>
+          </TableCell>
         </>
       ) : null}
+      <TableCell className={styles.numberCell}>
+        <span className={styles.displayValue}>
+          {formatCurrency(row.ticket_selling_price)}
+        </span>
+      </TableCell>
       <TableCell className={styles.valueCell}>
         <Tooltip
           content={t("manualDebts.table.incomeAutoCalculateTooltip")}
@@ -1920,6 +1941,7 @@ export function ManualDebtInputClient({
   const [thfPrice, setThfPrice] = React.useState(0)
   const [webPrice, setWebPrice] = React.useState(0)
   const [insurancePrice, setInsurancePrice] = React.useState(0)
+  const [addInPrice, setAddInPrice] = React.useState(0)
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod | "">(
     "",
   )
@@ -1942,6 +1964,7 @@ export function ManualDebtInputClient({
     setThfPrice(0)
     setWebPrice(0)
     setInsurancePrice(0)
+    setAddInPrice(0)
     setPaymentMethod("")
     setPaymentDate("")
     setIsFormDirty(false)
@@ -2092,7 +2115,7 @@ export function ManualDebtInputClient({
   }, [reportRows, sortState])
 
   const trueIncome =
-    sellingPrice + discount - (evPrice + astPrice + thfPrice + webPrice + insurancePrice)
+    sellingPrice + discount - (evPrice + astPrice + thfPrice + webPrice + insurancePrice + addInPrice)
   const fieldErrors = actionState.fieldErrors
 
   const handleFormOpenChange = React.useCallback(
@@ -2339,18 +2362,22 @@ export function ManualDebtInputClient({
                         />
                       </FormField>
                       <FormField
-                        error={getFieldError(fieldErrors, "selling_price")}
-                        htmlFor="manual-debt-selling-price"
-                        label={t("manualDebts.form.fields.sellingPrice")}
+                        error={getFieldError(fieldErrors, "add_in_price")}
+                        htmlFor="manual-debt-add-in-price"
+                        label={t("manualDebts.form.fields.addInPrice")}
                       >
                         <Input
-                          id="manual-debt-selling-price"
+                          id="manual-debt-add-in-price"
                           inputMode="numeric"
                           min={0}
-                          name="selling_price"
-                          onChange={(event) => setSellingPrice(parseCurrencyInput(event.target.value))}
+                          name="add_in_price"
+                          onChange={(event) =>
+                            setAddInPrice(parseCurrencyInput(event.target.value))
+                          }
                           type="text"
-                          value={sellingPrice > 0 ? formatCurrencyInput(sellingPrice) : ""}
+                          value={
+                            addInPrice > 0 ? formatCurrencyInput(addInPrice) : ""
+                          }
                         />
                       </FormField>
                       <FormField
@@ -2368,13 +2395,34 @@ export function ManualDebtInputClient({
                           value={discount > 0 ? formatCurrencyInput(discount) : ""}
                         />
                       </FormField>
+                      <FormField
+                        error={getFieldError(fieldErrors, "selling_price")}
+                        htmlFor="manual-debt-selling-price"
+                        label={t("manualDebts.form.fields.sellingPrice")}
+                      >
+                        <Input
+                          id="manual-debt-selling-price"
+                          inputMode="numeric"
+                          min={0}
+                          name="selling_price"
+                          onChange={(event) =>
+                            setSellingPrice(parseCurrencyInput(event.target.value))
+                          }
+                          type="text"
+                          value={
+                            sellingPrice > 0
+                              ? formatCurrencyInput(sellingPrice)
+                              : ""
+                          }
+                        />
+                      </FormField>
                     </div>
                     <div className={styles.incomeSummary}>
                       <p className={patterns.eyebrow}>
                         {t("manualDebts.table.columns.income")}
                       </p>
                       <p className={styles.incomeValue}>
-                        {formatCurrency(trueIncome)}
+                        {formatSignedCurrencyInput(trueIncome)}
                       </p>
                     </div>
                   </div>
@@ -2613,29 +2661,8 @@ export function ManualDebtInputClient({
                         {t("manualDebts.table.columns.createdAt")}
                       </SortableTableHead>
                     ) : null}
-                    <SortableTableHead
-                      className={cn(
-                        styles.headerNumber,
-                        styles.groupStart,
-                      )}
-                      label={t("manualDebts.table.columns.customerPaid")}
-                      onSort={handleSort}
-                      sortKey="customerPaid"
-                      sortState={sortState}
-                    >
-                      {t("manualDebts.table.columns.customerPaid")}
-                    </SortableTableHead>
                     {tableView === "full" ? (
                       <>
-                        <SortableTableHead
-                          className={styles.headerNumber}
-                          label={t("manualDebts.table.columns.discount")}
-                          onSort={handleSort}
-                          sortKey="discount"
-                          sortState={sortState}
-                        >
-                          {t("manualDebts.table.columns.discount")}
-                        </SortableTableHead>
                         <SortableTableHead
                           className={cn(
                             styles.headerNumber,
@@ -2684,8 +2711,38 @@ export function ManualDebtInputClient({
                         >
                           {t("manualDebts.table.columns.insurancePrice")}
                         </SortableTableHead>
+                        <SortableTableHead
+                          className={styles.headerNumber}
+                          label={t("manualDebts.table.columns.addInPrice")}
+                          onSort={handleSort}
+                          sortKey="addInPrice"
+                          sortState={sortState}
+                        >
+                          {t("manualDebts.table.columns.addInPrice")}
+                        </SortableTableHead>
+                        <SortableTableHead
+                          className={styles.headerNumber}
+                          label={t("manualDebts.table.columns.discount")}
+                          onSort={handleSort}
+                          sortKey="discount"
+                          sortState={sortState}
+                        >
+                          {t("manualDebts.table.columns.discount")}
+                        </SortableTableHead>
                       </>
                     ) : null}
+                    <SortableTableHead
+                      className={cn(
+                        styles.headerNumber,
+                        styles.groupStart,
+                      )}
+                      label={t("manualDebts.table.columns.customerPaid")}
+                      onSort={handleSort}
+                      sortKey="customerPaid"
+                      sortState={sortState}
+                    >
+                      {t("manualDebts.table.columns.customerPaid")}
+                    </SortableTableHead>
                     <SortableTableHead
                       className={cn(
                         styles.headerNumber,

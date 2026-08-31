@@ -12,8 +12,9 @@
 | Giá Thành Hoàng / Giá THF | Thành Hoàng / THF Price | `thf_price` |
 | Giá WEB | WEB Price | `web_price` |
 | Bảo hiểm | Insurance Price | `insurance_price` |
-| Giá bán | Selling Price | `selling_price` |
+| Khác | Other Ticket Cost | `add_in_price` |
 | Chiết khấu hãng | Airline Discount | `discount` |
+| Giá bán | Selling Price | `selling_price` |
 | Thu nhập thực / Doanh thu | True Income / Revenue | `true_income` |
 | Giá trị vé đã bán | Ticket Sales | `total_ticket_sales` |
 | Tổng thu nhập thực | Total True Income | `total_true_income` |
@@ -35,5 +36,8 @@
 ## Localization Rules
 - **Primary Locale**: `vi` (Vietnamese).
 - **Secondary Locale**: `en` (English).
-- **Currency Format**: Use `vi-VN` (e.g., `1.500.000 ₫`).
+- **Currency Format**: Use `vi-VN` (e.g., `1.500.000 ₫`). In manual-debt
+  pricing sections, show the active currency in the section title (`VNĐ` for
+  the current currency) and omit the repeated `₫` suffix from values inside
+  that section.
 - **Date Format**: Use `DD/MM/YYYY` for UI; `ISO-8601` for API/DB.

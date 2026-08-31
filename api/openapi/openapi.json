@@ -823,7 +823,7 @@
           "Tickets"
         ],
         "summary": "Confirm & save an AI-parsed ticket",
-        "description": "Accepts the user-reviewed ticket data from the frontend. Automatically resolves or creates the customer record by name, saves the ticket as CONFIRMED, creates a CHARGE transaction for the debt, optionally records a linked customer payment, and updates the customer balance. All changes are committed atomically. Business rule: true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price) (BUSINESS.md §2).",
+        "description": "Accepts the user-reviewed ticket data from the frontend. Automatically resolves or creates the customer record by name, saves the ticket as CONFIRMED, creates a CHARGE transaction for the debt, optionally records a linked customer payment, and updates the customer balance. All changes are committed atomically. Business rule: true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price) (BUSINESS.md §2).",
         "operationId": "confirm_ticket_api_v1_tickets_confirm_post",
         "requestBody": {
           "content": {
@@ -2293,6 +2293,26 @@
                 }
               ],
               "title": "Insurance Price"
+            }
+          },
+          {
+            "name": "add_in_price",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "zero",
+                    "positive"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Add In Price"
             }
           },
           {
@@ -5627,6 +5647,13 @@
             "description": "Insurance price (giá bảo hiểm). Empty values count as 0.",
             "default": 0.0
           },
+          "add_in_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Add In Price",
+            "description": "Other ticket cost (giá khác). Empty values count as 0.",
+            "default": 0.0
+          },
           "service_fee": {
             "type": "number",
             "minimum": 0.0,
@@ -5664,7 +5691,7 @@
               }
             ],
             "title": "True Income",
-            "description": "Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price)."
+            "description": "Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price)."
           },
           "payment_method": {
             "anyOf": [
@@ -5711,7 +5738,7 @@
           "net_price"
         ],
         "title": "TicketConfirmPayload",
-        "description": "Payload sent by the frontend when the user confirms an AI-parsed ticket.\n\nCustomer identification:\n    The user can identify the customer by name (and optionally `customer_type`).\n    The service will look up an existing customer by name (case-insensitive) or\n    create a new one if no match is found.\n\nPricing (docs/BUSINESS.md §2):\n    true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price)\n    If `selling_price` is omitted, the service derives it from service_fee.\n    If `true_income` is supplied, it must match the computed income."
+        "description": "Payload sent by the frontend when the user confirms an AI-parsed ticket.\n\nCustomer identification:\n    The user can identify the customer by name (and optionally `customer_type`).\n    The service will look up an existing customer by name (case-insensitive) or\n    create a new one if no match is found.\n\nPricing (docs/BUSINESS.md §2):\n    true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price)\n    If `selling_price` is omitted, the service derives it from service_fee.\n    If `true_income` is supplied, it must match the computed income."
       },
       "TicketCreate": {
         "properties": {
@@ -5904,6 +5931,13 @@
             "description": "Insurance price (giá bảo hiểm). Empty values count as 0.",
             "default": 0.0
           },
+          "add_in_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Add In Price",
+            "description": "Other ticket cost (giá khác). Empty values count as 0.",
+            "default": 0.0
+          },
           "selling_price": {
             "type": "number",
             "minimum": 0.0,
@@ -5920,7 +5954,7 @@
           "true_income": {
             "type": "number",
             "title": "True Income",
-            "description": "Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price).",
+            "description": "Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price).",
             "default": 0.0
           },
           "status": {
@@ -6271,6 +6305,18 @@
               }
             ],
             "title": "Insurance Price"
+          },
+          "add_in_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Add In Price"
           },
           "service_fee": {
             "anyOf": [

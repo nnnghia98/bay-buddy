@@ -19,6 +19,7 @@ const defaultManualDebtValidationMessages: ManualDebtValidationMessages = {
   thfPriceMin: "THF price must be at least 0.",
   webPriceMin: "WEB price must be at least 0.",
   insurancePriceMin: "Insurance price must be at least 0.",
+  addInPriceMin: "Other ticket cost must be at least 0.",
   sellingPriceMin: "Selling price must be at least 0.",
   discountMin: "Discount must be at least 0.",
   paymentAmountMin: "Payment must be at least 0.",
@@ -60,6 +61,7 @@ export type ManualDebtValidationMessages = {
   thfPriceMin: string
   webPriceMin: string
   insurancePriceMin: string
+  addInPriceMin: string
   sellingPriceMin: string
   discountMin: string
   paymentAmountMin: string
@@ -101,6 +103,7 @@ type ManualDebtValidationKey =
   | "manualDebts.validation.thfPriceMin"
   | "manualDebts.validation.webPriceMin"
   | "manualDebts.validation.insurancePriceMin"
+  | "manualDebts.validation.addInPriceMin"
   | "manualDebts.validation.sellingPriceMin"
   | "manualDebts.validation.discountMin"
   | "manualDebts.validation.paymentAmountMin"
@@ -162,12 +165,15 @@ function normalizeAmount(value: unknown): number {
     return Number.NaN
   }
 
-  if (value.trim().length === 0) {
+  const normalizedValue = value.trim()
+  if (normalizedValue.length === 0) {
     return 0
   }
 
-  const digitsOnly = value.replace(/[^\d]/g, "")
-  return Number(digitsOnly)
+  const digitsOnly = normalizedValue.replace(/[^\d]/g, "")
+  const parsedValue = digitsOnly ? Number(digitsOnly) : 0
+
+  return normalizedValue.startsWith("-") ? -parsedValue : parsedValue
 }
 
 function normalizeNullableAmount(value: unknown): number | null {
@@ -274,6 +280,7 @@ export function getManualDebtValidationMessages(
     thfPriceMin: t("manualDebts.validation.thfPriceMin"),
     webPriceMin: t("manualDebts.validation.webPriceMin"),
     insurancePriceMin: t("manualDebts.validation.insurancePriceMin"),
+    addInPriceMin: t("manualDebts.validation.addInPriceMin"),
     sellingPriceMin: t("manualDebts.validation.sellingPriceMin"),
     discountMin: t("manualDebts.validation.discountMin"),
     paymentAmountMin: t("manualDebts.validation.paymentAmountMin"),
@@ -359,6 +366,7 @@ export function createManualDebtRowUpdateSchema(
       thf_price: amount,
       web_price: amount,
       insurance_price: amount,
+      add_in_price: amount,
       true_income: z.preprocess(normalizeSignedAmount, z.number()),
       true_income_override: z.preprocess(normalizeBoolean, z.boolean()),
       payment_method: z.preprocess(
@@ -493,6 +501,10 @@ export function createManualDebtFormSchema(
       insurance_price: z.preprocess(
         normalizeAmount,
         z.number().min(0, messages.insurancePriceMin),
+      ),
+      add_in_price: z.preprocess(
+        normalizeAmount,
+        z.number().min(0, messages.addInPriceMin),
       ),
       selling_price: z.preprocess(
         normalizeAmount,

@@ -15,6 +15,7 @@ describe("ticket debt filters", () => {
       payment_method: "none",
       ev_price: "zero",
       ast_price: "positive",
+      add_in_price: "zero",
       selling_price: "positive",
     }
     const params = new URLSearchParams()
@@ -22,9 +23,9 @@ describe("ticket debt filters", () => {
     appendTicketDebtFilters(params, filters)
 
     expect(params.toString()).toBe(
-      "booked_at=2026-08-05&payment_method=none&ev_price=zero&ast_price=positive&selling_price=positive",
+      "booked_at=2026-08-05&payment_method=none&ev_price=zero&ast_price=positive&add_in_price=zero&selling_price=positive",
     )
-    expect(getTicketDebtFilterCount(filters)).toBe(5)
+    expect(getTicketDebtFilterCount(filters)).toBe(6)
     expect(getTicketDebtFiltersKey(filters)).toBe(params.toString())
   })
 
@@ -35,6 +36,7 @@ describe("ticket debt filters", () => {
       ev_price: "positive",
       ast_price: "negative",
       thf_price: "zero",
+      add_in_price: "positive",
     })
 
     expect(getTicketDebtFiltersFromSearchParams(params)).toEqual({
@@ -42,6 +44,7 @@ describe("ticket debt filters", () => {
       payment_method: "Tiền mặt",
       ev_price: "positive",
       thf_price: "zero",
+      add_in_price: "positive",
     })
   })
 })

@@ -108,6 +108,7 @@ class TicketDebtReportRow(BaseModel):
     ticket_thf_price: float
     ticket_web_price: float
     ticket_insurance_price: float
+    ticket_add_in_price: float
     ticket_true_income: float
     airline: Optional[Airline] = None
     route: Optional[str] = None
@@ -371,6 +372,7 @@ def list_ticket_debt_rows(
                     ticket_thf_price=ticket.thf_price,
                     ticket_web_price=ticket.web_price,
                     ticket_insurance_price=ticket.insurance_price,
+                    ticket_add_in_price=ticket.add_in_price,
                     ticket_true_income=ticket.true_income,
                     airline=ticket.airline,
                     route=_ticket_route(ticket),
@@ -496,6 +498,7 @@ def _has_ticket_debt_structured_filters(
     thf_price: TicketDebtMoneyFilter | None,
     web_price: TicketDebtMoneyFilter | None,
     insurance_price: TicketDebtMoneyFilter | None,
+    add_in_price: TicketDebtMoneyFilter | None,
     selling_price: TicketDebtMoneyFilter | None,
 ) -> bool:
     return any(
@@ -508,6 +511,7 @@ def _has_ticket_debt_structured_filters(
             thf_price,
             web_price,
             insurance_price,
+            add_in_price,
             selling_price,
         )
     )
@@ -527,6 +531,7 @@ def _filter_ticket_debt_rows(
     thf_price: TicketDebtMoneyFilter | None = None,
     web_price: TicketDebtMoneyFilter | None = None,
     insurance_price: TicketDebtMoneyFilter | None = None,
+    add_in_price: TicketDebtMoneyFilter | None = None,
     selling_price: TicketDebtMoneyFilter | None = None,
 ) -> list[TicketDebtReportRow]:
     """Apply report filters to the already reconciled ticket rows."""
@@ -598,6 +603,7 @@ def _filter_ticket_debt_rows(
                     row.ticket_insurance_price,
                     insurance_price,
                 ),
+                _matches_ticket_debt_money_filter(row.ticket_add_in_price, add_in_price),
                 _matches_ticket_debt_money_filter(
                     row.ticket_selling_price,
                     selling_price,
@@ -622,6 +628,7 @@ def list_ticket_debt_export_rows(
     thf_price: TicketDebtMoneyFilter | None = None,
     web_price: TicketDebtMoneyFilter | None = None,
     insurance_price: TicketDebtMoneyFilter | None = None,
+    add_in_price: TicketDebtMoneyFilter | None = None,
     selling_price: TicketDebtMoneyFilter | None = None,
 ) -> list[dict[str, object]]:
     """Return all filtered rows for an explicit report export request."""
@@ -639,6 +646,7 @@ def list_ticket_debt_export_rows(
         thf_price=thf_price,
         web_price=web_price,
         insurance_price=insurance_price,
+        add_in_price=add_in_price,
         selling_price=selling_price,
     )
     return [row.model_dump(mode="json") for row in rows]
@@ -660,6 +668,7 @@ def list_ticket_debt_page(
     thf_price: TicketDebtMoneyFilter | None = None,
     web_price: TicketDebtMoneyFilter | None = None,
     insurance_price: TicketDebtMoneyFilter | None = None,
+    add_in_price: TicketDebtMoneyFilter | None = None,
     selling_price: TicketDebtMoneyFilter | None = None,
 ) -> dict[str, object]:
     """Return one filtered page and summary for a ticket debt view."""
@@ -675,6 +684,7 @@ def list_ticket_debt_page(
         thf_price=thf_price,
         web_price=web_price,
         insurance_price=insurance_price,
+        add_in_price=add_in_price,
         selling_price=selling_price,
     ):
         from_datetime = _parse_report_datetime(from_value, boundary="start")

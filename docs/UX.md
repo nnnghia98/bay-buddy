@@ -44,8 +44,10 @@ The `/debts/input` edit drawer must keep the manual entry priority order so staf
 can review and correct a row without searching through database-shaped fields:
 
 1. Customer context, ticket issue date, and passengers.
-2. Pricing: EV, AST, THF, WEB, insurance, selling price, airline discount, net
-   price correction, and true income.
+2. Pricing: EV, AST, THF, WEB, insurance, Khác (`add_in_price`), airline
+   discount when applicable, net price correction, selling price (Giá bán),
+   and true income. Giá bán must always be immediately before true income.
+   Khác is non-negative and defaults to `0`.
 3. Optional payment method, date, and note details. Payment amount is recorded
    through the customer payment flow, not this drawer.
 4. Route.

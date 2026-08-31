@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { TicketReadSchema } from "@/schemas/ticket"
+import { computeTrueIncome, TicketReadSchema } from "@/schemas/ticket"
 
 describe("TicketReadSchema", () => {
   it("accepts nullable optional route fields from the API", () => {
@@ -35,6 +35,7 @@ describe("TicketReadSchema", () => {
     expect(parsed.arrival_code).toBeNull()
     expect(parsed.booked_at).toEqual(new Date("2026-04-23T08:30:00.000Z"))
     expect(parsed.insurance_price).toBe(0)
+    expect(parsed.add_in_price).toBe(0)
   })
 
   it("accepts nullable PNR and airline from manual ticket entries", () => {
@@ -93,5 +94,22 @@ describe("TicketReadSchema", () => {
 
     expect(parsed.itinerary).toBeNull()
     expect(parsed.passengers).toEqual([])
+  })
+})
+
+describe("computeTrueIncome", () => {
+  it("subtracts the other ticket cost", () => {
+    expect(
+      computeTrueIncome(
+        1_900_000,
+        50_000,
+        1_200_000,
+        300_000,
+        150_000,
+        50_000,
+        20_000,
+        10_000,
+      ),
+    ).toBe(220_000)
   })
 })

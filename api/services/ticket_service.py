@@ -94,7 +94,7 @@ class TicketConfirmPayload(BaseModel):
         create a new one if no match is found.
 
     Pricing (docs/BUSINESS.md §2):
-        true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price)
+        true_income = selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price)
         If `selling_price` is omitted, the service derives it from service_fee.
         If `true_income` is supplied, it must match the computed income.
     """
@@ -198,6 +198,11 @@ class TicketConfirmPayload(BaseModel):
         ge=0,
         description="Insurance price (giá bảo hiểm). Empty values count as 0.",
     )
+    add_in_price: float = Field(
+        default=0.0,
+        ge=0,
+        description="Other ticket cost (giá khác). Empty values count as 0.",
+    )
     service_fee: float = Field(
         default=0.0,
         ge=0,
@@ -221,7 +226,7 @@ class TicketConfirmPayload(BaseModel):
     )
     true_income: Optional[float] = Field(
         default=None,
-        description="Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price).",
+        description="Actual ticket income: selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price).",
     )
     payment_method: Optional[str] = Field(
         default=None,
@@ -277,7 +282,12 @@ class TicketConfirmPayload(BaseModel):
             and "insurance_price" not in self.model_fields_set
             and self.true_income is not None
         ):
-            legacy_true_income = self.selling_price + self.discount - self.net_price
+            legacy_true_income = (
+                self.selling_price
+                + self.discount
+                - self.net_price
+                - self.add_in_price
+            )
             if abs(self.true_income - legacy_true_income) <= 1.0:
                 self.ev_price = self.net_price
                 self.ast_price = 0.0
@@ -294,6 +304,7 @@ class TicketConfirmPayload(BaseModel):
                 + self.thf_price
                 + self.web_price
                 + self.insurance_price
+                + self.add_in_price
             )
         )
         if self.true_income is None:
@@ -301,9 +312,9 @@ class TicketConfirmPayload(BaseModel):
         elif abs(self.true_income - computed_true_income) > 1.0:
             raise ValueError(
                 f"true_income ({self.true_income}) must equal "
-                f"selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price) "
+                f"selling_price + discount - (ev_price + ast_price + thf_price + web_price + insurance_price + add_in_price) "
                 f"({self.selling_price} + {self.discount} - "
-                f"({self.ev_price} + {self.ast_price} + {self.thf_price} + {self.web_price} + {self.insurance_price}) = {computed_true_income})."
+                f"({self.ev_price} + {self.ast_price} + {self.thf_price} + {self.web_price} + {self.insurance_price} + {self.add_in_price}) = {computed_true_income})."
             )
         return self
 
@@ -736,6 +747,7 @@ def create_ticket_with_transaction(
         thf_price=payload.thf_price,
         web_price=payload.web_price,
         insurance_price=payload.insurance_price,
+        add_in_price=payload.add_in_price,
         selling_price=selling_price,
         discount=payload.discount,
         true_income=true_income,

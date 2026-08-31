@@ -50,9 +50,10 @@ function createTicket(id: string) {
     thf_price: 0,
     web_price: 0,
     insurance_price: 0,
+    add_in_price: 25_000,
     selling_price: 1_200_000,
     discount: 0,
-    true_income: 200_000,
+    true_income: 175_000,
     status: "CONFIRMED" as const,
     customer_id: customerId,
     service_fee: 200_000,
@@ -174,6 +175,7 @@ describe("mapLedgerToReportRows", () => {
     const unpaidTicketRow = rows.find((row) => row.id === unpaidTicketId)
 
     expect(paidTicketRow).toMatchObject({
+      ticket_add_in_price: 25_000,
       linked_payment_amount: 500_000,
       linked_payment_note: "First payment; Second payment",
       linked_payment_methods: ["THF"],
