@@ -26,6 +26,28 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+.brand-logo-frame {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-inner);
+}
+
+html[data-theme="dark"] .brand-logo-frame {
+  /* The navy mark needs its original white backing on dark surfaces. */
+  background-color: #fff;
+  padding: var(--spacing-1);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .brand-logo-frame {
+    background-color: #fff;
+    padding: var(--spacing-1);
+  }
+}
+
 :where(button, input, select, textarea) {
   font: inherit;
 }

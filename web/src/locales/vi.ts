@@ -936,8 +936,8 @@ export default {
         "Biết ai cần xử lý, dòng tiền đang ở đâu và bước tiếp theo là gì.",
       primaryAriaLabel: "Nhóm chỉ số tài chính chính",
       secondaryAriaLabel: "Nhóm chỉ số tài chính bổ sung",
-      analyticsAriaLabel: "Biểu đồ doanh thu và danh sách khách nợ nhiều nhất",
-      operationsAriaLabel: "Hoạt động gần đây và công nợ nổi bật",
+      analyticsAriaLabel: "Chỉ số doanh thu và vé",
+      operationsAriaLabel: "Hoạt động gần đây",
       unavailableTitle: "Chưa tải được tổng quan tài chính",
       unavailableDescription:
         "Không thể đọc ảnh chụp dữ liệu điều hành lúc này. Vui lòng thử lại khi kết nối API ổn định.",
@@ -946,15 +946,6 @@ export default {
         label: "Phạm vi dữ liệu",
         allData: "Toàn bộ dữ liệu",
         fromDate: "Từ {date}",
-      },
-      checksum: {
-        ariaLabel: "Đối soát sổ cái và phạm vi dữ liệu",
-        label: "Đối soát sổ cái",
-        identifier: "BB / OPS / 01",
-        confirmedTickets: "vé đã xác nhận",
-        ticketSales: "giá trị vé đã bán",
-        trueIncome: "thu nhập thực",
-        scope: "Phạm vi",
       },
       financial: {
         title: "Tài chính hiện tại",
@@ -1107,22 +1098,6 @@ export default {
             cumulative: "Doanh thu lũy kế",
             dateLabel: "Ngày",
           },
-        },
-        topDebtors: {
-          eyebrow: "Khách còn nợ",
-          title: "Công nợ nổi bật",
-          description:
-            "5 khách có số dư công nợ cao nhất dựa trên chênh lệch tổng phát sinh nợ và thanh toán.",
-          columns: {
-            customer: "Khách hàng",
-            balance: "Công nợ",
-          },
-          status: {
-            high: "Nợ cao",
-            medium: "Nợ vừa",
-          },
-          balanceLabel: "Số dư phải thu",
-          empty: "Chưa có khách hàng nào đang còn công nợ phải thu.",
         },
       },
     },

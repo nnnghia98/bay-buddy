@@ -935,8 +935,8 @@ export default {
         "See who needs attention, where the money stands, and what to do next.",
       primaryAriaLabel: "Primary financial summary metrics",
       secondaryAriaLabel: "Secondary financial summary metrics",
-      analyticsAriaLabel: "Revenue chart and top debtors",
-      operationsAriaLabel: "Recent activity and notable receivables",
+      analyticsAriaLabel: "Revenue and ticket metrics",
+      operationsAriaLabel: "Recent activity",
       unavailableTitle: "Financial overview unavailable",
       unavailableDescription:
         "We could not read the operations snapshot. Please try again when the API is available.",
@@ -945,15 +945,6 @@ export default {
         label: "Data scope",
         allData: "All data",
         fromDate: "From {date}",
-      },
-      checksum: {
-        ariaLabel: "Ledger checksum and data scope",
-        label: "Ledger checksum",
-        identifier: "BB / OPS / 01",
-        confirmedTickets: "confirmed tickets",
-        ticketSales: "ticket sales value",
-        trueIncome: "true income",
-        scope: "Scope",
       },
       financial: {
         title: "Current finances",
@@ -1106,22 +1097,6 @@ export default {
             cumulative: "Cumulative revenue",
             dateLabel: "Date",
           },
-        },
-        topDebtors: {
-          eyebrow: "Who Owes Me",
-          title: "Notable receivables",
-          description:
-            "The 5 highest receivable balances based on total debit minus total credit.",
-          columns: {
-            customer: "Customer",
-            balance: "Balance",
-          },
-          status: {
-            high: "High debt",
-            medium: "Medium debt",
-          },
-          balanceLabel: "Outstanding",
-          empty: "No customers currently have outstanding receivables.",
         },
       },
     },

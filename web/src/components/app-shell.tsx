@@ -39,6 +39,7 @@ import {
 } from "@/lib/auth-session"
 import { ThemeModeRadioGroup } from "@/components/theme-mode-menu"
 import { useI18n } from "@/locales/client"
+import styles from "./app-shell.module.css"
 
 type AppShellProps = {
   children: React.ReactNode
@@ -217,14 +218,16 @@ function BrandHeading() {
       heading="Bay Buddy"
       headingHref="/"
       icon={
-        <Image
-          alt=""
-          aria-hidden="true"
-          height={26}
-          priority
-          src="/branding/logo-bay-buddy-v1-crop.png"
-          width={32}
-        />
+        <span className="brand-logo-frame">
+          <Image
+            alt=""
+            aria-hidden="true"
+            height={28}
+            priority
+            src="/branding/logo-bay-buddy-mark.png"
+            width={32}
+          />
+        </span>
       }
       subheading={t("appShell.productDescription")}
     />
@@ -314,6 +317,7 @@ function LoadingShell({
       }
       topNav={
         <TopNav
+          className={styles.topNav}
           label={t("appShell.topNavigationAria")}
           startContent={
             <Breadcrumbs label={t("appShell.breadcrumbAria")}>
@@ -490,6 +494,7 @@ export function AppShell({ children }: AppShellProps) {
       }
       topNav={
         <TopNav
+          className={styles.topNav}
           label={t("appShell.topNavigationAria")}
           heading={<MobileNavToggle label={t("appShell.mobileMenuAria")} />}
           startContent={

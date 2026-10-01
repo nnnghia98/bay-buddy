@@ -32,8 +32,19 @@
   gap: var(--spacing-4);
 }
 
-.brandTitle {
-  font-size: var(--text-heading-1-size);
+.brandIdentity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+}
+
+.brandLogo {
+  display: block;
+  width: min(20rem, 100%);
+  height: auto;
+  object-fit: contain;
 }
 
 .brandDescription {
@@ -144,6 +155,11 @@
     flex-direction: row;
     align-items: flex-start;
     justify-content: space-between;
+    gap: var(--spacing-6);
+  }
+
+  .brandIdentity {
+    flex: 1 1 auto;
   }
 
   .identityGrid {

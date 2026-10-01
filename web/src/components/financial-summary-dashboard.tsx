@@ -10,7 +10,6 @@ import {
   FileCheck2,
   Ticket,
   Users,
-  WalletCards,
   type LucideIcon,
 } from "lucide-react"
 
@@ -32,7 +31,6 @@ import {
 import { formatCurrency, formatSignedCurrency } from "@/lib/formatters"
 import { useI18n } from "@/locales/client"
 import type {
-  DashboardActionQueue,
   DashboardRecentActivity,
   DashboardSummary,
 } from "@/schemas/dashboard"
@@ -77,18 +75,6 @@ function formatDateTime(value: Date): string {
   }).format(value)
 }
 
-function getQueueHref(key: DashboardActionQueue["key"]): string {
-  return key === "draftTickets" ? "/tickets/input" : "/customers"
-}
-
-function getQueueTone(
-  queue: DashboardActionQueue,
-): "info" | "warning" | "success" {
-  if (queue.count === 0) return "success"
-  if (queue.key === "heldCredit") return "info"
-  return "warning"
-}
-
 function getActivityTone(
   type: DashboardRecentActivity["type"],
 ): "neutral" | "info" | "warning" | "danger" {
@@ -116,38 +102,6 @@ export function FinancialSummaryDashboard({
         </div>
       </Panel>
     )
-  }
-
-  const getQueueLabel = (key: DashboardActionQueue["key"]): string => {
-    if (key === "heldCredit") {
-      return t("dashboard.summary.commandCenter.queues.heldCredit")
-    }
-    if (key === "draftTickets") {
-      return t("dashboard.summary.commandCenter.queues.draftTickets")
-    }
-    return t("dashboard.summary.commandCenter.queues.receivables")
-  }
-
-  const getQueueDescription = (
-    key: DashboardActionQueue["key"],
-  ): string => {
-    if (key === "heldCredit") {
-      return t("dashboard.summary.commandCenter.queueDescriptions.heldCredit")
-    }
-    if (key === "draftTickets") {
-      return t("dashboard.summary.commandCenter.queueDescriptions.draftTickets")
-    }
-    return t("dashboard.summary.commandCenter.queueDescriptions.receivables")
-  }
-
-  const getQueueUnit = (key: DashboardActionQueue["key"]): string => {
-    if (key === "heldCredit") {
-      return t("dashboard.summary.commandCenter.queueUnits.balances")
-    }
-    if (key === "draftTickets") {
-      return t("dashboard.summary.commandCenter.queueUnits.tickets")
-    }
-    return t("dashboard.summary.commandCenter.queueUnits.customers")
   }
 
   const getActivityTypeLabel = (
@@ -245,46 +199,9 @@ export function FinancialSummaryDashboard({
       </header>
 
       <section
-        aria-label={t("dashboard.summary.commandCenter.priorityAriaLabel")}
-        className={styles.priorityGrid}
+        aria-label={t("dashboard.summary.commandCenter.shortcuts.title")}
+        className={styles.shortcutsSection}
       >
-        <Panel className={styles.priorityPanel}>
-          <div className={styles.panelHeading}>
-            <div>
-              <p className={patterns.eyebrow}>
-                {t("dashboard.summary.commandCenter.queueEyebrow")}
-              </p>
-              <h2>{t("dashboard.summary.commandCenter.needsAction")}</h2>
-            </div>
-            <span>{t("dashboard.summary.commandCenter.queueOrder")}</span>
-          </div>
-          <div className={styles.queueList}>
-            {summary.action_queues.map((queue) => (
-              <Link
-                className={styles.queueRow}
-                href={getQueueHref(queue.key)}
-                key={queue.key}
-              >
-                <span className={styles.queueCopy}>
-                  <strong>{getQueueLabel(queue.key)}</strong>
-                  <span>{getQueueDescription(queue.key)}</span>
-                </span>
-                <span className={styles.queueCount}>
-                  {queue.count} {getQueueUnit(queue.key)}
-                </span>
-                <span className={styles.queueAmount}>
-                  {formatCurrency(queue.amount)}
-                </span>
-                <StatusChip tone={getQueueTone(queue)}>
-                  {queue.count === 0
-                    ? t("dashboard.summary.commandCenter.clear")
-                    : t("dashboard.summary.commandCenter.review")}
-                </StatusChip>
-              </Link>
-            ))}
-          </div>
-        </Panel>
-
         <Panel className={styles.shortcutsPanel}>
           <div className={styles.panelHeading}>
             <div>
@@ -307,35 +224,6 @@ export function FinancialSummaryDashboard({
             ))}
           </div>
         </Panel>
-      </section>
-
-      <section
-        aria-label={t("dashboard.summary.checksum.ariaLabel")}
-        className={styles.checksumStrip}
-      >
-        <div className={styles.checksumLabel}>
-          <span>{t("dashboard.summary.checksum.label")}</span>
-          <strong>{t("dashboard.summary.checksum.identifier")}</strong>
-        </div>
-        <div className={styles.checksumFlow}>
-          <span className={styles.checksumConfirmed}>
-            {summary.financial.confirmed_tickets} {" "}
-            {t("dashboard.summary.checksum.confirmedTickets")}
-          </span>
-          <ArrowRight aria-hidden="true" />
-          <span>
-            {formatCurrency(summary.financial.total_ticket_sales)} {" "}
-            {t("dashboard.summary.checksum.ticketSales")}
-          </span>
-          <ArrowRight aria-hidden="true" />
-          <span className={styles.checksumIncome}>
-            {formatCurrency(summary.financial.total_true_income)} {" "}
-            {t("dashboard.summary.checksum.trueIncome")}
-          </span>
-        </div>
-        <div className={styles.checksumScope}>
-          {t("dashboard.summary.checksum.scope")} · {scopeLabel}
-        </div>
       </section>
 
       <section aria-labelledby="dashboard-financial-title">
@@ -504,65 +392,6 @@ export function FinancialSummaryDashboard({
           </Panel>
         </div>
 
-        <aside className={styles.debtorColumn}>
-          <SectionHeader
-            action={
-              <Link className={styles.sectionLink} href="/customers">
-                {t("appShell.nav.customers")}
-                <ArrowRight aria-hidden="true" />
-              </Link>
-            }
-            id="dashboard-top-debtors-title"
-            title={t("dashboard.summary.analytics.topDebtors.title")}
-          />
-          <Panel aria-labelledby="dashboard-top-debtors-title">
-            {summary.top_debtors.length === 0 ? (
-              <div className={styles.empty}>
-                {t("dashboard.summary.analytics.topDebtors.empty")}
-              </div>
-            ) : (
-              <div className={styles.debtorList}>
-                {summary.top_debtors.map((debtor, index) => (
-                  <Link
-                    className={styles.debtorRow}
-                    href={`/customers/${debtor.customer_id}`}
-                    key={debtor.customer_id}
-                  >
-                    <span className={styles.debtorRank}>
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <span className={styles.debtorCopy}>
-                      <strong>{debtor.customer_name}</strong>
-                      <span>
-                        {t(
-                          "dashboard.summary.analytics.topDebtors.balanceLabel",
-                        )}
-                      </span>
-                    </span>
-                    <strong className={styles.debtorAmount}>
-                      {formatCurrency(debtor.outstanding_balance)}
-                    </strong>
-                  </Link>
-                ))}
-              </div>
-            )}
-            <div className={styles.creditSummary}>
-              <span className={styles.creditIcon}>
-                <WalletCards aria-hidden="true" />
-              </span>
-              <span className={styles.creditCopy}>
-                <strong>{t("dashboard.summary.financial.heldCredit.label")}</strong>
-                <span>
-                  {summary.financial.customers_with_credit} {" "}
-                  {t("dashboard.summary.financial.heldCredit.detail")}
-                </span>
-              </span>
-              <strong className={styles.creditAmount}>
-                {formatCurrency(summary.financial.total_held_credit)}
-              </strong>
-            </div>
-          </Panel>
-        </aside>
       </section>
     </div>
   )

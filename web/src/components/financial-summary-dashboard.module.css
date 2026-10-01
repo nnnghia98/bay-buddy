@@ -66,13 +66,16 @@
   font-weight: var(--font-weight-semibold);
 }
 
-.priorityGrid,
+.shortcutsSection,
 .operationsGrid {
   display: grid;
   gap: var(--spacing-5);
 }
 
-.priorityPanel,
+.operationsGrid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .shortcutsPanel,
 .snapshotPanel {
   overflow: hidden;
@@ -101,83 +104,11 @@
   white-space: nowrap;
 }
 
-.queueList,
-.debtorList {
-  display: flex;
-  flex-direction: column;
-}
-
-.queueRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--spacing-2) var(--spacing-4);
-  min-height: 4rem;
-  padding: var(--spacing-3) var(--spacing-5);
-  color: inherit;
-  text-decoration: none;
-  transition: background-color var(--duration-fast);
-}
-
-.queueRow + .queueRow,
-.debtorRow + .debtorRow {
-  border-block-start: var(--border-width) solid var(--color-border);
-}
-
-.queueRow:hover,
-.debtorRow:hover {
-  background: var(--color-overlay-hover);
-}
-
-.queueRow:focus-visible,
 .shortcut:focus-visible,
-.debtorRow:focus-visible,
 .customerLink:focus-visible,
 .sectionLink:focus-visible {
   outline: 2px solid var(--color-border-focus);
   outline-offset: -2px;
-}
-
-.queueCopy {
-  min-width: 0;
-}
-
-.queueCopy strong,
-.queueCopy span {
-  display: block;
-}
-
-.queueCopy strong {
-  color: var(--color-text-primary);
-  font-size: var(--text-body-size);
-  font-weight: var(--font-weight-semibold);
-}
-
-.queueCopy span {
-  margin-block-start: var(--spacing-0-5);
-  overflow: hidden;
-  color: var(--color-text-secondary);
-  font-size: var(--text-supporting-size);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.queueCount,
-.queueAmount {
-  color: var(--color-text-secondary);
-  font-family: var(--font-family-code);
-  font-size: var(--text-supporting-size);
-  font-variant-numeric: tabular-nums;
-  text-align: end;
-  white-space: nowrap;
-}
-
-.queueAmount {
-  grid-column: 1;
-  color: var(--color-text-primary);
-  font-size: var(--text-body-size);
-  font-weight: var(--font-weight-semibold);
-  text-align: start;
 }
 
 .shortcutGrid {
@@ -197,69 +128,6 @@
 .shortcut:hover {
   border-color: var(--color-border-blue);
   background: var(--color-background-blue);
-}
-
-.checksumStrip {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--spacing-3);
-  padding: var(--spacing-4) var(--spacing-5);
-  border: var(--border-width) solid var(--color-text-primary);
-  border-radius: var(--radius-container);
-  background: var(--color-text-primary);
-  color: var(--color-background-surface);
-}
-
-.checksumLabel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-0-5);
-  font-family: var(--font-family-code);
-  font-size: var(--text-supporting-size);
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-}
-
-.checksumLabel > span {
-  opacity: 0.7;
-}
-
-.checksumLabel strong {
-  font-size: var(--text-body-size);
-  font-weight: var(--font-weight-semibold);
-}
-
-.checksumFlow {
-  display: flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--spacing-2);
-  font-family: var(--font-family-code);
-  font-size: var(--text-supporting-size);
-  font-variant-numeric: tabular-nums;
-  line-height: var(--text-body-leading);
-}
-
-.checksumFlow svg {
-  width: var(--spacing-4);
-  height: var(--spacing-4);
-  flex: none;
-  opacity: 0.5;
-}
-
-.checksumConfirmed,
-.checksumIncome {
-  color: var(--color-background-green);
-}
-
-.checksumScope {
-  width: fit-content;
-  padding: var(--spacing-1-5) var(--spacing-2);
-  border: var(--border-width) solid color-mix(in srgb, currentColor 24%, transparent);
-  border-radius: var(--radius-element);
-  font-size: var(--text-supporting-size);
-  white-space: nowrap;
 }
 
 .sectionMeta {
@@ -371,8 +239,7 @@
   text-align: end;
 }
 
-.recentColumn,
-.debtorColumn {
+.recentColumn {
   min-width: 0;
 }
 
@@ -463,107 +330,6 @@
   font-size: var(--text-supporting-size);
 }
 
-.debtorRow {
-  display: grid;
-  grid-template-columns: var(--spacing-6) minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--spacing-2);
-  min-height: 3.75rem;
-  padding: var(--spacing-2) var(--spacing-5);
-  color: inherit;
-  text-decoration: none;
-  transition: background-color var(--duration-fast);
-}
-
-.debtorRank {
-  color: var(--color-text-secondary);
-  font-family: var(--font-family-code);
-  font-size: var(--text-supporting-size);
-}
-
-.debtorCopy {
-  min-width: 0;
-}
-
-.debtorCopy strong,
-.debtorCopy span {
-  display: block;
-}
-
-.debtorCopy strong {
-  overflow: hidden;
-  color: var(--color-text-primary);
-  font-size: var(--text-body-size);
-  font-weight: var(--font-weight-semibold);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.debtorCopy span {
-  margin-block-start: var(--spacing-0-5);
-  color: var(--color-text-secondary);
-  font-size: var(--text-supporting-size);
-}
-
-.debtorAmount,
-.creditAmount {
-  color: var(--color-text-primary);
-  font-family: var(--font-family-code);
-  font-size: var(--text-body-size);
-  font-variant-numeric: tabular-nums;
-  font-weight: var(--font-weight-semibold);
-  text-align: end;
-  white-space: nowrap;
-}
-
-.creditSummary {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-3) var(--spacing-5);
-  border-block-start: var(--border-width) solid var(--color-border);
-  background: var(--color-background-muted);
-}
-
-.creditIcon {
-  display: flex;
-  width: var(--spacing-8);
-  height: var(--spacing-8);
-  align-items: center;
-  justify-content: center;
-  border: var(--border-width) solid var(--color-border-green);
-  border-radius: var(--radius-element);
-  background: var(--color-background-green);
-  color: var(--color-text-green);
-}
-
-.creditIcon svg {
-  width: var(--spacing-4);
-  height: var(--spacing-4);
-}
-
-.creditCopy {
-  min-width: 0;
-}
-
-.creditCopy strong,
-.creditCopy span {
-  display: block;
-}
-
-.creditCopy strong {
-  color: var(--color-text-primary);
-  font-size: var(--text-supporting-size);
-  font-weight: var(--font-weight-semibold);
-}
-
-.creditCopy span {
-  margin-block-start: var(--spacing-0-5);
-  color: var(--color-text-secondary);
-  font-size: var(--text-supporting-size);
-}
-
 @media (min-width: 40rem) {
   .pageHeader {
     flex-direction: row;
@@ -573,15 +339,6 @@
 
   .scopeBlock {
     align-items: flex-end;
-    text-align: end;
-  }
-
-  .queueRow {
-    grid-template-columns: minmax(0, 1fr) auto minmax(8rem, auto) auto;
-  }
-
-  .queueAmount {
-    grid-column: auto;
     text-align: end;
   }
 
@@ -629,25 +386,6 @@
   }
 }
 
-@media (min-width: 80rem) {
-  .priorityGrid {
-    grid-template-columns: minmax(0, 1.45fr) minmax(21rem, 0.85fr);
-  }
-
-  .operationsGrid {
-    grid-template-columns: minmax(0, 1.7fr) minmax(19rem, 0.8fr);
-  }
-
-  .checksumStrip {
-    grid-template-columns: minmax(9rem, 0.7fr) minmax(0, 2fr) auto;
-    align-items: center;
-  }
-
-  .checksumScope {
-    justify-self: end;
-  }
-}
-
 @media (max-width: 39.99rem) {
   .panelHeading {
     align-items: flex-start;
@@ -655,34 +393,7 @@
     gap: var(--spacing-1);
   }
 
-  .queueCount {
-    justify-self: end;
-  }
-
-  .queueRow > :last-child {
-    justify-self: end;
-  }
-
-  .checksumFlow {
+  .scopeFooter {
     align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .checksumFlow svg {
-    display: none;
-  }
-
-  .scopeFooter,
-  .creditSummary {
-    align-items: flex-start;
-  }
-
-  .creditSummary {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .creditAmount {
-    grid-column: 2;
-    text-align: start;
   }
 }

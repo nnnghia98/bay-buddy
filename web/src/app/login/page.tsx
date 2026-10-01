@@ -90,14 +90,16 @@ export default function LoginPage() {
         <VStack gap={8}>
         {/* Logo */}
         <div className={patterns.center}>
-          <Image
-            alt="Bay Buddy"
-            className={styles.logo}
-            height={820}
-            priority
-            src="/branding/logo-bay-buddy-v1-crop.png"
-            width={1020}
-          />
+          <div className="brand-logo-frame">
+            <Image
+              alt="Bay Buddy"
+              className={styles.logo}
+              height={802}
+              priority
+              src="/branding/logo-bay-buddy-stacked.png"
+              width={1180}
+            />
+          </div>
         </div>
 
         {/* Heading */}

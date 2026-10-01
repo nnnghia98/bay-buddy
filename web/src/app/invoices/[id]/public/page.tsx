@@ -1,11 +1,12 @@
 import patterns from "@/styles/ui-patterns.module.css"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import { StatusChip } from "@/components/command-center"
 import { FinanceLineItemsTable } from "@/components/finance-document-ui"
 import { formatCurrency } from "@/lib/formatters"
 import { fetchInvoicePublicView } from "@/lib/server-finance"
 import { getI18n } from "@/locales/server"
 import type { InvoicePublicView } from "@/schemas"
+import Image from "next/image"
 import styles from "./invoice-public.module.css"
 
 type PageProps = {
@@ -51,10 +52,17 @@ export default async function InvoicePublicPage({ params }: PageProps) {
               {t("financeDocuments.invoices.public.eyebrow")}
             </div>
             <div className={styles.brandRow}>
-              <div className={patterns.fieldStack}>
-                <CardTitle className={styles.brandTitle}>
-                  {publicView.brand.company_name}
-                </CardTitle>
+              <div className={styles.brandIdentity}>
+                <div className="brand-logo-frame">
+                  <Image
+                    alt={publicView.brand.company_name}
+                    className={styles.brandLogo}
+                    height={279}
+                    priority
+                    src="/branding/logo-bay-buddy-horizontal.png"
+                    width={1255}
+                  />
+                </div>
                 <CardDescription className={styles.brandDescription}>
                   {publicView.brand.slogan}
                 </CardDescription>
