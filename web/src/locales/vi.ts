@@ -1,4 +1,49 @@
 export default {
+  identification: {
+    docsLabel: "SR-DOCS",
+    docsHelp: 'Kiểm tra họ, tên đệm và tên trước khi sao chép. Dòng SR-DOCS dùng VN và tên in hoa không dấu.',
+    docsIncomplete: 'Điền số giấy tờ hợp lệ, ngày sinh, giới tính (M/F), ngày hết hạn, họ và tên đệm + tên để tạo dòng SR-DOCS. CCCD cần đủ 12 chữ số.',
+  "upload": "Giấy tờ tùy thân",
+  "privacy": "Tệp được gửi đến Google Gemini để đọc. Bay Buddy không lưu tệp hoặc kết quả. Xóa dữ liệu trên trang sau khi dùng.",
+  "files": "Căn cước hoặc hộ chiếu",
+  "help": "Chọn một hoặc hai tệp của cùng một người (mặt trước và mặt sau). JPEG, PNG, WebP hoặc PDF. Tổng dung lượng tối đa 10 MB.",
+  "extract": "Đọc giấy tờ",
+  "extracting": "Đang đọc giấy tờ…",
+  "clear": "Xóa tệp và kết quả",
+  "invalidFiles": "Chọn một hoặc hai tệp JPEG, PNG, WebP hoặc PDF không trống, tổng dung lượng tối đa 10 MB.",
+  "unreadable": "Không đọc được giấy tờ. Chọn ảnh rõ của căn cước hoặc hộ chiếu của một người rồi thử lại.",
+  "sessionExpired": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+  "failed": "Chưa thể đọc giấy tờ. Vui lòng thử lại.",
+  "copyFailed": "Không sao chép được. Hãy chọn và sao chép thông tin thủ công.",
+  "preview": "Ảnh giấy tờ tùy thân",
+  "results": "Thông tin trích xuất",
+  "review": "Đối chiếu từng thông tin với giấy tờ. Thông tin thiếu hoặc không rõ sẽ để trống.",
+  "empty": "Tải căn cước hoặc hộ chiếu lên rồi chọn Đọc giấy tờ.",
+  "copy": "Sao chép SR-DOCS",
+  "copied": "Đã sao chép",
+  "notVisible": "Không thấy trên giấy tờ",
+  "documentType": "Loại giấy tờ",
+  "types": {
+    "identity_card": "CCCD",
+    "passport": "Hộ chiếu",
+    "unknown": "Không xác định"
+  },
+  "fields": {
+    "document_number": "Số giấy tờ",
+    "last_name": 'Họ',
+    "first_name": 'Tên đệm và tên',
+    "full_name": "Họ và tên",
+    "date_of_birth": "Ngày sinh",
+    "sex": "Giới tính",
+    "nationality": "Quốc tịch",
+    "place_of_birth": "Nơi sinh",
+    "place_of_origin": "Quê quán",
+    "address": "Nơi thường trú",
+    "issue_date": "Ngày cấp",
+    "expiry_date": "Ngày hết hạn",
+    "issuing_authority": "Cơ quan cấp"
+  }
+},
   login: {
     title: "Đăng nhập bằng mã truy cập",
     subtitle: "Nhập mã truy cập để tiếp tục.",
@@ -43,6 +88,7 @@ export default {
       staff: "Nhân viên",
     },
     nav: {
+      identification: "Giấy tờ tùy thân",
       tickets: "Nhập vé",
       manualDebts: "Nhập công nợ",
       activities: "Hoạt động",

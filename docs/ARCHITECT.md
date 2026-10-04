@@ -287,3 +287,8 @@ linked payment totals while also showing the selected charge method and date.
 - Ledger rows are sorted by `created_at` ascending, with ticket rows ordered before non-ticket rows when timestamps are equal.
 - Running balance is calculated incrementally: `running_balance = previous_running_balance + amount`.
 - This produces the debt-first formula used in the UI: positive balances mean the customer owes money, negative balances mean the customer has credit / deposit (`Tiền dư / Đặt cọc`).
+
+## Transient identification reading
+
+`/identification` reads ID cards and passports without saving extracted data.
+See `docs/IDENTIFICATION.md` for the API contract, model choice, and data handling.

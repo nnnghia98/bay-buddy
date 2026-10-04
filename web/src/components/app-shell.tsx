@@ -16,6 +16,7 @@ import { VStack } from "@astryxdesign/core/VStack"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Activity,
+  IdCard,
   ChartColumn,
   CircleDollarSign,
   Database,
@@ -58,6 +59,7 @@ type CustomerSummary = {
 }
 
 type NavLabelKey =
+  | "identification"
   | "tickets"
   | "manualDebts"
   | "activities"
@@ -80,6 +82,7 @@ const navItems: NavItem[] = [
   { labelKey: "reports", href: "/report", icon: ChartColumn },
   { labelKey: "workbookEditor", href: "/workbook-editor-v2", icon: FileSpreadsheet },
   { labelKey: "tickets", href: "/tickets/input", icon: Ticket },
+  { labelKey: "identification", href: "/identification", icon: IdCard },
   { labelKey: "activities", href: "/activities", icon: Activity },
   { labelKey: "customers", href: "/customers", icon: Users },
   { labelKey: "settings", href: "/settings", icon: Settings },
@@ -90,6 +93,7 @@ function useBreadcrumbs(
   pathname: string,
   homeLabel: string,
   labels: {
+    identification: string
     customers: string
     customerDetail: string
     tickets: string
@@ -111,6 +115,10 @@ function useBreadcrumbs(
   return React.useMemo(() => {
     if (pathname === "/") {
       return [{ label: homeLabel, href: "/" }]
+    }
+
+    if (pathname === "/identification") {
+      return [{ label: labels.identification, href: "/identification" }]
     }
 
     if (pathname === "/customers") {
@@ -409,6 +417,7 @@ export function AppShell({ children }: AppShellProps) {
     t("appShell.home"),
     React.useMemo(
       () => ({
+        identification: t("appShell.nav.identification"),
         aiTicketInput: t("appShell.breadcrumbs.aiTicketInput"),
         customerDetail: t("appShell.breadcrumbs.customerDetail"),
         customers: t("appShell.nav.customers"),

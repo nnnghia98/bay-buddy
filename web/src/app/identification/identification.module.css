@@ -1,0 +1,25 @@
+.workbench { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--spacing-6); align-items: start; }
+.panel { min-width: 0; padding: var(--spacing-6); border: 1px solid var(--color-border); border-radius: var(--radius-container); background: var(--color-background-surface); display: flex; flex-direction: column; gap: var(--spacing-4); }
+.heading { font-family: var(--font-family-heading); font-size: var(--text-heading-4-size); margin: 0; }
+.note { color: var(--color-text-secondary); font-size: var(--text-supporting-size); margin: 0; overflow-wrap: anywhere; }
+.label { font-weight: 600; }
+.panel input { max-width: 100%; min-width: 0; width: 100%; }
+.actions { display: flex; flex-wrap: wrap; gap: var(--spacing-3); align-items: center; justify-content: space-between; }
+.actions button { max-width: 100%; height: auto; min-height: 2.5rem; white-space: normal; }
+.previews { display: grid; gap: var(--spacing-4); }
+.previews figure { margin: 0; min-width: 0; }
+.previews img { display: block; width: 100%; max-height: 24rem; object-fit: contain; border-radius: var(--radius-inner); background: var(--color-background-muted); }
+.previews figcaption { overflow-wrap: anywhere; color: var(--color-text-secondary); margin-top: var(--spacing-2); }
+.details { margin: 0; }
+.details > div { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--spacing-2); padding: var(--spacing-3) 0; border-bottom: 1px solid var(--color-border); }
+.details dt { color: var(--color-text-secondary); }
+.details dd { margin: 0; min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; font-variant-numeric: tabular-nums; }
+@media (min-width: 1200px) { .workbench { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+@media (min-width: 600px) { .details > div { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); } }
+
+.details > div:first-child dd { font-family: var(--font-family-code); }
+.typeSelector { display: flex; flex-wrap: wrap; gap: var(--spacing-4); border: 0; padding: 0; min-width: 0; }
+.typeSelector legend { margin-bottom: var(--spacing-3); font-weight: 600; }
+.typeSelector label { display: flex; align-items: center; gap: var(--spacing-2); min-height: 2.5rem; }
+.typeSelector input { width: auto; }
+.docsOutput { width: 100%; min-width: 0; resize: vertical; padding: var(--spacing-3); border: 1px solid var(--color-border-emphasized); border-radius: var(--radius-element); background: var(--color-background-muted); color: var(--color-text-primary); font-family: var(--font-family-code); overflow-wrap: anywhere; }

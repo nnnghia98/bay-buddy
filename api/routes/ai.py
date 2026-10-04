@@ -8,10 +8,14 @@ Service reference: services/ai_agent.py
 Schema reference:  docs/AGENT_PARSER.md
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile, status
 from pydantic import BaseModel, Field
+
+from core.auth import CurrentUserDep
+from schemas.identification import IdentificationResult
+from services.identification import extract_identification
 
 from services.ai_agent import (
     AIExtractionValidationError,
@@ -166,3 +170,42 @@ async def ai_health_check() -> Dict[str, str]:
         "service": "ai-parser",
         "model": GEMINI_MODEL_NAME,
     }
+
+
+@router.post("/identification", response_model=IdentificationResult)
+async def parse_identification(
+    current_user: CurrentUserDep,
+    response: Response,
+    document_type: Literal["identity_card", "passport"] = Form(...),
+    files: list[UploadFile] = File(...),
+) -> IdentificationResult:
+    """Authenticated, transient extraction; no database writes or file storage."""
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        if not 1 <= len(files) <= 2:
+            raise HTTPException(422, "Upload one or two files.", headers={"Cache-Control": "no-store"})
+        remaining = 10 * 1024 * 1024
+        documents: list[tuple[bytes, str]] = []
+        for file in files:
+            mime_type = file.content_type or ""
+            if mime_type not in ALLOWED_MIME_TYPES:
+                raise HTTPException(415, "Unsupported document type.", headers={"Cache-Control": "no-store"})
+            data = await file.read(remaining + 1)
+            if len(data) > remaining:
+                raise HTTPException(413, "Total upload size exceeds 10 MB.", headers={"Cache-Control": "no-store"})
+            if not data:
+                raise HTTPException(422, "The uploaded file is empty.", headers={"Cache-Control": "no-store"})
+            remaining -= len(data)
+            documents.append((data, mime_type))
+        try:
+            result = await extract_identification(documents, document_type)
+        except ValueError:
+            raise HTTPException(422, "Identification could not be read.", headers={"Cache-Control": "no-store"}) from None
+        except Exception:
+            raise HTTPException(503, "Identification service is unavailable.", headers={"Cache-Control": "no-store"}) from None
+        if result.document_type != document_type:
+            raise HTTPException(422, "Upload a readable ID card or passport for one person.", headers={"Cache-Control": "no-store"})
+        return result
+    finally:
+        for file in files:
+            await file.close()

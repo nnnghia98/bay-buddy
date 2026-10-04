@@ -1,4 +1,49 @@
 export default {
+  identification: {
+    docsLabel: "SR-DOCS",
+    docsHelp: 'Check surname and all given names before copying. SR-DOCS uses VN and uppercase names without accents.',
+    docsIncomplete: 'Enter a valid document number, birth date, sex (M/F), expiry date, surname and all given names to build SR-DOCS. Citizen IDs need 12 digits.',
+  "upload": "Identification document",
+  "privacy": "Files are sent to Google Gemini for reading. Bay Buddy does not save files or results. Clear the page when finished.",
+  "files": "ID card or passport",
+  "help": "Choose one or two files for the same person (front and back). JPEG, PNG, WebP or PDF. Total size: up to 10 MB.",
+  "extract": "Read identification",
+  "extracting": "Reading identification…",
+  "clear": "Clear files and results",
+  "invalidFiles": "Choose one or two non-empty JPEG, PNG, WebP or PDF files, up to 10 MB in total.",
+  "unreadable": "Cannot read this document. Use clear photos of one person’s ID card or passport and try again.",
+  "sessionExpired": "Your session expired. Sign in again.",
+  "failed": "Cannot read identification now. Please try again.",
+  "copyFailed": "Cannot copy. Select and copy the values manually.",
+  "preview": "Identification document preview",
+  "results": "Extracted details",
+  "review": "Check each value against the document. Missing or unclear values are left blank.",
+  "empty": "Upload an ID card or passport, then choose Read identification.",
+  "copy": "Copy SR-DOCS",
+  "copied": "Copied",
+  "notVisible": "Not visible",
+  "documentType": "Document type",
+  "types": {
+    "identity_card": "Citizen ID Card",
+    "passport": "Passport",
+    "unknown": "Unknown"
+  },
+  "fields": {
+    "document_number": "Document number",
+    "last_name": 'Last name',
+    "first_name": 'First name / all given names',
+    "full_name": "Full name",
+    "date_of_birth": "Date of birth",
+    "sex": "Sex",
+    "nationality": "Nationality",
+    "place_of_birth": "Place of birth",
+    "place_of_origin": "Place of origin",
+    "address": "Address",
+    "issue_date": "Issue date",
+    "expiry_date": "Expiry date",
+    "issuing_authority": "Issuing authority"
+  }
+},
   login: {
     title: "Sign in with passcode",
     subtitle: "Enter the passcode to continue.",
@@ -43,6 +88,7 @@ export default {
       staff: "Staff",
     },
     nav: {
+      identification: "Identification",
       tickets: "Tickets",
       manualDebts: "Manual debt",
       activities: "Activities",
