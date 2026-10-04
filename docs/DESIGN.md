@@ -258,6 +258,13 @@ show a clear in-flight label.
 - Use semantic state styling for parsed or selected fields.
 - Optional controls start inactive until the user chooses the enabling option.
 - Native date controls must remain usable in light and dark mode.
+- Size form columns from the available panel width, not only the screen width.
+  Prefer container queries (CSS rules based on a panel's width) for filter bars
+  and forms inside panels. Stack fields and wrap actions before space runs out.
+- Use `minmax(0, 1fr)` for flexible grid columns and `min-width: 0` on field
+  wrappers and inputs. Keep controls within `width: 100%` and `max-width: 100%`.
+  Give native date and time fields enough room for their value and picker button,
+  especially in iPad Safari. Do not hide overflow to cover a broken form layout.
 
 ### Tables
 

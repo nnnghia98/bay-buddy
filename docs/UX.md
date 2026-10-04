@@ -229,6 +229,14 @@ Forms must follow the App Router standard from the DNA:
 - Attach labels to all inputs.
 - Do not rely on placeholder text as labels.
 - Keep validation errors close to the field and accessible.
+- For every new or changed field, check the form at phone widths (375–390 px),
+  iPad portrait widths (768–834 px), iPad landscape widths (1024–1194 px), and
+  desktop width (1440 px). Include the app shell and panel padding in the check.
+  Also check near layout changes, both locales, long labels, filled date/time
+  values, validation errors, and pending button text. Fields and actions must
+  remain readable and reachable without overlap, clipping, or page-wide scroll.
+  Verify native date/time controls in Safari when available. State any missing
+  browser checks; a desktop-only check does not prove tablet support.
 - On desktop workbench pages, long forms should scroll inside their panel instead of pushing the whole page. Keep the adjacent table available for context.
 - Order fields by operational priority, not database schema order.
 - Optional payment controls should start inactive: keep the payment type empty and

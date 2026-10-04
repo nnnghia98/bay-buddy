@@ -23,6 +23,7 @@
 }
 
 .header {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
@@ -46,11 +47,18 @@
 
 .filters {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
   gap: var(--spacing-3);
 }
 
-.searchField {
+.filters > div {
   min-width: 0;
+}
+
+.filters input {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .searchInput {
@@ -204,12 +212,28 @@
   gap: var(--spacing-2);
 }
 
-@media (min-width: 40rem) {
+@container (min-width: 36rem) {
   .filters {
-    grid-template-columns: repeat(2, minmax(8rem, 1fr)) minmax(14rem, 2fr) auto auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: end;
   }
 
+  .searchField {
+    grid-column: 1 / -1;
+  }
+}
+
+@container (min-width: 64rem) {
+  .filters {
+    grid-template-columns: repeat(2, minmax(12rem, 1fr)) minmax(16rem, 2fr) auto auto;
+  }
+
+  .searchField {
+    grid-column: auto;
+  }
+}
+
+@media (min-width: 40rem) {
   .metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -218,18 +242,6 @@
 @media (min-width: 64rem) {
   .metrics {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 80rem) {
-  .header {
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
-  }
-
-  .filters {
-    min-width: min(62rem, 70%);
   }
 }
 
