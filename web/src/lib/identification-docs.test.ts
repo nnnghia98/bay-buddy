@@ -22,9 +22,14 @@ describe("SR-DOCS output", () => {
       expiry_date: "2030-12-01", sex: "Nam", last_name: "Đặng", first_name: "Văn An",
     })).toBe("SR-DOCS-P-VN-B0123456-VN-22JAN98-M-01DEC30-DANG/VAN AN")
   })
+  it.each(["NỮ / F", "Female / F", "F / Nữ"])("builds a passport script with bilingual sex: %s", sex => {
+    expect(buildIdentificationDocs("passport", {
+      ...sample, document_number: "B0123456", sex,
+    })).toBe("SR-DOCS-P-VN-B0123456-VN-22NOV72-F-22NOV50-TRAN/THI HOAI HUONG")
+  })
   it.each([
     { expiry_date: null }, { date_of_birth: "1998-02-30" }, { sex: null },
-    { sex: "unknown" }, { last_name: null }, { first_name: null },
+    { sex: "unknown" }, { sex: "M / F" }, { sex: "unknown / F" }, { last_name: null }, { first_name: null },
     { first_name: "AN/TEST" }, { document_number: "123" },
   ])("does not produce a copyable line for missing or invalid required data: %j", change => {
     expect(buildIdentificationDocs("identity_card", { ...sample, ...change })).toBeNull()

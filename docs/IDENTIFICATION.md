@@ -40,6 +40,8 @@ The page builds this line from the reviewed values; the model does not format it
 - Country codes are fixed to `VN`, as requested for this workflow.
 - CCCD uses `I` and requires 12 digits; Passport uses `P` and an alphanumeric number.
 - Months use English JAN–DEC codes. Dates are never inferred when absent.
+- The Script section accepts matching bilingual sex values such as `NỮ / F`
+  and `NAM / M`. Unknown or conflicting values still disable copying.
 - Names use uppercase Latin letters without Vietnamese accents; `Đ` becomes `D`.
 - For CCCD, the first word is the surname; remaining words include middle and
   given names. Staff must review compound surnames. For passports, use the

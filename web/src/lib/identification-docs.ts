@@ -26,9 +26,13 @@ export function buildIdentificationDocs(
   const expiry = formatDate(result.expiry_date)
   const lastName = formatName(result.last_name)
   const firstName = formatName(result.first_name)
-  const sex = result.sex?.trim().toUpperCase()
-  const gender = ["M", "MALE", "NAM"].includes(sex ?? "") ? "M"
-    : ["F", "FEMALE", "NỮ", "NU"].includes(sex ?? "") ? "F" : null
+  const genders = result.sex?.split("/").map(value => {
+    const sex = value.trim().toUpperCase()
+    return ["M", "MALE", "NAM"].includes(sex) ? "M"
+      : ["F", "FEMALE", "NỮ", "NU"].includes(sex) ? "F" : null
+  }) ?? []
+  const gender = genders.length && genders[0] && genders.every(value => value === genders[0])
+    ? genders[0] : null
   const validNumber = number && (documentType === "identity_card" ? /^\d{12}$/.test(number) : /^[A-Z0-9]+$/.test(number))
   if (!validNumber || !dob || !expiry || !lastName || !firstName || !gender) return null
   return `SR-DOCS-${documentType === "identity_card" ? "I" : "P"}-VN-${number}-VN-${dob}-${gender}-${expiry}-${lastName}/${firstName}`

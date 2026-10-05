@@ -1,6 +1,6 @@
 export default {
   identification: {
-    docsLabel: "SR-DOCS",
+    docsLabel: "Script",
     docsHelp: 'Check surname and all given names before copying. SR-DOCS uses VN and uppercase names without accents.',
     docsIncomplete: 'Enter a valid document number, birth date, sex (M/F), expiry date, surname and all given names to build SR-DOCS. Citizen IDs need 12 digits.',
   "upload": "Identification document",
@@ -19,7 +19,7 @@ export default {
   "results": "Extracted details",
   "review": "Check each value against the document. Missing or unclear values are left blank.",
   "empty": "Upload an ID card or passport, then choose Read identification.",
-  "copy": "Copy SR-DOCS",
+  "copy": "Copy script",
   "copied": "Copied",
   "notVisible": "Not visible",
   "documentType": "Document type",

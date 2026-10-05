@@ -1,6 +1,6 @@
 export default {
   identification: {
-    docsLabel: "SR-DOCS",
+    docsLabel: "Script",
     docsHelp: 'Kiểm tra họ, tên đệm và tên trước khi sao chép. Dòng SR-DOCS dùng VN và tên in hoa không dấu.',
     docsIncomplete: 'Điền số giấy tờ hợp lệ, ngày sinh, giới tính (M/F), ngày hết hạn, họ và tên đệm + tên để tạo dòng SR-DOCS. CCCD cần đủ 12 chữ số.',
   "upload": "Giấy tờ tùy thân",
@@ -19,7 +19,7 @@ export default {
   "results": "Thông tin trích xuất",
   "review": "Đối chiếu từng thông tin với giấy tờ. Thông tin thiếu hoặc không rõ sẽ để trống.",
   "empty": "Tải căn cước hoặc hộ chiếu lên rồi chọn Đọc giấy tờ.",
-  "copy": "Sao chép SR-DOCS",
+  "copy": "Sao chép script",
   "copied": "Đã sao chép",
   "notVisible": "Không thấy trên giấy tờ",
   "documentType": "Loại giấy tờ",
