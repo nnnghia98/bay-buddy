@@ -36,5 +36,5 @@ export function buildIdentificationDocs(
     ? genders[0] : null
   const validNumber = number && (documentType === "identity_card" ? /^\d{12}$/.test(number) : /^[A-Z0-9]+$/.test(number))
   if (!validNumber || !dob || !expiry || !lastName || !firstName || !gender) return null
-  return `SR-DOCS-${documentType === "identity_card" ? "I" : "P"}-VN-${number}-VN-${dob}-${gender}-${expiry}-${lastName}/${firstName}`
+  return `SR DOCS-${documentType === "identity_card" ? "I" : "P"}-VN-${number}-VN-${dob}-${gender}-${expiry}-${lastName}/${firstName}`
 }

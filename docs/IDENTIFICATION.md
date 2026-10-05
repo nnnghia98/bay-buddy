@@ -29,13 +29,13 @@ later for narrow decisions over extracted text, after measured evaluation:
 https://docs.typesafe.ai/concepts/state
 https://docs.typesafe.ai/cookbooks/pre_parsed_value_extraction_cookbook
 
-## SR-DOCS output
+## SR DOCS output
 
 Staff selects CCCD (`identity_card`) or Passport (`passport`) before extraction.
 The API requires `document_type` in the multipart form and rejects a mismatch.
 The page builds this line from the reviewed values; the model does not format it:
 
-`SR-DOCS-[I or P]-VN-[number]-VN-[DDMMMYY DOB]-[M or F]-[DDMMMYY expiry]-[surname]/[all given names]`
+`SR DOCS-[I or P]-VN-[number]-VN-[DDMMMYY DOB]-[M or F]-[DDMMMYY expiry]-[surname]/[all given names]`
 
 - Country codes are fixed to `VN`, as requested for this workflow.
 - CCCD uses `I` and requires 12 digits; Passport uses `P` and an alphanumeric number.
