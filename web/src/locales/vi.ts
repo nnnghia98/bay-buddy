@@ -1,7 +1,7 @@
 export default {
   identification: {
     docsLabel: "Script",
-    docsHelp: 'Kiểm tra họ, tên đệm và tên trước khi sao chép. Dòng SR-DOCS dùng VN và tên in hoa không dấu.',
+    docsHelp: 'Kiểm tra họ, tên đệm và tên trước khi sao chép. Dòng SR-DOCS dùng VN và tên in hoa không dấu. CCCD không có ngày hết hạn mặc định dùng 31/12/2050; có thể sửa ngày bên dưới.',
     docsIncomplete: 'Điền số giấy tờ hợp lệ, ngày sinh, giới tính (M/F), ngày hết hạn, họ và tên đệm + tên để tạo dòng SR-DOCS. CCCD cần đủ 12 chữ số.',
   "upload": "Giấy tờ tùy thân",
   "privacy": "Tệp được gửi đến Google Gemini để đọc. Bay Buddy không lưu tệp hoặc kết quả. Xóa dữ liệu trên trang sau khi dùng.",

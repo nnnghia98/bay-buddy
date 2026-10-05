@@ -2,6 +2,7 @@ import { z } from "zod"
 import type { IdentificationResult } from "@/schemas/identification"
 
 export type IdentificationDocumentType = "identity_card" | "passport"
+export const defaultCitizenIdExpiryDate = "2050-12-31"
 
 const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
 
@@ -23,7 +24,7 @@ export function buildIdentificationDocs(
 ): string | null {
   const number = result.document_number?.trim().toUpperCase()
   const dob = formatDate(result.date_of_birth)
-  const expiry = formatDate(result.expiry_date)
+  const expiry = formatDate(result.expiry_date ?? (documentType === "identity_card" ? defaultCitizenIdExpiryDate : null))
   const lastName = formatName(result.last_name)
   const firstName = formatName(result.first_name)
   const genders = result.sex?.split("/").map(value => {

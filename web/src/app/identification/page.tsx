@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Banner } from "@astryxdesign/core/Banner"
 import { Input } from "@/components/ui/input"
-import { buildIdentificationDocs, type IdentificationDocumentType } from "@/lib/identification-docs"
+import { buildIdentificationDocs, defaultCitizenIdExpiryDate, type IdentificationDocumentType } from "@/lib/identification-docs"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/locales/client"
 import { ApiError, apiFetch } from "@/lib/api"
@@ -61,7 +61,7 @@ export default function IdentificationPage() {
       const payload = await apiFetch<unknown>("/ai/identification", { method: "POST", body, signal: controller.signal, cache: "no-store" })
       const extracted = identificationResultSchema.parse(payload)
       if (extracted.document_type !== documentType) throw new Error("Document type mismatch")
-      setResult(extracted)
+      setResult({ ...extracted, expiry_date: extracted.expiry_date ?? (documentType === "identity_card" ? defaultCitizenIdExpiryDate : null) })
     } catch (error) {
       if (controller.signal.aborted) return
       setError(error instanceof ApiError && error.status === 422 ? t("identification.unreadable") : error instanceof ApiError && error.status === 401 ? t("identification.sessionExpired") : t("identification.failed"))

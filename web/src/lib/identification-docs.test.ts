@@ -28,10 +28,18 @@ describe("SR-DOCS output", () => {
     })).toBe("SR-DOCS-P-VN-B0123456-VN-22NOV72-F-22NOV50-TRAN/THI HOAI HUONG")
   })
   it.each([
-    { expiry_date: null }, { date_of_birth: "1998-02-30" }, { sex: null },
+    { expiry_date: "2050-02-30" }, { date_of_birth: "1998-02-30" }, { sex: null },
     { sex: "unknown" }, { sex: "M / F" }, { sex: "unknown / F" }, { last_name: null }, { first_name: null },
     { first_name: "AN/TEST" }, { document_number: "123" },
   ])("does not produce a copyable line for missing or invalid required data: %j", change => {
     expect(buildIdentificationDocs("identity_card", { ...sample, ...change })).toBeNull()
+  })
+  it("uses 31 December 2050 for a citizen ID without an expiry date", () => {
+    expect(buildIdentificationDocs("identity_card", { ...sample, expiry_date: null })).toBe(
+      "SR-DOCS-I-VN-001172043965-VN-22NOV72-F-31DEC50-TRAN/THI HOAI HUONG",
+    )
+  })
+  it("requires an expiry date for passports", () => {
+    expect(buildIdentificationDocs("passport", { ...sample, expiry_date: null })).toBeNull()
   })
 })

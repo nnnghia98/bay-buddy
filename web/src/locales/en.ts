@@ -1,7 +1,7 @@
 export default {
   identification: {
     docsLabel: "Script",
-    docsHelp: 'Check surname and all given names before copying. SR-DOCS uses VN and uppercase names without accents.',
+    docsHelp: 'Check surname and all given names before copying. SR-DOCS uses VN and uppercase names without accents. Citizen IDs without an expiry date default to 31/12/2050; you can edit this date below.',
     docsIncomplete: 'Enter a valid document number, birth date, sex (M/F), expiry date, surname and all given names to build SR-DOCS. Citizen IDs need 12 digits.',
   "upload": "Identification document",
   "privacy": "Files are sent to Google Gemini for reading. Bay Buddy does not save files or results. Clear the page when finished.",
