@@ -1,7 +1,9 @@
 "use client"
 
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useEffectEvent, useRef, useState } from "react"
+import { Panel } from "@/components/command-center"
+import { UploadCloud } from "lucide-react"
 import { Banner } from "@astryxdesign/core/Banner"
 import { Input } from "@/components/ui/input"
 import { buildIdentificationDocs, defaultCitizenIdExpiryDate, type IdentificationDocumentType } from "@/lib/identification-docs"
@@ -21,6 +23,7 @@ export default function IdentificationPage() {
   const [result, setResult] = useState<IdentificationResult | null>(null)
   const [error, setError] = useState("")
   const [pending, setPending] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const [copied, setCopied] = useState(false)
   const input = useRef<HTMLInputElement>(null)
   const request = useRef<AbortController | null>(null)
@@ -35,6 +38,32 @@ export default function IdentificationPage() {
   }
   useEffect(() => () => previewUrls.current.forEach(url => { if (url) URL.revokeObjectURL(url) }), [])
   useEffect(() => () => request.current?.abort(), [])
+
+  function selectFiles(selected: File[]) {
+    if (pending || !selected.length) return
+    if (!identificationUploadSchema.safeParse(selected).success) {
+      setError(t("identification.invalidFiles"))
+    } else {
+      setResult(null)
+      setCopied(false)
+      replaceFiles(selected)
+      setError("")
+    }
+    if (input.current) input.current.value = ""
+  }
+
+  const handlePaste = useEffectEvent((event: ClipboardEvent) => {
+    if (pending || event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || (event.target instanceof HTMLElement && event.target.isContentEditable)) return
+    const selected = Array.from(event.clipboardData?.files ?? [])
+    if (!selected.length) return
+    event.preventDefault()
+    selectFiles([...files, ...selected])
+  })
+
+  useEffect(() => {
+    document.addEventListener("paste", handlePaste)
+    return () => document.removeEventListener("paste", handlePaste)
+  }, [])
 
   function clear() {
     replaceFiles([])
@@ -87,9 +116,9 @@ export default function IdentificationPage() {
   }
 
   return <div className={styles.workbench}>
+    <Panel>
     <form className={styles.panel} onSubmit={extract} aria-busy={pending}>
       <h1 className={styles.heading}>{t("identification.upload")}</h1>
-      <p className={styles.note}>{t("identification.privacy")}</p>
       <fieldset className={styles.typeSelector} disabled={pending}>
         <legend>{t("identification.documentType")}</legend>
         {(["identity_card", "passport"] as const).map(type => <label key={type}>
@@ -98,13 +127,21 @@ export default function IdentificationPage() {
         </label>)}
       </fieldset>
       <label className={styles.label} htmlFor="identification-files">{t("identification.files")}</label>
-      <input ref={input} id="identification-files" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple disabled={pending} aria-describedby="identification-help" onChange={event => {
-        const selected = Array.from(event.target.files ?? [])
-        setResult(null); setCopied(false)
-        if (selected.length && !identificationUploadSchema.safeParse(selected).success) {
-          replaceFiles([]); setError(t("identification.invalidFiles")); event.target.value = ""
-        } else { replaceFiles(selected); setError("") }
-      }} />
+      <input hidden ref={input} id="identification-files" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple disabled={pending} aria-describedby="identification-help" onChange={event => selectFiles(Array.from(event.target.files ?? []))} />
+      <button
+        type="button"
+        disabled={pending}
+        aria-describedby="identification-help"
+        className={`${styles.dropZone} ${isDragging ? styles.dropZoneDragging : ""}`}
+        onClick={() => input.current?.click()}
+        onDragOver={event => { event.preventDefault(); if (!pending) setIsDragging(true) }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={event => { event.preventDefault(); setIsDragging(false); selectFiles(Array.from(event.dataTransfer.files)) }}
+      >
+        <UploadCloud className={styles.uploadIcon} strokeWidth={1.5} aria-hidden="true" />
+        <span className={styles.label}>{t("identification.uploadPrompt")}</span>
+        <span className={styles.note}>{t("identification.fileFormats")}</span>
+      </button>
       <p id="identification-help" className={styles.note}>{t("identification.help")}</p>
       <div className={styles.actions}>
         <Button type="submit" disabled={!files.length || pending}>{pending ? t("identification.extracting") : t("identification.extract")}</Button>
@@ -116,6 +153,8 @@ export default function IdentificationPage() {
         <figcaption>{file.name}</figcaption>
       </figure>)}</div>
     </form>
+    </Panel>
+    <Panel>
     <section className={styles.panel} aria-live="polite" aria-busy={pending}>
       <div className={styles.actions}>
         <h2 className={styles.heading}>{t("identification.results")}</h2>
@@ -132,5 +171,6 @@ export default function IdentificationPage() {
         </dl>
       </> : <p className={styles.note}>{pending ? t("identification.extracting") : t("identification.empty")}</p>}
     </section>
+    </Panel>
   </div>
 }

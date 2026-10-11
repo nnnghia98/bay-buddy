@@ -491,7 +491,7 @@ export function AppShell({ children }: AppShellProps) {
         <SideNav
           collapsible={{
             buttonLabel: t("appShell.collapseNavigation"),
-            defaultIsCollapsed: false,
+            defaultIsCollapsed: true,
           }}
           header={<BrandHeading />}
         >
