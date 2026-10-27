@@ -47,6 +47,7 @@ TicketDebtPaymentMethod = Literal[
     "Tiền mặt",
     "AST",
     "THF",
+    "EV",
 ]
 TicketDebtMoneyFilter = Literal["zero", "positive"]
 

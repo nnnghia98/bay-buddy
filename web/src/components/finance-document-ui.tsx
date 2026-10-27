@@ -47,11 +47,13 @@ export function DocumentSummaryGrid({
 }
 
 export function DocumentField({
+  field,
   className,
   label,
   value,
   valueClassName,
 }: {
+  field?: string
   className?: string
   label: ReactNode
   value: ReactNode
@@ -59,6 +61,7 @@ export function DocumentField({
 }) {
   return (
     <DetailField
+      field={field}
       className={className}
       label={label}
       value={value}
@@ -69,11 +72,13 @@ export function DocumentField({
 
 export function FinanceLineItemsTable({
   descriptionClassName,
+  fieldTable,
   items,
   labels,
   showLinkedTicketId = true,
 }: {
   descriptionClassName?: string
+  fieldTable?: "invoice_item" | "quote_item"
   items: FinanceDocumentLineItem[]
   labels: FinanceLineItemLabels
   showLinkedTicketId?: boolean
@@ -83,17 +88,17 @@ export function FinanceLineItemsTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>{labels.description}</TableHead>
-            <TableHead>{labels.passenger}</TableHead>
-            <TableHead className={styles.numberCell}>{labels.quantity}</TableHead>
-            <TableHead className={styles.numberCell}>{labels.unitPrice}</TableHead>
-            <TableHead className={styles.numberCell}>{labels.total}</TableHead>
+            <TableHead field={fieldTable ? `${fieldTable}.description` : undefined}>{labels.description}</TableHead>
+            <TableHead field={fieldTable ? `${fieldTable}.passenger_name_snapshot` : undefined}>{labels.passenger}</TableHead>
+            <TableHead field={fieldTable ? `${fieldTable}.quantity` : undefined} className={styles.numberCell}>{labels.quantity}</TableHead>
+            <TableHead field={fieldTable ? `${fieldTable}.unit_price_snapshot` : undefined} className={styles.numberCell}>{labels.unitPrice}</TableHead>
+            <TableHead field={fieldTable ? `${fieldTable}.total` : undefined} className={styles.numberCell}>{labels.total}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {items.map((item) => (
             <TableRow key={item.id}>
-              <TableCell className={cn(styles.descriptionCell, descriptionClassName)}>
+              <TableCell field={fieldTable ? `${fieldTable}.description` : undefined} className={cn(styles.descriptionCell, descriptionClassName)}>
                 <div className={styles.descriptionStack}>
                   <p className={styles.description}>{item.description}</p>
                   {showLinkedTicketId && item.linked_ticket_id ? (
@@ -103,12 +108,12 @@ export function FinanceLineItemsTable({
                   ) : null}
                 </div>
               </TableCell>
-              <TableCell>{item.passenger_name_snapshot}</TableCell>
-              <TableCell className={styles.numberCell}>{item.quantity}</TableCell>
-              <TableCell className={styles.numberCell}>
+              <TableCell field={fieldTable ? `${fieldTable}.passenger_name_snapshot` : undefined}>{item.passenger_name_snapshot}</TableCell>
+              <TableCell field={fieldTable ? `${fieldTable}.quantity` : undefined} className={styles.numberCell}>{item.quantity}</TableCell>
+              <TableCell field={fieldTable ? `${fieldTable}.unit_price_snapshot` : undefined} className={styles.numberCell}>
                 {formatCurrency(item.unit_price_snapshot)}
               </TableCell>
-              <TableCell className={cn(styles.numberCell, styles.totalCell)}>
+              <TableCell field={fieldTable ? `${fieldTable}.total` : undefined} className={cn(styles.numberCell, styles.totalCell)}>
                 {formatCurrency(item.total)}
               </TableCell>
             </TableRow>

@@ -489,19 +489,32 @@ def test_ticket_debt_filters_use_effective_payment_and_validate(
             "payment_method": "AST",
         },
     )
+    ev_response = test_client.post(
+        "/api/v1/tickets/confirm",
+        json=_confirm_payload()
+        | zero_prices
+        | {
+            "pnr": "DDD444",
+            "ticket_number": "7382319993004",
+            "payment_method": "EV",
+        },
+    )
 
     assert no_payment_response.status_code == 201
     assert cash_payment_response.status_code == 201
     assert ast_response.status_code == 201
+    assert ev_response.status_code == 201
     no_payment_ticket_id = no_payment_response.json()["data"]["ticket"]["id"]
     cash_ticket_id = cash_payment_response.json()["data"]["ticket"]["id"]
     ast_ticket_id = ast_response.json()["data"]["ticket"]["id"]
+    ev_ticket_id = ev_response.json()["data"]["ticket"]["id"]
 
     for payment_method, expected_ticket_ids in {
         "none": [no_payment_ticket_id],
         "Tiền mặt": [cash_ticket_id],
         "Chuyển khoản": [],
         "AST": [ast_ticket_id],
+        "EV": [ev_ticket_id],
     }.items():
         response = test_client.get(
             "/api/v1/finance/ticket-debts",
@@ -542,7 +555,7 @@ def test_ticket_debt_filters_use_effective_payment_and_validate(
     assert zero_prices_response.status_code == 200
     assert {
         row["ticket_id"] for row in zero_prices_response.json()["data"]["items"]
-    } == {no_payment_ticket_id, cash_ticket_id, ast_ticket_id}
+    } == {no_payment_ticket_id, cash_ticket_id, ast_ticket_id, ev_ticket_id}
     assert invalid_method_response.status_code == 422
     assert invalid_money_response.status_code == 422
     assert invalid_date_response.status_code == 422

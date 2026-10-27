@@ -1,5 +1,7 @@
 "use client"
 
+import { ConfiguredSelect } from "@/components/configured-select"
+import { ConfiguredField } from "@/components/configured-field"
 import patterns from "@/styles/ui-patterns.module.css"
 
 import * as React from "react"
@@ -245,7 +247,7 @@ function EditCustomerDialog({
           <input name="is_active" type="hidden" value={String(customer.is_active)} />
 
           <div className={patterns.grid}>
-            <div className={patterns.fieldStack}>
+            <ConfiguredField field="customer.name" systemRequired><div className={patterns.fieldStack}>
               <Label htmlFor="customer-name">
                 {t("customers.management.fields.name")}
               </Label>
@@ -261,13 +263,13 @@ function EditCustomerDialog({
                   {getCustomerFieldError("name", clientErrors, state)}
                 </p>
               ) : null}
-            </div>
+            </div></ConfiguredField>
 
-            <div className={patterns.fieldStack}>
+            <ConfiguredField field="customer.type"><div className={patterns.fieldStack}>
               <Label htmlFor="customer-type">
                 {t("customers.management.fields.type")}
               </Label>
-              <select
+              <ConfiguredSelect
                 className={selectInputClassName}
                 id="customer-type"
                 name="type"
@@ -282,16 +284,16 @@ function EditCustomerDialog({
                 <option value="BUSINESS">
                   {t("customers.management.types.BUSINESS")}
                 </option>
-              </select>
+              </ConfiguredSelect>
               {getCustomerFieldError("type", clientErrors, state) ? (
                 <p className={patterns.errorText}>
                   {getCustomerFieldError("type", clientErrors, state)}
                 </p>
               ) : null}
-            </div>
+            </div></ConfiguredField>
 
             <div className={patterns.twoColumnGrid}>
-              <div className={patterns.fieldStack}>
+              <ConfiguredField field="customer.phone"><div className={patterns.fieldStack}>
                 <Label htmlFor="customer-phone">
                   {t("customers.management.fields.phone")}
                 </Label>
@@ -307,9 +309,9 @@ function EditCustomerDialog({
                     {getCustomerFieldError("phone", clientErrors, state)}
                   </p>
                 ) : null}
-              </div>
+              </div></ConfiguredField>
 
-              <div className={patterns.fieldStack}>
+              <ConfiguredField field="customer.email"><div className={patterns.fieldStack}>
                 <Label htmlFor="customer-email">
                   {t("customers.management.fields.email")}
                 </Label>
@@ -325,10 +327,10 @@ function EditCustomerDialog({
                     {getCustomerFieldError("email", clientErrors, state)}
                   </p>
                 ) : null}
-              </div>
+              </div></ConfiguredField>
             </div>
 
-            <div className={patterns.fieldStack}>
+            <ConfiguredField field="customer.address"><div className={patterns.fieldStack}>
               <Label htmlFor="customer-address">
                 {t("customers.management.fields.address")}
               </Label>
@@ -344,9 +346,9 @@ function EditCustomerDialog({
                   {getCustomerFieldError("address", clientErrors, state)}
                 </p>
               ) : null}
-            </div>
+            </div></ConfiguredField>
 
-            <div className={patterns.fieldStack}>
+            <ConfiguredField field="customer.tax_code"><div className={patterns.fieldStack}>
               <Label htmlFor="customer-tax-code">
                 {t("customers.management.fields.taxCode")}
               </Label>
@@ -362,7 +364,7 @@ function EditCustomerDialog({
                   {getCustomerFieldError("tax_code", clientErrors, state)}
                 </p>
               ) : null}
-            </div>
+            </div></ConfiguredField>
           </div>
 
           <DialogFooter>
@@ -543,24 +545,24 @@ function LedgerRecordCorrectionDialog({
             <>
               <input name="ticket_id" type="hidden" value={ticket.id} />
               <div className={patterns.twoColumnGrid}>
-                <div className={patterns.fieldStack}>
+                <ConfiguredField field="ticket.pnr"><div className={patterns.fieldStack}>
                   <Label htmlFor={`pnr-${entry.id}`}>{t("customers.ledger.corrections.fields.pnr")}</Label>
                   <Input id={`pnr-${entry.id}`} name="pnr" defaultValue={ticket.pnr ?? ""} />
                   {getCorrectionError("pnr", state) ? (
                     <p className={patterns.errorText}>{getCorrectionError("pnr", state)}</p>
                   ) : null}
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="ticket.ticket_number"><div className={patterns.fieldStack}>
                   <Label htmlFor={`ticket-number-${entry.id}`}>{t("customers.ledger.corrections.fields.ticketNumber")}</Label>
                   <Input
                     id={`ticket-number-${entry.id}`}
                     name="ticket_number"
                     defaultValue={ticket.ticket_number ?? ""}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="ticket.airline"><div className={patterns.fieldStack}>
                   <Label htmlFor={`airline-${entry.id}`}>{t("customers.ledger.corrections.fields.airline")}</Label>
-                  <select
+                  <ConfiguredSelect
                     className={selectInputClassName}
                     id={`airline-${entry.id}`}
                     name="airline"
@@ -570,9 +572,9 @@ function LedgerRecordCorrectionDialog({
                     {["VNA", "VJ", "QH", "VU"].map((airline) => (
                       <option key={airline} value={airline}>{airline}</option>
                     ))}
-                  </select>
-                </div>
-                <div className={patterns.fieldStack}>
+                  </ConfiguredSelect>
+                </div></ConfiguredField>
+                <ConfiguredField field="ticket.flight_date"><div className={patterns.fieldStack}>
                   <Label htmlFor={`flight-date-${entry.id}`}>{t("customers.ledger.corrections.fields.flightDate")}</Label>
                   <Input
                     id={`flight-date-${entry.id}`}
@@ -580,55 +582,55 @@ function LedgerRecordCorrectionDialog({
                     type="datetime-local"
                     defaultValue={formatDateTimeLocal(ticket.flight_date)}
                   />
-                </div>
+                </div></ConfiguredField>
               </div>
 
-              <div className={patterns.fieldStack}>
+              <ConfiguredField field="ticket.passengers"><div className={patterns.fieldStack}>
                 <Label htmlFor={`passengers-${entry.id}`}>{t("customers.ledger.corrections.fields.passengers")}</Label>
                 <Textarea
                   id={`passengers-${entry.id}`}
                   name="passengers"
                   defaultValue={ticket.passengers.join("\n")}
                 />
-              </div>
+              </div></ConfiguredField>
 
               <div className={patterns.twoColumnGrid}>
-                <div className={patterns.fieldStack}>
+                <ConfiguredField field="ticket.departure_place"><div className={patterns.fieldStack}>
                   <Label htmlFor={`departure-place-${entry.id}`}>{t("customers.ledger.corrections.fields.departurePlace")}</Label>
                   <Input
                     id={`departure-place-${entry.id}`}
                     name="departure_place"
                     defaultValue={ticket.departure_place ?? ""}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="ticket.arrival_place"><div className={patterns.fieldStack}>
                   <Label htmlFor={`arrival-place-${entry.id}`}>{t("customers.ledger.corrections.fields.arrivalPlace")}</Label>
                   <Input
                     id={`arrival-place-${entry.id}`}
                     name="arrival_place"
                     defaultValue={ticket.arrival_place ?? ""}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="ticket.departure_code"><div className={patterns.fieldStack}>
                   <Label htmlFor={`departure-code-${entry.id}`}>{t("customers.ledger.corrections.fields.departureCode")}</Label>
                   <Input
                     id={`departure-code-${entry.id}`}
                     name="departure_code"
                     defaultValue={ticket.departure_code ?? ""}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="ticket.arrival_code"><div className={patterns.fieldStack}>
                   <Label htmlFor={`arrival-code-${entry.id}`}>{t("customers.ledger.corrections.fields.arrivalCode")}</Label>
                   <Input
                     id={`arrival-code-${entry.id}`}
                     name="arrival_code"
                     defaultValue={ticket.arrival_code ?? ""}
                   />
-                </div>
+                </div></ConfiguredField>
               </div>
 
               <div className={styles.priceGrid}>
-                <div className={patterns.fieldStack}>
+                <ConfiguredField field="ticket.ev_price"><div className={patterns.fieldStack}>
                   <Label htmlFor={`ev-price-${entry.id}`}>{t("customers.ledger.corrections.fields.evPrice")}</Label>
                   <Input
                     id={`ev-price-${entry.id}`}
@@ -637,8 +639,8 @@ function LedgerRecordCorrectionDialog({
                     min="0"
                     defaultValue={ticket.ev_price}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="ticket.ast_price"><div className={patterns.fieldStack}>
                   <Label htmlFor={`ast-price-${entry.id}`}>{t("customers.ledger.corrections.fields.astPrice")}</Label>
                   <Input
                     id={`ast-price-${entry.id}`}
@@ -647,8 +649,8 @@ function LedgerRecordCorrectionDialog({
                     min="0"
                     defaultValue={ticket.ast_price}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="ticket.thf_price"><div className={patterns.fieldStack}>
                   <Label htmlFor={`thf-price-${entry.id}`}>{t("customers.ledger.corrections.fields.thfPrice")}</Label>
                   <Input
                     id={`thf-price-${entry.id}`}
@@ -657,8 +659,8 @@ function LedgerRecordCorrectionDialog({
                     min="0"
                     defaultValue={ticket.thf_price}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="ticket.web_price"><div className={patterns.fieldStack}>
                   <Label htmlFor={`web-price-${entry.id}`}>{t("customers.ledger.corrections.fields.webPrice")}</Label>
                   <Input
                     id={`web-price-${entry.id}`}
@@ -667,8 +669,8 @@ function LedgerRecordCorrectionDialog({
                     min="0"
                     defaultValue={ticket.web_price}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="ticket.insurance_price"><div className={patterns.fieldStack}>
                   <Label htmlFor={`insurance-price-${entry.id}`}>{t("customers.ledger.corrections.fields.insurancePrice")}</Label>
                   <Input
                     id={`insurance-price-${entry.id}`}
@@ -677,8 +679,8 @@ function LedgerRecordCorrectionDialog({
                     min="0"
                     defaultValue={ticket.insurance_price}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="ticket.add_in_price"><div className={patterns.fieldStack}>
                   <Label htmlFor={`add-in-price-${entry.id}`}>
                     {t("customers.ledger.corrections.fields.addInPrice")}
                   </Label>
@@ -689,8 +691,8 @@ function LedgerRecordCorrectionDialog({
                     min="0"
                     defaultValue={ticket.add_in_price}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="ticket.discount"><div className={patterns.fieldStack}>
                   <Label htmlFor={`discount-${entry.id}`}>{t("customers.ledger.corrections.fields.discount")}</Label>
                   <Input
                     id={`discount-${entry.id}`}
@@ -699,8 +701,8 @@ function LedgerRecordCorrectionDialog({
                     min="0"
                     defaultValue={ticket.discount}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="ticket.net_price"><div className={patterns.fieldStack}>
                   <Label htmlFor={`net-price-${entry.id}`}>{t("customers.ledger.corrections.fields.netPrice")}</Label>
                   <Input
                     id={`net-price-${entry.id}`}
@@ -709,8 +711,8 @@ function LedgerRecordCorrectionDialog({
                     min="0"
                     defaultValue={ticket.net_price}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="ticket.selling_price"><div className={patterns.fieldStack}>
                   <Label htmlFor={`selling-price-${entry.id}`}>{t("customers.ledger.corrections.fields.sellingPrice")}</Label>
                   <Input
                     id={`selling-price-${entry.id}`}
@@ -719,14 +721,14 @@ function LedgerRecordCorrectionDialog({
                     min="0"
                     defaultValue={ticket.selling_price}
                   />
-                </div>
+                </div></ConfiguredField>
               </div>
             </>
           ) : transaction ? (
             <>
               <input name="transaction_id" type="hidden" value={transaction.id} />
               <div className={patterns.twoColumnGrid}>
-                <div className={patterns.fieldStack}>
+                <ConfiguredField field="transaction.amount"><div className={patterns.fieldStack}>
                   <Label htmlFor={`amount-${entry.id}`}>{t("customers.ledger.corrections.fields.amount")}</Label>
                   <Input
                     id={`amount-${entry.id}`}
@@ -735,8 +737,8 @@ function LedgerRecordCorrectionDialog({
                     min="1"
                     defaultValue={transaction.amount}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="transaction.occurred_at"><div className={patterns.fieldStack}>
                   <Label htmlFor={`occurred-at-${entry.id}`}>{t("customers.ledger.corrections.fields.occurredAt")}</Label>
                   <Input
                     id={`occurred-at-${entry.id}`}
@@ -744,10 +746,10 @@ function LedgerRecordCorrectionDialog({
                     type="datetime-local"
                     defaultValue={formatDateTimeLocal(transaction.occurred_at)}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="transaction.category"><div className={patterns.fieldStack}>
                   <Label htmlFor={`category-${entry.id}`}>{t("customers.ledger.corrections.fields.category")}</Label>
-                  <select
+                  <ConfiguredSelect
                     className={selectInputClassName}
                     id={`category-${entry.id}`}
                     name="category"
@@ -758,33 +760,33 @@ function LedgerRecordCorrectionDialog({
                         {category.label}
                       </option>
                     ))}
-                  </select>
-                </div>
-                <div className={patterns.fieldStack}>
+                  </ConfiguredSelect>
+                </div></ConfiguredField>
+                <ConfiguredField field="transaction.method"><div className={patterns.fieldStack}>
                   <Label htmlFor={`method-${entry.id}`}>{t("customers.ledger.corrections.fields.method")}</Label>
                   <Input
                     id={`method-${entry.id}`}
                     name="method"
                     defaultValue={transaction.method ?? ""}
                   />
-                </div>
+                </div></ConfiguredField>
               </div>
-              <div className={patterns.fieldStack}>
+              <ConfiguredField field="transaction.note"><div className={patterns.fieldStack}>
                 <Label htmlFor={`note-${entry.id}`}>{t("customers.ledger.corrections.fields.note")}</Label>
                 <Textarea
                   id={`note-${entry.id}`}
                   name="note"
                   defaultValue={transaction.note ?? ""}
                 />
-              </div>
-              <div className={patterns.fieldStack}>
+              </div></ConfiguredField>
+              <ConfiguredField field="transaction.evidence_url"><div className={patterns.fieldStack}>
                 <Label htmlFor={`evidence-${entry.id}`}>{t("customers.ledger.corrections.fields.evidence")}</Label>
                 <Input
                   id={`evidence-${entry.id}`}
                   name="evidence_url"
                   defaultValue={transaction.evidence_url ?? ""}
                 />
-              </div>
+              </div></ConfiguredField>
             </>
           ) : null}
 
@@ -1116,10 +1118,10 @@ export function CustomerLedgerClient({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("customers.ledger.columns.date")}</TableHead>
-                <TableHead>{t("customers.ledger.columns.type")}</TableHead>
-                <TableHead>{t("customers.ledger.columns.content")}</TableHead>
-                <TableHead className={patterns.textRight}>
+                <TableHead field="transaction.created_at">{t("customers.ledger.columns.date")}</TableHead>
+                <TableHead field="transaction.type">{t("customers.ledger.columns.type")}</TableHead>
+                <TableHead field="transaction.note">{t("customers.ledger.columns.content")}</TableHead>
+                <TableHead field="transaction.amount" className={patterns.textRight}>
                   {t("customers.ledger.columns.amount")}
                 </TableHead>
                 <TableHead className={patterns.textRight}>
@@ -1145,10 +1147,10 @@ export function CustomerLedgerClient({
               ) : (
                 ledger.entries.map((entry) => (
                   <TableRow key={entry.id}>
-                    <TableCell className={styles.dateCell}>
+                    <TableCell field="transaction.created_at" className={styles.dateCell}>
                       {formatDate(entry.created_at)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell field="transaction.type">
                       <StatusChip
                         tone={
                           entry.entry_type === "ticket"
@@ -1161,7 +1163,7 @@ export function CustomerLedgerClient({
                         {getEntryTypeLabel(entry.entry_type)}
                       </StatusChip>
                     </TableCell>
-                    <TableCell>
+                    <TableCell field="transaction.note">
                       {entry.entry_type === "ticket" && entry.ticket ? (
                         <Link
                           className={styles.ticketLink}
@@ -1179,7 +1181,7 @@ export function CustomerLedgerClient({
                         </p>
                       )}
                     </TableCell>
-                    <TableCell
+                    <TableCell field="transaction.amount"
                       className={cn(
                         styles.amountCell,
                         entry.amount > 0

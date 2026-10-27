@@ -5,6 +5,7 @@ export const paymentMethodOptions = [
   "Tiền mặt",
   "AST",
   "THF",
+  "EV",
 ] as const
 
 export type PaymentMethod = (typeof paymentMethodOptions)[number]

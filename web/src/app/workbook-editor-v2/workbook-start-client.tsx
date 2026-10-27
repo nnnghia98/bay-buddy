@@ -1,5 +1,6 @@
 "use client"
 
+import { ConfiguredValue } from "@/components/configured-field"
 import patterns from "@/styles/ui-patterns.module.css"
 
 import { Banner } from "@astryxdesign/core/Banner"
@@ -178,9 +179,9 @@ export function WorkbookStartClient({
                   {text("workbookEditor.sheets.eyebrow")}
                 </p>
                 {uploaded ? (
-                  <span className={patterns.monoSupporting}>
+                  <ConfiguredValue field="workbook_editor_workbook.sheet_count"><span className={patterns.monoSupporting}>
                     {uploaded.sheets.length}
-                  </span>
+                  </span></ConfiguredValue>
                 ) : null}
               </div>
               <p className={styles.sheetsDescription}>
@@ -194,9 +195,9 @@ export function WorkbookStartClient({
                   <div className={styles.uploadedIdentity}>
                     <FileSpreadsheet aria-hidden="true" className={patterns.iconSmall} />
                     <div className={patterns.minWidthZero}>
-                      <p className={styles.uploadedName} title={uploaded.original_filename}>
+                      <ConfiguredValue field="workbook_editor_workbook.original_filename"><p className={styles.uploadedName} title={uploaded.original_filename}>
                         {uploaded.original_filename}
-                      </p>
+                      </p></ConfiguredValue>
                       <p className={patterns.supportingText}>
                         {text("workbookEditor.start.uploadedProtected")}
                       </p>

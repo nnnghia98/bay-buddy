@@ -12,6 +12,9 @@ from services.system_settings_service import (
     update_base_datetime,
 )
 
+from models.field_preferences import FieldPreferencesUpdate
+from services.field_preferences_service import get_field_preferences, update_field_preference
+
 router = APIRouter()
 
 
@@ -39,3 +42,19 @@ async def update_base_date_time_settings(
         base_datetime=payload.base_datetime,
     )
     return success_response(setting.model_dump(mode="json"))
+
+
+@router.get("/fields", response_model=dict)
+async def get_personal_field_settings(
+    session: SessionDep, current_user: CurrentUserDep,
+) -> dict:
+    return success_response(get_field_preferences(session=session, user=current_user))
+
+
+@router.patch("/fields", response_model=dict)
+async def update_personal_field_settings(
+    payload: FieldPreferencesUpdate, session: SessionDep, current_user: CurrentUserDep,
+) -> dict:
+    return success_response(update_field_preference(
+        session=session, user=current_user, payload=payload,
+    ))

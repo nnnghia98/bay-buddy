@@ -1,5 +1,7 @@
 "use client"
 
+import { ConfiguredSelect } from "@/components/configured-select"
+import { ConfiguredField } from "@/components/configured-field"
 import patterns from "@/styles/ui-patterns.module.css"
 
 import * as React from "react"
@@ -130,6 +132,7 @@ export function PaymentDialog({
     "Tiền mặt": t("customers.ledger.paymentDialog.fields.methodOptions.cash"),
     AST: t("customers.ledger.paymentDialog.fields.methodOptions.ast"),
     THF: t("customers.ledger.paymentDialog.fields.methodOptions.thf"),
+    EV: t("customers.ledger.paymentDialog.fields.methodOptions.ev"),
   }
 
   React.useEffect(() => {
@@ -207,7 +210,7 @@ export function PaymentDialog({
         <form action={formAction} className={patterns.contentStack} onSubmit={handleSubmit}>
           <input name="customer_id" type="hidden" value={customerId} />
 
-          <div className={styles.amountSurface}>
+          <ConfiguredField field="transaction.amount" systemRequired><div className={styles.amountSurface}>
             <div className={patterns.fieldStack}>
               <Label htmlFor="amount">
                 {t("customers.ledger.paymentDialog.fields.amount")}
@@ -227,12 +230,12 @@ export function PaymentDialog({
                 <p className={patterns.errorText}>{getFieldError("amount")}</p>
               ) : null}
             </div>
-          </div>
+          </div></ConfiguredField>
 
           <div className={patterns.twoColumnGrid}>
-            <div className={patterns.fieldStack}>
+            <ConfiguredField field="transaction.method"><div className={patterns.fieldStack}>
               <Label htmlFor="method">{t("customers.ledger.paymentDialog.fields.method")}</Label>
-              <select
+              <ConfiguredSelect
                 className={selectInputClassName}
                 id="method"
                 name="method"
@@ -246,17 +249,17 @@ export function PaymentDialog({
                     {paymentMethodLabels[option]}
                   </option>
                 ))}
-              </select>
+              </ConfiguredSelect>
               {getFieldError("method") ? (
                 <p className={patterns.errorText}>{getFieldError("method")}</p>
               ) : null}
-            </div>
+            </div></ConfiguredField>
 
-            <div className={patterns.fieldStack}>
+            <ConfiguredField field="transaction.linked_ticket_id"><div className={patterns.fieldStack}>
               <Label htmlFor="linked_ticket_id">
                 {t("customers.ledger.paymentDialog.fields.linkedTicket")}
               </Label>
-              <select
+              <ConfiguredSelect
                 className={selectInputClassName}
                 defaultValue={defaultLinkedTicketId}
                 id="linked_ticket_id"
@@ -270,16 +273,16 @@ export function PaymentDialog({
                     {ticketOption.label}
                   </option>
                 ))}
-              </select>
+              </ConfiguredSelect>
               {getFieldError("linked_ticket_id") ? (
                 <p className={patterns.errorText}>
                   {getFieldError("linked_ticket_id")}
                 </p>
               ) : null}
-            </div>
+            </div></ConfiguredField>
           </div>
 
-          <div className={patterns.fieldStack}>
+          <ConfiguredField field="transaction.note"><div className={patterns.fieldStack}>
             <Label htmlFor="note">{t("customers.ledger.paymentDialog.fields.note")}</Label>
             <Textarea
               id="note"
@@ -289,9 +292,9 @@ export function PaymentDialog({
             {getFieldError("note") ? (
               <p className={patterns.errorText}>{getFieldError("note")}</p>
             ) : null}
-          </div>
+          </div></ConfiguredField>
 
-          <div className={styles.evidenceSurface}>
+          <ConfiguredField field="transaction.evidence_url"><div className={styles.evidenceSurface}>
             <div className={patterns.fieldStack}>
               <Label htmlFor="evidence_url">
                 {t("customers.ledger.paymentDialog.fields.evidence")}
@@ -333,7 +336,7 @@ export function PaymentDialog({
             {getFieldError("evidence_url") ? (
               <p className={patterns.errorText}>{getFieldError("evidence_url")}</p>
             ) : null}
-          </div>
+          </div></ConfiguredField>
 
           <DialogFooter className={styles.footer}>
             <Button

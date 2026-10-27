@@ -1,5 +1,6 @@
 "use client"
 
+import { ticketFieldKey } from "@/lib/field-mapping"
 import patterns from "@/styles/ui-patterns.module.css"
 
 import * as React from "react"
@@ -723,6 +724,7 @@ export function LedgerReportClient({
               <TableRow>
                 {visibleColumns.map((column) => (
                   <TableHead
+                    field={ticketFieldKey(column.key)}
                     className={cn(
                       styles.tableHead,
                       column.align === "right" && styles.numericCell,
@@ -756,6 +758,7 @@ export function LedgerReportClient({
 
                       return (
                         <TableCell
+                          field={ticketFieldKey(column.key)}
                           className={cn(
                             styles.tableCell,
                             column.align === "right" && styles.numericCell,

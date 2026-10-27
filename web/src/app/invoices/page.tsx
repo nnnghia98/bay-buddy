@@ -84,32 +84,32 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("financeDocuments.common.invoice")}</TableHead>
-                  <TableHead>{t("financeDocuments.common.status")}</TableHead>
-                  <TableHead>{t("financeDocuments.common.customer")}</TableHead>
-                  <TableHead className={styles.numberCell}>{t("financeDocuments.common.total")}</TableHead>
-                  <TableHead>{t("financeDocuments.common.createdAt")}</TableHead>
+                  <TableHead field="invoice.invoice_number">{t("financeDocuments.common.invoice")}</TableHead>
+                  <TableHead field="invoice.status">{t("financeDocuments.common.status")}</TableHead>
+                  <TableHead field="invoice.customer_name_snapshot">{t("financeDocuments.common.customer")}</TableHead>
+                  <TableHead field="invoice.total_amount" className={styles.numberCell}>{t("financeDocuments.common.total")}</TableHead>
+                  <TableHead field="invoice.created_at">{t("financeDocuments.common.createdAt")}</TableHead>
                   <TableHead className={styles.actionsCell}>{t("financeDocuments.common.print")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {invoices.map((invoice) => (
                   <TableRow key={invoice.id}>
-                    <TableCell className={styles.invoiceNumber}>
+                    <TableCell field="invoice.invoice_number" className={styles.invoiceNumber}>
                       {invoice.invoice_number}
                     </TableCell>
-                    <TableCell>
+                    <TableCell field="invoice.status">
                       <StatusChip tone={statusTone(invoice.status)}>
                         {t(`financeDocuments.statuses.invoice.${invoice.status}`)}
                       </StatusChip>
                     </TableCell>
-                    <TableCell className={styles.mutedCell}>
+                    <TableCell field="invoice.customer_name_snapshot" className={styles.mutedCell}>
                       {invoice.customer_name_snapshot}
                     </TableCell>
-                    <TableCell className={styles.numberCell}>
+                    <TableCell field="invoice.total_amount" className={styles.numberCell}>
                       {formatCurrency(invoice.total_amount)}
                     </TableCell>
-                    <TableCell className={styles.mutedCell}>
+                    <TableCell field="invoice.created_at" className={styles.mutedCell}>
                       {formatDate(invoice.created_at)}
                     </TableCell>
                     <TableCell className={styles.actionsCell}>

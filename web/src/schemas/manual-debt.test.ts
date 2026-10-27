@@ -114,7 +114,7 @@ describe("manualDebtFormSchema", () => {
     expect(parsed.payment_date).toBeUndefined()
   })
 
-  it.each(["Chuyển khoản", "Tiền mặt", "AST", "THF"] as const)(
+  it.each(["Chuyển khoản", "Tiền mặt", "AST", "THF", "EV"] as const)(
     "accepts %s for an optional payment",
     (paymentMethod) => {
       const parsed = manualDebtFormSchema.parse({

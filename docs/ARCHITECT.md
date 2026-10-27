@@ -85,7 +85,7 @@
 - `amount`: Float
 - `type`: Enum (PAYMENT, CHARGE, REFUND)
 - `category`: Enum (TICKET_PURCHASE, PAYMENT, DISCOUNT, ADDITIONAL_FEE, REFUND)
-- `method`: String (`Chuyển khoản`, `Tiền mặt`, `AST`, `THF`)
+- `method`: String (`Chuyển khoản`, `Tiền mặt`, `AST`, `THF`, `EV` for ENVIET)
 - `note`: Text Nullable (Required for manual payments and manual adjustments)
 - `evidence_url`: String Nullable (Receipt / payment proof URL)
 - `customer_id`: UUID (FK to Customer)
@@ -292,3 +292,24 @@ linked payment totals while also showing the selected charge method and date.
 
 `/identification` reads ID cards and passports without saving extracted data.
 See `docs/IDENTIFICATION.md` for the API contract, model choice, and data handling.
+
+## Personal field configuration
+
+`GET /api/v1/settings/fields` returns a catalogue derived from public model
+schemas, limited to explicit UI bindings, and the signed-in user's preferences. `PATCH` on the same endpoint
+saves or resets one field for that user. Authentication determines ownership;
+clients cannot supply another user's ID. Preferences are stored in
+`user_field_preferences`, keyed by `user_id`, with JSON field overrides.
+
+Database names and types remain read-only. UI overrides support labels,
+visibility, required input, text lengths, and numeric bounds. Personal rules
+cannot relax stored model constraints. Existing shared Zod and API validation
+remain authoritative. Credential fields are excluded from the catalogue.
+
+The frontend loads preferences through its authenticated query cache and applies
+explicit database field bindings to forms, table columns, and detail fields.
+Hidden form controls retain their values for submission. Required workflow
+fields stay visible in forms. Public printable invoices keep their canonical
+layout and snapshot values. Workbook cell-level configuration remains owned
+by the workbook's existing column configurator; personal field settings apply
+to persisted workbook/session metadata.

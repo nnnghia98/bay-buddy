@@ -1,8 +1,8 @@
+import { ConfiguredAstryxField, ConfiguredField, ConfiguredText } from "@/components/configured-field"
 import { Avatar } from "@astryxdesign/core/Avatar"
 import { Banner } from "@astryxdesign/core/Banner"
 import { Card } from "@astryxdesign/core/Card"
 import { Center } from "@astryxdesign/core/Center"
-import { Field } from "@astryxdesign/core/Field"
 import { Heading } from "@astryxdesign/core/Heading"
 import { HStack } from "@astryxdesign/core/HStack"
 import { Icon } from "@astryxdesign/core/Icon"
@@ -96,7 +96,7 @@ export function FormField({
   const errorMessage = nodeText(error)
 
   return (
-    <Field
+    <ConfiguredAstryxField
       className={className}
       description={nodeText(hint) || undefined}
       inputID={htmlFor}
@@ -113,7 +113,7 @@ export function FormField({
       width="100%"
     >
       {children}
-    </Field>
+    </ConfiguredAstryxField>
   )
 }
 
@@ -232,12 +232,14 @@ function ShieldFallback(props: SVGProps<SVGSVGElement>) {
 }
 
 export function DetailField({
+  field = "",
   className,
   label,
   labelMuted = false,
   value,
   valueClassName,
 }: {
+  field?: string
   className?: string
   label: ReactNode
   labelMuted?: boolean
@@ -245,14 +247,14 @@ export function DetailField({
   valueClassName?: string
 }) {
   return (
-    <Card className={className} padding={4} variant="muted">
+    <ConfiguredField field={field}><Card className={className} padding={4} variant="muted">
       <VStack gap={2}>
         <Text
           color={labelMuted ? "secondary" : "accent"}
           display="block"
           type="label"
         >
-          {label}
+          <ConfiguredText field={field}>{label}</ConfiguredText>
         </Text>
         <Text
           className={valueClassName}
@@ -264,7 +266,7 @@ export function DetailField({
           {value}
         </Text>
       </VStack>
-    </Card>
+    </Card></ConfiguredField>
   )
 }
 

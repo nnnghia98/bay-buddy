@@ -1,5 +1,7 @@
 "use client"
 
+import { ConfiguredSelect } from "@/components/configured-select"
+import { ConfiguredField } from "@/components/configured-field"
 import patterns from "@/styles/ui-patterns.module.css"
 
 import * as React from "react"
@@ -247,7 +249,7 @@ export default function CustomersPage() {
         data-state={customer.is_active ? "active" : "inactive"}
       >
         {/* Name + initials */}
-        <TableCell>
+        <TableCell field="customer.name">
           <div className={patterns.row}>
             <InitialsAvatar value={customer.full_name} />
             <div>
@@ -262,12 +264,12 @@ export default function CustomersPage() {
         </TableCell>
 
         {/* Phone */}
-        <TableCell className={styles.phone}>
+        <TableCell field="customer.phone" className={styles.phone}>
           {customer.phone ?? t("financeDocuments.common.notUpdated")}
         </TableCell>
 
         {/* Status */}
-        <TableCell>
+        <TableCell field="customer.is_active">
           <StatusChip tone={customer.is_active ? "success" : "warning"}>
             {customer.is_active
               ? t("customers.management.statuses.active")
@@ -276,7 +278,7 @@ export default function CustomersPage() {
         </TableCell>
 
         {/* Balance */}
-        <TableCell className={styles.balanceCell}>
+        <TableCell field="customer.balance" className={styles.balanceCell}>
           <div className={styles.balance}>
             {customer.current_balance < 0 ? (
               <StatusChip tone="info">
@@ -371,7 +373,7 @@ export default function CustomersPage() {
                 </DialogDescription>
               </DialogHeader>
               <div className={patterns.grid}>
-                <div className={patterns.fieldStack}>
+                <ConfiguredField field="customer.name" systemRequired><div className={patterns.fieldStack}>
                   <Label htmlFor="create-customer-name">
                     {t("customers.management.fields.name")}
                   </Label>
@@ -381,12 +383,12 @@ export default function CustomersPage() {
                     placeholder={t("customers.management.fields.namePlaceholder")}
                     value={createName}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="customer.type"><div className={patterns.fieldStack}>
                   <Label htmlFor="create-customer-type">
                     {t("customers.management.fields.type")}
                   </Label>
-                  <select
+                  <ConfiguredSelect
                     className={selectInputClassName}
                     id="create-customer-type"
                     onChange={(e) => setCreateType(e.target.value as "INDIVIDUAL" | "BUSINESS")}
@@ -394,10 +396,10 @@ export default function CustomersPage() {
                   >
                     <option value="INDIVIDUAL">{t("customers.management.types.INDIVIDUAL")}</option>
                     <option value="BUSINESS">{t("customers.management.types.BUSINESS")}</option>
-                  </select>
-                </div>
+                  </ConfiguredSelect>
+                </div></ConfiguredField>
                 <div className={patterns.twoColumnGrid}>
-                  <div className={patterns.fieldStack}>
+                  <ConfiguredField field="customer.phone"><div className={patterns.fieldStack}>
                     <Label htmlFor="create-customer-phone">
                       {t("customers.management.fields.phone")}
                     </Label>
@@ -407,8 +409,8 @@ export default function CustomersPage() {
                       placeholder={t("customers.management.fields.phonePlaceholder")}
                       value={createPhone}
                     />
-                  </div>
-                  <div className={patterns.fieldStack}>
+                  </div></ConfiguredField>
+                  <ConfiguredField field="customer.email"><div className={patterns.fieldStack}>
                     <Label htmlFor="create-customer-email">
                       {t("customers.management.fields.email")}
                     </Label>
@@ -418,9 +420,9 @@ export default function CustomersPage() {
                       placeholder={t("customers.management.fields.emailPlaceholder")}
                       value={createEmail}
                     />
-                  </div>
+                  </div></ConfiguredField>
                 </div>
-                <div className={patterns.fieldStack}>
+                <ConfiguredField field="customer.address"><div className={patterns.fieldStack}>
                   <Label htmlFor="create-customer-address">
                     {t("customers.management.fields.address")}
                   </Label>
@@ -430,8 +432,8 @@ export default function CustomersPage() {
                     placeholder={t("customers.management.fields.addressPlaceholder")}
                     value={createAddress}
                   />
-                </div>
-                <div className={patterns.fieldStack}>
+                </div></ConfiguredField>
+                <ConfiguredField field="customer.tax_code"><div className={patterns.fieldStack}>
                   <Label htmlFor="create-customer-tax-code">
                     {t("customers.management.fields.taxCode")}
                   </Label>
@@ -441,7 +443,7 @@ export default function CustomersPage() {
                     placeholder={t("customers.management.fields.taxCodePlaceholder")}
                     value={createTaxCode}
                   />
-                </div>
+                </div></ConfiguredField>
               </div>
               <DialogFooter>
                 <Button onClick={() => setIsCreateOpen(false)} type="button" variant="outline">
@@ -502,10 +504,10 @@ export default function CustomersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("financeDocuments.common.customer")}</TableHead>
-                <TableHead>{t("customers.directory.columns.phone")}</TableHead>
-                <TableHead>{t("customers.management.fields.status")}</TableHead>
-                <TableHead className={styles.balanceCell}>{t("customers.ledger.currentBalance")}</TableHead>
+                <TableHead field="customer.name">{t("financeDocuments.common.customer")}</TableHead>
+                <TableHead field="customer.phone">{t("customers.directory.columns.phone")}</TableHead>
+                <TableHead field="customer.is_active">{t("customers.management.fields.status")}</TableHead>
+                <TableHead field="customer.balance" className={styles.balanceCell}>{t("customers.ledger.currentBalance")}</TableHead>
                 {isAdmin ? (
                   <TableHead className={styles.actionsHeading}>{t("customers.directory.columns.actions")}</TableHead>
                 ) : null}
@@ -529,7 +531,7 @@ export default function CustomersPage() {
                   {t("customers.management.dialogs.edit.description")}
                 </DialogDescription>
               </DialogHeader>
-              <div className={patterns.fieldStack}>
+              <ConfiguredField field="customer.name" systemRequired><div className={patterns.fieldStack}>
                 <Label htmlFor="edit-customer-name">
                   {t("customers.management.fields.name")}
                 </Label>
@@ -539,7 +541,7 @@ export default function CustomersPage() {
                   placeholder={t("customers.management.fields.namePlaceholder")}
                   value={editName}
                 />
-              </div>
+              </div></ConfiguredField>
               <DialogFooter>
                 <Button onClick={() => setIsEditOpen(false)} type="button" variant="outline">
                   {t("customers.management.dialogs.cancel")}

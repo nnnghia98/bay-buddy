@@ -1,3 +1,4 @@
+import { ConfiguredValue } from "@/components/configured-field"
 import patterns from "@/styles/ui-patterns.module.css"
 import { Banner } from "@astryxdesign/core/Banner"
 import { redirect } from "next/navigation"
@@ -95,48 +96,48 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
           description={t("financeDocuments.quotes.detail.informationalNotice")}
           action={
             <div className={patterns.wrapRow}>
-              <StatusChip tone={statusTone(quote.status)}>
+              <ConfiguredValue field="quote.status"><StatusChip tone={statusTone(quote.status)}>
                 {quoteStatusLabel}
-              </StatusChip>
-              <span className={patterns.supportingText}>
+              </StatusChip></ConfiguredValue>
+              <ConfiguredValue field="quote.valid_until"><span className={patterns.supportingText}>
                 {t("financeDocuments.common.validUntil")}: {formatDate(quote.valid_until)}
-              </span>
+              </span></ConfiguredValue>
             </div>
           }
         />
         <DocumentSummaryGrid>
-          <DocumentField
+          <DocumentField field="quote.customer_name_snapshot"
             label={t("financeDocuments.common.customer")}
             value={
               <>
-                <p>{quote.customer_name_snapshot}</p>
-                <p className={patterns.supportingText}>
+                <ConfiguredValue field="quote.customer_name_snapshot"><p>{quote.customer_name_snapshot}</p></ConfiguredValue>
+                <ConfiguredValue field="quote.customer_address_snapshot"><p className={patterns.supportingText}>
                   {t("financeDocuments.common.address")}:{" "}
                   {quote.customer_address_snapshot ?? t("financeDocuments.common.notUpdated")}
-                </p>
-                <p className={patterns.supportingText}>
+                </p></ConfiguredValue>
+                <ConfiguredValue field="quote.customer_tax_code_snapshot"><p className={patterns.supportingText}>
                   {t("financeDocuments.common.taxCode")}:{" "}
                   {quote.customer_tax_code_snapshot ?? t("financeDocuments.common.notUpdated")}
-                </p>
+                </p></ConfiguredValue>
               </>
             }
           />
-          <DocumentField
+          <DocumentField field="quote.total_amount"
             label={t("financeDocuments.common.total")}
             value={
               <>
-                <p>{formatCurrency(quote.total_amount)}</p>
-                <p className={patterns.supportingText}>
+                <ConfiguredValue field="quote.total_amount"><p>{formatCurrency(quote.total_amount)}</p></ConfiguredValue>
+                <ConfiguredValue field="quote.tax_amount"><p className={patterns.supportingText}>
                   {t("financeDocuments.common.taxAmount")}: {formatCurrency(quote.tax_amount)}
-                </p>
-                <p className={patterns.supportingText}>
+                </p></ConfiguredValue>
+                <ConfiguredValue field="quote.discount_amount"><p className={patterns.supportingText}>
                   {t("financeDocuments.common.discountAmount")}: {formatCurrency(quote.discount_amount)}
-                </p>
+                </p></ConfiguredValue>
               </>
             }
             valueClassName={patterns.metricValue}
           />
-          <DocumentField
+          <DocumentField field="quote.created_at"
             label={t("financeDocuments.common.createdAt")}
             value={formatDate(quote.created_at)}
           />
@@ -144,7 +145,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             label={t("financeDocuments.common.amountInWords")}
             value={quote.amount_in_words}
           />
-          <DocumentField
+          <DocumentField field="quote.note"
             className={patterns.spanTwo}
             label={t("financeDocuments.common.note")}
             value={quote.note ?? t("financeDocuments.common.noNote")}
@@ -172,7 +173,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             )
           }
         />
-        <FinanceLineItemsTable
+        <FinanceLineItemsTable fieldTable="quote_item"
           items={quote.items}
           labels={{
             description: t("financeDocuments.common.columns.description"),

@@ -52,7 +52,7 @@ Each ticket parsed into the system follows a specific lifecycle. Status changes 
 The system distinguishes between what the airline charges and what the customer pays.
 
 - **Net Price**: The actual cost from the airline/supplier (VNA, Vietjet, etc.).
-- **EV Price**: Host price passed down from the EV upstream agency.
+- **EV Price**: Host price passed down from ENVIET (EV).
 - **AST Price**: Host net price passed down from the AST upstream agency.
 - **THF Price / Thành Hoàng**: Host net price passed down from Thành Hoàng (THF).
 - **WEB Price**: Host net price passed down from the WEB upstream channel.
@@ -126,7 +126,7 @@ To comply with Vietnamese Accounting Standards (Circular 200/2014/TT-BTC or Circ
 ### Audit Trail Requirement
 
 - Every transaction must store the authenticated internal user in `created_by`.
-- Manual customer payments support the method labels `Chuyển khoản`, `Tiền mặt`, `AST`, and `THF`.
+- Payment methods are `Chuyển khoản`, `Tiền mặt`, `AST`, `THF`, and `EV` (ENVIET).
 - Transaction `occurred_at` is the real-world business event time and may be historical; transaction `created_at` is the Bay Buddy audit timestamp used for logs, histories, and base date-time filtering.
 - `/debts/input` does not record payment amounts. It may capture a payment method and date as metadata on the ticket charge.
 - When staff selects a payment date, keep the row unpaid and store the date as `payment_occurred_at` on the ticket charge. This metadata must not change the customer balance or create a zero-value payment.

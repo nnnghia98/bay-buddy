@@ -1,5 +1,6 @@
 "use client"
 
+import { ConfiguredValue } from "@/components/configured-field"
 import patterns from "@/styles/ui-patterns.module.css"
 
 import { Card } from "@astryxdesign/core/Card"
@@ -252,8 +253,8 @@ export function WorkbookSessionLibrary({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{text("workbookEditor.library.columns.name")}</TableHead>
-                <TableHead>{text("workbookEditor.library.columns.updated")}</TableHead>
+                <TableHead field="workbook_editor_session.display_name">{text("workbookEditor.library.columns.name")}</TableHead>
+                <TableHead field="workbook_editor_session.updated_at">{text("workbookEditor.library.columns.updated")}</TableHead>
                 <TableHead className={styles.tableActionsHeader}>{text("workbookEditor.library.columns.actions")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -263,7 +264,7 @@ export function WorkbookSessionLibrary({
                 const active = session.status === "DRAFT"
                 return (
                   <TableRow key={session.id}>
-                    <TableCell className={styles.sessionCell}>
+                    <TableCell field="workbook_editor_session.display_name" className={styles.sessionCell}>
                       <div className={styles.sessionIdentity}>
                         <span className={styles.sessionIcon}>
                           <FileSpreadsheet aria-hidden="true" className={patterns.iconCompact} />
@@ -273,7 +274,7 @@ export function WorkbookSessionLibrary({
                             {session.display_name}
                           </p>
                           <p className={styles.sessionSubtitle}>
-                            {session.original_filename} / {session.selected_sheet_name}
+                            <ConfiguredValue field="workbook_editor_workbook.original_filename"><span>{session.original_filename}</span></ConfiguredValue> / <ConfiguredValue field="workbook_editor_session.selected_sheet_name"><span>{session.selected_sheet_name}</span></ConfiguredValue>
                           </p>
                           {localState ? (
                             <div className={styles.localStatus}>
@@ -285,7 +286,7 @@ export function WorkbookSessionLibrary({
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className={styles.updatedCell}>
+                    <TableCell field="workbook_editor_session.updated_at" className={styles.updatedCell}>
                       {updatedAtFormatter.format(new Date(session.updated_at))}
                     </TableCell>
                     <TableCell>

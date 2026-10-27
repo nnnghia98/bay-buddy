@@ -2184,7 +2184,8 @@
                     "Chuyển khoản",
                     "Tiền mặt",
                     "AST",
-                    "THF"
+                    "THF",
+                    "EV"
                   ],
                   "type": "string"
                 },

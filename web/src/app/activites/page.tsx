@@ -1,3 +1,4 @@
+import { ConfiguredValue } from "@/components/configured-field"
 import patterns from "@/styles/ui-patterns.module.css"
 import Link from "next/link"
 import { CalendarClock, Plane } from "lucide-react"
@@ -172,20 +173,20 @@ export default async function TicketActivityPage({ searchParams }: PageProps) {
                     <div className={styles.customer}>
                       <InitialsAvatar value={customerName} />
                       <div className={patterns.minWidthZero}>
-                        <Link
+                        <ConfiguredValue field="ticket.customer_id"><Link
                           className={styles.primaryLink}
                           href={`/customers/${row.ticket.customer_id}`}
                         >
                           {customerName}
-                        </Link>
-                        <p className={styles.customerId}>
+                        </Link></ConfiguredValue>
+                        <ConfiguredValue field="ticket.customer_id"><p className={styles.customerId}>
                           #{row.ticket.customer_id.slice(0, 8)}
-                        </p>
-                        <p className={styles.balancePill}>
+                        </p></ConfiguredValue>
+                        <ConfiguredValue field="customer.balance"><p className={styles.balancePill}>
                           {row.customer
                             ? formatCurrency(row.customer.current_balance)
                             : t("tickets.activity.list.noBalance")}
-                        </p>
+                        </p></ConfiguredValue>
                       </div>
                     </div>
 
@@ -197,23 +198,23 @@ export default async function TicketActivityPage({ searchParams }: PageProps) {
                         >
                           {row.ticket.pnr ?? t("tickets.activity.list.noPnr")}
                         </Link>
-                        <StatusChip tone="success">
+                        <ConfiguredValue field="ticket.status"><StatusChip tone="success">
                           {t(`tickets.statuses.${row.ticket.status}`)}
-                        </StatusChip>
+                        </StatusChip></ConfiguredValue>
                       </div>
                       <p className={styles.route}>
                         {getRouteLabel(row.ticket)}
                       </p>
-                      <p className={patterns.supportingText}>
+                      <ConfiguredValue field="ticket.ticket_number"><p className={patterns.supportingText}>
                         {row.ticket.ticket_number ??
                           t("tickets.activity.list.noTicketNumber")}
-                      </p>
+                      </p></ConfiguredValue>
                     </div>
 
                     <div className={styles.financial}>
-                      <p className={styles.amount}>
+                      <ConfiguredValue field="ticket.selling_price"><p className={styles.amount}>
                         {formatCurrency(row.ticket.selling_price)}
-                      </p>
+                      </p></ConfiguredValue>
                       <p className={styles.timestamp}>
                         {formatDateTime(row.added_at)}
                       </p>

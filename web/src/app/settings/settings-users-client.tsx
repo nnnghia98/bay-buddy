@@ -1,5 +1,7 @@
 "use client"
 
+import { ConfiguredSelect } from "@/components/configured-select"
+import { ConfiguredField } from "@/components/configured-field"
 import patterns from "@/styles/ui-patterns.module.css"
 
 import * as React from "react"
@@ -7,7 +9,6 @@ import {
   Loader2,
   ShieldCheck,
   ShieldOff,
-  UserCog,
   UserPlus,
   UsersRound,
 } from "lucide-react"
@@ -47,7 +48,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { apiFetchData } from "@/lib/api"
-import { cn } from "@/lib/utils"
 import { useI18n } from "@/locales/client"
 import {
   createCreateUserFormSchema,
@@ -281,7 +281,7 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
           ) : null}
 
           <div className={patterns.grid}>
-            <div className={patterns.fieldStack}>
+            <ConfiguredField field="user.username" systemRequired><div className={patterns.fieldStack}>
               <Label htmlFor={`${mode}-username`}>
                 {t("settings.users.fields.username")}
               </Label>
@@ -297,7 +297,7 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
                   {getFieldError("username", clientErrors, serverErrors)}
                 </p>
               ) : null}
-            </div>
+            </div></ConfiguredField>
 
             <div className={patterns.fieldStack}>
               <Label htmlFor={`${mode}-password`}>
@@ -324,11 +324,11 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
             </div>
 
             <div className={patterns.twoColumnGrid}>
-              <div className={patterns.fieldStack}>
+              <ConfiguredField field="user.role"><div className={patterns.fieldStack}>
                 <Label htmlFor={`${mode}-role`}>
                   {t("settings.users.fields.role")}
                 </Label>
-                <select
+                <ConfiguredSelect
                   className={selectInputClassName}
                   id={`${mode}-role`}
                   name="role"
@@ -337,19 +337,19 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
                 >
                   <option value="ADMIN">{t("settings.users.roles.ADMIN")}</option>
                   <option value="STAFF">{t("settings.users.roles.STAFF")}</option>
-                </select>
+                </ConfiguredSelect>
                 {getFieldError("role", clientErrors, serverErrors) ? (
                   <p className={patterns.errorText}>
                     {getFieldError("role", clientErrors, serverErrors)}
                   </p>
                 ) : null}
-              </div>
+              </div></ConfiguredField>
 
-              <div className={patterns.fieldStack}>
+              <ConfiguredField field="user.is_active"><div className={patterns.fieldStack}>
                 <Label htmlFor={`${mode}-status`}>
                   {t("settings.users.fields.status")}
                 </Label>
-                <select
+                <ConfiguredSelect
                   className={selectInputClassName}
                   id={`${mode}-status`}
                   name="is_active"
@@ -358,13 +358,13 @@ function UserEditorDialog({ mode, user }: UserEditorProps) {
                 >
                   <option value="true">{t("settings.users.statuses.active")}</option>
                   <option value="false">{t("settings.users.statuses.inactive")}</option>
-                </select>
+                </ConfiguredSelect>
                 {getFieldError("is_active", clientErrors, serverErrors) ? (
                   <p className={patterns.errorText}>
                     {getFieldError("is_active", clientErrors, serverErrors)}
                   </p>
                 ) : null}
-              </div>
+              </div></ConfiguredField>
             </div>
           </div>
 
@@ -486,17 +486,7 @@ export function SettingsUsersClient({
   return (
     <div className={patterns.pageStack}>
       <header className={styles.pageHeader}>
-        <div className={patterns.minWidthZero}>
-          <p className={patterns.accentEyebrow}>
-            {t("settings.users.eyebrow")}
-          </p>
-          <h1 className={styles.pageTitle}>
-            {t("settings.users.title")}
-          </h1>
-          <p className={styles.pageDescription}>
-            {t("settings.users.description")}
-          </p>
-        </div>
+        <h2 className={styles.pageTitle}>{t("settings.users.eyebrow")}</h2>
         <div className={patterns.shrinkNone}>
           <UserEditorDialog mode="create" />
         </div>
@@ -522,13 +512,13 @@ export function SettingsUsersClient({
               <Table className={styles.userTable}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>
+                    <TableHead field="user.username">
                       {t("settings.users.columns.username")}
                     </TableHead>
-                    <TableHead>
+                    <TableHead field="user.role">
                       {t("settings.users.columns.role")}
                     </TableHead>
-                    <TableHead>
+                    <TableHead field="user.is_active">
                       {t("settings.users.columns.status")}
                     </TableHead>
                     <TableHead className={styles.actionsHeading}>
@@ -541,7 +531,7 @@ export function SettingsUsersClient({
                     const isCurrentUser = currentUser.id === user.id
                     return (
                       <TableRow key={user.id}>
-                        <TableCell>
+                        <TableCell field="user.username">
                           <div className={patterns.row}>
                             <InitialsAvatar value={user.username} />
                             <div>
@@ -554,12 +544,12 @@ export function SettingsUsersClient({
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell field="user.role">
                           <StatusChip>
                             {formatRoleLabel(user.role, t)}
                           </StatusChip>
                         </TableCell>
-                        <TableCell>
+                        <TableCell field="user.is_active">
                           <div className={styles.statusGroup}>
                             <StatusChip tone={user.is_active ? "success" : "warning"}>
                               {user.is_active
@@ -588,36 +578,7 @@ export function SettingsUsersClient({
           )}
         </Panel>
 
-        <aside>
-          <Panel>
-            <div className={styles.guidanceHeader}>
-              <p className={patterns.accentEyebrow}>
-                {t("settings.guidance.title")}
-              </p>
-              <p className={cn(patterns.mutedText, styles.guidanceDescription)}>
-                {t("settings.guidance.description")}
-              </p>
-            </div>
-            <div className={patterns.dividerList}>
-              <div className={styles.guidanceItem}>
-                <div className={styles.guidanceIcon}>
-                  <ShieldCheck className={patterns.iconSmall} aria-hidden="true" />
-                </div>
-                <p className={patterns.mutedText}>
-                  {t("settings.guidance.access")}
-                </p>
-              </div>
-              <div className={styles.guidanceItem}>
-                <div className={styles.guidanceIcon}>
-                  <UserCog className={patterns.iconSmall} aria-hidden="true" />
-                </div>
-                <p className={patterns.mutedText}>
-                  {t("settings.guidance.status")}
-                </p>
-              </div>
-            </div>
-          </Panel>
-        </aside>
+
       </div>
     </div>
   )

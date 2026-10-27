@@ -351,3 +351,17 @@ The UX rework is successful when:
 - Invoice and quote states are visually distinct and legally/commercially precise.
 - Ticket capture clearly separates AI extraction from human confirmation.
 - The interface remains calm, professional, and Vietnamese-first.
+
+## Personal Settings
+
+Settings is a general settings surface. Personal field configuration is available
+to every authenticated user; account administration remains admin-only.
+Show UI names, database field references, types, baseline validation, and personal
+visibility in a searchable table with a database-table filter. Keep long lists
+inside a scroll container so other settings remain reachable.
+
+Edit a field through a labelled dialog. Save through a Server Action with shared
+Zod validation and explicit pending, success, and error feedback. Reset removes
+that field's personal override. Required workflow controls remain visible even
+when the corresponding read-only table column is hidden. Preferences never
+change database schemas, issued snapshots, or access permissions.

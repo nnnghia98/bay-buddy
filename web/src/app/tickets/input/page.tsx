@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfiguredField } from "@/components/configured-field"
 import patterns from "@/styles/ui-patterns.module.css"
 /* eslint-disable @next/next/no-img-element */
 
@@ -686,7 +687,7 @@ export default function CaptureTicketPage() {
                 </p>
               </div>
               <div className={styles.formPanelBody}>
-                <div className={patterns.fieldStack}>
+                <ConfiguredField field="customer.name" systemRequired><div className={patterns.fieldStack}>
                   <Label htmlFor="customerName" className={patterns.sectionTitle}>Tên khách hàng</Label>
                   <Input
                     id="customerName"
@@ -705,11 +706,11 @@ export default function CaptureTicketPage() {
                       {form.formState.errors.customerName.message}
                     </p>
                   )}
-                </div>
+                </div></ConfiguredField>
 
                 <div className={styles.priceSurface}>
                   <div className={patterns.stack}>
-                    <div className={patterns.fieldStack}>
+                    <ConfiguredField field="ticket.net_price" systemRequired><div className={patterns.fieldStack}>
                       <Label htmlFor="totalPrice" className={patterns.sectionTitle}>Giá gốc <span className={styles.required}>*</span></Label>
                       <div className={patterns.compactStack}>
                         <div className={styles.moneyField}>
@@ -732,9 +733,9 @@ export default function CaptureTicketPage() {
                           </p>
                         )}
                       </div>
-                    </div>
+                    </div></ConfiguredField>
 
-                    <div className={patterns.fieldStack}>
+                    <ConfiguredField field="ticket.add_in_price"><div className={patterns.fieldStack}>
                       <Label
                         htmlFor="addInPrice"
                         className={patterns.sectionTitle}
@@ -755,9 +756,9 @@ export default function CaptureTicketPage() {
                         />
                         <span className={styles.currencySuffix}>VND</span>
                       </div>
-                    </div>
+                    </div></ConfiguredField>
 
-                    <div className={patterns.fieldStack}>
+                    <ConfiguredField field="ticket.discount"><div className={patterns.fieldStack}>
                       <Label
                         htmlFor="discount"
                         className={patterns.sectionTitle}
@@ -787,9 +788,9 @@ export default function CaptureTicketPage() {
                           </p>
                         )}
                       </div>
-                    </div>
+                    </div></ConfiguredField>
 
-                    <div className={patterns.fieldStack}>
+                    <ConfiguredField field="ticket.selling_price" systemRequired><div className={patterns.fieldStack}>
                       <Label
                         htmlFor="sellingPrice"
                         className={patterns.sectionTitle}
@@ -819,10 +820,10 @@ export default function CaptureTicketPage() {
                           </p>
                         )}
                       </div>
-                    </div>
+                    </div></ConfiguredField>
                   </div>
 
-                  <div className={styles.incomeSurface}>
+                  <ConfiguredField field="ticket.true_income"><div className={styles.incomeSurface}>
                     <div className={patterns.stack}>
                       <Label htmlFor="trueIncome" className={patterns.sectionTitle}>Lợi nhuận</Label>
                       <div className={styles.incomeField}>
@@ -864,7 +865,7 @@ export default function CaptureTicketPage() {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </div></ConfiguredField>
                 </div>
               </div>
             </Panel>
@@ -879,7 +880,7 @@ export default function CaptureTicketPage() {
               <div className={styles.flightPanelBody}>
                 {/* PNR + Airline row */}
                 <div className={styles.threeFieldGrid}>
-                  <div className={patterns.fieldStack}>
+                  <ConfiguredField field="ticket.pnr"><div className={patterns.fieldStack}>
                     <Label htmlFor="pnr">Mã đặt chỗ (PNR)</Label>
                     <Input
                       id="pnr"
@@ -892,8 +893,8 @@ export default function CaptureTicketPage() {
                         {form.formState.errors.pnr.message}
                       </p>
                     )}
-                  </div>
-                  <div className={patterns.fieldStack}>
+                  </div></ConfiguredField>
+                  <ConfiguredField field="ticket.airline" systemRequired><div className={patterns.fieldStack}>
                     <Label htmlFor="airline">Hãng bay <span className={styles.required}>*</span></Label>
                     <Input
                       id="airline"
@@ -906,8 +907,8 @@ export default function CaptureTicketPage() {
                         {form.formState.errors.airline.message}
                       </p>
                     )}
-                  </div>
-                  <div className={patterns.fieldStack}>
+                  </div></ConfiguredField>
+                  <ConfiguredField field="ticket.ticket_number" systemRequired><div className={patterns.fieldStack}>
                     <Label htmlFor="ticketNumber">Số vé <span className={styles.required}>*</span></Label>
                     <Input
                       id="ticketNumber"
@@ -920,11 +921,11 @@ export default function CaptureTicketPage() {
                         {form.formState.errors.ticketNumber.message}
                       </p>
                     )}
-                  </div>
+                  </div></ConfiguredField>
                 </div>
 
                 <div className={styles.twoFieldGrid}>
-                  <div className={patterns.fieldStack}>
+                  <ConfiguredField field="ticket.departure_place"><div className={patterns.fieldStack}>
                     <Label htmlFor="departurePlace">Nơi đi</Label>
                     <Input
                       id="departurePlace"
@@ -937,8 +938,8 @@ export default function CaptureTicketPage() {
                         {form.formState.errors.departurePlace.message}
                       </p>
                     )}
-                  </div>
-                  <div className={patterns.fieldStack}>
+                  </div></ConfiguredField>
+                  <ConfiguredField field="ticket.arrival_place"><div className={patterns.fieldStack}>
                     <Label htmlFor="arrivalPlace">Nơi đến</Label>
                     <Input
                       id="arrivalPlace"
@@ -951,12 +952,12 @@ export default function CaptureTicketPage() {
                         {form.formState.errors.arrivalPlace.message}
                       </p>
                     )}
-                  </div>
+                  </div></ConfiguredField>
                 </div>
 
                 {/* Route & Date */}
                 <div className={styles.routeSurface}>
-                  <div className={patterns.fieldStack}>
+                  <ConfiguredField field="ticket.departure_code"><div className={patterns.fieldStack}>
                     <Label htmlFor="departureCode">Mã nơi đi</Label>
                     <Input
                       id="departureCode"
@@ -969,8 +970,8 @@ export default function CaptureTicketPage() {
                         {form.formState.errors.departureCode.message}
                       </p>
                     )}
-                  </div>
-                  <div className={patterns.fieldStack}>
+                  </div></ConfiguredField>
+                  <ConfiguredField field="ticket.arrival_code"><div className={patterns.fieldStack}>
                     <Label htmlFor="arrivalCode">Mã nơi đến</Label>
                     <Input
                       id="arrivalCode"
@@ -983,8 +984,8 @@ export default function CaptureTicketPage() {
                         {form.formState.errors.arrivalCode.message}
                       </p>
                     )}
-                  </div>
-                  <div className={patterns.fieldStack}>
+                  </div></ConfiguredField>
+                  <ConfiguredField field="ticket.itinerary"><div className={patterns.fieldStack}>
                     <Label htmlFor="route">Hành trình</Label>
                     <Input
                       id="route"
@@ -998,10 +999,10 @@ export default function CaptureTicketPage() {
                         {form.formState.errors.route.message}
                       </p>
                     )}
-                  </div>
+                  </div></ConfiguredField>
                 </div>
                 
-                <div className={patterns.fieldStack}>
+                <ConfiguredField field="ticket.flight_date"><div className={patterns.fieldStack}>
                   <Label htmlFor="flightDate">Ngày giờ bay</Label>
                   <Input
                     id="flightDate"
@@ -1014,7 +1015,7 @@ export default function CaptureTicketPage() {
                       {form.formState.errors.flightDate.message}
                     </p>
                   )}
-                </div>
+                </div></ConfiguredField>
               </div>
             </Panel>
 

@@ -3598,7 +3598,7 @@ export interface operations {
                 insurance_price?: ("zero" | "positive") | null;
                 page?: number | null;
                 page_size?: number | null;
-                payment_method?: ("none" | "Chuyển khoản" | "Tiền mặt" | "AST" | "THF") | null;
+                payment_method?: ("none" | "Chuyển khoản" | "Tiền mặt" | "AST" | "THF" | "EV") | null;
                 q?: string | null;
                 selling_price?: ("zero" | "positive") | null;
                 thf_price?: ("zero" | "positive") | null;

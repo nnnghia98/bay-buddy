@@ -1,5 +1,6 @@
 "use client"
 
+import { ConfiguredField } from "@/components/configured-field"
 import patterns from "@/styles/ui-patterns.module.css"
 
 import { LoaderCircle } from "lucide-react"
@@ -57,7 +58,7 @@ export function SessionRenameDialog({
             onSubmit(normalizedName)
           }}
         >
-          <div className={patterns.fieldStack}>
+<ConfiguredField field="workbook_editor_session.display_name" systemRequired>          <div className={patterns.fieldStack}>
             <Label htmlFor="workbook-session-name">
               {text("workbookEditor.library.renameDialog.label")}
             </Label>
@@ -71,7 +72,7 @@ export function SessionRenameDialog({
               required
               value={displayName}
             />
-          </div>
+          </div></ConfiguredField>
           {error ? (
             <p className={patterns.errorText} role="alert">
               {error}

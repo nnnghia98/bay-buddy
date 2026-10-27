@@ -1,5 +1,6 @@
 "use client"
 
+import { ConfiguredField } from "@/components/configured-field"
 import patterns from "@/styles/ui-patterns.module.css"
 
 import * as React from "react"
@@ -467,7 +468,7 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
           </StatusChip>
         </div>
         <div className={styles.panelBody}>
-          <div className={patterns.fieldStack}>
+<ConfiguredField field="system_setting.base_datetime">          <div className={patterns.fieldStack}>
             <Label htmlFor="data-center-base-date-time">
               {t("dataCenter.baseDateTime.label")}
             </Label>
@@ -478,7 +479,7 @@ export function DataCenterClient({ currentUser }: DataCenterClientProps) {
               type="datetime-local"
               value={baseDateTime}
             />
-          </div>
+          </div></ConfiguredField>
           <Button
             disabled={isLoadingBaseDateTime || isSavingBaseDateTime || !baseDateTime}
             onClick={() => setBaseDateTime("")}

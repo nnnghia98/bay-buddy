@@ -38,6 +38,7 @@ from .enums import (
     UserRole,
 )
 from .user import User, UserCreate, UserRead, UserUpdate
+from .field_preferences import UserFieldPreferences
 from .customer import Customer, CustomerCreate, CustomerRead, CustomerUpdate
 from .ticket import Ticket, TicketCreate, TicketRead, TicketUpdate
 from .ticket_import import TicketImport, TicketImportRead
@@ -87,6 +88,7 @@ __all__ = [
     "TransactionCategory",
     "TransactionType",
     # User
+    "UserFieldPreferences",
     "User",
     "UserCreate",
     "UserRead",

@@ -1,5 +1,8 @@
 "use client"
 
+import { ConfiguredValue } from "@/components/configured-field"
+import { ConfiguredSelect } from "@/components/configured-select"
+import { ConfiguredField } from "@/components/configured-field"
 import patterns from "@/styles/ui-patterns.module.css"
 
 import * as React from "react"
@@ -114,16 +117,19 @@ function useActionToast(
 }
 
 function DetailItem({
+  field,
   label,
   value,
   className,
 }: {
+  field?: string
   label: string
   value: React.ReactNode
   className?: string
 }) {
   return (
     <DetailField
+      field={field}
       className={className}
       label={label}
       labelMuted
@@ -165,7 +171,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
         <input name="ticket_id" type="hidden" value={ticket.id} />
 
         <div className={patterns.fourColumnGrid}>
-          <div className={patterns.fieldStack}>
+          <ConfiguredField field="ticket.pnr"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-pnr">
               {t("customers.ledger.corrections.fields.pnr")}
             </Label>
@@ -173,8 +179,8 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
             {fieldError("pnr") ? (
               <p className={patterns.errorText}>{fieldError("pnr")}</p>
             ) : null}
-          </div>
-          <div className={patterns.fieldStack}>
+          </div></ConfiguredField>
+          <ConfiguredField field="ticket.ticket_number"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-ticket-number">
               {t("customers.ledger.corrections.fields.ticketNumber")}
             </Label>
@@ -183,12 +189,12 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               name="ticket_number"
               defaultValue={ticket.ticket_number ?? ""}
             />
-          </div>
-          <div className={patterns.fieldStack}>
+          </div></ConfiguredField>
+          <ConfiguredField field="ticket.airline"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-airline">
               {t("customers.ledger.corrections.fields.airline")}
             </Label>
-            <select
+            <ConfiguredSelect
               className={selectInputClassName}
               id="ticket-detail-airline"
               name="airline"
@@ -200,9 +206,9 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
                   {airline}
                 </option>
               ))}
-            </select>
-          </div>
-          <div className={patterns.fieldStack}>
+            </ConfiguredSelect>
+          </div></ConfiguredField>
+          <ConfiguredField field="ticket.flight_date"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-flight-date">
               {t("customers.ledger.corrections.fields.flightDate")}
             </Label>
@@ -212,10 +218,10 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               type="datetime-local"
               defaultValue={formatDateTimeLocal(ticket.flight_date)}
             />
-          </div>
+          </div></ConfiguredField>
         </div>
 
-        <div className={patterns.fieldStack}>
+        <ConfiguredField field="ticket.passengers"><div className={patterns.fieldStack}>
           <Label htmlFor="ticket-detail-passengers">
             {t("customers.ledger.corrections.fields.passengers")}
           </Label>
@@ -224,10 +230,10 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
             name="passengers"
             defaultValue={ticket.passengers.join("\n")}
           />
-        </div>
+        </div></ConfiguredField>
 
         <div className={patterns.fourColumnGrid}>
-          <div className={patterns.fieldStack}>
+          <ConfiguredField field="ticket.departure_place"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-departure-place">
               {t("customers.ledger.corrections.fields.departurePlace")}
             </Label>
@@ -236,8 +242,8 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               name="departure_place"
               defaultValue={ticket.departure_place ?? ""}
             />
-          </div>
-          <div className={patterns.fieldStack}>
+          </div></ConfiguredField>
+          <ConfiguredField field="ticket.arrival_place"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-arrival-place">
               {t("customers.ledger.corrections.fields.arrivalPlace")}
             </Label>
@@ -246,8 +252,8 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               name="arrival_place"
               defaultValue={ticket.arrival_place ?? ""}
             />
-          </div>
-          <div className={patterns.fieldStack}>
+          </div></ConfiguredField>
+          <ConfiguredField field="ticket.departure_code"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-departure-code">
               {t("customers.ledger.corrections.fields.departureCode")}
             </Label>
@@ -256,8 +262,8 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               name="departure_code"
               defaultValue={ticket.departure_code ?? ""}
             />
-          </div>
-          <div className={patterns.fieldStack}>
+          </div></ConfiguredField>
+          <ConfiguredField field="ticket.arrival_code"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-arrival-code">
               {t("customers.ledger.corrections.fields.arrivalCode")}
             </Label>
@@ -266,11 +272,11 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               name="arrival_code"
               defaultValue={ticket.arrival_code ?? ""}
             />
-          </div>
+          </div></ConfiguredField>
         </div>
 
         <div className={styles.priceGrid}>
-          <div className={patterns.fieldStack}>
+          <ConfiguredField field="ticket.ev_price"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-ev-price">
               {t("customers.ledger.corrections.fields.evPrice")}
             </Label>
@@ -281,8 +287,8 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               min="0"
               defaultValue={ticket.ev_price}
             />
-          </div>
-          <div className={patterns.fieldStack}>
+          </div></ConfiguredField>
+          <ConfiguredField field="ticket.ast_price"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-ast-price">
               {t("customers.ledger.corrections.fields.astPrice")}
             </Label>
@@ -293,8 +299,8 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               min="0"
               defaultValue={ticket.ast_price}
             />
-          </div>
-          <div className={patterns.fieldStack}>
+          </div></ConfiguredField>
+          <ConfiguredField field="ticket.thf_price"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-thf-price">
               {t("customers.ledger.corrections.fields.thfPrice")}
             </Label>
@@ -305,8 +311,8 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               min="0"
               defaultValue={ticket.thf_price}
             />
-          </div>
-          <div className={patterns.fieldStack}>
+          </div></ConfiguredField>
+          <ConfiguredField field="ticket.web_price"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-web-price">
               {t("customers.ledger.corrections.fields.webPrice")}
             </Label>
@@ -317,8 +323,8 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               min="0"
               defaultValue={ticket.web_price}
             />
-          </div>
-          <div className={patterns.fieldStack}>
+          </div></ConfiguredField>
+          <ConfiguredField field="ticket.insurance_price"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-insurance-price">
               {t("customers.ledger.corrections.fields.insurancePrice")}
             </Label>
@@ -329,8 +335,8 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               min="0"
               defaultValue={ticket.insurance_price}
             />
-          </div>
-          <div className={patterns.fieldStack}>
+          </div></ConfiguredField>
+          <ConfiguredField field="ticket.add_in_price"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-add-in-price">
               {t("customers.ledger.corrections.fields.addInPrice")}
             </Label>
@@ -341,8 +347,8 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               min="0"
               defaultValue={ticket.add_in_price}
             />
-          </div>
-          <div className={patterns.fieldStack}>
+          </div></ConfiguredField>
+          <ConfiguredField field="ticket.discount"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-discount">
               {t("customers.ledger.corrections.fields.discount")}
             </Label>
@@ -353,8 +359,8 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               min="0"
               defaultValue={ticket.discount}
             />
-          </div>
-          <div className={patterns.fieldStack}>
+          </div></ConfiguredField>
+          <ConfiguredField field="ticket.net_price"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-net-price">
               {t("customers.ledger.corrections.fields.netPrice")}
             </Label>
@@ -365,8 +371,8 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               min="0"
               defaultValue={ticket.net_price}
             />
-          </div>
-          <div className={patterns.fieldStack}>
+          </div></ConfiguredField>
+          <ConfiguredField field="ticket.selling_price"><div className={patterns.fieldStack}>
             <Label htmlFor="ticket-detail-selling-price">
               {t("customers.ledger.corrections.fields.sellingPrice")}
             </Label>
@@ -377,7 +383,7 @@ function TicketCorrectionForm({ ticket }: { ticket: TicketRead }) {
               min="0"
               defaultValue={ticket.selling_price}
             />
-          </div>
+          </div></ConfiguredField>
         </div>
 
         {state.status === "error" && state.message ? (
@@ -448,9 +454,9 @@ export function TicketDetailClient({
               <h1 className={styles.title}>
                 {ticket.pnr ?? t("tickets.detail.emptyValue")}
               </h1>
-              <StatusChip tone={getStatusTone(ticket.status)}>
+              <ConfiguredValue field="ticket.status"><StatusChip tone={getStatusTone(ticket.status)}>
                 {t(`tickets.statuses.${ticket.status}`)}
-              </StatusChip>
+              </StatusChip></ConfiguredValue>
             </div>
             <p className={`${patterns.mutedText} ${styles.description}`}>
               {t("tickets.detail.description")}
@@ -467,16 +473,16 @@ export function TicketDetailClient({
         </div>
 
         <div className={styles.metricGrid}>
-          <DetailItem label={t("tickets.detail.metrics.route")} value={route} />
-          <DetailItem
+          <DetailItem field="ticket.itinerary" label={t("tickets.detail.metrics.route")} value={route} />
+          <DetailItem field="ticket.flight_date"
             label={t("tickets.detail.metrics.flightDate")}
             value={formatDateTime(ticket.flight_date)}
           />
-          <DetailItem
+          <DetailItem field="ticket.selling_price"
             label={t("tickets.detail.metrics.sellingPrice")}
             value={formatCurrency(ticket.selling_price)}
           />
-          <DetailItem
+          <DetailItem field="ticket.true_income"
             label={t("tickets.detail.metrics.trueIncome")}
             value={formatCurrency(ticket.true_income)}
           />
@@ -495,20 +501,20 @@ export function TicketDetailClient({
           </div>
 
           <div className={styles.detailGrid}>
-            <DetailItem label={t("tickets.detail.fields.ticketNumber")} value={ticket.ticket_number ?? t("tickets.detail.emptyValue")} />
-            <DetailItem label={t("tickets.detail.fields.airline")} value={ticket.airline ?? t("tickets.detail.emptyValue")} />
-            <DetailItem label={t("tickets.detail.fields.departure")} value={`${ticket.departure_place ?? t("tickets.detail.emptyValue")} (${ticket.departure_code ?? "-"})`} />
-            <DetailItem label={t("tickets.detail.fields.arrival")} value={`${ticket.arrival_place ?? t("tickets.detail.emptyValue")} (${ticket.arrival_code ?? "-"})`} />
-            <DetailItem label={t("tickets.detail.fields.evPrice")} value={formatCurrency(ticket.ev_price)} />
-            <DetailItem label={t("tickets.detail.fields.astPrice")} value={formatCurrency(ticket.ast_price)} />
-            <DetailItem label={t("tickets.detail.fields.thfPrice")} value={formatCurrency(ticket.thf_price)} />
-            <DetailItem label={t("tickets.detail.fields.webPrice")} value={formatCurrency(ticket.web_price)} />
-            <DetailItem label={t("tickets.detail.fields.insurancePrice")} value={formatCurrency(ticket.insurance_price)} />
-            <DetailItem label={t("tickets.detail.fields.addInPrice")} value={formatCurrency(ticket.add_in_price)} />
-            <DetailItem label={t("tickets.detail.fields.discount")} value={formatCurrency(ticket.discount)} />
-            <DetailItem label={t("tickets.detail.fields.netPrice")} value={formatCurrency(ticket.net_price)} />
+            <DetailItem field="ticket.ticket_number" label={t("tickets.detail.fields.ticketNumber")} value={ticket.ticket_number ?? t("tickets.detail.emptyValue")} />
+            <DetailItem field="ticket.airline" label={t("tickets.detail.fields.airline")} value={ticket.airline ?? t("tickets.detail.emptyValue")} />
+            <DetailItem field="ticket.departure_place" label={t("tickets.detail.fields.departure")} value={`${ticket.departure_place ?? t("tickets.detail.emptyValue")} (${ticket.departure_code ?? "-"})`} />
+            <DetailItem field="ticket.arrival_place" label={t("tickets.detail.fields.arrival")} value={`${ticket.arrival_place ?? t("tickets.detail.emptyValue")} (${ticket.arrival_code ?? "-"})`} />
+            <DetailItem field="ticket.ev_price" label={t("tickets.detail.fields.evPrice")} value={formatCurrency(ticket.ev_price)} />
+            <DetailItem field="ticket.ast_price" label={t("tickets.detail.fields.astPrice")} value={formatCurrency(ticket.ast_price)} />
+            <DetailItem field="ticket.thf_price" label={t("tickets.detail.fields.thfPrice")} value={formatCurrency(ticket.thf_price)} />
+            <DetailItem field="ticket.web_price" label={t("tickets.detail.fields.webPrice")} value={formatCurrency(ticket.web_price)} />
+            <DetailItem field="ticket.insurance_price" label={t("tickets.detail.fields.insurancePrice")} value={formatCurrency(ticket.insurance_price)} />
+            <DetailItem field="ticket.add_in_price" label={t("tickets.detail.fields.addInPrice")} value={formatCurrency(ticket.add_in_price)} />
+            <DetailItem field="ticket.discount" label={t("tickets.detail.fields.discount")} value={formatCurrency(ticket.discount)} />
+            <DetailItem field="ticket.net_price" label={t("tickets.detail.fields.netPrice")} value={formatCurrency(ticket.net_price)} />
             <DetailItem label={t("tickets.detail.fields.serviceFee")} value={formatCurrency(ticket.service_fee)} />
-            <DetailItem label={t("tickets.detail.fields.updatedAt")} value={formatDateTime(ticket.updated_at)} />
+            <DetailItem field="ticket.updated_at" label={t("tickets.detail.fields.updatedAt")} value={formatDateTime(ticket.updated_at)} />
           </div>
 
           <div className={styles.passengers}>
@@ -604,7 +610,7 @@ export function TicketDetailClient({
                     </p>
                   </div>
                   <div className={patterns.stack}>
-                    <select
+                    <ConfiguredSelect
                       aria-label={t("tickets.actions.reassignCustomer")}
                       className={selectInputClassName}
                       name="new_customer_id"
@@ -621,7 +627,7 @@ export function TicketDetailClient({
                           </option>
                         ))
                       )}
-                    </select>
+                    </ConfiguredSelect>
                     <LifecycleSubmitButton
                       disabled={!canChangeLifecycle || availableCustomers.length === 0}
                       idleLabel={t("tickets.actions.reassignSubmit")}
@@ -646,11 +652,11 @@ export function TicketDetailClient({
           {t("tickets.detail.timestampsEyebrow")}
         </p>
         <div className={styles.timestampGrid}>
-          <DetailItem
+          <DetailItem field="ticket.created_at"
             label={t("tickets.detail.fields.createdAt")}
             value={formatDateTime(ticket.created_at)}
           />
-          <DetailItem
+          <DetailItem field="ticket.updated_at"
             label={t("tickets.detail.fields.updatedAt")}
             value={formatDateTime(ticket.updated_at)}
           />

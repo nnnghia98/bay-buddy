@@ -7,7 +7,7 @@
 | Số vé | Ticket Number | `ticket_number` |
 | Ngày xuất vé | Ticket Issue Date | `booked_at` |
 | Giá gốc | Net Price | `net_price` |
-| Giá EV | EV Price | `ev_price` |
+| Giá EV (ENVIET) | EV Price | `ev_price` |
 | Giá AST | AST Price | `ast_price` |
 | Giá Thành Hoàng / Giá THF | Thành Hoàng / THF Price | `thf_price` |
 | Giá WEB | WEB Price | `web_price` |
@@ -29,6 +29,7 @@
 | Giao dịch | Transaction | `transaction` |
 | Số tiền | Amount | `amount` |
 | Phương thức thanh toán | Payment Method | `method` |
+| EV (ENVIET) | EV payment method | `method = "EV"` |
 | Ngày thanh toán | Payment Date | `payment_occurred_at` |
 | Trạng thái | Status | `status` |
 | Ghi chú | Note | `note` |

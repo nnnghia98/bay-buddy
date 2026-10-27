@@ -4,6 +4,7 @@ import * as React from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Toaster } from "sonner"
 
+import { FieldPreferencesProvider } from "@/components/configured-field"
 import { AuthProvider } from "@/lib/auth-context"
 import {
   ThemeModeProvider,
@@ -47,7 +48,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ThemeModeProvider>
       <QueryClientProvider client={queryClient}>
         <I18nProviderClient locale="vi">
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider><FieldPreferencesProvider>{children}</FieldPreferencesProvider></AuthProvider>
         </I18nProviderClient>
       </QueryClientProvider>
       <ThemedToaster />

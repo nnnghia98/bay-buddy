@@ -1,5 +1,8 @@
 "use client"
 
+import { ConfiguredSelect } from "@/components/configured-select"
+import { ticketFieldKey } from "@/lib/field-mapping"
+import { ConfiguredField, ConfiguredText } from "@/components/configured-field"
 import patterns from "@/styles/ui-patterns.module.css"
 
 import * as React from "react"
@@ -856,7 +859,7 @@ function CurrencyEditField({
   value: number
 }) {
   return (
-    <FormField error={error} htmlFor={id} label={label}>
+    <ConfiguredField field={ticketFieldKey(name)}><FormField error={error} htmlFor={id} label={label}>
       <Input
         className={styles.editorMoneyInput}
         id={id}
@@ -876,7 +879,7 @@ function CurrencyEditField({
             : formatCurrencyInput(value)
         }
       />
-    </FormField>
+    </FormField></ConfiguredField>
   )
 }
 
@@ -896,7 +899,7 @@ function EditorTextField({
   name: string
 }) {
   return (
-    <FormField error={error} htmlFor={id} label={label}>
+    <ConfiguredField field={ticketFieldKey(name)}><FormField error={error} htmlFor={id} label={label}>
       <Input
         defaultValue={defaultValue}
         id={id}
@@ -904,7 +907,7 @@ function EditorTextField({
         name={name}
         type="text"
       />
-    </FormField>
+    </FormField></ConfiguredField>
   )
 }
 
@@ -983,6 +986,7 @@ function ManualDebtEditorForm({
     "Tiền mặt": t("customers.ledger.paymentDialog.fields.methodOptions.cash"),
     AST: t("customers.ledger.paymentDialog.fields.methodOptions.ast"),
     THF: t("customers.ledger.paymentDialog.fields.methodOptions.thf"),
+    EV: t("customers.ledger.paymentDialog.fields.methodOptions.ev"),
   }
   const hasPricingChanged = editablePricingFields.some(
     (field) => pricing[field] !== initialPricing[field],
@@ -1186,7 +1190,7 @@ function ManualDebtEditorForm({
                     />
                   </dl>
 
-                  <FormField
+                  <ConfiguredField field="ticket.booked_at"><FormField
                     error={getError("booked_at")}
                     htmlFor={`edit-booked-at-${row.id}`}
                     label={t("manualDebts.form.fields.bookedAt")}
@@ -1197,9 +1201,9 @@ function ManualDebtEditorForm({
                       name="booked_at"
                       type="date"
                     />
-                  </FormField>
+                  </FormField></ConfiguredField>
 
-                  <FormField
+                  <ConfiguredField field="ticket.passengers"><FormField
                     error={getError("passengers")}
                     htmlFor={`edit-passengers-${row.id}`}
                     label={t("manualDebts.form.fields.passengers")}
@@ -1210,7 +1214,7 @@ function ManualDebtEditorForm({
                       name="passengers"
                       rows={2}
                     />
-                  </FormField>
+                  </FormField></ConfiguredField>
                 </div>
               </FormSection>
 
@@ -1313,12 +1317,12 @@ function ManualDebtEditorForm({
 
               <FormSection icon={Wallet} title={t("manualDebts.form.paymentGroup")}>
                 <div className={styles.editorSectionContent}>
-                  <FormField
+                  <ConfiguredField field="transaction.method"><FormField
                     error={getError("payment_method")}
                     htmlFor={`edit-payment-method-${row.id}`}
                     label={t("manualDebts.form.fields.paymentMethod")}
                   >
-                    <select
+                    <ConfiguredSelect
                       className={selectInputClassName}
                       disabled={!canEditPayment}
                       id={`edit-payment-method-${row.id}`}
@@ -1336,11 +1340,11 @@ function ManualDebtEditorForm({
                           {paymentMethodLabels[method]}
                         </option>
                       ))}
-                    </select>
-                  </FormField>
+                    </ConfiguredSelect>
+                  </FormField></ConfiguredField>
                   <div className={styles.sectionOffset}>
                     {canEditPaymentDate ? (
-                      <FormField
+                      <ConfiguredField field="transaction.payment_occurred_at"><FormField
                         error={getError("payment_occurred_at")}
                         htmlFor={`edit-payment-date-${row.id}`}
                         label={t("manualDebts.form.fields.paymentDate")}
@@ -1355,7 +1359,7 @@ function ManualDebtEditorForm({
                           type="date"
                           value={paymentOccurredAt}
                         />
-                      </FormField>
+                      </FormField></ConfiguredField>
                     ) : (
                       <dl className={styles.detailGrid}>
                         <DetailItem
@@ -1368,7 +1372,7 @@ function ManualDebtEditorForm({
                       </dl>
                     )}
                   </div>
-                  <FormField
+                  <ConfiguredField field="transaction.note"><FormField
                     error={getError("payment_note")}
                     htmlFor={`edit-payment-note-${row.id}`}
                     label={t("manualDebts.table.columns.note")}
@@ -1382,7 +1386,7 @@ function ManualDebtEditorForm({
                       rows={3}
                       value={paymentNote}
                     />
-                  </FormField>
+                  </FormField></ConfiguredField>
                 </div>
               </FormSection>
 
@@ -1419,12 +1423,12 @@ function ManualDebtEditorForm({
                   />
                 </div>
                 <div className={patterns.twoColumnGrid}>
-                  <FormField
+                  <ConfiguredField field="ticket.airline"><FormField
                     error={getError("airline")}
                     htmlFor={`edit-airline-${row.id}`}
                     label={t("manualDebts.form.fields.airline")}
                   >
-                    <select
+                    <ConfiguredSelect
                       className={selectInputClassName}
                       defaultValue={row.airline ?? ""}
                       id={`edit-airline-${row.id}`}
@@ -1438,9 +1442,9 @@ function ManualDebtEditorForm({
                           {label}
                         </option>
                       ))}
-                    </select>
-                  </FormField>
-                  <FormField
+                    </ConfiguredSelect>
+                  </FormField></ConfiguredField>
+                  <ConfiguredField field="ticket.flight_date"><FormField
                     error={getError("flight_date")}
                     htmlFor={`edit-flight-date-${row.id}`}
                     label={t("manualDebts.form.fields.flightDate")}
@@ -1451,7 +1455,7 @@ function ManualDebtEditorForm({
                       name="flight_date"
                       type="datetime-local"
                     />
-                  </FormField>
+                  </FormField></ConfiguredField>
                 </div>
               </div>
 
@@ -1508,6 +1512,7 @@ function SortableTableHead({
 
   return (
     <TableHead
+      field={ticketFieldKey(sortKey)}
       aria-sort={
         isActive
           ? sortState.direction === "asc"
@@ -1524,7 +1529,7 @@ function SortableTableHead({
         title={label}
         type="button"
       >
-        <span>{children}</span>
+        <span><ConfiguredText field={ticketFieldKey(sortKey)}>{children}</ConfiguredText></span>
         <SortIcon aria-hidden="true" className={styles.sortIcon} />
       </button>
     </TableHead>
@@ -1549,6 +1554,7 @@ function ManualDebtTableRow({
     "Tiền mặt": t("customers.ledger.paymentDialog.fields.methodOptions.cash"),
     AST: t("customers.ledger.paymentDialog.fields.methodOptions.ast"),
     THF: t("customers.ledger.paymentDialog.fields.methodOptions.thf"),
+    EV: t("customers.ledger.paymentDialog.fields.methodOptions.ev"),
   }
   const ticketPaymentMethod = paymentMethodOptions.find(
     (method) => method === row.transaction_method,
@@ -1566,12 +1572,12 @@ function ManualDebtTableRow({
 
   return (
     <TableRow className={styles.tableRow}>
-      <TableCell className={cn(styles.cell, styles.stickyCell)}>
+      <TableCell field="ticket.booked_at" className={cn(styles.cell, styles.stickyCell)}>
         <span className={styles.displayDate}>
           {formatOptionalDate(row.booked_at) || t("manualDebts.emptyValue")}
         </span>
       </TableCell>
-      <TableCell
+      <TableCell field="ticket.passengers"
         className={cn(styles.cell, styles.stickyContextCell)}
         title={[row.passenger_names, row.customer_name]
           .filter(Boolean)
@@ -1585,55 +1591,55 @@ function ManualDebtTableRow({
         </div>
       </TableCell>
       {tableView === "full" ? (
-        <TableCell className={cn(styles.cell, styles.mutedCell)}>
+        <TableCell field="ticket.created_at" className={cn(styles.cell, styles.mutedCell)}>
           {formatDate(row.created_at)}
         </TableCell>
       ) : null}
       {tableView === "full" ? (
         <>
-          <TableCell className={styles.numberCell}>
+          <TableCell field="ticket.ev_price" className={styles.numberCell}>
             <span className={styles.displayValue}>
               {formatCurrency(row.ticket_ev_price)}
             </span>
           </TableCell>
-          <TableCell className={styles.numberCell}>
+          <TableCell field="ticket.ast_price" className={styles.numberCell}>
             <span className={styles.displayValue}>
               {formatCurrency(row.ticket_ast_price)}
             </span>
           </TableCell>
-          <TableCell className={styles.numberCell}>
+          <TableCell field="ticket.thf_price" className={styles.numberCell}>
             <span className={styles.displayValue}>
               {formatCurrency(row.ticket_thf_price)}
             </span>
           </TableCell>
-          <TableCell className={styles.numberCell}>
+          <TableCell field="ticket.web_price" className={styles.numberCell}>
             <span className={styles.displayValue}>
               {formatCurrency(row.ticket_web_price)}
             </span>
           </TableCell>
-          <TableCell className={styles.numberCell}>
+          <TableCell field="ticket.insurance_price" className={styles.numberCell}>
             <span className={styles.displayValue}>
               {formatCurrency(row.ticket_insurance_price)}
             </span>
           </TableCell>
-          <TableCell className={styles.numberCell}>
+          <TableCell field="ticket.add_in_price" className={styles.numberCell}>
             <span className={styles.displayValue}>
               {formatCurrency(row.ticket_add_in_price)}
             </span>
           </TableCell>
-          <TableCell className={styles.numberCell}>
+          <TableCell field="ticket.discount" className={styles.numberCell}>
             <span className={styles.displayValue}>
               {formatCurrency(row.ticket_discount)}
             </span>
           </TableCell>
         </>
       ) : null}
-      <TableCell className={styles.numberCell}>
+      <TableCell field="ticket.selling_price" className={styles.numberCell}>
         <span className={styles.displayValue}>
           {formatCurrency(row.ticket_selling_price)}
         </span>
       </TableCell>
-      <TableCell className={styles.valueCell}>
+      <TableCell field="ticket.true_income" className={styles.valueCell}>
         <Tooltip
           content={t("manualDebts.table.incomeAutoCalculateTooltip")}
           hasHoverIndication={false}
@@ -1645,18 +1651,18 @@ function ManualDebtTableRow({
         </Tooltip>
       </TableCell>
       {tableView === "full" ? (
-        <TableCell className={styles.valueCell}>
+        <TableCell field="transaction.amount" className={styles.valueCell}>
           {row.linked_payment_amount === null
             ? ""
             : formatCurrency(row.linked_payment_amount)}
         </TableCell>
       ) : null}
-      <TableCell className={styles.paymentMethodCell}>
+      <TableCell field="transaction.method" className={styles.paymentMethodCell}>
         <span className={styles.paymentMethodValue}>
           {paymentMethodDisplay}
         </span>
       </TableCell>
-      <TableCell className={styles.noteCell}>
+      <TableCell field="transaction.note" className={styles.noteCell}>
         {row.linked_payment_note ?? ""}
       </TableCell>
       <TableCell className={styles.actionsCell}>
@@ -1954,6 +1960,7 @@ export function ManualDebtInputClient({
     "Tiền mặt": t("customers.ledger.paymentDialog.fields.methodOptions.cash"),
     AST: t("customers.ledger.paymentDialog.fields.methodOptions.ast"),
     THF: t("customers.ledger.paymentDialog.fields.methodOptions.thf"),
+    EV: t("customers.ledger.paymentDialog.fields.methodOptions.ev"),
   }
 
   const resetManualDebtForm = React.useCallback(() => {
@@ -2238,7 +2245,7 @@ export function ManualDebtInputClient({
                 ) : null}
 
                 <div className={patterns.grid}>
-                  <FormField
+                  <ConfiguredField field="customer.name" systemRequired><FormField
                     error={getFieldError(fieldErrors, "customer_name")}
                     htmlFor="manual-debt-customer"
                     isRequired
@@ -2252,9 +2259,9 @@ export function ManualDebtInputClient({
                       placeholder={t("manualDebts.form.customerPlaceholder")}
                       required
                     />
-                  </FormField>
+                  </FormField></ConfiguredField>
 
-                  <FormField
+                  <ConfiguredField field="ticket.booked_at"><FormField
                     error={getFieldError(fieldErrors, "booked_at")}
                     htmlFor="manual-debt-booked-at"
                     label={t("manualDebts.form.fields.bookedAt")}
@@ -2265,9 +2272,9 @@ export function ManualDebtInputClient({
                       name="booked_at"
                       type="date"
                     />
-                  </FormField>
+                  </FormField></ConfiguredField>
 
-                  <FormField
+                  <ConfiguredField field="ticket.passengers"><FormField
                     error={getFieldError(fieldErrors, "passengers")}
                     htmlFor="manual-debt-passengers"
                     label={t("manualDebts.form.fields.passengers")}
@@ -2276,7 +2283,7 @@ export function ManualDebtInputClient({
                       id="manual-debt-passengers"
                       name="passengers"
                     />
-                  </FormField>
+                  </FormField></ConfiguredField>
                 </div>
 
                 <FormSection
@@ -2286,7 +2293,7 @@ export function ManualDebtInputClient({
                   <div className={patterns.grid}>
                     <input name="net_price" type="hidden" value="0" />
                     <div className={patterns.twoColumnGrid}>
-                      <FormField
+                      <ConfiguredField field="ticket.ev_price"><FormField
                         error={getFieldError(fieldErrors, "ev_price")}
                         htmlFor="manual-debt-ev-price"
                         label={t("manualDebts.form.fields.evPrice")}
@@ -2300,8 +2307,8 @@ export function ManualDebtInputClient({
                           type="text"
                           value={evPrice > 0 ? formatCurrencyInput(evPrice) : ""}
                         />
-                      </FormField>
-                      <FormField
+                      </FormField></ConfiguredField>
+                      <ConfiguredField field="ticket.ast_price"><FormField
                         error={getFieldError(fieldErrors, "ast_price")}
                         htmlFor="manual-debt-ast-price"
                         label={t("manualDebts.form.fields.astPrice")}
@@ -2315,8 +2322,8 @@ export function ManualDebtInputClient({
                           type="text"
                           value={astPrice > 0 ? formatCurrencyInput(astPrice) : ""}
                         />
-                      </FormField>
-                      <FormField
+                      </FormField></ConfiguredField>
+                      <ConfiguredField field="ticket.thf_price"><FormField
                         error={getFieldError(fieldErrors, "thf_price")}
                         htmlFor="manual-debt-thf-price"
                         label={t("manualDebts.form.fields.thfPrice")}
@@ -2330,8 +2337,8 @@ export function ManualDebtInputClient({
                           type="text"
                           value={thfPrice > 0 ? formatCurrencyInput(thfPrice) : ""}
                         />
-                      </FormField>
-                      <FormField
+                      </FormField></ConfiguredField>
+                      <ConfiguredField field="ticket.web_price"><FormField
                         error={getFieldError(fieldErrors, "web_price")}
                         htmlFor="manual-debt-web-price"
                         label={t("manualDebts.form.fields.webPrice")}
@@ -2345,8 +2352,8 @@ export function ManualDebtInputClient({
                           type="text"
                           value={webPrice > 0 ? formatCurrencyInput(webPrice) : ""}
                         />
-                      </FormField>
-                      <FormField
+                      </FormField></ConfiguredField>
+                      <ConfiguredField field="ticket.insurance_price"><FormField
                         error={getFieldError(fieldErrors, "insurance_price")}
                         htmlFor="manual-debt-insurance-price"
                         label={t("manualDebts.form.fields.insurancePrice")}
@@ -2360,8 +2367,8 @@ export function ManualDebtInputClient({
                           type="text"
                           value={insurancePrice > 0 ? formatCurrencyInput(insurancePrice) : ""}
                         />
-                      </FormField>
-                      <FormField
+                      </FormField></ConfiguredField>
+                      <ConfiguredField field="ticket.add_in_price"><FormField
                         error={getFieldError(fieldErrors, "add_in_price")}
                         htmlFor="manual-debt-add-in-price"
                         label={t("manualDebts.form.fields.addInPrice")}
@@ -2379,8 +2386,8 @@ export function ManualDebtInputClient({
                             addInPrice > 0 ? formatCurrencyInput(addInPrice) : ""
                           }
                         />
-                      </FormField>
-                      <FormField
+                      </FormField></ConfiguredField>
+                      <ConfiguredField field="ticket.discount"><FormField
                         error={getFieldError(fieldErrors, "discount")}
                         htmlFor="manual-debt-discount"
                         label={t("manualDebts.form.fields.discount")}
@@ -2394,8 +2401,8 @@ export function ManualDebtInputClient({
                           type="text"
                           value={discount > 0 ? formatCurrencyInput(discount) : ""}
                         />
-                      </FormField>
-                      <FormField
+                      </FormField></ConfiguredField>
+                      <ConfiguredField field="ticket.selling_price"><FormField
                         error={getFieldError(fieldErrors, "selling_price")}
                         htmlFor="manual-debt-selling-price"
                         label={t("manualDebts.form.fields.sellingPrice")}
@@ -2415,7 +2422,7 @@ export function ManualDebtInputClient({
                               : ""
                           }
                         />
-                      </FormField>
+                      </FormField></ConfiguredField>
                     </div>
                     <div className={styles.incomeSummary}>
                       <p className={patterns.eyebrow}>
@@ -2432,12 +2439,12 @@ export function ManualDebtInputClient({
                   icon={Wallet}
                   title={t("manualDebts.form.paymentGroup")}
                 >
-                  <FormField
+                  <ConfiguredField field="transaction.method"><FormField
                     error={getFieldError(fieldErrors, "payment_method")}
                     htmlFor="manual-debt-payment-method"
                     label={t("manualDebts.form.fields.paymentMethod")}
                   >
-                    <select
+                    <ConfiguredSelect
                       className={selectInputClassName}
                       id="manual-debt-payment-method"
                       name="payment_method"
@@ -2461,10 +2468,10 @@ export function ManualDebtInputClient({
                           {paymentMethodLabels[method]}
                         </option>
                       ))}
-                    </select>
-                  </FormField>
+                    </ConfiguredSelect>
+                  </FormField></ConfiguredField>
                   <div className={styles.sectionOffset}>
-                    <FormField
+                    <ConfiguredField field="transaction.payment_occurred_at"><FormField
                       error={getFieldError(fieldErrors, "payment_date")}
                       htmlFor="manual-debt-payment-date"
                       label={t("manualDebts.form.fields.paymentDate")}
@@ -2477,7 +2484,7 @@ export function ManualDebtInputClient({
                         type="date"
                         value={paymentDate}
                       />
-                    </FormField>
+                    </FormField></ConfiguredField>
                   </div>
                   <p className={styles.hint}>
                     {t("manualDebts.form.paymentHint")}
@@ -2486,16 +2493,16 @@ export function ManualDebtInputClient({
 
                 <FormSection icon={Route} title={t("manualDebts.form.routeGroup")}>
                   <div>
-                    <FormField
+                    <ConfiguredField field="ticket.itinerary"><FormField
                       error={getFieldError(fieldErrors, "itinerary")}
                       htmlFor="manual-debt-itinerary"
                       label={t("manualDebts.form.fields.route")}
                     >
                       <Input id="manual-debt-itinerary" name="itinerary" />
-                    </FormField>
+                    </FormField></ConfiguredField>
                   </div>
                   <div className={cn(patterns.twoColumnGrid, styles.sectionOffset)}>
-                    <FormField
+                    <ConfiguredField field="ticket.departure_code"><FormField
                       error={getFieldError(fieldErrors, "departure_code")}
                       htmlFor="manual-debt-departure-code"
                       label={t("manualDebts.form.fields.departureCode")}
@@ -2505,8 +2512,8 @@ export function ManualDebtInputClient({
                         id="manual-debt-departure-code"
                         name="departure_code"
                       />
-                    </FormField>
-                    <FormField
+                    </FormField></ConfiguredField>
+                    <ConfiguredField field="ticket.arrival_code"><FormField
                       error={getFieldError(fieldErrors, "arrival_code")}
                       htmlFor="manual-debt-arrival-code"
                       label={t("manualDebts.form.fields.arrivalCode")}
@@ -2516,13 +2523,13 @@ export function ManualDebtInputClient({
                         id="manual-debt-arrival-code"
                         name="arrival_code"
                       />
-                    </FormField>
+                    </FormField></ConfiguredField>
                   </div>
                 </FormSection>
 
                 <div className={patterns.grid}>
                   <div className={patterns.twoColumnGrid}>
-                    <FormField
+                    <ConfiguredField field="ticket.pnr"><FormField
                       error={getFieldError(fieldErrors, "pnr")}
                       htmlFor="manual-debt-pnr"
                       label={t("manualDebts.form.fields.pnr")}
@@ -2533,18 +2540,18 @@ export function ManualDebtInputClient({
                         maxLength={6}
                         name="pnr"
                       />
-                    </FormField>
-                    <FormField
+                    </FormField></ConfiguredField>
+                    <ConfiguredField field="ticket.ticket_number"><FormField
                       error={getFieldError(fieldErrors, "ticket_number")}
                       htmlFor="manual-debt-ticket-number"
                       label={t("manualDebts.form.fields.ticketNumber")}
                     >
                       <Input id="manual-debt-ticket-number" name="ticket_number" />
-                    </FormField>
+                    </FormField></ConfiguredField>
                   </div>
 
                   <div className={patterns.twoColumnGrid}>
-                    <FormField
+                    <ConfiguredField field="ticket.airline"><FormField
                       error={getFieldError(fieldErrors, "airline")}
                       htmlFor="manual-debt-airline"
                       label={t("manualDebts.form.fields.airline")}
@@ -2555,8 +2562,8 @@ export function ManualDebtInputClient({
                         noResultsLabel={t("manualDebts.form.airlineNoResults")}
                         placeholder={t("manualDebts.form.chooseAirline")}
                       />
-                    </FormField>
-                    <FormField
+                    </FormField></ConfiguredField>
+                    <ConfiguredField field="ticket.flight_date"><FormField
                       error={getFieldError(fieldErrors, "flight_date")}
                       htmlFor="manual-debt-flight-date"
                       label={t("manualDebts.form.fields.flightDate")}
@@ -2567,7 +2574,7 @@ export function ManualDebtInputClient({
                         name="flight_date"
                         type="date"
                       />
-                    </FormField>
+                    </FormField></ConfiguredField>
                   </div>
                 </div>
               </div>
@@ -2790,7 +2797,7 @@ export function ManualDebtInputClient({
                     >
                       {t("manualDebts.table.columns.paymentMethod")}
                     </SortableTableHead>
-                    <TableHead className={styles.headerNote}>
+                    <TableHead field="transaction.note" className={styles.headerNote}>
                       {t("manualDebts.table.columns.note")}
                     </TableHead>
                     <TableHead className={styles.headerStickyRight}>

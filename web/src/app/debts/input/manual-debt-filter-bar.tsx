@@ -115,6 +115,7 @@ export function ManualDebtFilterBar({
     "Tiền mặt": t("customers.ledger.paymentDialog.fields.methodOptions.cash"),
     AST: t("customers.ledger.paymentDialog.fields.methodOptions.ast"),
     THF: t("customers.ledger.paymentDialog.fields.methodOptions.thf"),
+    EV: t("customers.ledger.paymentDialog.fields.methodOptions.ev"),
   }
   const columnLabels: Record<TicketDebtFilterColumn, string> = {
     booked_at: t("manualDebts.table.columns.bookedAt"),

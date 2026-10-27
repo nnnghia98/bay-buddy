@@ -1,3 +1,4 @@
+import { ConfiguredValue } from "@/components/configured-field"
 import {
   Panel,
   PanelHeaderRow,
@@ -58,9 +59,9 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
           description={t("financeDocuments.common.snapshotNotice")}
           action={
             <div className={patterns.wrapRow}>
-              <StatusChip tone={statusTone(invoice.status)}>
+              <ConfiguredValue field="invoice.status"><StatusChip tone={statusTone(invoice.status)}>
                 {t(`financeDocuments.statuses.invoice.${invoice.status}`)}
-              </StatusChip>
+              </StatusChip></ConfiguredValue>
               <Button
                 href={`/invoices/${invoice.id}/public`}
                 variant="outline"
@@ -72,27 +73,27 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
           }
         />
         <DocumentSummaryGrid>
-          <DocumentField
+          <DocumentField field="invoice.customer_name_snapshot"
             label={t("financeDocuments.common.customer")}
             value={invoice.customer_name_snapshot}
           />
-          <DocumentField
+          <DocumentField field="invoice.created_at"
             label={t("financeDocuments.common.createdAt")}
             value={formatDateTime(invoice.created_at)}
           />
-          <DocumentField
+          <DocumentField field="invoice.customer_address_snapshot"
             label={t("financeDocuments.common.address")}
             value={invoice.customer_address_snapshot ?? t("financeDocuments.common.notUpdated")}
           />
-          <DocumentField
+          <DocumentField field="invoice.customer_tax_code_snapshot"
             label={t("financeDocuments.common.taxCode")}
             value={invoice.customer_tax_code_snapshot ?? t("financeDocuments.common.notUpdated")}
           />
-          <DocumentField
+          <DocumentField field="invoice.total_amount"
             label={t("financeDocuments.common.total")}
             value={
               <>
-                <p>{formatCurrency(invoice.total_amount)}</p>
+                <ConfiguredValue field="invoice.total_amount"><p>{formatCurrency(invoice.total_amount)}</p></ConfiguredValue>
                 <p className={patterns.supportingText}>
                   {invoice.amount_in_words}
                 </p>
@@ -100,29 +101,29 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
             }
             valueClassName={patterns.metricValue}
           />
-          <DocumentField
+          <DocumentField field="invoice.tax_amount"
             label={t("financeDocuments.common.taxAmount")}
             value={
               <div className={patterns.stack}>
-                <p>{formatCurrency(invoice.tax_amount)}</p>
+                <ConfiguredValue field="invoice.tax_amount"><p>{formatCurrency(invoice.tax_amount)}</p></ConfiguredValue>
                 <div>
                   <p className={patterns.accentEyebrow}>
                     {t("financeDocuments.common.discountAmount")}
                   </p>
-                  <p className={patterns.labelText}>
+                  <ConfiguredValue field="invoice.discount_amount"><p className={patterns.labelText}>
                     {formatCurrency(invoice.discount_amount)}
-                  </p>
+                  </p></ConfiguredValue>
                 </div>
               </div>
             }
           />
-          <DocumentField
+          <DocumentField field="invoice.note"
             className={patterns.spanTwo}
             label={t("financeDocuments.common.note")}
             value={invoice.note ?? t("financeDocuments.common.noNote")}
           />
           {invoice.issued_at ? (
-            <DocumentField
+            <DocumentField field="invoice.issued_at"
               className={patterns.spanTwo}
               label={t("financeDocuments.common.issuedAt")}
               value={formatDateTime(invoice.issued_at)}
@@ -135,7 +136,7 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
         <PanelHeaderRow
           title={t("financeDocuments.invoices.detail.lineItemsTitle")}
         />
-        <FinanceLineItemsTable
+        <FinanceLineItemsTable fieldTable="invoice_item"
           items={invoice.items}
           labels={{
             description: t("financeDocuments.common.columns.description"),
