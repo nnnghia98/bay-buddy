@@ -321,6 +321,104 @@ function FormField({
   )
 }
 
+function PassengerInput({ id, defaultValue = [] }: { id: string; defaultValue?: string[] }) {
+  const t = useI18n()
+  const [names, setNames] = React.useState(() => defaultValue.length ? defaultValue : [""])
+  const [query, setQuery] = React.useState("")
+  const [suggestions, setSuggestions] = React.useState<string[]>([])
+  const listId = React.useId()
+  const [openIndex, setOpenIndex] = React.useState<number | null>(null)
+  const [activeIndex, setActiveIndex] = React.useState(0)
+
+  React.useEffect(() => {
+    if (!query.trim()) return
+    let active = true
+    const timeout = window.setTimeout(() => {
+      void apiFetchData<{ items: { passengers: string[] }[] }>(
+        `/tickets/?page=1&page_size=100&q=${encodeURIComponent(query.trim())}`,
+      ).then((page) => {
+        if (active) setSuggestions([...new Set(page.items.flatMap((ticket) => ticket.passengers))]
+          .filter((name) => normalizeSearch(name).includes(normalizeSearch(query))).slice(0, 20))
+      }).catch(() => { if (active) setSuggestions([]) })
+    }, 250)
+    return () => { active = false; window.clearTimeout(timeout) }
+  }, [query])
+
+  return (
+    <div className={patterns.fieldStack}>
+      <input name="passengers" type="hidden" value={JSON.stringify(names)} />
+      {names.map((name, index) => (
+        <div className={styles.passengerRow} key={index}>
+          <div className={cn(patterns.relative, styles.passengerControl)}>
+            <Input
+              aria-activedescendant={openIndex === index && suggestions[activeIndex] ? `${listId}-${index}-${activeIndex}` : undefined}
+              aria-autocomplete="list"
+              aria-controls={`${listId}-${index}`}
+              aria-expanded={openIndex === index && suggestions.length > 0}
+              aria-label={`${t("manualDebts.form.fields.passengers")} ${index + 1}`}
+              autoComplete="off"
+              id={index === 0 ? id : undefined}
+              onBlur={() => setOpenIndex(null)}
+              onChange={(event) => {
+                const value = event.target.value
+                setNames((current) => current.map((item, i) => i === index ? value : item))
+                setQuery(value)
+                setSuggestions([])
+                setActiveIndex(0)
+                setOpenIndex(index)
+              }}
+              onFocus={() => {
+                if (name !== query) setSuggestions([])
+                setQuery(name)
+                setActiveIndex(0)
+                setOpenIndex(index)
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") setOpenIndex(null)
+                if (openIndex !== index || !suggestions.length) return
+                if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                  event.preventDefault()
+                  setActiveIndex((current) => (current + (event.key === "ArrowDown" ? 1 : -1) + suggestions.length) % suggestions.length)
+                }
+                if (event.key === "Enter") {
+                  event.preventDefault()
+                  setNames((current) => current.map((item, i) => i === index ? suggestions[activeIndex] : item))
+                  setOpenIndex(null)
+                }
+              }}
+              role="combobox"
+              value={name}
+            />
+            {openIndex === index && suggestions.length > 0 ? (
+              <div className={cn(styles.listbox, styles.passengerListbox)} id={`${listId}-${index}`} role="listbox">
+                {suggestions.map((suggestion, optionIndex) => (
+                  <button
+                    aria-selected={optionIndex === activeIndex}
+                    className={cn(styles.option, optionIndex === activeIndex && styles.optionActive)}
+                    id={`${listId}-${index}-${optionIndex}`}
+                    key={suggestion}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      setNames((current) => current.map((item, i) => i === index ? suggestion : item))
+                      setOpenIndex(null)
+                    }}
+                    role="option"
+                    type="button"
+                  >
+                    <span className={styles.optionName}>{suggestion}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          {names.length > 1 ? <Button aria-label={`${t("manualDebts.form.removePassenger")} ${index + 1}`} onClick={() => setNames((current) => current.filter((_, i) => i !== index))} size="icon" type="button" variant="ghost"><Trash2 aria-hidden="true" /></Button> : null}
+        </div>
+      ))}
+      <Button onClick={() => setNames((current) => [...current, ""])} size="sm" type="button" variant="outline">{t("manualDebts.form.addPassenger")}</Button>
+    </div>
+  )
+}
+
 function CustomerAutocomplete({
   customers,
   id,
@@ -1208,12 +1306,7 @@ function ManualDebtEditorForm({
                     htmlFor={`edit-passengers-${row.id}`}
                     label={t("manualDebts.form.fields.passengers")}
                   >
-                    <Textarea
-                      defaultValue={row.passenger_names}
-                      id={`edit-passengers-${row.id}`}
-                      name="passengers"
-                      rows={2}
-                    />
+                    <PassengerInput defaultValue={row.passengers ?? row.passenger_names.split(/\r?\n|,/).map((name) => name.trim()).filter(Boolean)} id={`edit-passengers-${row.id}`} />
                   </FormField></ConfiguredField>
                 </div>
               </FormSection>
@@ -2279,10 +2372,7 @@ export function ManualDebtInputClient({
                     htmlFor="manual-debt-passengers"
                     label={t("manualDebts.form.fields.passengers")}
                   >
-                    <Textarea
-                      id="manual-debt-passengers"
-                      name="passengers"
-                    />
+                    <PassengerInput id="manual-debt-passengers" />
                   </FormField></ConfiguredField>
                 </div>
 

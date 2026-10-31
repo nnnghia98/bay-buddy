@@ -211,7 +211,7 @@ def test_ticket_debt_report_returns_each_ticket_for_one_customer(
         | {
             "pnr": "DEF456",
             "ticket_number": "7382319992102",
-            "passengers": ["TRAN THI B"],
+            "passengers": ["TRAN, THI B", "LE VAN C"],
         },
     )
 
@@ -224,6 +224,9 @@ def test_ticket_debt_report_returns_each_ticket_for_one_customer(
     rows = response.json()["data"]
     assert len(rows) == 2
     assert {row["pnr"] for row in rows} == {"ABC123", "DEF456"}
+    assert next(row for row in rows if row["pnr"] == "DEF456")["passengers"] == [
+        "TRAN, THI B", "LE VAN C"
+    ]
     assert {row["customer_id"] for row in rows} == {
         first_response.json()["data"]["customer"]["id"]
     }

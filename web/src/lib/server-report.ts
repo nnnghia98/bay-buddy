@@ -19,6 +19,7 @@ export type LedgerReportRow = {
   customer_name: string
   customer_phone: string | null
   passenger_names: string
+  passengers?: string[]
   entry_type: CustomerLedger["entries"][number]["entry_type"]
   issued_at: string
   created_at: string
@@ -69,6 +70,7 @@ const ticketDebtReportRowSchema = z.object({
   customer_name: z.string(),
   customer_phone: z.string().nullable(),
   passenger_names: z.string(),
+  passengers: z.array(z.string()).optional(),
   entry_type: z.literal("ticket"),
   issued_at: z.string(),
   created_at: z.string(),

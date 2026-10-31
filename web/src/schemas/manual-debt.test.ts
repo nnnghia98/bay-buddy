@@ -31,6 +31,13 @@ const validManualDebtInput = {
 }
 
 describe("manualDebtFormSchema", () => {
+  it("preserves each passenger field as a separate name", () => {
+    const parsed = manualDebtFormSchema.parse({
+      ...validManualDebtInput,
+      passengers: JSON.stringify(["Nguyen, An", " Tran B ", ""]),
+    })
+    expect(parsed.passengers).toEqual(["NGUYEN, AN", "TRAN B"])
+  })
   it("requires a customer", () => {
     const result = manualDebtFormSchema.safeParse({
       ...validManualDebtInput,
@@ -247,6 +254,14 @@ describe("manualDebtRowUpdateSchema", () => {
     expect(parsed.add_in_price).toBe(25_000)
     expect(parsed.true_income).toBe(-25_000)
     expect(parsed.payment_note).toBe("Da thanh toan")
+  })
+
+  it("keeps passenger fields separate when editing", () => {
+    const parsed = manualDebtRowUpdateSchema.parse({
+      ...validRowUpdate,
+      passengers: JSON.stringify(["Nguyen, An", "Tran B"]),
+    })
+    expect(parsed.passengers).toEqual(["Nguyen, An", "Tran B"])
   })
 
   it("allows empty optional date and payment values", () => {

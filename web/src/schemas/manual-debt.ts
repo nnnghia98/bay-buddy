@@ -202,6 +202,14 @@ function normalizeOptionalDate(value: unknown): unknown {
 }
 
 function normalizePassengers(value: unknown): string[] {
+  if (typeof value === "string" && value.startsWith("[")) {
+    try {
+      const parsed: unknown = JSON.parse(value)
+      if (Array.isArray(parsed) && parsed.every((name) => typeof name === "string")) {
+        return parsed.map((name: string) => name.trim().toUpperCase()).filter(Boolean)
+      }
+    } catch {}
+  }
   if (typeof value !== "string") {
     return []
   }
@@ -213,6 +221,14 @@ function normalizePassengers(value: unknown): string[] {
 }
 
 function normalizeRowPassengers(value: unknown): string[] {
+  if (typeof value === "string" && value.startsWith("[")) {
+    try {
+      const parsed: unknown = JSON.parse(value)
+      if (Array.isArray(parsed) && parsed.every((name) => typeof name === "string")) {
+        return parsed.map((name: string) => name.trim()).filter(Boolean)
+      }
+    } catch {}
+  }
   if (typeof value !== "string") {
     return []
   }

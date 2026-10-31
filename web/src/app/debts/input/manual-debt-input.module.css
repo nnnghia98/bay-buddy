@@ -779,3 +779,24 @@
   }
 
 }
+.passengerRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  min-width: 0;
+}
+
+.passengerRow input {
+  min-width: 0;
+  flex: 1;
+}
+
+.passengerControl {
+  flex: 1;
+  min-width: 0;
+}
+
+.passengerListbox {
+  max-height: 18rem;
+  overflow-y: auto;
+}

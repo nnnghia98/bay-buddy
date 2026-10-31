@@ -90,6 +90,7 @@ class TicketDebtReportRow(BaseModel):
     customer_name: str
     customer_phone: Optional[str] = None
     passenger_names: str
+    passengers: list[str] = []
     entry_type: Literal["ticket"] = "ticket"
     issued_at: datetime
     created_at: datetime
@@ -351,6 +352,7 @@ def list_ticket_debt_rows(
                     customer_name=customer.name,
                     customer_phone=customer.phone,
                     passenger_names=", ".join(ticket.passengers),
+                    passengers=ticket.passengers,
                     issued_at=created_at,
                     created_at=created_at,
                     updated_at=updated_at,

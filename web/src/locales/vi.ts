@@ -529,6 +529,8 @@ export default {
       airlineNoResults: "Không tìm thấy hãng bay phù hợp.",
       customerPlaceholder: "Tìm theo tên hoặc số điện thoại",
       customerNoResults: "Không tìm thấy khách hàng phù hợp.",
+      addPassenger: "Thêm hành khách",
+      removePassenger: "Xóa hành khách",
       routeGroup: "Hành trình",
       pricingGroup: "Giá và thu nhập (VNĐ)",
       paymentGroup: "Thanh toán (tùy chọn)",

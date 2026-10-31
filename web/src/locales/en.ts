@@ -529,6 +529,8 @@ export default {
       airlineNoResults: "No matching airline found.",
       customerPlaceholder: "Search by name or phone",
       customerNoResults: "No matching customer found.",
+      addPassenger: "Add passenger",
+      removePassenger: "Remove passenger",
       routeGroup: "Route",
       pricingGroup: "Price and income (VND)",
       paymentGroup: "Payment (optional)",
